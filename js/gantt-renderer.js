@@ -140,7 +140,13 @@ const GanttRenderer = {
     const tl = this.buildTimeline(scaleMode, startDate, endDate, holidays);
 
     header.style.width = `${tl.totalWidth}px`;
-    header.style.position = "relative";
+    // 목록 머리글 (차트 머리글과 높이를 맞춰 행 위치 정렬)
+    const head = document.createElement("div");
+    head.className = "gantt-tree-head";
+    head.textContent = "📋 WBS 목록";
+    tree.appendChild(head);
+    const pane = document.getElementById("ganttPane");
+    if (pane) pane.style.width = `${tl.totalWidth}px`;
     tl.cols.forEach(c => {
       const col = document.createElement("div");
       col.className = `gantt-day-col ${c.cls || ""}`;
@@ -216,6 +222,17 @@ const GanttRenderer = {
       rows.appendChild(row);
     });
 
+    // 같은 행 강조 (목록 ↔ 차트)
+    const treeRows = [...tree.querySelectorAll(".gantt-row")];
+    const chartRows = [...rows.querySelectorAll(".gantt-row")];
+    treeRows.forEach((tr, i) => {
+      const cr = chartRows[i];
+      if (!cr) return;
+      const on = () => { tr.classList.add("gantt-row-hover"); cr.classList.add("gantt-row-hover"); };
+      const off = () => { tr.classList.remove("gantt-row-hover"); cr.classList.remove("gantt-row-hover"); };
+      [tr, cr].forEach(el => { el.addEventListener("mouseenter", on); el.addEventListener("mouseleave", off); });
+    });
+
     // 기준일 세로선 (머리글 + 전체 행)
     const rep = projectConfig.reportDate;
     if (rep) {
@@ -232,14 +249,14 @@ const GanttRenderer = {
         tag.style.left = `${x}px`;
         tag.textContent = `기준일 ${rep.slice(5).replace("-", "/")}`;
         header.appendChild(tag);
-        // 처음 표시할 때 기준일이 화면 가운데 오도록 자동 스크롤
-        const pane = document.getElementById("ganttPane");
-        if (pane && !pane.dataset.userScrolled) {
-          pane.scrollLeft = Math.max(0, x - pane.clientWidth / 2);
-          if (!pane.dataset.scrollBound) {
-            pane.dataset.scrollBound = "1";
-            pane.addEventListener("wheel", () => { pane.dataset.userScrolled = "1"; }, { passive: true });
-            pane.addEventListener("mousedown", () => { pane.dataset.userScrolled = "1"; });
+        // 처음 표시할 때 기준일이 화면 가운데 오도록 자동 스크롤 (목록·차트는 하나의 스크롤 영역)
+        const wrap = tree.parentElement;
+        if (wrap && !wrap.dataset.userScrolled) {
+          wrap.scrollLeft = Math.max(0, x + tree.offsetWidth - wrap.clientWidth / 2);
+          if (!wrap.dataset.scrollBound) {
+            wrap.dataset.scrollBound = "1";
+            wrap.addEventListener("wheel", () => { wrap.dataset.userScrolled = "1"; }, { passive: true });
+            wrap.addEventListener("mousedown", () => { wrap.dataset.userScrolled = "1"; });
           }
         }
       }

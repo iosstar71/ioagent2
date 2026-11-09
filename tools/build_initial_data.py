@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.7] 초기 데이터 빌더
+[AX Project Management by YS v1.0.8] 초기 데이터 빌더
 
 data/initial_data.json  ->  js/initial-data.js  (window.AX_INITIAL_DATA = {...})
 

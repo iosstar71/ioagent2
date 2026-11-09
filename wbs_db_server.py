@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AX Project Management by YS ver1.0.7 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
+AX Project Management by YS ver1.0.8 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
@@ -35,7 +35,7 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "ver1.0.7"
+VERSION = "ver1.0.8"
 APP_NAME = f"AX Project Management by YS {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리

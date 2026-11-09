@@ -1,7 +1,7 @@
 // =============================================================================
 // AX Project Management by YS - 코어 앱 엔진
 // =============================================================================
-const APP_VERSION = { version: "1.0.7", title: "AX Project Management by YS ver1.0.7" };
+const APP_VERSION = { version: "1.0.8", title: "AX Project Management by YS ver1.0.8" };
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼
 let _confirmCallback = null;
@@ -536,7 +536,7 @@ function resetStandardDeliverablesMeta() {
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
-  systemTitle: "AX Project Management by YS ver1.0.7",
+  systemTitle: "AX Project Management by YS ver1.0.8",
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
   channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
@@ -1278,6 +1278,131 @@ var InitialDataLoader = {
 window.InitialDataLoader = InitialDataLoader;
 
 // =============================================================================
+// [v1.0.8] 접속 방식과 저장소 모드 불일치 방지 (ModeGuard)
+//  - 서버 주소(http://IP:8080)로 접속 + 로컬 저장소 모드 → "서버 DB 모드로 전환하시겠습니까?"
+//      · 이 브라우저에서 저장소 모드를 한 번도 고른 적이 없으면 서버 DB 모드를 기본값으로 사용
+//  - index.html 파일을 직접 열어 접속(file://) → 로컬 저장소 모드로 실행하고 서버 주소 접속 방법 안내
+// =============================================================================
+var ModeGuard = {
+  accessType() {
+    const p = window.location.protocol;
+    return p === "http:" || p === "https:" ? "SERVER_URL" : "FILE";
+  },
+
+  async pingServer() {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    try {
+      const res = await fetch(window.location.origin + "/api/db/ping", { cache: "no-store", signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return false;
+      const json = await res.json().catch(() => ({}));
+      return !!json.ok;
+    } catch (e) {
+      clearTimeout(timer);
+      return false;
+    }
+  },
+
+  _hasSavedChoice() {
+    try { return !!localStorage.getItem(DbConnector.CONFIG_STORAGE_KEY); } catch (e) { return false; }
+  },
+
+  _setMode(mode) {
+    DbConnector.config.mode = mode;
+    DbConnector.config.connected = false;
+    DbConnector.saveConfig();
+    DbConnector.renderConfigForm();
+    DbConnector.updateHeaderBadge();
+  },
+
+  async check() {
+    const access = this.accessType();
+    const mode = DbConnector.config.mode;
+
+    if (access === "FILE") {
+      if (mode !== "LOCAL") this._setMode("LOCAL");
+      this.loginNotice = "📁 <b>index.html 파일을 직접 열어 실행</b>했습니다. <b>로컬 저장소 모드</b>(이 PC 브라우저에만 저장)로 로그인합니다.<br>" +
+        "여러 사용자가 함께 쓰는 <b>서버 DB 모드</b>는 서버에서 run_server.bat 실행 후 브라우저 주소창에 <code>http://서버IP:8080</code> 으로 접속하세요.";
+      if (mode !== "LOCAL") {
+        await SyncUI.ask("📁 로컬 저장소 모드로 실행합니다",
+          "index.html 파일을 직접 열어 접속했기 때문에 서버 DB 를 사용할 수 없습니다.\n" +
+          "이번 접속은 로컬 저장소 모드(이 PC 브라우저에만 저장)로 전환하여 로그인합니다.\n\n" +
+          "서버 DB 모드로 사용하려면 서버 PC 에서 run_server.bat 을 실행한 뒤, 브라우저 주소창에 http://서버IP:8080 으로 접속하세요.",
+          [{ id: "ok", label: "확인 (로컬 저장소 모드로 로그인)", cls: "btn-primary" }]);
+      }
+      return;
+    }
+
+    // 서버 주소로 접속
+    if (mode !== "LOCAL") return;
+    const alive = await this.pingServer();
+    if (!alive) {
+      this.loginNotice = "⚠️ 서버 주소로 접속했지만 DB 서버 응답이 없어 <b>로컬 저장소 모드</b>로 실행합니다. (입력한 내용은 이 PC 브라우저에만 저장)";
+      return;
+    }
+    if (!this._hasSavedChoice()) {
+      this._setMode("SQLITE");
+      this.loginNotice = "🗄️ 서버 주소로 접속하여 <b>서버 DB 모드</b>로 시작합니다. (여러 사용자가 같은 데이터를 함께 사용)";
+      return;
+    }
+    const choice = await SyncUI.ask("🗄️ 서버 DB 모드로 전환하시겠습니까?",
+      `서버 주소(${window.location.host})로 접속했지만 현재 저장소 모드가 [로컬 저장소] 입니다.\n` +
+      "로컬 저장소 모드에서는 입력한 내용이 이 PC 브라우저에만 저장되어 다른 사용자와 공유되지 않고, 서버를 꺼도 화면이 계속 동작합니다.\n\n" +
+      "※ 이 브라우저에 로컬로만 저장한 데이터가 있다면 전환 전에 [데이터 가져오기·내보내기 > ④ 전체 일괄 > JSON 다운로드]로 받아 두었다가 서버 모드에서 올리세요.",
+      [
+        { id: "server", label: "🗄️ 서버 DB 모드로 전환 (권장)", cls: "btn-primary" },
+        { id: "local", label: "로컬 저장소 모드로 계속", cls: "btn-secondary" }
+      ]);
+    if (choice === "server") {
+      this._setMode("SQLITE");
+      this.loginNotice = "🗄️ <b>서버 DB 모드</b>로 전환했습니다. 로그인하면 서버 데이터를 불러옵니다.";
+    } else {
+      this.loginNotice = "💻 <b>로컬 저장소 모드</b>로 계속합니다. 입력한 내용은 이 PC 브라우저에만 저장됩니다.";
+    }
+  }
+};
+window.ModeGuard = ModeGuard;
+
+// =============================================================================
+// [v1.0.8] 서버 연결 감시 (DB 서버 모드): 20초마다 서버 응답 확인
+//  - 끊기면 상단 경고 배너 표시 + 저장 버튼 비활성화, 다시 연결되면 자동 해제
+// =============================================================================
+var ServerHeartbeat = {
+  INTERVAL_MS: 20000,
+  online: true,
+  timer: null,
+
+  start() {
+    if (SyncManager.isLocal() || this.timer) return;
+    this.timer = setInterval(() => this.check(), this.INTERVAL_MS);
+  },
+
+  async check() {
+    const res = await ServerBackend.request("/api/db/ping", null, "GET", 4000);
+    this.setOnline(!!res.ok);
+  },
+
+  setOnline(ok) {
+    if (ok === this.online) return;
+    this.online = ok;
+    let bar = document.getElementById("serverOfflineBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "serverOfflineBar";
+      bar.className = "server-offline-bar";
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
+    bar.style.display = ok ? "none" : "block";
+    bar.innerHTML = "🔌 <b>DB 서버 연결이 끊겼습니다.</b> 지금 입력하는 내용은 저장되지 않고 화면에만 남습니다. 서버가 다시 켜지면 자동으로 연결되며, 그때 [💾 전체 저장]을 눌러 주세요.";
+    document.querySelectorAll("#btnHeaderSaveAll, .sync-toolbar button[data-btn='save'], .sync-toolbar .btn-primary").forEach(b => { b.disabled = !ok; });
+    DbConnector.setConnected(ok);
+    showToast(ok ? "🟢 DB 서버에 다시 연결되었습니다. 미저장 변경이 있으면 [💾 전체 저장]을 눌러 주세요." : "🔌 DB 서버 연결이 끊겼습니다. 저장할 수 없습니다.");
+  }
+};
+window.ServerHeartbeat = ServerHeartbeat;
+
+// =============================================================================
 // [v1.0.6] 애플리케이션 시작 순서 (단일 진입점)
 //  1) 저장소 모드·언어 초기화 → 2) 공통 툴바 → 3) 데이터 로드(로컬) → 4) 화면 초기화 → 5) 로그인
 //  ※ DB 서버 모드는 서버 로그인(토큰 인증) 후 데이터를 불러옵니다.
@@ -1289,7 +1414,9 @@ var AppBoot = {
     DbConnector.init();
     if (typeof ButtonStandard !== "undefined") ButtonStandard.init();
     if (typeof I18N !== "undefined") I18N.init();
+    await ModeGuard.check();
     SyncUI.init();
+    ServerHeartbeat.start();
     if (SyncManager.isLocal()) {
       await SyncManager.initialLoad();
     }
@@ -1668,10 +1795,19 @@ function remapWbsReferences(idMap) {
     const k = strip(c.taskId);
     if (k && idMap.has(k)) c.taskId = idMap.get(k);
   });
-  const rep = typeof WeeklyReportManager !== "undefined" ? WeeklyReportManager.currentWeekReport : null;
+  const WRM = typeof WeeklyReportManager !== "undefined" ? WeeklyReportManager : null;
+  const rep = WRM ? WRM.currentWeekReport : null;
   if (rep) {
-    ["currentWeekTasks", "nextWeekTasks"].forEach(key => (rep[key] || []).forEach(t => { if (t.wbsId && idMap.has(t.wbsId)) t.wbsId = idMap.get(t.wbsId); }));
-    ["excludedCurWbsIds", "excludedNxtWbsIds"].forEach(key => { if (Array.isArray(rep[key])) rep[key] = rep[key].map(id => idMap.get(id) || id); });
+    const remap = r => {
+      ["currentWeekTasks", "nextWeekTasks"].forEach(key => (r[key] || []).forEach(t => { if (t.wbsId && idMap.has(t.wbsId)) t.wbsId = idMap.get(t.wbsId); }));
+      ["excludedCurWbsIds", "excludedNxtWbsIds"].forEach(key => { if (Array.isArray(r[key])) r[key] = r[key].map(id => idMap.get(id) || id); });
+    };
+    remap(rep);
+    // 기준본에도 같은 변환을 적용하여, ID 변경만으로 "미저장"이 되지 않도록 함
+    try {
+      const base = JSON.parse(WRM._draftBase || "null");
+      if (base) { remap(base); WRM._draftBase = WRM._canon(base); }
+    } catch (e) {}
   }
 }
 
@@ -1743,6 +1879,12 @@ function renderWbsTable() {
   const dFilter = dFilterEl ? dFilterEl.value : "ALL";
   const sysFilter = sysFilterEl ? sysFilterEl.value : "ALL";
   const maxLvl = lvlFilterEl ? parseInt(lvlFilterEl.value, 10) || 5 : 5;
+  const stFilterEl = document.getElementById("wbsStatusFilter");
+  const stFilter = stFilterEl ? stFilterEl.value : "ALL";
+  const leafOnly = stFilter !== "ALL";
+  const delayCnt = wbsData.filter(t => t.isLeaf && t.status === "지연" && (sysFilter === "ALL" || t.system === sysFilter)).length;
+  const dc = document.getElementById("wbsDelayedCount");
+  if (dc) dc.textContent = delayCnt;
 
   wbsData.forEach((row, idx) => {
     const pStartOutOfRange = WBSEngine.isDateOutOfRange(row.pStart, projectConfig.projectStartDate, projectConfig.projectEndDate);
@@ -1756,11 +1898,11 @@ function renderWbsTable() {
 
     // 서브시스템 필터 및 레벨 접기 필터 적용 (해당 레벨 이하는 표시 안 함)
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
-    if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
-    if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
-    if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
-    if ((row.level || 1) > maxLvl) return;
+    // 상태 조회는 최하위 Task(Leaf) 기준 — 레벨 접기와 무관하게 해당 상태의 최하위 과업만 표시
+    if (leafOnly) {
+      if (!row.isLeaf || row.status !== stFilter) return;
+    } else if ((row.level || 1) > maxLvl) return;
 
     const tr = document.createElement("tr");
     tr.className = `wbs-row-lvl-${row.level}`;
@@ -2116,47 +2258,47 @@ function autoAdjustWbsHolidays() {
 }
 
 // [요건 5 신규] 개별 행(Task) 단위 계획 ➔ 실적 즉시 반영
+// [v1.0.8] 계획 → 실적 반영 공통 규칙
+//  - 실적 진척률 = 계획 진척률, 실적시작일 미입력 시 계획시작일
+//  - 100% 가 되면 실적완료일: 계획완료일이 기준일과 같은 주차이면 계획완료일, 아니면 기준일
+//  - 실적시작일이 실적완료일보다 미래이면 실적시작일 = 실적완료일
+function applyPlanToActual(task) {
+  const rep = projectConfig.reportDate;
+  if (task.pStart && !task.aStart) task.aStart = task.pStart;
+  task.aProg = task.pProg;
+  if (task.aProg >= 100) {
+    const wk = WBSEngine.getWeekRange(rep, projectConfig.weekStartDay);
+    task.aEnd = task.pEnd && task.pEnd >= wk.start && task.pEnd <= wk.end ? task.pEnd : rep;
+    if (task.aStart && task.aStart > task.aEnd) task.aStart = task.aEnd;
+  }
+}
+
 function fillRowActualFromPlan(idx) {
   const task = wbsData[idx];
   if (!task || !task.isLeaf) return;
-  if (task.pStart && !task.aStart) task.aStart = task.pStart;
-  task.aProg = task.pProg;
-  if (task.pProg >= 100 && task.pEnd) {
-    task.aEnd = task.pEnd;
-  }
+  applyPlanToActual(task);
   rebuildAll();
-  showToast(`[${task.id} ${task.name}] 과업의 계획 진척율(${task.pProg}%)이 실적에 반영되었습니다.`);
+  showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${task.aProg >= 100 ? ` (실적완료일 ${task.aEnd})` : ""}`);
 }
 
-// [요건 5 개선] 서브시스템별 기준일자에 진행중이거나 당일 완료되는 건만 반영 (과거 완료/마감건은 수정하지 않음)
+// 서브시스템(또는 전체)에서 기준일 현재 진행 중이거나 기준일에 끝나는 과업만 반영 (과거 완료 과업은 보존)
 function fillActualFromPlan() {
   const repDateStr = projectConfig.reportDate;
   const sysFilterEl = document.getElementById("wbsSubsystemFilter");
   const sysFilter = sysFilterEl ? sysFilterEl.value : "ALL";
   let updatedCount = 0;
-
   wbsData.forEach(task => {
     if (!task.isLeaf) return;
     if (sysFilter !== "ALL" && task.system !== sysFilter) return;
     if (!task.pStart || !task.pEnd) return;
-
-    // 과거 일정(계획종료일이 기준일자보다 이전인 과업: pEnd < repDateStr)은 수정하지 않고,
-    // 기준일자에 진행중이거나 기준일자에 완료되는 과업(pStart <= repDateStr <= pEnd)만 반영
     if (task.pStart <= repDateStr && task.pEnd >= repDateStr) {
-      if (!task.aStart) task.aStart = task.pStart;
-      task.aProg = task.pProg;
-      if (task.pProg >= 100 && !task.aEnd) {
-        task.aEnd = task.pEnd;
-      }
+      applyPlanToActual(task);
       updatedCount++;
     }
   });
-
   rebuildAll();
   const scopeLabel = sysFilter === "ALL" ? "전체 서브시스템" : `[${sysFilter}]`;
-  showToast(
-    `${scopeLabel}에서 기준일(${repDateStr}) 현재 진행중이거나 완료되는 과업 ${updatedCount}건의 실적이 자동 반영되었습니다. (과거 일정 과업은 보존됨)`
-  );
+  showToast(`${scopeLabel}에서 기준일(${repDateStr}) 현재 진행 중이거나 완료되는 과업 ${updatedCount}건의 실적을 반영했습니다. (과거 일정 과업은 보존)`);
 }
 
 // -------------------------------------------------------------
@@ -3283,8 +3425,12 @@ function appendSubsystemTemplate(type) {
 // 탭 화면 활성화 (권한 검사는 AuthManager.installTabGuards 에서 단일 래핑)
 // ※ 탭 이동 시 화면의 미저장 변경 데이터는 메모리에 그대로 유지됩니다.
 function activateTab(tabId) {
-  if (typeof MeetingManager !== "undefined" && MeetingManager.confirmLeave && !MeetingManager.confirmLeave(() => activateTab(tabId))) return;
-  if (typeof WeeklyReportManager !== "undefined" && WeeklyReportManager.confirmLeave && !WeeklyReportManager.confirmLeave(() => activateTab(tabId))) return;
+  // 회의록·주간보고 화면에서 다른 탭으로 나갈 때만 미저장 확인 (다른 탭 사이 이동은 확인하지 않음)
+  const leaving = (document.querySelector(".tab-pane.active") || {}).id;
+  if (leaving !== tabId) {
+    if (leaving === "tab-meeting" && !MeetingManager.confirmLeave(() => activateTab(tabId))) return;
+    if (leaving === "tab-weekly-report" && !WeeklyReportManager.confirmLeave(() => activateTab(tabId))) return;
+  }
 
   document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab-btn").forEach(b => {
@@ -5592,7 +5738,7 @@ const SmartMergeCenter = {
     const scope = this._collabScope();
     const repDate = projectConfig.reportDate || "";
     if (format === "JSON") {
-      const payload = { schemaVersion: "AX_PMYS_1.0.7_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
+      const payload = { schemaVersion: "AX_PMYS_1.0.8_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
       keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.json`;
@@ -6210,7 +6356,7 @@ var StorageManager = {
     const now = new Date();
     const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
     const fullPayload = Object.assign({
-      schemaVersion: "AX_PMYS_1.0.7_FULL_BACKUP",
+      schemaVersion: "AX_PMYS_1.0.8_FULL_BACKUP",
       exportedAt: now.toISOString(),
       exportedBy: AuthManager.getCurrentUser().empNo,
       systemSettings: {
@@ -6906,7 +7052,7 @@ var WeeklyReportManager = {
       <td style="text-align:center;">${status}</td>
       <td style="text-align:center;">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
       <td style="font-size:11px;">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
-      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" onclick="event.stopPropagation(); WeeklyReportManager.openUnit(${arg})">${r ? "보기" : "작성"}</button></td>
+      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" onclick="event.stopPropagation(); WeeklyReportManager.openUnit(${arg})" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
     </tr>`;
   },
 
@@ -6937,6 +7083,74 @@ var WeeklyReportManager = {
     const done = rows.filter(x => x.r).length;
     if (summary) summary.textContent = `작성 ${done} / ${rows.length} 단위`;
     body.innerHTML = rows.map(({ sc, r }) => this._listRow(wObj.fullLabel, wObj.weekNum, sc, r, isCurRow(wObj.weekNum, sc), sc.scope === "SYS" && sc.value === own)).join("");
+  },
+
+  // ---------------------------------------------------------------------------
+  // [v1.0.8] 주차 통합 묶음 보고서: 목차 + ① 통합 ② 분야별 ③ 서브시스템별 주간보고를 한 파일로
+  //  - 저장된 보고서를 우선 사용하고, 미작성 단위는 WBS 기준으로 자동 생성하여 "미작성(자동생성)"으로 표시
+  // ---------------------------------------------------------------------------
+  _bundleSections(weekNum) {
+    const weeks = this.getAllWeeks();
+    const wObj = weeks.find(w => w.weekNum === parseInt(weekNum, 10)) || weeks[0];
+    const groups = [
+      { no: 1, title: "통합 주간보고", units: [{ scope: "ALL", value: "" }] },
+      { no: 2, title: "분야별 주간보고", units: getProjectDomains().map(d => ({ scope: "DOMAIN", value: d })) },
+      { no: 3, title: "서브시스템별 주간보고", units: getAllSubsystemNames().map(sy => ({ scope: "SYS", value: sy })) }
+    ];
+    const sections = [];
+    groups.forEach(g => g.units.forEach((u, i) => {
+      const saved = this._findSaved(wObj, u.scope, u.value);
+      const rep = saved ? JSON.parse(JSON.stringify(saved)) : this.buildReport(wObj, u.scope, u.value);
+      sections.push({
+        no: g.units.length > 1 || g.no > 1 ? `${g.no}.${i + 1}` : `${g.no}`,
+        group: g.title, groupNo: g.no,
+        title: this.scopeLabel(u.scope, u.value),
+        written: !!saved, rep
+      });
+    }));
+    return { wObj, groups, sections };
+  },
+
+  exportWeekBundle(format) {
+    const wNum = this.listWeek || this.selectedWeek;
+    const { wObj, groups, sections } = this._bundleSections(wNum);
+    if (!wObj) return;
+    const projName = projectConfig.projectName || "";
+    const stamp = `${projName}_${wObj.fullLabel.replace(/\s+/g, "_")}`;
+    if (format === "WORD") {
+      const blob = DocxBuilder.buildWeeklyBundleDocx({ projectName: projName, weekLabel: wObj.fullLabel, reportDate: projectConfig.reportDate, groups, sections });
+      ExcelSync._triggerDownload(blob, `[주간보고_통합묶음]_${stamp}.docx`);
+    } else {
+      const toc = [
+        { cells: [`[${projName}] 주간보고 통합 묶음 — ${wObj.fullLabel}`], styleId: 3, height: 28 },
+        { cells: ["목차 번호", "구분", "작성 단위", "작성 상태", "작성자", "금주 항목", "차주 항목", "시트명"], styleId: 1, height: 24 }
+      ];
+      const sheets = [];
+      sections.forEach((sec, idx) => {
+        const sheetName = `${idx + 1}_${sec.title.replace(/^(분야|서브시스템): /, "").replace(/[\\/?*\[\]:]/g, "")}`.slice(0, 31);
+        toc.push({ cells: [sec.no, sec.group, sec.title, sec.written ? "작성완료" : "미작성(자동생성)", sec.rep.author || "-", (sec.rep.currentWeekTasks || []).length, (sec.rep.nextWeekTasks || []).length, sheetName], styleId: 2, height: 20 });
+        const r = sec.rep;
+        const rows = [
+          { cells: [`${sec.no}. ${sec.group} — ${sec.title} (${wObj.fullLabel})${sec.written ? "" : "  ※ 미작성: WBS 기준 자동 생성"}`], styleId: 3, height: 26 },
+          { cells: ["작성자", r.author || "-", "금주기간", `${r.startDate} ~ ${r.endDate}`, "차주기간", `${r.nextStartDate} ~ ${r.nextEndDate}`], styleId: 2, height: 20 },
+          { cells: ["【금주 실적 요약】"], styleId: 3, height: 22 }, { cells: [r.currentWeekSummary || "-"], styleId: 2, height: 24 },
+          { cells: ["【차주 계획 요약】"], styleId: 3, height: 22 }, { cells: [r.nextWeekSummary || "-"], styleId: 2, height: 24 },
+          { cells: ["【주요 현안】"], styleId: 3, height: 22 }, { cells: [r.issuesNotes || "-"], styleId: 2, height: 24 },
+          { cells: ["【금주 실적】"], styleId: 3, height: 22 },
+          { cells: ["서브시스템", "WBS ID", "항목명", "계획(%)", "실적(%)", "상태", "상세 실적"], styleId: 1, height: 22 }
+        ];
+        (r.currentWeekTasks || []).forEach(t => rows.push({ cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "", t.detail || ""], styleId: 2, height: 20 }));
+        rows.push({ cells: ["【차주 계획】"], styleId: 3, height: 22 });
+        rows.push({ cells: ["서브시스템", "WBS ID", "항목명", "목표계획(%)", "상태", "차주 추진계획"], styleId: 1, height: 22 });
+        (r.nextWeekTasks || []).forEach(t => rows.push({ cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.status || "계획", t.detail || ""], styleId: 2, height: 20 }));
+        const merges = ["A1:G1", "A3:G3", "A4:G4", "A5:G5", "A6:G6", "A7:G7", "A8:G8", "A9:G9"];
+        sheets.push({ name: sheetName, colWidths: [14, 14, 40, 12, 12, 12, 50], rows, merges });
+      });
+      const blob = ExcelSync._buildXlsxBlob([{ name: "0_목차", colWidths: [10, 22, 26, 18, 16, 10, 10, 30], rows: toc, merges: ["A1:H1"] }].concat(sheets));
+      ExcelSync._triggerDownload(blob, `[주간보고_통합묶음]_${stamp}.xlsx`);
+    }
+    const done = sections.filter(x => x.written).length;
+    showToast(`📥 [주간보고 통합 묶음] ${wObj.fullLabel} — 목차 + 통합·분야별·서브시스템별 ${sections.length}개 보고서 (작성 ${done} / 미작성 자동생성 ${sections.length - done})`);
   },
 
   onListWeekChanged() {
@@ -6980,6 +7194,35 @@ var WeeklyReportManager = {
     this.openReport(this.selectedWeek, this.scope, this.scopeValue);
     this.render();
     showToast("↩️ 저장하지 않은 주간보고 변경 내용을 취소했습니다.");
+  },
+
+  // ---- [v1.0.8] 엑셀 셀 한도(32,767자) 대비 보고서 크기 제한 ----
+  //  협업 데이터 엑셀 내보내기는 보고서 1건을 원본(JSON) 1개 셀에 담으므로, 보고서 전체 크기를 32,000자 이내로 제한
+  MAX_REPORT_CHARS: 32000,
+  FIELD_LIMITS: { summary: 3000, issues: 2000, detail: 1000, name: 200 },
+  reportSize(rep) {
+    return JSON.stringify(rep || this.currentWeekReport || {}).length;
+  },
+  _checkSize(extra = 0, notify = true) {
+    const size = this.reportSize() + extra;
+    if (size > this.MAX_REPORT_CHARS) {
+      if (notify) showToast(`⛔ 주간보고 크기 한도 초과: ${size.toLocaleString()} / ${this.MAX_REPORT_CHARS.toLocaleString()}자 (엑셀 셀 한도 32,767자). 상세 내용을 줄이거나 항목을 정리하세요.`);
+      return false;
+    }
+    return true;
+  },
+  renderSizeMeter() {
+    const el = document.getElementById("wrSizeMeter");
+    if (!el || !this.currentWeekReport) return;
+    const size = this.reportSize();
+    const pct = Math.min(100, Math.round(size / this.MAX_REPORT_CHARS * 100));
+    el.className = "wr-size-meter" + (pct >= 100 ? " over" : pct >= 85 ? " warn" : "");
+    el.innerHTML = `📏 보고서 크기 <b>${size.toLocaleString()}</b> / ${this.MAX_REPORT_CHARS.toLocaleString()}자 <span class="wr-size-bar"><span style="width:${pct}%"></span></span>`;
+    el.title = "엑셀 셀 최대 32,767자 제한에 맞춰 주간보고 1건의 전체 내용을 32,000자 이내로 제한합니다.";
+  },
+  onSizeInput() {
+    this.readInputsIntoCurrentReport();
+    this.renderSizeMeter();
   },
 
   // ---- 항목 추가 / 제외 ----
@@ -7026,6 +7269,7 @@ var WeeklyReportManager = {
     });
   },
   addWbsItem(kind) {
+    if (!this._checkSize(400)) return;
     const sel = document.getElementById(kind === "cur" ? "wrAddCurWbsSelect" : "wrAddNxtWbsSelect");
     const t = sel && sel.value ? wbsData.find(x => x.id === sel.value) : null;
     if (!t) { showToast("⚠️ 추가할 WBS 과업을 먼저 선택하세요."); return; }
@@ -7044,6 +7288,7 @@ var WeeklyReportManager = {
   },
   addManualItem(kind) {
     this.readInputsIntoCurrentReport();
+    if (!this._checkSize(300)) return;
     const systems = this.scopeSystems(this.scope, this.scopeValue);
     const sys = this.scope === "SYS" ? this.scopeValue : (systems.includes(Permission.ownSubsystem()) ? Permission.ownSubsystem() : (systems[0] || ""));
     this._listOf(kind).push({
@@ -7060,7 +7305,14 @@ var WeeklyReportManager = {
   updateItem(kind, itemId, field, value) {
     const t = this._listOf(kind).find(x => x.id === itemId);
     if (!t) return;
+    const prev = t[field];
     t[field] = typeof value === "string" ? value.trim() : value;
+    if (!this._checkSize()) {
+      t[field] = prev;
+      this.render();
+      return;
+    }
+    this.renderSizeMeter();
   },
 
   renderScopeBanner() {
@@ -7089,14 +7341,14 @@ var WeeklyReportManager = {
       ? `<select style="font-size:11px; width:96px;" onchange="WeeklyReportManager.updateItem(${k}, 'system', this.value)">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
       : `<span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span>`;
     const nameCell = t.manual
-      ? `<input type="text" class="wr-manual-name" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" onchange="WeeklyReportManager.updateItem(${k}, 'name', this.value)">`
+      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" onchange="WeeklyReportManager.updateItem(${k}, 'name', this.value)">`
       : escapeHtml(t.name);
     const sched = t.manual
       ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:10px; width:120px;" title="목표일 (선택)" onchange="WeeklyReportManager.updateItem(${k}, 'pEnd', this.value)">`
       : `<span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
-    const detail = `<input type="text" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateItem(${k}, 'detail', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">`;
+    const detail = `<input type="text" maxlength="1000" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateItem(${k}, 'detail', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">`;
     const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" onclick="WeeklyReportManager.removeItem(${k})">✕</button>`;
     const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
     const lvl = t.manual ? "-" : `L${t.level || 4}`;
@@ -7123,6 +7375,7 @@ var WeeklyReportManager = {
     this.renderScopeBanner();
     this.renderSavedList();
     this._fillAddSelects();
+    this.renderSizeMeter();
     const setCnt = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
     setCnt("wrCurCount", (rep.currentWeekTasks || []).length);
     setCnt("wrNxtCount", (rep.nextWeekTasks || []).length);
@@ -7233,6 +7486,7 @@ var WeeklyReportManager = {
       showToast(`⛔ 저장 권한 없음: 일반 사용자는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
       return false;
     }
+    if (!this._checkSize()) return false;
     const u = AuthManager.getCurrentUser();
     rep.status = "DONE";
     rep.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
@@ -7621,7 +7875,7 @@ var WeeklyReportManager = {
     const scopeSystems = this.scopeSystems(sc.scope, sc.value);
     const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
     const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.7";
+    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.8";
     const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
     const repDay = WBSEngine.getDayOfWeekText(repDate);
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;

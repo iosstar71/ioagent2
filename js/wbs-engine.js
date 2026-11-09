@@ -495,33 +495,40 @@ const WBSEngine = {
         }
       }
     }
+    if (typeof projectConfig !== "undefined" && projectConfig.reportDate) this.applyStatus(data, projectConfig.reportDate);
     return data;
   },
 
+  // [v1.0.8] 과업 상태 판정
+  //  - 완료  : 실적 100%
+  //  - 지연  : 계획 진척률보다 실적이 1%p 이상 적은 경우 (계획종료일 경과 미완료 포함)
+  //  - 진행중: 실적이 있거나 실적시작일이 기준일 이전
+  //  - 착수전: 그 외
   getTaskStatus(task, reportDateStr) {
-    const aProg = task.aProg || 0;
-    const pProg = task.pProg || 0;
-    const repDate = new Date(reportDateStr);
-    const pStart = task.pStart ? new Date(task.pStart) : null;
-    const pEnd = task.pEnd ? new Date(task.pEnd) : null;
-    const aStart = task.aStart ? new Date(task.aStart) : null;
-
-    if (aProg >= 100) {
-      return { code: "completed", label: "완료", cssClass: "tag-completed" };
-    }
-    if (pEnd && repDate > pEnd && aProg < 100) {
-      return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
-    }
-    if (pStart && repDate >= pStart && (aProg === 0 || !aStart)) {
-      return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
-    }
-    if ((pProg - aProg) >= 10) {
-      return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
-    }
-    if (aProg > 0 || (aStart && aStart <= repDate)) {
-      return { code: "progress", label: "진행중", cssClass: "tag-progress" };
-    }
+    const aProg = parseFloat(task.aProg) || 0;
+    const pProg = parseFloat(task.pProg) || 0;
+    if (aProg >= 100) return { code: "completed", label: "완료", cssClass: "tag-completed" };
+    if (pProg - aProg >= 1) return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
+    if (aProg > 0 || (task.aStart && task.aStart <= reportDateStr)) return { code: "progress", label: "진행중", cssClass: "tag-progress" };
     return { code: "ready", label: "착수전", cssClass: "tag-ready" };
+  },
+
+  // 판정한 상태를 데이터(task.status)에 저장 — 엑셀/DB/주간보고에서 동일 상태 사용
+  applyStatus(data, reportDateStr) {
+    (data || []).forEach(t => { t.status = this.getTaskStatus(t, reportDateStr).label; });
+  },
+
+  // 기준일이 속한 주차(주 시작 요일 기준)의 시작·종료일
+  getWeekRange(dateStr, weekStartDayArg) {
+    const d = new Date(dateStr + "T00:00:00");
+    const wsd = parseInt(weekStartDayArg, 10);
+    const target = isNaN(wsd) ? 1 : wsd;
+    const start = new Date(d);
+    while (start.getDay() !== target) start.setDate(start.getDate() - 1);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const iso = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+    return { start: iso(start), end: iso(end) };
   },
 
   // [2026 v1.7.6 신규] 프로젝트 주차(Weeks) 목록 생성 헬퍼

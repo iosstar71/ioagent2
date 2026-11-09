@@ -1,12 +1,12 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.7] Multi-User DB Server Launcher
+rem [AX Project Management by YS - ver1.0.8] Multi-User DB Server Launcher
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"
 
 echo ============================================================================
-echo [AX Project Management by YS - ver1.0.7] Multi-User DB Web Server (Port: 8080)
+echo [AX Project Management by YS - ver1.0.8] Multi-User DB Web Server (Port: 8080)
 echo Current Directory: %~dp0
 echo ============================================================================
 

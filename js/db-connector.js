@@ -297,6 +297,8 @@ CREATE TABLE TB_WBS_VOC (
         ["sqlite", "oracle", "excelAccess"].forEach(k => {
           if (saved[k]) this.config[k] = Object.assign({}, this.config[k], saved[k]);
         });
+        // 이전 버전에서 Oracle / Excel·Access 를 선택해 둔 경우 SQLite 서버 모드로 전환 (실제 저장소는 원래 SQLite)
+        if (!this.SUPPORTED_MODES.includes(this.config.mode)) this.config.mode = "SQLITE";
       }
     } catch (e) {}
   },
@@ -311,7 +313,13 @@ CREATE TABLE TB_WBS_VOC (
   },
 
   // 저장 모드 변경: 로컬 저장소 ↔ DB 서버 (변경 후 재로그인/재조회를 위해 화면을 다시 불러옴)
+  SUPPORTED_MODES: ["LOCAL", "SQLITE"], // v1.0.8: Oracle / Excel·Access 비활성화
+
   selectMode(mode) {
+    if (!this.SUPPORTED_MODES.includes(mode)) {
+      showToast("⛔ Oracle · Excel/Access 연동은 비활성화되었습니다. 서버 DB 는 SQLite 를 사용하세요.");
+      return;
+    }
     if (mode === this.config.mode) return;
     const go = () => {
       this.config.mode = mode;

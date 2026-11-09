@@ -23,7 +23,7 @@ var DataRegistry = {
     subsystemsMeta:           { part: null,     scope: "master",    label: "분야/서브시스템" },
     standardDeliverablesMeta: { part: null,     scope: "master",    label: "표준 산출물" },
     projectUsers:             { part: "empNo",  scope: "users",     label: "사용자" },
-    wbsData:                  { part: "system", scope: "subsystem", label: "WBS 공정", volatile: ["pProg"] },
+    wbsData:                  { part: "system", scope: "subsystem", label: "WBS 공정", volatile: ["pProg", "status"] },
     deliverablesData:         { part: "system", scope: "subsystem", label: "산출물" },
     reqMasterData:            { part: "system", scope: "subsystem", label: "요구사항" },
     vocData:                  { part: "system", scope: "subsystem", label: "VOC" },
@@ -984,7 +984,7 @@ var FileAutoSyncManager = {
   async syncNow(showAlert = false) {
     if (!this.fileHandle) return;
     try {
-      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.7" }, DataRegistry.collect());
+      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.8" }, DataRegistry.collect());
       const writable = await this.fileHandle.createWritable();
       await writable.write(JSON.stringify(payload, null, 2));
       await writable.close();

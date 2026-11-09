@@ -1819,6 +1819,51 @@ const ExcelSync = {
 // 5대 목차: 1) 프로젝트 기본정보 2) 통합/서브시스템 진척률 3) 요구사항 진척율 4) VOC 진행 현황 5) 서브시스템별 금주/차주 상세
 // ===================================================================
 const DocxBuilder = {
+  // [v1.0.8] 주간보고 통합 묶음 워드: 목차 + 통합 / 분야별 / 서브시스템별 보고서
+  buildWeeklyBundleDocx(meta) {
+    const esc = s => ExcelSync.escapeXml(s);
+    const pal = ExcelSync.getExportThemePalette();
+    const font = pal.fontName, sz = pal.fontSize * 2;
+    const run = (t, o = {}) => `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:eastAsia="${font}" w:hAnsi="${font}"/>${o.b ? "<w:b/>" : ""}<w:sz w:val="${o.sz || sz}"/><w:color w:val="${o.color || "1F2937"}"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
+    const para = (t, o = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.center ? '<w:jc w:val="center"/>' : ""}${o.pageBreak ? '<w:pageBreakBefore/>' : ""}<w:spacing w:before="${o.before || 0}" w:after="${o.after || 80}"/>${o.indent ? `<w:ind w:left="${o.indent}"/>` : ""}</w:pPr>${run(t, o)}</w:p>`;
+    const cell = (t, head) => `<w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="4" w:color="${pal.border}"/><w:left w:val="single" w:sz="4" w:color="${pal.border}"/><w:bottom w:val="single" w:sz="4" w:color="${pal.border}"/><w:right w:val="single" w:sz="4" w:color="${pal.border}"/></w:tcBorders>${head ? `<w:shd w:val="clear" w:color="auto" w:fill="${pal.headerBg}"/>` : ""}</w:tcPr><w:p>${run(t, { b: head, color: head ? pal.headerTextColor : "1F2937", sz: sz - 2 })}</w:p></w:tc>`;
+    const table = (headers, rows) => `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tr>${headers.map(h => cell(h, true)).join("")}</w:tr>${rows.map(r => `<w:tr>${r.map(c => cell(c === undefined || c === null ? "" : String(c), false)).join("")}</w:tr>`).join("")}</w:tbl>${para("")}`;
+    const body = [];
+    body.push(para(`[주간보고 통합 묶음] ${meta.projectName}`, { b: true, sz: sz + 20, center: true, after: 60, color: "0F172A" }));
+    body.push(para(`${meta.weekLabel}  |  공정 기준일: ${meta.reportDate}`, { center: true, after: 300, color: pal.secondary, b: true }));
+    body.push(para("목차", { style: "Heading1", b: true, sz: sz + 8, color: pal.primary, after: 120 }));
+    meta.groups.forEach(g => {
+      body.push(para(`${g.no}. ${g.title}`, { b: true, indent: 200 }));
+      meta.sections.filter(sec => sec.groupNo === g.no).forEach(sec => body.push(para(`${sec.no}  ${sec.title}  ${sec.written ? "" : "(미작성 · 자동생성)"}`, { indent: 600 })));
+    });
+    let lastGroup = 0;
+    meta.sections.forEach((sec, idx) => {
+      const r = sec.rep;
+      if (sec.groupNo !== lastGroup) {
+        body.push(para(`${sec.groupNo}. ${sec.group}`, { style: "Heading1", b: true, sz: sz + 8, color: pal.primary, pageBreak: true, after: 120 }));
+        lastGroup = sec.groupNo;
+      }
+      body.push(para(`${sec.no}  ${sec.title}${sec.written ? "" : "  ※ 미작성: WBS 기준 자동 생성"}`, { style: "Heading2", b: true, sz: sz + 4, color: pal.secondary, before: idx ? 200 : 0 }));
+      body.push(para(`작성자: ${r.author || "-"}   |   금주: ${r.startDate} ~ ${r.endDate}   |   차주: ${r.nextStartDate} ~ ${r.nextEndDate}`, { color: "475569", sz: sz - 2 }));
+      body.push(para("■ 금주 실적 요약", { b: true })); body.push(para(r.currentWeekSummary || "-", { indent: 300 }));
+      body.push(para("■ 차주 계획 요약", { b: true })); body.push(para(r.nextWeekSummary || "-", { indent: 300 }));
+      body.push(para("■ 주요 현안", { b: true })); body.push(para(r.issuesNotes || "-", { indent: 300 }));
+      body.push(para("■ 금주 실적", { b: true }));
+      body.push(table(["서브시스템", "WBS ID", "항목명", "실적(%)", "상태", "상세 실적"],
+        (r.currentWeekTasks || []).map(t => [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "", t.detail || ""])));
+      body.push(para("■ 차주 계획", { b: true }));
+      body.push(table(["서브시스템", "WBS ID", "항목명", "목표(%)", "상태", "추진계획"],
+        (r.nextWeekTasks || []).map(t => [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.status || "계획", t.detail || ""])));
+    });
+    const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1200" w:right="1100" w:bottom="1200" w:left="1100"/></w:sectPr></w:body></w:document>`;
+    const files = [
+      { name: "[Content_Types].xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>` },
+      { name: "_rels/.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+      { name: "word/document.xml", content: ExcelSync._normalizeWordXml ? ExcelSync._normalizeWordXml(docXml) : docXml }
+    ];
+    return ExcelSync._createZipBlob(files, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+  },
+
   buildDocxBlob(reportMeta, useTables = true) {
     const esc = s => ExcelSync.escapeXml(s);
     const bodyParts = [];

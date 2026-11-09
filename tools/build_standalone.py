@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.7] 단일 파일 실행본(Standalone.html) 빌더
+[AX Project Management by YS v1.0.8] 단일 파일 실행본(Standalone.html) 빌더
 
 index.html 이 참조하는 css/*.css, js/*.js 를 모두 인라인하여
 파일 1개(Standalone.html)만으로 오프라인 실행되는 포터블 배포본을 생성합니다.
@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_initial_data  # noqa: E402
+import build_manual_docx  # noqa: E402
 
 SRC = ROOT / "index.html"
 DST = ROOT / "Standalone.html"
@@ -32,8 +33,9 @@ def _safe_inline_js(code: str) -> str:
 
 
 def build() -> Path:
-    # 1) 초기 데이터 JS 최신화
+    # 1) 초기 데이터 JS · 워드 매뉴얼 최신화
     build_initial_data.build()
+    build_manual_docx.build()
 
     html = SRC.read_text(encoding="utf-8")
     missing = []

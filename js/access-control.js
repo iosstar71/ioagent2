@@ -299,9 +299,11 @@ var AuthManager = {
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
-      info.innerHTML = server
+      const notice = typeof ModeGuard !== "undefined" && ModeGuard.loginNotice ? `<div style="margin-top:4px;">${ModeGuard.loginNotice}</div>` : "";
+      info.innerHTML = (server
         ? `🗄️ DB 서버 모드 (${escapeHtml(DbConnector.getApiBase())}) — 서버 인증 후 저장 버튼으로 저장합니다.`
-        : "💻 로컬 저장소 모드 — 변경 내용이 실시간 자동저장됩니다.";
+        : "💻 로컬 저장소 모드 — 변경 내용이 이 PC 브라우저에 실시간 자동저장됩니다.") + notice;
+      info.style.textAlign = "left";
     }
     const cancel = document.getElementById("btnLockCancel");
     if (cancel) cancel.style.display = "none";
