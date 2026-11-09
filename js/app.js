@@ -536,7 +536,7 @@ function resetStandardDeliverablesMeta() {
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
-  systemTitle: "AX Project Management by YS ver1.0.5",
+  systemTitle: "AX Project Management by YS ver1.0.6",
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
   channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
@@ -676,7 +676,8 @@ let projectConfig = {
 };
 
 function renderProjectTitles() {
-  const sysTitle = projectConfig.systemTitle || "Enterprise WBS & 프로젝트 통합 관리 시스템";
+  // 저장된 시스템 명칭의 버전 표기는 현재 프로그램 버전으로 표시
+  const sysTitle = String(projectConfig.systemTitle || APP_VERSION.title).replace(/ver\d+\.\d+\.\d+/, "ver" + APP_VERSION.version);
   const projName = projectConfig.projectName || "차세대 통합 구축 프로젝트";
 
   const hSys = document.getElementById("headerSystemTitleText");
@@ -684,7 +685,7 @@ function renderProjectTitles() {
   const bTitle = document.getElementById("pageBrowserTitle");
   if (hSys) hSys.textContent = `🛡️ ${sysTitle}`;
   if (hProj) hProj.textContent = projName;
-  if (bTitle) bTitle.textContent = `${sysTitle} (${projName}) - ver1.0.4`;
+  if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 
   const inSys = document.getElementById("cfgSystemTitle");
   const inProj = document.getElementById("cfgProjectName");
@@ -4089,21 +4090,21 @@ var NoticeCommManager = {
 // =============================================================================
 // [ver1.0.4] 실시간 팀 채팅 매니저 (서버 연결 시에만 활성화)
 // =============================================================================
+// =============================================================================
+// 실시간 채팅 (DB 서버 모드 전용)
+//  - 로컬 저장소 모드: "오프라인" 표시 및 채팅 기능 비활성화 (v1.0.6)
+//  - DB 서버 모드: 로그인 토큰으로 서버 채팅 API 사용 (2.5초 주기 동기화)
+// =============================================================================
 var RealtimeChatManager = {
   isConnected: false,
   activeChannel: "전체",
   pollTimer: null,
   messages: [],
-  apiBaseUrl: "",
 
   async init() {
-    await this.checkServerConnection(false);
     this.renderChannelButtons();
-    if (this.isConnected) {
-      await this.startPolling();
-    } else {
-      this.loadLocalMessages();
-    }
+    await this.checkServerConnection(false);
+    if (this.isConnected) await this.startPolling();
   },
 
   renderChannelButtons() {
@@ -4121,25 +4122,17 @@ var RealtimeChatManager = {
   },
 
   async checkServerConnection(showFeedback = false) {
-    const isHttp = typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http");
-    const targetUrl = isHttp ? "" : "http://localhost:8080";
-
-    try {
-      const resp = await fetch(targetUrl + "/api/db/ping", { method: "GET", cache: "no-store" });
-      if (resp.ok) {
-        this.apiBaseUrl = targetUrl;
-        this.setConnected(true, "서버 정상 연결 (실시간 다중 채팅 활성화)");
-        if (showFeedback) showToast("🟢 다중 사용자 채팅 서버와 정상 연결되었습니다.", "success");
-        return true;
-      }
-    } catch (e) {
-      // not reachable
+    if (SyncManager.isLocal()) {
+      this.setConnected(false, "오프라인 (로컬 저장소 모드에서는 채팅을 사용할 수 없습니다)");
+      if (showFeedback) showToast("💬 채팅은 DB 서버 모드에서만 사용할 수 있습니다. (시스템 설정 > DB 연동에서 서버 모드 선택)");
+      return false;
     }
-
-    this.apiBaseUrl = "";
-    this.setConnected(false, "오프라인 모드 (로컬 브라우저 채팅 등록 가능 · run_server.bat 실행 시 다중 연동)");
-    if (showFeedback) showToast("서버 미연결: 현재 로컬 세션 모드로 동작합니다. 다중 연동을 원하시면 run_server.bat를 기동하세요.", "info");
-    return false;
+    const res = await ServerBackend.request("/api/chat/messages?channel=" + encodeURIComponent(this.activeChannel), null, "GET");
+    const ok = !!res.ok;
+    this.setConnected(ok, ok ? "서버 정상 연결 (실시간 채팅 활성화)" : "오프라인 (DB 서버 연결 실패)");
+    if (ok) this.renderMessages(res.messages || [], true);
+    if (showFeedback) showToast(ok ? "🟢 채팅 서버와 정상 연결되었습니다." : "⚠️ 채팅 서버에 연결할 수 없습니다. run_server.bat 실행 여부를 확인하세요.");
+    return ok;
   },
 
   setConnected(connected, statusText) {
@@ -4148,23 +4141,24 @@ var RealtimeChatManager = {
     const indicator = document.getElementById("chatServerStatusText");
     const offlineBanner = document.getElementById("chatServerOfflineBanner");
     const activeArea = document.getElementById("chatActiveArea");
-
+    const input = document.getElementById("chatMessageInput");
+    const sendBtn = document.getElementById("btnChatSend");
     if (dot) {
-      dot.style.color = connected ? "#10b981" : "#f59e0b";
-      dot.textContent = connected ? "● 온라인 (서버연결됨)" : "● 로컬/오프라인";
+      dot.style.color = connected ? "#10b981" : "#94a3b8";
+      dot.textContent = connected ? "● 온라인" : "● 오프라인";
     }
     if (indicator) {
-      indicator.textContent = statusText || (connected ? "서버 정상 연결 (실시간 채팅 활성)" : "로컬 모드");
-      indicator.style.color = connected ? "#059669" : "#d97706";
+      indicator.textContent = statusText;
+      indicator.style.color = connected ? "#059669" : "#64748b";
     }
-    if (offlineBanner) {
-      // Allow user to dismiss or use chat even if server is offline
-      offlineBanner.style.display = "none";
+    if (offlineBanner) offlineBanner.style.display = connected ? "none" : "flex";
+    if (activeArea) activeArea.classList.toggle("chat-offline-disabled", !connected);
+    if (input) {
+      input.disabled = !connected;
+      input.placeholder = connected ? "메시지를 입력하세요... (Enter 키로 전송)" : "오프라인 - 채팅 사용 불가";
     }
-    if (activeArea) {
-      activeArea.style.opacity = "1";
-      activeArea.style.pointerEvents = "auto";
-    }
+    if (sendBtn) sendBtn.disabled = !connected;
+    if (!connected) this.stopPolling();
   },
 
   async startPolling() {
@@ -4193,44 +4187,14 @@ var RealtimeChatManager = {
     this.renderChannelButtons();
     const curTitle = document.getElementById("chatCurrentChannelTitle");
     if (curTitle) curTitle.textContent = `# ${ch} 채널`;
-    if (this.isConnected) {
-      this.fetchMessages(true);
-    } else {
-      this.loadLocalMessages();
-    }
-  },
-
-  loadLocalMessages() {
-    try {
-      const raw = localStorage.getItem("WBS_LOCAL_CHAT_MSGS");
-      const allMsgs = raw ? JSON.parse(raw) : [];
-      const filtered = this.activeChannel === "전체" ? allMsgs : allMsgs.filter(m => m.channel === this.activeChannel);
-      this.renderMessages(filtered, true);
-    } catch (e) {
-      this.renderMessages([], true);
-    }
+    if (this.isConnected) this.fetchMessages(true);
   },
 
   async fetchMessages(forceScroll = false) {
-    if (!this.isConnected) {
-      this.loadLocalMessages();
-      return;
-    }
-    try {
-      const resp = await fetch(`${this.apiBaseUrl}/api/chat/messages?channel=${encodeURIComponent(this.activeChannel)}`, {
-        method: "GET",
-        cache: "no-store"
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && Array.isArray(data.messages)) {
-          this.renderMessages(data.messages, forceScroll);
-        }
-      }
-    } catch (err) {
-      console.warn("Chat fetch error, falling back to local:", err);
-      this.loadLocalMessages();
-    }
+    if (!this.isConnected) return;
+    const res = await ServerBackend.request("/api/chat/messages?channel=" + encodeURIComponent(this.activeChannel), null, "GET");
+    if (res.ok && Array.isArray(res.messages)) this.renderMessages(res.messages, forceScroll);
+    else if (res.network) this.setConnected(false, "오프라인 (DB 서버 연결 끊김)");
   },
 
   renderMessages(msgs, forceScroll = false) {
@@ -4270,68 +4234,33 @@ var RealtimeChatManager = {
   },
 
   async sendMessage() {
-    const input = document.getElementById("chatMessageInput");
-    const msg = (input?.value || "").trim();
-    if (!msg) return;
-
-    const curUser = (typeof AuthManager !== "undefined" && typeof AuthManager.getCurrentUser === "function" ? AuthManager.getCurrentUser() : (AuthManager?.currentUser || { name: "관리자", empNo: "admin", subsystem: "PMO", role: "SYS_ADMIN" }));
-    const nowStr = new Date().toISOString().slice(0, 10) + " " + new Date().toTimeString().slice(0, 8);
-    const msgObj = {
-      id: "CHAT-" + Date.now().toString(),
-      channel: this.activeChannel,
-      senderName: curUser.name || "관리자",
-      senderEmpNo: curUser.empNo || "admin",
-      userRole: curUser.subsystem || curUser.role || "MEMBER",
-      message: msg,
-      createdAt: nowStr
-    };
-
-    if (this.isConnected) {
-      try {
-        const resp = await fetch(`${this.apiBaseUrl}/api/chat/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(msgObj)
-        });
-        if (resp.ok) {
-          input.value = "";
-          await this.fetchMessages(true);
-          return;
-        }
-      } catch (e) {
-        console.warn("Server send failed, falling back to local:", e);
-      }
+    if (!this.isConnected) {
+      showToast("💬 오프라인 상태에서는 채팅을 사용할 수 없습니다.");
+      return;
     }
-
-    // Local / Offline fallback save
-    input.value = "";
-    try {
-      const raw = localStorage.getItem("WBS_LOCAL_CHAT_MSGS");
-      const allMsgs = raw ? JSON.parse(raw) : [];
-      allMsgs.push(msgObj);
-      localStorage.setItem("WBS_LOCAL_CHAT_MSGS", JSON.stringify(allMsgs));
-    } catch (e) {}
-
-    this.loadLocalMessages();
-    showToast("💬 채팅 메시지가 전송되었습니다.");
+    const input = document.getElementById("chatMessageInput");
+    const msg = (input && input.value || "").trim();
+    if (!msg) return;
+    const res = await ServerBackend.request("/api/chat/send", { id: Date.now().toString(), channel: this.activeChannel, message: msg });
+    if (res.ok) {
+      input.value = "";
+      await this.fetchMessages(true);
+    } else {
+      showToast("⚠️ 메시지 전송 실패: " + (res.message || ""));
+    }
   },
 
   async clearAllChat() {
-    openConfirmDialog("⚠️ 모든 채팅 기록을 초기화하시겠습니까?\n(과업·WBS·공정 데이터는 안전하게 보존되며, 채팅 기록만 삭제되어 브라우저 및 서버 용량이 확보됩니다)", async () => {
-      if (this.isConnected) {
-        try {
-          await fetch(`${this.apiBaseUrl}/api/chat/clear`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-        } catch (e) {}
-      }
-      try {
-        localStorage.removeItem("WBS_LOCAL_CHAT_MSGS");
-      } catch (e) {}
+    if (!this.isConnected) {
+      showToast("💬 채팅은 DB 서버 모드에서만 사용할 수 있습니다.");
+      return;
+    }
+    openConfirmDialog("⚠️ 서버의 모든 채팅 기록을 삭제하시겠습니까? (업무 데이터는 보존됩니다)", async () => {
+      const res = await ServerBackend.request("/api/chat/clear", {});
+      if (!res.ok) { showToast("⚠️ 채팅 삭제 실패: " + (res.message || "")); return; }
       this.messages = [];
-      const stream = document.getElementById("chatMessagesStream");
-      if (stream) {
-        stream.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#94a3b8; font-size:13px;">💬 채팅 기록이 초기화되었습니다. 새로운 메시지를 전송해보세요.</div>';
-      }
-      showToast("🧹 채팅 대화기록이 모두 초기화되었습니다. (저장 용량 확보 완료)", "success");
+      this.renderMessages([], true);
+      showToast("🧹 채팅 대화기록이 모두 초기화되었습니다.");
     });
   }
 };
@@ -6259,17 +6188,59 @@ var weeklyReportsData = [];
 // [ver1.0.4 신규] 주간보고 작성 및 서술형 DOCX / 엑셀 통합 매니저
 // =========================================================================
 var WeeklyReportManager = {
-  currentWeekReport: null,
+  currentWeekReport: null, // 작성 중인 편집본 (작성 완료 시 weeklyReportsData 에 반영)
+  _draftBase: "",
   selectedHistoryIdx: 0,
   selectedWeek: null,
-  selectedSubsystem: "ALL",
+  scope: null,            // "ALL" (통합) | "DOMAIN" (분야) | "SYS" (서브시스템)
+  scopeValue: "",
+
+  // -------------------------------------------------------------------------
+  // 작성 단위(Scope): 일반 사용자 = 담당 서브시스템, PM·관리자·총괄리더 = 통합
+  // -------------------------------------------------------------------------
+  defaultScope() {
+    const u = AuthManager.getCurrentUser();
+    const role = AuthManager.normalizeRole(u.role);
+    if (role === "MEMBER" && u.subsystem && u.subsystem !== "ALL") return { scope: "SYS", value: u.subsystem };
+    return { scope: "ALL", value: "" };
+  },
+  scopeKey(scope, value) {
+    if (scope === "DOMAIN") return `D-${value}`;
+    if (scope === "SYS") return `S-${value}`;
+    return "ALL";
+  },
+  scopeLabel(scope, value) {
+    if (scope === "DOMAIN") return `분야: ${value}`;
+    if (scope === "SYS") return `서브시스템: ${value}`;
+    return "통합 (전체)";
+  },
+  scopeFileLabel(scope, value) {
+    if (scope === "DOMAIN") return `분야_${value}`;
+    if (scope === "SYS") return `${value}_서브시스템`;
+    return "전체통합";
+  },
+  scopeSystems(scope, value) {
+    const all = getAllSubsystemNames();
+    if (scope === "DOMAIN") return (subsystemsMeta || []).filter(s => (s.domain || "") === value).map(s => s.name);
+    if (scope === "SYS") return [value];
+    return all;
+  },
+  reportScope(r) { return { scope: r.scope || "ALL", value: r.scopeValue || "" }; },
+  reportId(weekObj, scope, value) { return `WR-${weekObj.year}-W${weekObj.weekNum}-${this.scopeKey(scope, value)}`; },
+  canWrite(rep) {
+    return Permission.canWritePart("weeklyReportsData", rep.id, rep);
+  },
 
   init() {
-    this.ensureInitialData();
+    if (!this.scope) {
+      const d = this.defaultScope();
+      this.scope = d.scope;
+      this.scopeValue = d.value;
+    }
     if (!this.currentWeekReport) {
-      const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
-      const wObj = this.findWeekForDate(repDate);
-      this.currentWeekReport = this.getCurrentReport(wObj ? wObj.weekNum : 22, "ALL");
+      const wObj = this.findWeekForDate(projectConfig.reportDate);
+      this.selectedWeek = wObj ? wObj.weekNum : 1;
+      this.openReport(this.selectedWeek, this.scope, this.scopeValue);
     }
     this.populateWeekDropdown();
     this.populateSubsystemDropdown();
@@ -6277,136 +6248,89 @@ var WeeklyReportManager = {
   },
 
   getAllWeeks() {
-    const sDate = (typeof projectConfig !== "undefined" && projectConfig.projectStartDate) || "2027-01-01";
-    const eDate = (typeof projectConfig !== "undefined" && projectConfig.projectEndDate) || "2027-12-31";
-    const wDay = (typeof projectConfig !== "undefined" && projectConfig.weekStartDay !== undefined) ? projectConfig.weekStartDay : 5;
+    const sDate = projectConfig.projectStartDate || "2027-01-01";
+    const eDate = projectConfig.projectEndDate || "2027-12-31";
+    const wDay = projectConfig.weekStartDay !== undefined ? projectConfig.weekStartDay : 5;
     return WBSEngine.getProjectWeeks(sDate, eDate, wDay);
   },
 
   findWeekForDate(dateStr) {
     const weeks = this.getAllWeeks();
-    const target = dateStr || (projectConfig && projectConfig.reportDate) || "2027-06-01";
-    for (let i = 0; i < weeks.length; i++) {
-      if (target >= weeks[i].startDate && target <= weeks[i].endDate) {
-        return weeks[i];
-      }
-    }
-    return weeks[Math.min(21, weeks.length - 1)] || weeks[0];
+    const target = dateStr || projectConfig.reportDate;
+    return weeks.find(w => target >= w.startDate && target <= w.endDate) || weeks[weeks.length - 1] || weeks[0];
   },
 
-  ensureInitialData() {
-    if (!Array.isArray(weeklyReportsData) || weeklyReportsData.length === 0) {
-      const weeks = this.getAllWeeks();
-      const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
-      const curWeek = this.findWeekForDate(repDate);
-      const prevWeekIdx = Math.max(0, curWeek.weekNum - 2);
-      const prevWeek = weeks[prevWeekIdx] || curWeek;
-
-      const w21Report = this.buildInitialReportForWeek(prevWeek, "21주차 정기 공정회의 주관 및 5월말 1단계 분석설계 산출물 감리 검수 사전 조치 완료");
-      const w22Report = this.buildInitialReportForWeek(curWeek, "22주차 목표 공정률 초과 달성 및 5월말 1단계 분석설계 산출물 감리 검수 조건부 승인 완료");
-
-      weeklyReportsData = [w22Report, w21Report];
-    }
-  },
-
-  // [ver1.0.4 요건 4]
-  // 금주 주간보고 과업 엄격 선별:
-  // 1) 금주에 실적시작일자나 완료일자가 도래한 경우
-  // [ver1.0.4 요건 2]
-  // 금주 주간보고 표시 태스크 기준 (아래 모든 경우 표출):
-  // a) 금주까지 계획이 시작되었고 아직 실적완료일자가 설정되지 않은 건
-  // b) 실적이 시작되었으나 완료처리되지 않은 건
-  // c) 실적이 완료되었고 실적완료일자가 금주인 경우
+  // 금주 주간보고 표시 태스크: a) 금주까지 계획 시작·미완료 b) 실적 진행 중 c) 금주 실적 완료
   isTaskInWeek(task, wStart, wEnd) {
     if (!task || !task.isLeaf) return false;
-    const pS = task.pStart;
-    const aS = task.aStart;
     const aE = (task.aEnd || "").trim();
-
-    // a) 금주까지 계획이 시작되었고 아직 실적완료일자가 설정되지 않은 건
-    const condA = Boolean(pS && pS <= wEnd && !aE);
-
-    // b) 실적이 시작되었으나 완료처리되지 않은 건
-    const condB = Boolean(aS && !aE && task.status !== "완료");
-
-    // c) 실적이 완료되었고 실적완료일자가 금주인 경우
+    const condA = Boolean(task.pStart && task.pStart <= wEnd && !aE);
+    const condB = Boolean(task.aStart && !aE && task.status !== "완료");
     const condC = Boolean(aE && aE >= wStart && aE <= wEnd);
-
     return condA || condB || condC;
   },
 
-  // [ver1.0.4 요건 2]
-  // 차주 주간보고 표시 태스크 기준:
-  // a) 계획시작일자가 차주까지인 경우 중 금주까지 실적이 완료되지 않은 건
+  // 차주 표시 태스크: 계획시작일이 차주까지이고 금주까지 실적 미완료
   isNextWeekTask(task, nStart, nEnd, wEnd) {
     if (!task || !task.isLeaf) return false;
-    const pS = task.pStart;
     const aE = (task.aEnd || "").trim();
     const cutoff = wEnd || (nStart ? WBSEngine.addDays(nStart, -1) : "");
-
-    return Boolean(
-      pS && pS <= nEnd && (!aE || (cutoff ? aE > cutoff : true))
-    );
+    return Boolean(task.pStart && task.pStart <= nEnd && (!aE || (cutoff ? aE > cutoff : true)));
   },
 
-  buildInitialReportForWeek(weekObj, defaultSummary = "") {
+  // 같은 주차의 서브시스템 보고서(작성 완료본)에서 상세 내용 취합
+  _subsystemReportsOfWeek(weekNo) {
+    return (weeklyReportsData || []).filter(r => r.weekNo === weekNo && r.scope === "SYS");
+  },
+
+  buildReport(weekObj, scope, value) {
     const weeks = this.getAllWeeks();
-    const nextWeekIdx = weekObj.weekNum < weeks.length ? weekObj.weekNum : weekObj.weekNum - 1;
-    const nextWeekObj = weeks[nextWeekIdx] || {
+    const nextWeekObj = weeks[weekObj.weekNum] || {
       startDate: WBSEngine.addDays(weekObj.endDate, 1),
       endDate: WBSEngine.addDays(weekObj.endDate, 7)
     };
+    const systems = this.scopeSystems(scope, value);
+    const subReports = scope === "SYS" ? [] : this._subsystemReportsOfWeek(weekObj.weekNum).filter(r => systems.includes(r.scopeValue));
+    const subDetail = new Map();
+    subReports.forEach(r => {
+      (r.currentWeekTasks || []).forEach(t => subDetail.set("C" + t.wbsId, t));
+      (r.nextWeekTasks || []).forEach(t => subDetail.set("N" + t.wbsId, t));
+    });
 
-    const sysNames = getAllSubsystemNames();
     const curTasks = [];
     const nxtTasks = [];
-
-    sysNames.forEach(sys => {
-      const leafTasks = wbsData.filter(t => t.system === sys && t.isLeaf);
-      leafTasks.forEach(t => {
+    systems.forEach(sys => {
+      wbsData.filter(t => t.system === sys && t.isLeaf).forEach(t => {
         if (this.isTaskInWeek(t, weekObj.startDate, weekObj.endDate)) {
-          const st = (t.aProg >= 100) ? "완료" : (t.aProg > 0 ? "진행중" : "계획");
-          let detail = "";
-          if (st === "완료") detail = `${t.name} 완료 및 산출물 품질 검수 기준 충족 (${t.output || "과업 완료"})`;
-          else if (st === "진행중") detail = `${t.name} 공정 정상 진행 중 (현재 진척률 ${t.aProg}%)`;
-          else detail = `${t.name} 착수 준비 및 담당자 일정 편성 완료`;
-
+          const st = t.aProg >= 100 ? "완료" : (t.aProg > 0 ? "진행중" : "계획");
+          let detail = st === "완료"
+            ? `${t.name} 완료 (${t.output || "과업 완료"})`
+            : (st === "진행중" ? `${t.name} 진행 중 (현재 진척률 ${t.aProg}%)` : `${t.name} 착수 준비`);
+          const sub = subDetail.get("C" + t.id);
           curTasks.push({
-            id: `CT-${sys}-${t.id}`,
-            system: sys,
-            wbsId: t.id,
-            level: t.level,
-            name: t.name,
-            pProg: t.pProg,
-            aProg: t.aProg,
-            pStart: t.pStart,
-            pEnd: t.pEnd,
-            aStart: t.aStart,
-            aEnd: t.aEnd,
-            status: st,
-            detail: detail
+            id: `CT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name,
+            pProg: t.pProg, aProg: t.aProg, pStart: t.pStart, pEnd: t.pEnd, aStart: t.aStart, aEnd: t.aEnd,
+            status: sub ? sub.status : st,
+            detail: sub && sub.detail ? sub.detail : detail
           });
         }
-
         if (this.isNextWeekTask(t, nextWeekObj.startDate, nextWeekObj.endDate, weekObj.endDate)) {
+          const sub = subDetail.get("N" + t.id);
           nxtTasks.push({
-            id: `NT-${sys}-${t.id}`,
-            system: sys,
-            wbsId: t.id,
-            level: t.level,
-            name: t.name,
-            pProg: t.pProg,
-            pStart: t.pStart,
-            pEnd: t.pEnd,
-            status: "계획",
-            detail: `차주 ${t.name} 중점 착수 및 실시간 공정률 갭 관리 예정`
+            id: `NT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name,
+            pProg: t.pProg, pStart: t.pStart, pEnd: t.pEnd, status: "계획",
+            detail: sub && sub.detail ? sub.detail : `차주 ${t.name} 추진 예정`
           });
         }
       });
     });
 
+    const joinSub = field => subReports.filter(r => r[field]).map(r => `[${r.scopeValue}] ${r[field]}`).join("\n");
+    const u = AuthManager.getCurrentUser();
     return {
-      id: `WR-${weekObj.year}-W${weekObj.weekNum}-ALL`,
+      id: this.reportId(weekObj, scope, value),
+      scope, scopeValue: value || "",
+      status: "DRAFT",
       year: weekObj.year,
       weekNo: weekObj.weekNum,
       weekLabel: weekObj.fullLabel,
@@ -6414,76 +6338,189 @@ var WeeklyReportManager = {
       endDate: weekObj.endDate,
       nextStartDate: nextWeekObj.startDate,
       nextEndDate: nextWeekObj.endDate,
-      reportDate: (projectConfig && projectConfig.reportDate) || "2027-06-01",
-      author: "김총괄 수석PM",
-      currentWeekSummary: defaultSummary || `${weekObj.weekNum}주차 WBS 계획 공정률 달성 및 핵심 서브시스템 단위 기능 개발 정상 추진`,
-      nextWeekSummary: `차주 WBS 공정 연계 단위테스트 환경 검증 및 필수 산출물 조기 품질 검수 추진`,
-      issuesNotes: `특이 장애 사항 없음. 계획 일정 대비 정상 범위 내 공정 관리 유지 중`,
+      reportDate: projectConfig.reportDate,
+      author: u.name || "",
+      authorEmpNo: u.empNo || "",
+      currentWeekSummary: joinSub("currentWeekSummary") || `${weekObj.weekNum}주차 WBS 계획 대비 실적 정상 추진`,
+      nextWeekSummary: joinSub("nextWeekSummary") || "차주 계획 과업 착수 및 공정률 관리 예정",
+      issuesNotes: joinSub("issuesNotes") || "특이사항 없음",
       currentWeekTasks: curTasks,
       nextWeekTasks: nxtTasks,
-      updatedAt: new Date().toISOString().replace("T", " ").substring(0, 19)
+      updatedAt: ""
     };
   },
 
-  getCurrentReport(weekNum, sysName) {
-    this.ensureInitialData();
-    const wNum = parseInt(weekNum, 10);
-    let found = weeklyReportsData.find(r => r.weekNo === wNum);
-    if (!found) {
-      const weeks = this.getAllWeeks();
-      const targetW = weeks.find(w => w.weekNum === wNum) || weeks[0];
-      found = this.buildInitialReportForWeek(targetW);
-      weeklyReportsData.push(found);
+  _canon(r) {
+    if (!r) return "";
+    const c = Object.assign({}, r);
+    delete c.updatedAt;
+    return JSON.stringify(c);
+  },
+
+  // 주차 + 작성 단위의 보고서를 편집본으로 열기 (저장본 없으면 새로 생성)
+  openReport(weekNum, scope, value) {
+    const weeks = this.getAllWeeks();
+    const wObj = weeks.find(w => w.weekNum === parseInt(weekNum, 10)) || weeks[0];
+    if (!wObj) return;
+    const id = this.reportId(wObj, scope, value);
+    const saved = (weeklyReportsData || []).find(r => r.id === id)
+      || (scope === "ALL" ? (weeklyReportsData || []).find(r => r.weekNo === wObj.weekNum && !r.scope) : null);
+    this.currentWeekReport = saved
+      ? Object.assign({ scope, scopeValue: value || "", status: "DONE" }, JSON.parse(JSON.stringify(saved)), { id })
+      : this.buildReport(wObj, scope, value);
+    this._draftBase = this._canon(this.currentWeekReport);
+    this.selectedWeek = wObj.weekNum;
+    this.scope = scope;
+    this.scopeValue = value || "";
+  },
+
+  isDirty() {
+    if (!this.currentWeekReport) return false;
+    const pane = document.getElementById("tab-weekly-report");
+    if (pane && pane.classList.contains("active")) this.readInputsIntoCurrentReport(true);
+    return this._canon(this.currentWeekReport) !== this._draftBase;
+  },
+
+  // 미저장 상태에서 다른 보고서/화면 이동 시 [저장 / 무시 / 취소]
+  confirmLeave(onProceed) {
+    if (!this.isDirty()) return true;
+    SyncUI.ask(
+      "📝 주간보고 미저장",
+      `작성 중인 주간보고 [${this.currentWeekReport.weekLabel} · ${this.scopeLabel(this.scope, this.scopeValue)}] 이 저장되지 않았습니다.\n저장하시겠습니까?`,
+      [
+        { id: "save", label: "💾 저장 (작성 완료)", cls: "btn-primary" },
+        { id: "ignore", label: "무시 (변경 취소)", cls: "btn-danger" },
+        { id: "cancel", label: "계속 작성", cls: "btn-secondary" }
+      ]
+    ).then(async choice => {
+      if (choice === "cancel") { this.populateWeekDropdown(); this.populateSubsystemDropdown(); return; }
+      if (choice === "save") {
+        const ok = await this.completeReport(false);
+        if (!ok) return;
+      } else {
+        this._draftBase = this._canon(this.currentWeekReport);
+        this.currentWeekReport = null;
+      }
+      if (typeof onProceed === "function") onProceed();
+    });
+    return false;
+  },
+
+  onDataReloaded() {
+    if (!this.currentWeekReport) return;
+    if (!this.isDirty()) this.openReport(this.selectedWeek, this.scope, this.scopeValue);
+    const pane = document.getElementById("tab-weekly-report");
+    if (pane && pane.classList.contains("active")) {
+      this.populateWeekDropdown();
+      this.populateSubsystemDropdown();
+      this.render();
     }
-    return found;
   },
 
   populateWeekDropdown() {
     const sel = document.getElementById("wrWeekSelect");
     if (!sel) return;
-    const weeks = this.getAllWeeks();
-    const curW = this.selectedWeek || (this.currentWeekReport ? this.currentWeekReport.weekNo : (sel.value ? parseInt(sel.value, 10) : 22));
-    sel.innerHTML = weeks.map(w => `<option value="${w.weekNum}" ${w.weekNum === curW ? "selected" : ""}>${escapeHtml(w.fullLabel)}</option>`).join("");
+    const curW = this.selectedWeek || 1;
+    sel.innerHTML = this.getAllWeeks().map(w => `<option value="${w.weekNum}">${escapeHtml(w.fullLabel)}</option>`).join("");
     sel.value = String(curW);
   },
 
+  // 작성 단위 선택: 통합 / 분야별 / 서브시스템별
   populateSubsystemDropdown() {
     const sel = document.getElementById("wrSubsystemSelect");
     if (!sel) return;
-    const curSys = this.selectedSubsystem || (sel.value || "ALL");
-    const subs = getAllSubsystemNames();
-    sel.innerHTML = `<option value="ALL" ${curSys === "ALL" ? "selected" : ""}>전체 서브시스템 (통합)</option>` +
-      subs.map(s => `<option value="${escapeHtml(s)}" ${s === curSys ? "selected" : ""}>${escapeHtml(s)}</option>`).join("");
-    sel.value = curSys;
+    const opt = (v, label) => `<option value="${escapeHtml(v)}">${escapeHtml(label)}</option>`;
+    const doms = getProjectDomains();
+    sel.innerHTML =
+      opt("ALL|", "📊 통합 (전체)") +
+      `<optgroup label="분야별">${doms.map(d => opt(`DOMAIN|${d}`, `🏢 분야: ${d}`)).join("")}</optgroup>` +
+      `<optgroup label="서브시스템별">${getAllSubsystemNames().map(s => opt(`SYS|${s}`, `🔧 ${s}`)).join("")}</optgroup>`;
+    sel.value = `${this.scope || "ALL"}|${this.scopeValue || ""}`;
   },
 
   onWeekOrSubsystemChanged() {
     const wSel = document.getElementById("wrWeekSelect");
     const sSel = document.getElementById("wrSubsystemSelect");
-    const wNum = wSel && wSel.value ? parseInt(wSel.value, 10) : 22;
-    const sys = sSel && sSel.value ? sSel.value : "ALL";
+    const wNum = wSel && wSel.value ? parseInt(wSel.value, 10) : this.selectedWeek;
+    const [scope, value] = (sSel && sSel.value ? sSel.value : "ALL|").split("|");
+    if (this.currentWeekReport && !this.confirmLeave(() => this._switchTo(wNum, scope, value))) return;
+    this._switchTo(wNum, scope, value);
+  },
 
-    this.selectedWeek = wNum;
-    this.selectedSubsystem = sys;
-    this.currentWeekReport = this.getCurrentReport(wNum, sys);
+  _switchTo(wNum, scope, value) {
+    this.openReport(wNum, scope, value);
+    this.populateWeekDropdown();
+    this.populateSubsystemDropdown();
     this.render();
+  },
+
+  openSavedReport(id) {
+    const r = (weeklyReportsData || []).find(x => x.id === id);
+    if (!r) return;
+    const sc = this.reportScope(r);
+    if (this.currentWeekReport && this.currentWeekReport.id !== id && !this.confirmLeave(() => this._switchTo(r.weekNo, sc.scope, sc.value))) return;
+    this._switchTo(r.weekNo, sc.scope, sc.value);
+  },
+
+  // 저장된 주간보고 목록
+  renderSavedList() {
+    const body = document.getElementById("wrSavedListBody");
+    if (!body) return;
+    const own = Permission.ownSubsystem();
+    const list = [...(weeklyReportsData || [])].sort((a, b) => (b.weekNo - a.weekNo) || String(a.id).localeCompare(String(b.id)));
+    const cnt = document.getElementById("wrSavedListCount");
+    if (cnt) cnt.textContent = `${list.length}건`;
+    if (!list.length) {
+      body.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">저장된 주간보고가 없습니다. 작성 후 [✅ 작성 완료 (저장)]을 누르세요.</td></tr>`;
+      return;
+    }
+    const curId = this.currentWeekReport ? this.currentWeekReport.id : "";
+    body.innerHTML = list.map(r => {
+      const sc = this.reportScope(r);
+      const mine = sc.scope === "SYS" && sc.value === own;
+      return `<tr class="wr-list-row ${r.id === curId ? "active" : ""}" onclick="WeeklyReportManager.openSavedReport('${escapeHtml(r.id)}')">
+        <td>${escapeHtml(r.weekLabel || ("W" + r.weekNo))}</td>
+        <td>${escapeHtml(this.scopeLabel(sc.scope, sc.value))}${mine ? " ⭐" : ""}</td>
+        <td>${escapeHtml(r.author || "-")}</td>
+        <td style="text-align:center;">${(r.status || "DONE") === "DONE" ? '<span class="status-tag tag-completed">작성완료</span>' : '<span class="status-tag tag-ready">작성중</span>'}</td>
+        <td style="text-align:center;">${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}</td>
+        <td style="font-size:11px;">${escapeHtml(r.updatedAt || "-")}</td>
+        <td style="text-align:center;"><button class="btn btn-outline btn-xs" onclick="event.stopPropagation(); WeeklyReportManager.openSavedReport('${escapeHtml(r.id)}')">열기</button></td>
+      </tr>`;
+    }).join("");
+  },
+
+  renderScopeBanner() {
+    const el = document.getElementById("wrScopeBanner");
+    if (!el || !this.currentWeekReport) return;
+    const rep = this.currentWeekReport;
+    const writable = this.canWrite(rep);
+    const saved = (weeklyReportsData || []).some(r => r.id === rep.id);
+    el.innerHTML = `📌 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b> · ${escapeHtml(rep.weekLabel)}
+      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>
+      ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}`;
+    const btn = document.getElementById("btnWrComplete");
+    if (btn) {
+      btn.disabled = !writable;
+      btn.style.opacity = writable ? "1" : "0.5";
+    }
   },
 
   render() {
     if (!this.currentWeekReport) return;
     const rep = this.currentWeekReport;
-    const wSel = document.getElementById("wrWeekSelect");
-    const sSel = document.getElementById("wrSubsystemSelect");
-    if (wSel && this.selectedWeek) wSel.value = String(this.selectedWeek);
-    if (sSel && this.selectedSubsystem) sSel.value = this.selectedSubsystem;
-    const filterSys = this.selectedSubsystem || (sSel ? sSel.value : "ALL");
+    const scopeSystems = this.scopeSystems(this.scope, this.scopeValue);
+    const filterSys = "ALL"; // 보고서 자체가 작성 단위로 구성됨
+    const inScope = sys => this.scope === "ALL" || scopeSystems.includes(sys);
+    this.renderScopeBanner();
+    this.renderSavedList();
 
     const inAuthor = document.getElementById("wrAuthorInput");
     const inCurSum = document.getElementById("wrCurrentSummary");
     const inNxtSum = document.getElementById("wrNextSummary");
     const inIssues = document.getElementById("wrIssuesNotes");
 
-    if (inAuthor) inAuthor.value = rep.author || "김총괄 수석PM";
+    if (inAuthor) inAuthor.value = rep.author || "";
     if (inCurSum) inCurSum.value = rep.currentWeekSummary || "";
     if (inNxtSum) inNxtSum.value = rep.nextWeekSummary || "";
     if (inIssues) inIssues.value = rep.issuesNotes || "";
@@ -6553,7 +6590,7 @@ var WeeklyReportManager = {
       const curMtgsBody = document.getElementById("wrCurrentMeetingsBody");
       if (curMtgsBody) {
         curMtgsBody.innerHTML = "";
-        const filteredMtgs = curMtgs.filter(m => filterSys === "ALL" || m.system === filterSys);
+        const filteredMtgs = curMtgs.filter(m => m.system === "ALL" || inScope(m.system));
         if (filteredMtgs.length === 0) {
           curMtgsBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">ℹ️ 금주 진행된 회의 일정이 없습니다.</td></tr>`;
         } else {
@@ -6579,7 +6616,7 @@ var WeeklyReportManager = {
       const nxtMtgsBody = document.getElementById("wrNextMeetingsBody");
       if (nxtMtgsBody) {
         nxtMtgsBody.innerHTML = "";
-        const filteredNxt = nxtMtgs.filter(m => filterSys === "ALL" || m.system === filterSys);
+        const filteredNxt = nxtMtgs.filter(m => m.system === "ALL" || inScope(m.system));
         if (filteredNxt.length === 0) {
           nxtMtgsBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">ℹ️ 차주 예정된 회의 일정이 없습니다.</td></tr>`;
         } else {
@@ -6624,23 +6661,41 @@ var WeeklyReportManager = {
 
   readInputsIntoCurrentReport() {
     if (!this.currentWeekReport) return;
-    const inAuthor = document.getElementById("wrAuthorInput");
-    const inCurSum = document.getElementById("wrCurrentSummary");
-    const inNxtSum = document.getElementById("wrNextSummary");
-    const inIssues = document.getElementById("wrIssuesNotes");
-
-    if (inAuthor) this.currentWeekReport.author = inAuthor.value.trim();
-    if (inCurSum) this.currentWeekReport.currentWeekSummary = inCurSum.value.trim();
-    if (inNxtSum) this.currentWeekReport.nextWeekSummary = inNxtSum.value.trim();
-    if (inIssues) this.currentWeekReport.issuesNotes = inIssues.value.trim();
-    this.currentWeekReport.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
+    const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : null; };
+    const map = { wrAuthorInput: "author", wrCurrentSummary: "currentWeekSummary", wrNextSummary: "nextWeekSummary", wrIssuesNotes: "issuesNotes" };
+    Object.keys(map).forEach(id => {
+      const v = val(id);
+      if (v !== null) this.currentWeekReport[map[id]] = v;
+    });
   },
 
-  saveCurrentReport() {
+  // [✅ 작성 완료 (저장)] 편집본을 확정하여 저장
+  async completeReport(notify = true) {
+    if (!this.currentWeekReport) return false;
     this.readInputsIntoCurrentReport();
-    if (typeof StorageManager !== "undefined") StorageManager.saveAll(false);
-    showToast(`💾 [주간보고 저장 완료] ${this.currentWeekReport.weekLabel} 보고서 내용이 저장되었습니다.`);
+    const rep = this.currentWeekReport;
+    if (!this.canWrite(rep)) {
+      showToast(`⛔ 저장 권한 없음: 일반 사용자는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
+      return false;
+    }
+    const u = AuthManager.getCurrentUser();
+    rep.status = "DONE";
+    rep.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
+    rep.updatedBy = u.empNo || "";
+    if (!rep.author) rep.author = u.name || "";
+    const copy = JSON.parse(JSON.stringify(rep));
+    const idx = weeklyReportsData.findIndex(r => r.id === rep.id);
+    if (idx !== -1) weeklyReportsData[idx] = copy;
+    else weeklyReportsData.push(copy);
+    const res = await SyncManager.save(["weeklyReportsData"], { notify: false });
+    if (!(res.ok || res.nothing)) return false;
+    this._draftBase = this._canon(this.currentWeekReport);
+    this.render();
+    if (notify) showToast(`✅ [주간보고 작성 완료] ${rep.weekLabel} · ${this.scopeLabel(this.scope, this.scopeValue)} 보고서가 저장되었습니다.`);
+    return true;
   },
+
+  saveCurrentReport() { return this.completeReport(true); },
 
   syncWbsTasks() {
     if (!this.currentWeekReport) return;
@@ -6649,7 +6704,8 @@ var WeeklyReportManager = {
     const weekNum = this.currentWeekReport.weekNo;
     const weeks = this.getAllWeeks();
     const wObj = weeks.find(w => w.weekNum === weekNum) || weeks[0];
-    const freshReport = this.buildInitialReportForWeek(wObj);
+    const freshReport = this.buildReport(wObj, this.scope, this.scopeValue);
+    freshReport.status = this.currentWeekReport.status;
 
     const existingCurDetails = new Map();
     (this.currentWeekReport.currentWeekTasks || []).forEach(t => {
@@ -6680,9 +6736,7 @@ var WeeklyReportManager = {
     freshReport.issuesNotes = this.currentWeekReport.issuesNotes;
     freshReport.author = this.currentWeekReport.author;
 
-    const idx = weeklyReportsData.findIndex(r => r.weekNo === weekNum);
-    if (idx !== -1) weeklyReportsData[idx] = freshReport;
-    this.currentWeekReport = freshReport;
+    this.currentWeekReport = freshReport; // 저장은 [작성 완료] 시 반영
 
     this.render();
     showToast("🔄 [WBS 동기화 완료] 최신 WBS 공정표 과업과 성공적으로 연동되었습니다.");
@@ -6836,13 +6890,21 @@ var WeeklyReportManager = {
   },
 
   // [ver1.0.4] 주간보고 엑셀 다운로드 (XLSX 형태)
-  exportExcel(isAll = true) {
-    if (!this.currentWeekReport) return;
+  // forceIntegrated=true: 현재 작성 단위와 관계없이 통합(전체) 보고서로 생성 (대시보드 엑셀 보고서)
+  exportExcel(forceIntegrated = false) {
+    if (!this.currentWeekReport) this.init();
     this.readInputsIntoCurrentReport();
 
-    const rep = this.currentWeekReport;
-    const filterSys = isAll ? "ALL" : ((document.getElementById("wrSubsystemSelect") && document.getElementById("wrSubsystemSelect").value) || "ALL");
-    const scopeLabel = filterSys === "ALL" ? "전체통합" : `${filterSys}_서브시스템`;
+    let rep = this.currentWeekReport;
+    if (forceIntegrated && rep.scope !== "ALL") {
+      const wObj = this.getAllWeeks().find(w => w.weekNum === rep.weekNo);
+      rep = (weeklyReportsData || []).find(r => r.id === this.reportId(wObj, "ALL", "")) || this.buildReport(wObj, "ALL", "");
+    }
+    const sc = this.reportScope(rep);
+    const scopeSystems = this.scopeSystems(sc.scope, sc.value);
+    const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
+    const filterSys = "ALL";
+    const scopeLabel = this.scopeFileLabel(sc.scope, sc.value);
     const projName = (projectConfig && projectConfig.projectName) || "27년_가동률_시스템_개선";
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
 
@@ -6869,7 +6931,7 @@ var WeeklyReportManager = {
       s1Rows.push({ cells: ["【서브시스템별 공정 진척 현황】"], styleId: 3, height: 26 });
       s1Rows.push({ cells: ["분야", "서브시스템", "공정유형", "담당PM", "가중치(%)", "Task수", "계획(%)", "실적(%)", "달성률(%)", "지연(건)"], styleId: 1, height: 24 });
       m.subsystemRows.forEach(r => {
-        if (filterSys === "ALL" || r[1] === filterSys) s1Rows.push({ cells: r, styleId: 2, height: 20 });
+        if (inScope(r[1])) s1Rows.push({ cells: r, styleId: 2, height: 20 });
       });
     }
 
@@ -6912,7 +6974,7 @@ var WeeklyReportManager = {
       { cells: [`[${rep.weekLabel}] 현장 VOC 및 개선 이슈 진행 현황 (대기·진행 분리)`], styleId: 3, height: 28 },
       { cells: ["VOC ID", "서브시스템", "우선순위", "요청제목", "요청자", "접수일자", "목표완료일", "처리상태", "조치결과 및 향후 계획"], styleId: 1, height: 24 }
     ];
-    const vocList = vocData.filter(v => (filterSys === "ALL" || v.system === filterSys) && v.status !== "삭제");
+    const vocList = vocData.filter(v => inScope(v.system) && v.status !== "삭제");
     vocList.forEach(v => {
       s4Rows.push({
         cells: [v.id, v.system, v.priority, v.title, v.requester || "", v.reqDate || "", v.targetDate || "", v.status, v.action || ""],
@@ -6922,13 +6984,8 @@ var WeeklyReportManager = {
     });
 
     // [ver1.0.4 요건 3] Sheet 5: 금주 및 차주 회의 일정 추가
-    const curMtgs = (typeof MeetingManager !== "undefined" && typeof MeetingManager.getWeeklyMeetings === "function")
-      ? MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate, filterSys)
-      : (meetingsData || []).filter(m => m.date >= rep.startDate && m.date <= rep.endDate && (filterSys === "ALL" || m.system === filterSys));
-
-    const nxtMtgs = (typeof MeetingManager !== "undefined" && typeof MeetingManager.getNextWeekMeetings === "function")
-      ? MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate, filterSys)
-      : (meetingsData || []).filter(m => m.date >= rep.nextStartDate && m.date <= rep.nextEndDate && (filterSys === "ALL" || m.system === filterSys));
+    const curMtgs = MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate).filter(m => m.system === "ALL" || inScope(m.system));
+    const nxtMtgs = MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate).filter(m => m.system === "ALL" || inScope(m.system));
 
     const s5Rows = [
       { cells: [`[${projName} 주간보고] 금주 진행 및 차주 예정 프로젝트 회의 일정 (${scopeLabel})`], styleId: 3, height: 28 },
@@ -6983,12 +7040,15 @@ var WeeklyReportManager = {
   },
 
   exportDocx(useTables = true) {
-    if (!this.currentWeekReport) return;
+    if (!this.currentWeekReport) this.init();
     this.readInputsIntoCurrentReport();
 
     const rep = this.currentWeekReport;
+    const sc = this.reportScope(rep);
+    const scopeSystems = this.scopeSystems(sc.scope, sc.value);
+    const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
     const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.4";
+    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.6";
     const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
     const repDay = WBSEngine.getDayOfWeekText(repDate);
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
@@ -7007,17 +7067,18 @@ var WeeklyReportManager = {
       projectStartDate: projectConfig.projectStartDate || "2027-01-01",
       projectEndDate: projectConfig.projectEndDate || "2027-12-31",
       domains: projectConfig.domains || ["관리공통", "개선공정", "신규공정"],
-      subsystems: getAllSubsystemNames(),
+      subsystems: scopeSystems,
+      scopeLabel: this.scopeLabel(sc.scope, sc.value),
       currentWeekSummary: rep.currentWeekSummary,
       nextWeekSummary: rep.nextWeekSummary,
       issuesNotes: rep.issuesNotes,
       metrics: m,
-      reqMasterData: reqMasterData,
-      vocData: vocData,
+      reqMasterData: reqMasterData.filter(r => inScope(r.system)),
+      vocData: vocData.filter(v => inScope(v.system)),
       currentWeekTasks: rep.currentWeekTasks || [],
       nextWeekTasks: rep.nextWeekTasks || [],
-      currentWeekMeetings: (typeof MeetingManager !== "undefined") ? MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate) : [],
-      nextWeekMeetings: (typeof MeetingManager !== "undefined") ? MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate) : [],
+      currentWeekMeetings: MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate).filter(m => m.system === "ALL" || inScope(m.system)),
+      nextWeekMeetings: MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate).filter(m => m.system === "ALL" || inScope(m.system)),
       currentWeekActionItems: (typeof MeetingManager !== "undefined") ? MeetingManager.getAllActionItems() : []
     };
 
@@ -7028,7 +7089,7 @@ var WeeklyReportManager = {
 
     const blob = DocxBuilder.buildDocxBlob(reportMeta, useTables);
     const modeTag = useTables ? "(서술형_표포함)" : "(완전서술형_표없음)";
-    const filename = `[주간보고서]_${projName}_${rep.weekLabel.replace(/\s+/g, "_")}_${modeTag}.docx`;
+    const filename = `[주간보고서]_${projName}_${this.scopeFileLabel(sc.scope, sc.value)}_${rep.weekLabel.replace(/\s+/g, "_")}_${modeTag}.docx`;
 
     ExcelSync._triggerDownload(blob, filename);
     showToast(`📄 [주간보고 DOCX 다운로드 완료] ${filename} 파일이 다운로드되었습니다.`);

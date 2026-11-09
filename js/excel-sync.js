@@ -1821,7 +1821,7 @@ const ExcelSync = {
 // ===================================================================
 const DocxBuilder = {
   buildDocxBlob(reportMeta, useTables = true) {
-    const esc = this._escapeXml;
+    const esc = this.escapeXml;
     const bodyParts = [];
 
     // [2026 v0.9 신규] 워드(DOCX) 보고서 스타일 테마, 폰트 크기, 서체 연동
@@ -2820,7 +2820,7 @@ const DocxBuilder = {
   // [2026 v0.9 신규] 회의록 독립 OpenXML DOCX 생성기
   // =========================================================================
   buildMeetingMinutesDocx(m, projName = "27년 가동률 시스템 개선") {
-    const esc = this._escapeXml;
+    const esc = this.escapeXml;
     const bodyParts = [];
 
     const pal = (typeof ExcelSync !== "undefined" && ExcelSync.getExportThemePalette)

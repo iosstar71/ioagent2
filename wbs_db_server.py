@@ -1,25 +1,42 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AX Project Management by YS ver1.0.5 - 보안 강화형 다중 데이터베이스 연동 웹 서버
+AX Project Management by YS ver1.0.6 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
-[HTTP 사내망 보안 강화 및 ver1.0.4 스키마 호환 적용 내역]
-1) 디렉터리 트래버설(Path Traversal) 원천 차단: DB 파일 경로를 ./data 디렉터리 내부 및 허용 확장자로 엄격 제한
-2) 민감 파일 직접 접근 차단(403 Forbidden): 브라우저 URL로 /server/*, /data/*, *.py, *.db, *.accdb, *.sql, *.bat 직접 다운로드 불가
-3) HTTP 보안 헤더 자동 주입: X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN
-4) ver1.0.4 전체 설정(분야 domains, 커스텀 SDLC, 서브시스템 domain/sdlcCode, 인력 권한 projectUsers) 완벽 보존
+[v1.0.6 주요 변경]
+1) 인증(Authentication)
+   - /api/auth/login 으로 사번 + 비밀번호(SHA-256 해시) 검증 후 세션 토큰 발급
+   - 모든 데이터·채팅 API 는 "Authorization: Bearer <token>" 필수 (미인증 401)
+   - 신규 사용자 자가 등록(/api/auth/register) → 기본 권한 MEMBER(일반 사용자)
+2) 권한(Authorization) - 브라우저(js/data-store.js Permission)와 동일 규칙을 서버에서 재검증
+   - SYS_ADMIN / PM : 전체 데이터 저장
+   - LEAD(총괄리더)  : 전체 서브시스템 업무 데이터 저장 (기준정보 제외)
+   - MEMBER         : 담당 서브시스템 데이터만 저장 (그 외 변경은 거부 → blocked 응답)
+3) 동시 저장 충돌 감지
+   - 데이터셋을 파티션(서브시스템 / 행 ID / 전체) 단위 리비전으로 관리
+   - 클라이언트가 불러온 이후 다른 사용자가 같은 파티션을 저장했으면 409 + 충돌 목록 반환
+   - force=true(덮어쓰기) 일 때만 강제 저장
+4) 데이터 무손실 저장: 데이터셋 원본 JSON(TB_WBS_DATASET) 기준 저장/조회
+   - 외부 조회용 관계형 테이블(TB_WBS_TASK 등)은 저장 시 자동 미러링
+   - v1.0.5 이하 DB(관계형 테이블)는 최초 기동 시 자동 이관, 빈 DB는 data/initial_data.json 으로 초기화
+5) 보안: 경로 탐색 차단, 서버/DB 파일 직접 다운로드 차단, 보안 헤더, 요청 크기 제한
 """
 
 import argparse
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-import json
 import datetime
-import time
+import hashlib
+import json
 import pathlib
-import re
+import secrets
 import sqlite3
 import sys
 import threading
+import time
+import urllib.parse
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+VERSION = "ver1.0.6"
+APP_NAME = f"AX Project Management by YS {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
 if hasattr(sys.stdout, "reconfigure"):
@@ -29,480 +46,707 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-DB_LOCK = threading.Lock()
 _THIS_DIR = pathlib.Path(__file__).resolve().parent
 BASE_DIR = _THIS_DIR if (_THIS_DIR / "index.html").exists() else _THIS_DIR.parent
 DATA_DIR = (BASE_DIR / "data").resolve()
-MAX_BODY_BYTES = 15 * 1024 * 1024  # 15MB 제한
-ALLOWED_DB_EXTENSIONS = {".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".xlsx"}
-BLOCKED_URL_PREFIXES = ("/server", "/data", "/.")
-BLOCKED_URL_EXTENSIONS = {".py", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env"}
+DB_PATH = DATA_DIR / "wbs_enterprise.db"
+INITIAL_DATA_PATH = DATA_DIR / "initial_data.json"
+MAX_BODY_BYTES = 15 * 1024 * 1024
+BLOCKED_URL_PREFIXES = ("/server", "/data", "/logs", "/tools", "/.")
+BLOCKED_URL_EXTENSIONS = {".py", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env", ".log"}
 
+PWD_SALT = "WBS_OFFLINE_SECURITY_SALT_2026"  # js/access-control.js 와 동일
+SESSION_TTL_SEC = 12 * 60 * 60
+DB_LOCK = threading.RLock()
 
-# [v1.0.5] TB_WBS_EXTRA_JSON 에 원본 JSON 그대로 저장/복원하는 확장 데이터 키
-EXTRA_JSON_KEYS = ("noticesData", "communicationsData", "meetingsData", "weeklyReportsData")
+# ---------------------------------------------------------------------------
+# 데이터셋 정의 (js/data-store.js DataRegistry.DEFS 와 동일하게 유지)
+# ---------------------------------------------------------------------------
+WHOLE = "*"
+DATASETS = {
+    "projectConfig":            {"part": None,     "scope": "master"},
+    "subsystemsMeta":           {"part": None,     "scope": "master"},
+    "standardDeliverablesMeta": {"part": None,     "scope": "master"},
+    "projectUsers":             {"part": "empNo",  "scope": "users"},
+    "wbsData":                  {"part": "system", "scope": "subsystem"},
+    "deliverablesData":         {"part": "system", "scope": "subsystem"},
+    "reqMasterData":            {"part": "system", "scope": "subsystem"},
+    "vocData":                  {"part": "system", "scope": "subsystem"},
+    "noticesData":              {"part": "id",     "scope": "shared"},
+    "communicationsData":       {"part": "id",     "scope": "shared"},
+    "meetingsData":             {"part": "id",     "scope": "shared"},
+    "weeklyReportsData":        {"part": "id",     "scope": "weekly"},
+    "theme":                    {"part": None,     "scope": "pref"},
+}
+MANAGER_ROLES = {"SYS_ADMIN", "PM"}
+ALL_SUBSYSTEM_ROLES = {"SYS_ADMIN", "PM", "LEAD"}
+USER_SELF_FIELDS = {"name", "dept", "lang", "pwdHash"}
 
 
 class SecurityError(Exception):
-    """보안 정책 위반 예외"""
+    """보안 정책 위반"""
 
 
-class DatabaseAdapter:
-    """SQLite / Oracle / Excel·Access 3대 DB 공통 보안 어댑터"""
+class AuthError(Exception):
+    """인증 필요 / 권한 없음"""
 
+    def __init__(self, message, status=401):
+        super().__init__(message)
+        self.status = status
+
+
+def now_str():
+    return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def hash_password(plain: str) -> str:
+    return hashlib.sha256((plain + PWD_SALT).encode("utf-8")).hexdigest()
+
+
+DEFAULT_PWD_HASH = hash_password("1234")
+
+
+def normalize_role(role) -> str:
+    r = str(role or "").upper()
+    if r in ("SYS_ADMIN", "ADMIN"):
+        return "SYS_ADMIN"
+    if r == "PM":
+        return "PM"
+    if r in ("LEAD", "LEADER", "TOTAL_LEAD"):
+        return "LEAD"
+    return "MEMBER"
+
+
+# ---------------------------------------------------------------------------
+# 파티션 (js/data-store.js Partition 과 동일 로직)
+# ---------------------------------------------------------------------------
+def part_of(key, row):
+    field = DATASETS[key]["part"]
+    if not field:
+        return WHOLE
+    v = row.get(field, "") if isinstance(row, dict) else ""
+    return "" if v is None else str(v)
+
+
+def split_parts(key, value):
+    field = DATASETS[key]["part"]
+    out = {}
+    if not field or not isinstance(value, list):
+        out[WHOLE] = value
+        return out
+    for row in value:
+        p = part_of(key, row)
+        if field == "system":
+            out.setdefault(p, []).append(row)
+        else:
+            out[p] = row
+    return out
+
+
+def merge_parts(key, base, changed):
+    field = DATASETS[key]["part"]
+    if not field:
+        return changed[WHOLE] if WHOLE in changed else base
+    base = base if isinstance(base, list) else []
+    if field == "system":
+        order, groups = [], {}
+        for r in base:
+            p = part_of(key, r)
+            if p not in groups:
+                groups[p] = []
+                order.append(p)
+            groups[p].append(r)
+        for p, rows in changed.items():
+            if p not in groups:
+                order.append(p)
+            groups[p] = rows if isinstance(rows, list) else []
+        return [r for p in order for r in groups.get(p, [])]
+    out, seen = [], set()
+    for r in base:
+        p = part_of(key, r)
+        seen.add(p)
+        if p in changed:
+            if changed[p]:
+                out.append(changed[p])
+        else:
+            out.append(r)
+    for p, row in changed.items():
+        if p not in seen and row:
+            out.append(row)
+    return out
+
+
+def can_write(user, key, part, row):
+    role = user["role"]
+    scope = DATASETS[key]["scope"]
+    own = str(user.get("subsystem") or "ALL")
+    if scope in ("master", "pref"):
+        return role in MANAGER_ROLES
+    if scope == "users":
+        return role in MANAGER_ROLES or str(part).lower() == str(user["empNo"]).lower()
+    if scope == "subsystem":
+        return role in ALL_SUBSYSTEM_ROLES or own == "ALL" or own == str(part)
+    if scope == "weekly":
+        if role in ALL_SUBSYSTEM_ROLES:
+            return True
+        r = row or {}
+        return r.get("scope") == "SYS" and (own == "ALL" or own == str(r.get("scopeValue", "")))
+    if scope == "shared":
+        return True
+    return False
+
+
+# ---------------------------------------------------------------------------
+# 저장소
+# ---------------------------------------------------------------------------
+class Store:
     @staticmethod
-    def _validate_and_resolve_db_path(file_path: str) -> pathlib.Path:
+    def connect():
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        raw_name = pathlib.Path(str(file_path or "wbs_enterprise.db")).name
-        safe_name = re.sub(r"[^a-zA-Z0-9가-힣_.-]", "_", raw_name)
-        if not safe_name or safe_name.startswith("."):
-            safe_name = "wbs_enterprise.db"
-        target = (DATA_DIR / safe_name).resolve()
-        if not str(target).startswith(str(DATA_DIR)):
-            raise SecurityError("허용되지 않은 파일 경로 접근이 차단되었습니다.")
-        if target.suffix.lower() not in ALLOWED_DB_EXTENSIONS:
-            raise SecurityError(f"허용되지 않는 DB 파일 확장자입니다: {target.suffix}")
-        return target
-
-    @classmethod
-    def sqlite_connect(cls, cfg: dict) -> sqlite3.Connection:
-        s_cfg = cfg.get("sqlite", {})
-        db_path = cls._validate_and_resolve_db_path(s_cfg.get("filePath", "./data/wbs_enterprise.db"))
-        timeout_sec = max(1.0, min(30.0, float(s_cfg.get("busyTimeout", 5000)) / 1000.0))
-        conn = sqlite3.connect(str(db_path), timeout=timeout_sec)
-        journal = str(s_cfg.get("journalMode", "WAL")).upper()
-        if journal not in {"WAL", "DELETE", "MEMORY", "TRUNCATE", "PERSIST"}:
-            journal = "WAL"
-        conn.execute(f"PRAGMA journal_mode = {journal};")
+        conn = sqlite3.connect(str(DB_PATH), timeout=10)
+        conn.execute("PRAGMA journal_mode = WAL;")
         conn.execute("PRAGMA synchronous = NORMAL;")
         return conn
 
     @classmethod
-    def sqlite_init(cls, cfg: dict) -> str:
+    def init_schema(cls):
         with DB_LOCK:
-            conn = cls.sqlite_connect(cfg)
+            conn = cls.connect()
             try:
-                cur = conn.cursor()
-                cur.executescript(
+                conn.executescript(
                     """
-                    CREATE TABLE IF NOT EXISTS TB_WBS_CONFIG (
-                      PROJECT_ID TEXT PRIMARY KEY DEFAULT 'DEFAULT_PROJ',
-                      PROJECT_START_DATE TEXT NOT NULL,
-                      PROJECT_END_DATE TEXT NOT NULL,
-                      REPORT_DATE TEXT NOT NULL,
-                      WEEK_START_DAY INTEGER DEFAULT 5,
-                      THEME TEXT DEFAULT 'navy',
-                      HOLIDAYS_JSON TEXT,
-                      STD_DELIV_JSON TEXT,
-                      FULL_CONFIG_JSON TEXT,
-                      USERS_JSON TEXT,
-                      UPDATED_AT TEXT DEFAULT (datetime('now','localtime'))
+                    CREATE TABLE IF NOT EXISTS TB_WBS_DATASET (
+                      DATA_KEY TEXT PRIMARY KEY,
+                      JSON_TEXT TEXT,
+                      PART_REVS_JSON TEXT,
+                      UPDATED_AT TEXT,
+                      UPDATED_BY TEXT
                     );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_SUBSYSTEM (
-                      SUBSYSTEM_CODE TEXT PRIMARY KEY,
-                      SUBSYSTEM_NAME TEXT NOT NULL,
-                      DOMAIN_NAME TEXT DEFAULT '관리공통',
-                      PROJ_TYPE TEXT DEFAULT 'SDLC',
-                      SDLC_CODE TEXT DEFAULT 'SDLC_PROC',
-                      WEIGHT REAL DEFAULT 15,
-                      PM_NAME TEXT,
-                      DESCRIPTION TEXT,
-                      SORT_ORDER INTEGER DEFAULT 0
-                    );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_TASK (
-                      ROW_SEQ INTEGER PRIMARY KEY AUTOINCREMENT,
-                      WBS_ID TEXT NOT NULL,
-                      LVL INTEGER NOT NULL DEFAULT 1,
-                      SUBSYSTEM_NAME TEXT NOT NULL,
-                      TASK_NAME TEXT NOT NULL,
-                      WEIGHT REAL DEFAULT 1,
-                      REQ_ID TEXT,
-                      PLAN_START TEXT,
-                      PLAN_END TEXT,
-                      ACT_START TEXT,
-                      ACT_END TEXT,
-                      PLAN_PROG REAL DEFAULT 0,
-                      ACT_PROG REAL DEFAULT 0,
-                      OUTPUT_NOTE TEXT
-                    );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_DELIVERABLE (
-                      DELIV_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                      SUBMIT_ROUND TEXT NOT NULL,
-                      SUBSYSTEM_NAME TEXT NOT NULL,
-                      PHASE_NAME TEXT,
-                      DELIV_NAME TEXT NOT NULL,
-                      PLAN_DATE TEXT,
-                      ACT_DATE TEXT,
-                      STATUS TEXT DEFAULT '작성전',
-                      MANAGER_NAME TEXT,
-                      REMARKS TEXT
-                    );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_REQ (
-                      REQ_ID TEXT PRIMARY KEY,
-                      SUBSYSTEM_NAME TEXT NOT NULL,
-                      REQ_NAME TEXT NOT NULL,
-                      REQ_TYPE TEXT DEFAULT '기능',
-                      PRIORITY TEXT DEFAULT '중',
-                      ACCEPT_YN TEXT DEFAULT '수용',
-                      STATUS TEXT DEFAULT '착수전',
-                      SORT_ORDER INTEGER DEFAULT 0
-                    );
-                                        CREATE TABLE IF NOT EXISTS TB_WBS_NOTICE (
-                      NOTICE_ID TEXT PRIMARY KEY,
-                      TITLE TEXT NOT NULL,
-                      CONTENT TEXT,
-                      AUTHOR TEXT,
-                      AUTHOR_EMP_NO TEXT,
-                      NOTICE_DATE TEXT,
-                      PRIORITY TEXT DEFAULT '일반',
-                      IS_PINNED INTEGER DEFAULT 0,
-                      VIEW_COUNT INTEGER DEFAULT 0,
-                      UPDATED_AT TEXT DEFAULT (datetime('now','localtime'))
-                    );
-                                        CREATE TABLE IF NOT EXISTS TB_WBS_CHAT (
+                    CREATE TABLE IF NOT EXISTS TB_WBS_CHAT (
                       MSG_ID TEXT PRIMARY KEY,
                       CHANNEL TEXT DEFAULT '전체',
                       SENDER_NAME TEXT NOT NULL,
                       SENDER_EMP_NO TEXT,
                       USER_ROLE TEXT,
                       MESSAGE TEXT NOT NULL,
-                      CREATED_AT TEXT DEFAULT (datetime('now','localtime'))
+                      CREATED_AT TEXT
                     );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_COMMUNICATION (
-                      COMM_ID TEXT PRIMARY KEY,
-                      CHANNEL TEXT DEFAULT '전체',
-                      TASK_ID TEXT,
-                      AUTHOR TEXT,
-                      AUTHOR_EMP_NO TEXT,
-                      USER_ROLE TEXT,
-                      CONTENT TEXT NOT NULL,
-                      POST_DATE TEXT,
-                      REPLIES_JSON TEXT,
-                      UPDATED_AT TEXT DEFAULT (datetime('now','localtime'))
+                    CREATE TABLE IF NOT EXISTS TB_WBS_CONFIG (
+                      PROJECT_ID TEXT PRIMARY KEY DEFAULT 'DEFAULT_PROJ',
+                      PROJECT_START_DATE TEXT, PROJECT_END_DATE TEXT, REPORT_DATE TEXT,
+                      WEEK_START_DAY INTEGER DEFAULT 5, THEME TEXT DEFAULT 'navy',
+                      HOLIDAYS_JSON TEXT, STD_DELIV_JSON TEXT, FULL_CONFIG_JSON TEXT, USERS_JSON TEXT,
+                      UPDATED_AT TEXT
                     );
-                    CREATE TABLE IF NOT EXISTS TB_WBS_EXTRA_JSON (
-                      DATA_KEY TEXT PRIMARY KEY,
-                      JSON_TEXT TEXT,
-                      UPDATED_AT TEXT DEFAULT (datetime('now','localtime'))
+                    CREATE TABLE IF NOT EXISTS TB_WBS_SUBSYSTEM (
+                      SUBSYSTEM_CODE TEXT PRIMARY KEY, SUBSYSTEM_NAME TEXT NOT NULL,
+                      DOMAIN_NAME TEXT, PROJ_TYPE TEXT, SDLC_CODE TEXT, WEIGHT REAL,
+                      PM_NAME TEXT, DESCRIPTION TEXT, SORT_ORDER INTEGER DEFAULT 0
+                    );
+                    CREATE TABLE IF NOT EXISTS TB_WBS_TASK (
+                      ROW_SEQ INTEGER PRIMARY KEY, WBS_ID TEXT, LVL INTEGER, SUBSYSTEM_NAME TEXT,
+                      TASK_NAME TEXT, WEIGHT REAL, REQ_ID TEXT, PLAN_START TEXT, PLAN_END TEXT,
+                      ACT_START TEXT, ACT_END TEXT, PLAN_PROG REAL, ACT_PROG REAL, OUTPUT_NOTE TEXT
+                    );
+                    CREATE TABLE IF NOT EXISTS TB_WBS_DELIVERABLE (
+                      DELIV_ID INTEGER PRIMARY KEY, SUBMIT_ROUND TEXT, SUBSYSTEM_NAME TEXT, PHASE_NAME TEXT,
+                      DELIV_NAME TEXT, PLAN_DATE TEXT, ACT_DATE TEXT, STATUS TEXT, MANAGER_NAME TEXT, REMARKS TEXT
+                    );
+                    CREATE TABLE IF NOT EXISTS TB_WBS_REQ (
+                      REQ_ID TEXT, SUBSYSTEM_NAME TEXT, REQ_NAME TEXT, REQ_TYPE TEXT,
+                      PRIORITY TEXT, ACCEPT_YN TEXT, STATUS TEXT, SORT_ORDER INTEGER DEFAULT 0
                     );
                     CREATE TABLE IF NOT EXISTS TB_WBS_VOC (
-                      VOC_ID TEXT PRIMARY KEY,
-                      SUBSYSTEM_NAME TEXT NOT NULL,
-                      PRIORITY TEXT DEFAULT '중',
-                      VOC_TITLE TEXT NOT NULL,
-                      REQUESTER TEXT,
-                      REQ_DATE TEXT,
-                      TARGET_DATE TEXT,
-                      STATUS TEXT DEFAULT '착수전',
-                      ACTION_NOTE TEXT,
-                      SORT_ORDER INTEGER DEFAULT 0
+                      VOC_ID TEXT, SUBSYSTEM_NAME TEXT, PRIORITY TEXT, VOC_TITLE TEXT, REQUESTER TEXT,
+                      REQ_DATE TEXT, TARGET_DATE TEXT, STATUS TEXT, ACTION_NOTE TEXT, SORT_ORDER INTEGER DEFAULT 0
+                    );
+                    CREATE TABLE IF NOT EXISTS TB_WBS_NOTICE (
+                      NOTICE_ID TEXT, TITLE TEXT, CONTENT TEXT, AUTHOR TEXT, AUTHOR_EMP_NO TEXT,
+                      NOTICE_DATE TEXT, PRIORITY TEXT, IS_PINNED INTEGER DEFAULT 0, VIEW_COUNT INTEGER DEFAULT 0
+                    );
+                    CREATE TABLE IF NOT EXISTS TB_WBS_COMMUNICATION (
+                      COMM_ID TEXT, CHANNEL TEXT, TASK_ID TEXT, AUTHOR TEXT, AUTHOR_EMP_NO TEXT,
+                      USER_ROLE TEXT, CONTENT TEXT, POST_DATE TEXT, REPLIES_JSON TEXT
                     );
                     """
                 )
-                # 구버전 테이블 호환을 위한 컬럼 자동 추가
-                for alter_sql in [
-                    "ALTER TABLE TB_WBS_CONFIG ADD COLUMN FULL_CONFIG_JSON TEXT;",
-                    "ALTER TABLE TB_WBS_CONFIG ADD COLUMN USERS_JSON TEXT;",
-                    "ALTER TABLE TB_WBS_SUBSYSTEM ADD COLUMN DOMAIN_NAME TEXT DEFAULT '관리공통';",
-                    "ALTER TABLE TB_WBS_SUBSYSTEM ADD COLUMN SDLC_CODE TEXT DEFAULT 'SDLC_PROC';",
-                ]:
-                    try:
-                        cur.execute(alter_sql)
-                    except Exception:
-                        pass
-                
                 conn.commit()
-                return "SQLite 6개 표준 테이블(TB_WBS_*) 초기화 및 v1.3 스키마 동기화가 완료되었습니다."
+                cls._bootstrap_datasets(conn)
             finally:
                 conn.close()
+        return "SQLite 표준 테이블(TB_WBS_DATASET 외) 확인 및 초기화가 완료되었습니다."
 
+    # ---- 최초 기동: v1.0.5 관계형 데이터 이관 또는 초기 데이터 적재 ----
     @classmethod
-    def sqlite_save(cls, cfg: dict, data: dict) -> str:
-        cls.sqlite_init(cfg)
-        with DB_LOCK:
-            conn = cls.sqlite_connect(cfg)
-            try:
-                cur = conn.cursor()
-                p_cfg = data.get("projectConfig", {})
-                cur.execute("DELETE FROM TB_WBS_CONFIG")
-                cur.execute(
-                    """INSERT INTO TB_WBS_CONFIG
-                       (PROJECT_ID, PROJECT_START_DATE, PROJECT_END_DATE, REPORT_DATE, WEEK_START_DAY, THEME, HOLIDAYS_JSON, STD_DELIV_JSON, FULL_CONFIG_JSON, USERS_JSON)
-                       VALUES ('DEFAULT_PROJ', ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (
-                        p_cfg.get("projectStartDate", "2027-01-01"),
-                        p_cfg.get("projectEndDate", "2027-12-31"),
-                        p_cfg.get("reportDate", "2027-06-01"),
-                        int(p_cfg.get("weekStartDay", 5)),
-                        data.get("theme", "navy"),
-                        json.dumps(p_cfg.get("holidays", []), ensure_ascii=False),
-                        json.dumps(data.get("standardDeliverablesMeta", []), ensure_ascii=False),
-                        json.dumps(p_cfg, ensure_ascii=False),
-                        json.dumps(data.get("projectUsers", []), ensure_ascii=False),
-                    ),
-                )
+    def _bootstrap_datasets(cls, conn):
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM TB_WBS_DATASET")
+        if cur.fetchone()[0] > 0:
+            return
+        data = cls._legacy_load(conn)
+        source = "v1.0.5 관계형 테이블 이관"
+        if not data.get("wbsData") and not data.get("projectConfig"):
+            data, source = {}, "initial_data.json"
+            if INITIAL_DATA_PATH.exists():
+                try:
+                    data = json.loads(INITIAL_DATA_PATH.read_text(encoding="utf-8"))
+                except Exception as ex:
+                    write_server_log(f"[WARN] initial_data.json 읽기 실패: {ex}")
+        users = data.get("projectUsers") or []
+        if not any(str(u.get("empNo", "")).lower() == "admin" for u in users):
+            users.insert(0, {"empNo": "admin", "name": "시스템관리자", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "", "pwdHash": "", "lang": "ko"})
+        data["projectUsers"] = users
+        for key in DATASETS:
+            if key in data:
+                cls._write_dataset(cur, key, data[key], {p: {"rev": 1, "by": "bootstrap", "at": now_str()} for p in split_parts(key, data[key])}, "bootstrap")
+        conn.commit()
+        write_server_log(f"[INIT] 데이터셋 초기화 완료 ({source})")
 
-                cur.execute("DELETE FROM TB_WBS_SUBSYSTEM")
-                for idx, s in enumerate(data.get("subsystemsMeta", [])):
-                    code = s.get("code") or s.get("name") or f"SYS_{idx+1}"
-                    name = s.get("name") or code
-                    cur.execute(
-                        """INSERT OR REPLACE INTO TB_WBS_SUBSYSTEM
-                           (SUBSYSTEM_CODE, SUBSYSTEM_NAME, DOMAIN_NAME, PROJ_TYPE, SDLC_CODE, WEIGHT, PM_NAME, DESCRIPTION, SORT_ORDER)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (
-                            code,
-                            name,
-                            s.get("domain", "관리공통"),
-                            s.get("type", "SDLC"),
-                            s.get("sdlcCode", "SDLC_PROC"),
-                            float(s.get("weight", 15)),
-                            s.get("pm", ""),
-                            s.get("desc", ""),
-                            idx,
-                        ),
-                    )
-
-                cur.execute("DELETE FROM TB_WBS_TASK")
-                for idx, t in enumerate(data.get("wbsData", []), 1):
-                    cur.execute(
-                        """INSERT INTO TB_WBS_TASK
-                           (ROW_SEQ, WBS_ID, LVL, SUBSYSTEM_NAME, TASK_NAME, WEIGHT, REQ_ID, PLAN_START, PLAN_END, ACT_START, ACT_END, PLAN_PROG, ACT_PROG, OUTPUT_NOTE)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (
-                            idx, t.get("id", ""), int(t.get("level", 1)), t.get("system", ""), t.get("name", ""),
-                            float(t.get("weight", 1)), t.get("reqId", ""), t.get("pStart", ""), t.get("pEnd", ""),
-                            t.get("aStart", ""), t.get("aEnd", ""), float(t.get("pProg", 0)), float(t.get("aProg", 0)), t.get("output", ""),
-                        ),
-                    )
-
-                cur.execute("DELETE FROM TB_WBS_DELIVERABLE")
-                for idx, d in enumerate(data.get("deliverablesData", []), 1):
-                    cur.execute(
-                        "INSERT INTO TB_WBS_DELIVERABLE VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (idx, d.get("round", "1회차"), d.get("system", ""), d.get("phase", ""), d.get("name", ""), d.get("pDate", ""), d.get("aDate", ""), d.get("status", "작성전"), d.get("manager", ""), d.get("remarks", "")),
-                    )
-
-                cur.execute("DELETE FROM TB_WBS_REQ")
-                for idx, r in enumerate(data.get("reqMasterData", []), 1):
-                    cur.execute(
-                        "INSERT OR REPLACE INTO TB_WBS_REQ VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (r.get("id", f"REQ-{idx}"), r.get("system", ""), r.get("name", ""), r.get("type", "기능"), r.get("priority", "중"), r.get("accept", "수용"), r.get("status", "착수전"), idx),
-                    )
-
-                cur.execute("DELETE FROM TB_WBS_VOC")
-                for idx, v in enumerate(data.get("vocData", []), 1):
-                    cur.execute(
-                        "INSERT OR REPLACE INTO TB_WBS_VOC VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (v.get("id", f"VOC-{idx}"), v.get("system", ""), v.get("priority", "중"), v.get("title", ""), v.get("requester", ""), v.get("reqDate", ""), v.get("targetDate", ""), v.get("status", "착수전"), v.get("action", ""), idx),
-                    )
-
-                # [v1.0.5 버그수정] sqlite_init 에 잘못 위치하여 NameError(payload)로 저장/조회 API 전체가 500 오류를 내던 코드를 저장 함수로 이동
-                # 6. 공지사항 저장
-                notices_list = data.get("noticesData", [])
-                if isinstance(notices_list, list):
-                    cur.execute("DELETE FROM TB_WBS_NOTICE")
-                    for n in notices_list:
-                        cur.execute(
-                            """INSERT OR REPLACE INTO TB_WBS_NOTICE
-                               (NOTICE_ID, TITLE, CONTENT, AUTHOR, AUTHOR_EMP_NO, NOTICE_DATE, PRIORITY, IS_PINNED, VIEW_COUNT)
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                            (
-                                str(n.get("id") or ""),
-                                str(n.get("title") or ""),
-                                str(n.get("content") or ""),
-                                str(n.get("author") or ""),
-                                str(n.get("authorEmpNo") or ""),
-                                str(n.get("date") or ""),
-                                str(n.get("priority") or "일반"),
-                                1 if n.get("isPinned") else 0,
-                                int(n.get("viewCount") or 0)
-                            )
-                        )
-
-                # 7. 소통 피드 저장
-                comm_list = data.get("communicationsData", [])
-                if isinstance(comm_list, list):
-                    cur.execute("DELETE FROM TB_WBS_COMMUNICATION")
-                    for c in comm_list:
-                        cur.execute(
-                            """INSERT OR REPLACE INTO TB_WBS_COMMUNICATION
-                               (COMM_ID, CHANNEL, TASK_ID, AUTHOR, AUTHOR_EMP_NO, USER_ROLE, CONTENT, POST_DATE, REPLIES_JSON)
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                            (
-                                str(c.get("id") or ""),
-                                str(c.get("channel") or "전체"),
-                                str(c.get("taskId") or ""),
-                                str(c.get("author") or ""),
-                                str(c.get("authorEmpNo") or ""),
-                                str(c.get("role") or ""),
-                                str(c.get("content") or ""),
-                                str(c.get("date") or ""),
-                                json.dumps(c.get("replies", []), ensure_ascii=False)
-                            )
-                        )
-
-                # [v1.0.5] 공지/소통/회의/주간보고 등 확장 데이터 무손실 JSON 저장
-                for data_key in EXTRA_JSON_KEYS:
-                    if data_key in data and isinstance(data.get(data_key), list):
-                        cur.execute(
-                            "INSERT OR REPLACE INTO TB_WBS_EXTRA_JSON (DATA_KEY, JSON_TEXT, UPDATED_AT) VALUES (?, ?, datetime('now','localtime'))",
-                            (data_key, json.dumps(data.get(data_key), ensure_ascii=False)),
-                        )
-
-                conn.commit()
-                return f"SQLite DB 저장 완료 (서브시스템 {len(data.get('subsystemsMeta', []))}개, WBS {len(data.get('wbsData', []))}건)"
-            finally:
-                conn.close()
-
-    @classmethod
-    def sqlite_load(cls, cfg: dict) -> dict:
-        cls.sqlite_init(cfg)
-        with DB_LOCK:
-            conn = cls.sqlite_connect(cfg)
-            try:
-                cur = conn.cursor()
-                out = {}
-                cur.execute("SELECT PROJECT_START_DATE, PROJECT_END_DATE, REPORT_DATE, WEEK_START_DAY, THEME, HOLIDAYS_JSON, STD_DELIV_JSON, FULL_CONFIG_JSON, USERS_JSON FROM TB_WBS_CONFIG LIMIT 1")
-                row = cur.fetchone()
-                if row:
-                    if row[7]:
-                        out["projectConfig"] = json.loads(row[7])
-                    else:
-                        out["projectConfig"] = {
-                            "projectStartDate": row[0],
-                            "projectEndDate": row[1],
-                            "reportDate": row[2],
-                            "weekStartDay": row[3],
-                            "holidays": json.loads(row[5] or "[]"),
-                        }
-                    out["theme"] = row[4]
-                    if row[6]:
-                        out["standardDeliverablesMeta"] = json.loads(row[6])
-                    if row[8]:
-                        out["projectUsers"] = json.loads(row[8])
-
-                cur.execute("SELECT SUBSYSTEM_CODE, SUBSYSTEM_NAME, DOMAIN_NAME, PROJ_TYPE, SDLC_CODE, WEIGHT, PM_NAME, DESCRIPTION FROM TB_WBS_SUBSYSTEM ORDER BY SORT_ORDER")
-                out["subsystemsMeta"] = [
-                    {
-                        "code": r[0],
-                        "name": r[1],
-                        "domain": r[2] or "관리공통",
-                        "type": r[3] or "SDLC",
-                        "sdlcCode": r[4] or "SDLC_PROC",
-                        "weight": r[5],
-                        "pm": r[6],
-                        "desc": r[7],
-                    }
-                    for r in cur.fetchall()
-                ]
-
-                cur.execute("SELECT WBS_ID, LVL, SUBSYSTEM_NAME, TASK_NAME, WEIGHT, REQ_ID, PLAN_START, PLAN_END, ACT_START, ACT_END, PLAN_PROG, ACT_PROG, OUTPUT_NOTE FROM TB_WBS_TASK ORDER BY ROW_SEQ")
-                out["wbsData"] = [
-                    {
-                        "id": r[0], "level": r[1], "system": r[2], "name": r[3], "weight": r[4],
-                        "reqId": r[5], "pStart": r[6], "pEnd": r[7], "aStart": r[8], "aEnd": r[9],
-                        "pProg": r[10], "aProg": r[11], "output": r[12],
-                    }
-                    for r in cur.fetchall()
-                ]
-
-                cur.execute("SELECT DELIV_ID, SUBMIT_ROUND, SUBSYSTEM_NAME, PHASE_NAME, DELIV_NAME, PLAN_DATE, ACT_DATE, STATUS, MANAGER_NAME, REMARKS FROM TB_WBS_DELIVERABLE ORDER BY DELIV_ID")
-                out["deliverablesData"] = [
-                    {"id": r[0], "round": r[1], "system": r[2], "phase": r[3], "name": r[4], "pDate": r[5], "aDate": r[6], "status": r[7], "manager": r[8], "remarks": r[9]}
-                    for r in cur.fetchall()
-                ]
-
-                cur.execute("SELECT REQ_ID, SUBSYSTEM_NAME, REQ_NAME, REQ_TYPE, PRIORITY, ACCEPT_YN, STATUS FROM TB_WBS_REQ ORDER BY SORT_ORDER")
-                out["reqMasterData"] = [
-                    {"id": r[0], "system": r[1], "name": r[2], "type": r[3], "priority": r[4], "accept": r[5], "status": r[6]}
-                    for r in cur.fetchall()
-                ]
-
-                cur.execute("SELECT VOC_ID, SUBSYSTEM_NAME, PRIORITY, VOC_TITLE, REQUESTER, REQ_DATE, TARGET_DATE, STATUS, ACTION_NOTE FROM TB_WBS_VOC ORDER BY SORT_ORDER")
-                out["vocData"] = [
-                    {"id": r[0], "system": r[1], "priority": r[2], "title": r[3], "requester": r[4], "reqDate": r[5], "targetDate": r[6], "status": r[7], "action": r[8]}
-                    for r in cur.fetchall()
-                ]
-                cur.execute("SELECT DATA_KEY, JSON_TEXT FROM TB_WBS_EXTRA_JSON")
-                for data_key, json_text in cur.fetchall():
-                    if data_key in EXTRA_JSON_KEYS and json_text:
-                        try:
-                            out[data_key] = json.loads(json_text)
-                        except Exception:
-                            pass
-                return out
-            finally:
-                conn.close()
-
-    @classmethod
-    def oracle_connect(cls, cfg: dict):
+    @staticmethod
+    def _legacy_load(conn):
+        """v1.0.5 이하 관계형 테이블 + TB_WBS_EXTRA_JSON 에서 데이터 복원"""
+        out = {}
+        cur = conn.cursor()
         try:
-            import oracledb as ora
-        except ImportError:
-            import cx_Oracle as ora
-        o_cfg = cfg.get("oracle", {})
-        host = re.sub(r"[^a-zA-Z0-9.-]", "", str(o_cfg.get("host", "127.0.0.1")))
-        port = int(o_cfg.get("port", 1521))
-        svc = re.sub(r"[^a-zA-Z0-9_.-]", "", str(o_cfg.get("serviceOrSid", "ORCL")))
-        user = str(o_cfg.get("user", "WBS_ADMIN"))
-        pwd = str(o_cfg.get("password", ""))
-        dsn = f"{host}:{port}/{svc}"
-        return ora.connect(user=user, password=pwd, dsn=dsn)
+            cur.execute("SELECT FULL_CONFIG_JSON, USERS_JSON, STD_DELIV_JSON, THEME FROM TB_WBS_CONFIG LIMIT 1")
+            row = cur.fetchone()
+            if row:
+                if row[0]:
+                    out["projectConfig"] = json.loads(row[0])
+                if row[1]:
+                    out["projectUsers"] = json.loads(row[1])
+                if row[2]:
+                    out["standardDeliverablesMeta"] = json.loads(row[2])
+                if row[3]:
+                    out["theme"] = row[3]
+            cur.execute("SELECT SUBSYSTEM_CODE, SUBSYSTEM_NAME, DOMAIN_NAME, PROJ_TYPE, SDLC_CODE, WEIGHT, PM_NAME, DESCRIPTION FROM TB_WBS_SUBSYSTEM ORDER BY SORT_ORDER")
+            out["subsystemsMeta"] = [
+                {"code": r[0], "name": r[1], "domain": r[2], "type": r[3], "sdlcCode": r[4], "weight": r[5], "pm": r[6], "desc": r[7]}
+                for r in cur.fetchall()
+            ]
+            cur.execute("SELECT WBS_ID, LVL, SUBSYSTEM_NAME, TASK_NAME, WEIGHT, REQ_ID, PLAN_START, PLAN_END, ACT_START, ACT_END, PLAN_PROG, ACT_PROG, OUTPUT_NOTE FROM TB_WBS_TASK ORDER BY ROW_SEQ")
+            out["wbsData"] = [
+                {"id": r[0], "level": r[1], "system": r[2], "name": r[3], "weight": r[4], "reqId": r[5], "pStart": r[6],
+                 "pEnd": r[7], "aStart": r[8], "aEnd": r[9], "pProg": r[10], "aProg": r[11], "output": r[12]}
+                for r in cur.fetchall()
+            ]
+            cur.execute("SELECT DELIV_ID, SUBMIT_ROUND, SUBSYSTEM_NAME, PHASE_NAME, DELIV_NAME, PLAN_DATE, ACT_DATE, STATUS, MANAGER_NAME, REMARKS FROM TB_WBS_DELIVERABLE ORDER BY DELIV_ID")
+            out["deliverablesData"] = [
+                {"id": r[0], "round": r[1], "system": r[2], "phase": r[3], "name": r[4], "pDate": r[5], "aDate": r[6], "status": r[7], "manager": r[8], "remarks": r[9]}
+                for r in cur.fetchall()
+            ]
+            cur.execute("SELECT REQ_ID, SUBSYSTEM_NAME, REQ_NAME, REQ_TYPE, PRIORITY, ACCEPT_YN, STATUS FROM TB_WBS_REQ ORDER BY SORT_ORDER")
+            out["reqMasterData"] = [
+                {"id": r[0], "system": r[1], "name": r[2], "type": r[3], "priority": r[4], "accept": r[5], "status": r[6]}
+                for r in cur.fetchall()
+            ]
+            cur.execute("SELECT VOC_ID, SUBSYSTEM_NAME, PRIORITY, VOC_TITLE, REQUESTER, REQ_DATE, TARGET_DATE, STATUS, ACTION_NOTE FROM TB_WBS_VOC ORDER BY SORT_ORDER")
+            out["vocData"] = [
+                {"id": r[0], "system": r[1], "priority": r[2], "title": r[3], "requester": r[4], "reqDate": r[5], "targetDate": r[6], "status": r[7], "action": r[8]}
+                for r in cur.fetchall()
+            ]
+        except sqlite3.Error:
+            pass
+        try:
+            cur.execute("SELECT DATA_KEY, JSON_TEXT FROM TB_WBS_EXTRA_JSON")
+            for k, txt in cur.fetchall():
+                if k in DATASETS and txt:
+                    out[k] = json.loads(txt)
+        except sqlite3.Error:
+            pass
+        return {k: v for k, v in out.items() if v not in (None, [], {})}
+
+    # ---- 데이터셋 입출력 ----
+    @staticmethod
+    def _read_dataset(cur, key):
+        cur.execute("SELECT JSON_TEXT, PART_REVS_JSON FROM TB_WBS_DATASET WHERE DATA_KEY = ?", (key,))
+        row = cur.fetchone()
+        if not row:
+            return None, {}
+        value = json.loads(row[0]) if row[0] else None
+        revs = json.loads(row[1]) if row[1] else {}
+        return value, revs
+
+    @staticmethod
+    def _write_dataset(cur, key, value, revs, who):
+        cur.execute(
+            "INSERT OR REPLACE INTO TB_WBS_DATASET (DATA_KEY, JSON_TEXT, PART_REVS_JSON, UPDATED_AT, UPDATED_BY) VALUES (?, ?, ?, ?, ?)",
+            (key, json.dumps(value, ensure_ascii=False), json.dumps(revs, ensure_ascii=False), now_str(), who),
+        )
+
+    @staticmethod
+    def public_value(key, value):
+        """응답에서 비밀번호 해시 제거"""
+        if key == "projectUsers" and isinstance(value, list):
+            return [dict(u, pwdHash="") for u in value if isinstance(u, dict)]
+        return value
 
     @classmethod
-    def excel_access_test(cls, cfg: dict) -> str:
-        ea_cfg = cfg.get("excelAccess", {})
-        sub = ea_cfg.get("subType", "ACCESS_ODBC")
-        f_path = cls._validate_and_resolve_db_path(ea_cfg.get("filePath", "./data/WBS_Database.accdb"))
-        if sub == "ACCESS_ODBC":
-            import pyodbc
-            drv = ea_cfg.get("odbcDriver", "Microsoft Access Driver (*.mdb, *.accdb)")
-            conn_str = f"DRIVER={{{drv}}};DBQ={f_path};"
-            conn = pyodbc.connect(conn_str)
-            conn.close()
-            return f"MS Access ODBC 연결 성공 ({f_path.name})"
-        else:
-            import openpyxl
-            if not f_path.exists():
-                wb = openpyxl.Workbook()
-                wb.save(str(f_path))
-            return f"MS Excel 공유 DB 워크북 연결 성공 ({f_path.name})"
+    def load(cls, keys=None):
+        keys = [k for k in (keys or DATASETS.keys()) if k in DATASETS]
+        data, revs = {}, {}
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                for k in keys:
+                    value, r = cls._read_dataset(cur, k)
+                    if value is not None:
+                        data[k] = cls.public_value(k, value)
+                    revs[k] = r
+            finally:
+                conn.close()
+        return data, revs
+
+    @classmethod
+    def get_users(cls):
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                value, _ = cls._read_dataset(conn.cursor(), "projectUsers")
+                return value or []
+            finally:
+                conn.close()
+
+    @classmethod
+    def get_subsystem_names(cls):
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                value, _ = cls._read_dataset(conn.cursor(), "subsystemsMeta")
+                return [s.get("name") for s in (value or []) if isinstance(s, dict) and s.get("name")]
+            finally:
+                conn.close()
+
+    @classmethod
+    def save(cls, user, changes, force=False):
+        """changes = {key: {"parts": {part: rows|row|None}, "base": {part: rev}}}"""
+        who = f"{user.get('name', '')}({user['empNo']})"
+        blocked = []
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                current = {}
+                conflicts = []
+                accepted = {}
+                for key, ch in (changes or {}).items():
+                    if key not in DATASETS or not isinstance(ch, dict):
+                        continue
+                    value, revs = cls._read_dataset(cur, key)
+                    current[key] = (value, revs)
+                    server_parts = split_parts(key, value) if value is not None else {}
+                    parts = ch.get("parts") or {}
+                    base = ch.get("base") or {}
+                    ok_parts = {}
+                    for p, incoming in parts.items():
+                        row_for_perm = incoming if isinstance(incoming, dict) else server_parts.get(p)
+                        if DATASETS[key]["scope"] == "weekly" and incoming is None:
+                            row_for_perm = server_parts.get(p)
+                        if not can_write(user, key, p, row_for_perm if isinstance(row_for_perm, dict) else None):
+                            blocked.append(f"{key}[{p}]")
+                            continue
+                        # 주간보고: 다른 서브시스템 보고서로 바꿔 쓰기 방지
+                        if DATASETS[key]["scope"] == "weekly" and isinstance(server_parts.get(p), dict) and not can_write(user, key, p, server_parts.get(p)):
+                            blocked.append(f"{key}[{p}]")
+                            continue
+                        if key == "projectUsers":
+                            incoming = cls._sanitize_user_row(user, p, incoming, server_parts.get(p))
+                            if incoming == "BLOCK":
+                                blocked.append(f"{key}[{p}]")
+                                continue
+                        server_rev = (revs.get(p) or {}).get("rev", 0)
+                        if int(base.get(p, 0) or 0) != int(server_rev) and not force:
+                            info = revs.get(p) or {}
+                            conflicts.append({"key": key, "part": p, "by": info.get("by", ""), "at": info.get("at", "")})
+                        ok_parts[p] = incoming
+                    if ok_parts:
+                        accepted[key] = ok_parts
+                if conflicts and not force:
+                    return {"ok": False, "conflict": True, "conflicts": conflicts}
+
+                out_data, out_revs = {}, {}
+                for key, ok_parts in accepted.items():
+                    value, revs = current[key]
+                    merged = merge_parts(key, value, ok_parts)
+                    for p in ok_parts:
+                        revs[p] = {"rev": int((revs.get(p) or {}).get("rev", 0)) + 1, "by": who, "at": now_str()}
+                    cls._write_dataset(cur, key, merged, revs, who)
+                    out_data[key] = cls.public_value(key, merged)
+                    out_revs[key] = revs
+                cls._write_mirror(cur, accepted.keys())
+                conn.commit()
+                return {"ok": True, "data": out_data, "revs": out_revs, "blocked": blocked,
+                        "message": f"저장 완료 ({', '.join(out_data.keys()) or '변경 없음'})"}
+            finally:
+                conn.close()
+
+    @staticmethod
+    def _sanitize_user_row(user, part, incoming, stored):
+        """사용자 행: 비밀번호 해시 보존, 일반 사용자는 본인 행의 허용 필드만 변경"""
+        if incoming is None:
+            if user["role"] not in MANAGER_ROLES or str(part).lower() == "admin":
+                return "BLOCK"
+            return None
+        row = dict(incoming)
+        if stored and not row.get("pwdHash"):
+            row["pwdHash"] = stored.get("pwdHash", "")
+        if user["role"] not in MANAGER_ROLES:
+            if not stored:
+                return "BLOCK"
+            safe = dict(stored)
+            for f in USER_SELF_FIELDS:
+                if f in row:
+                    safe[f] = row[f]
+            row = safe
+        if str(part).lower() == "admin":
+            row["role"] = "SYS_ADMIN"
+        return row
+
+    # ---- 외부 조회용 관계형 미러 테이블 ----
+    @classmethod
+    def _write_mirror(cls, cur, keys):
+        keys = set(keys)
+        get = lambda k: (cls._read_dataset(cur, k)[0] or [])  # noqa: E731
+        if keys & {"projectConfig", "projectUsers", "standardDeliverablesMeta", "theme"}:
+            cfg = cls._read_dataset(cur, "projectConfig")[0] or {}
+            theme = cls._read_dataset(cur, "theme")[0] or "navy"
+            cur.execute("DELETE FROM TB_WBS_CONFIG")
+            cur.execute(
+                "INSERT INTO TB_WBS_CONFIG VALUES ('DEFAULT_PROJ', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (cfg.get("projectStartDate", ""), cfg.get("projectEndDate", ""), cfg.get("reportDate", ""),
+                 int(cfg.get("weekStartDay", 5) or 5), theme, json.dumps(cfg.get("holidays", []), ensure_ascii=False),
+                 json.dumps(get("standardDeliverablesMeta"), ensure_ascii=False), json.dumps(cfg, ensure_ascii=False),
+                 json.dumps(Store.public_value("projectUsers", get("projectUsers")), ensure_ascii=False), now_str()),
+            )
+        if "subsystemsMeta" in keys:
+            cur.execute("DELETE FROM TB_WBS_SUBSYSTEM")
+            for i, s in enumerate(get("subsystemsMeta")):
+                code = s.get("code") or s.get("name") or f"SYS_{i + 1}"
+                cur.execute("INSERT OR REPLACE INTO TB_WBS_SUBSYSTEM VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (code, s.get("name") or code, s.get("domain", ""), s.get("type", "SDLC"), s.get("sdlcCode", ""),
+                             float(s.get("weight") or 0), s.get("pm", ""), s.get("desc", ""), i))
+        if "wbsData" in keys:
+            cur.execute("DELETE FROM TB_WBS_TASK")
+            for i, t in enumerate(get("wbsData"), 1):
+                cur.execute("INSERT INTO TB_WBS_TASK VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (i, t.get("id", ""), int(t.get("level") or 1), t.get("system", ""), t.get("name", ""),
+                             float(t.get("weight") or 0), t.get("reqId", ""), t.get("pStart", ""), t.get("pEnd", ""),
+                             t.get("aStart", ""), t.get("aEnd", ""), float(t.get("pProg") or 0), float(t.get("aProg") or 0), t.get("output", "")))
+        if "deliverablesData" in keys:
+            cur.execute("DELETE FROM TB_WBS_DELIVERABLE")
+            for i, d in enumerate(get("deliverablesData"), 1):
+                cur.execute("INSERT INTO TB_WBS_DELIVERABLE VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (i, d.get("round", ""), d.get("system", ""), d.get("phase", ""), d.get("name", ""), d.get("pDate", ""),
+                             d.get("aDate", ""), d.get("status", ""), d.get("manager", ""), d.get("remarks", "")))
+        if "reqMasterData" in keys:
+            cur.execute("DELETE FROM TB_WBS_REQ")
+            for i, r in enumerate(get("reqMasterData"), 1):
+                cur.execute("INSERT INTO TB_WBS_REQ VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            (r.get("id", ""), r.get("system", ""), r.get("name", ""), r.get("type", ""), r.get("priority", ""),
+                             r.get("accept", ""), r.get("status", ""), i))
+        if "vocData" in keys:
+            cur.execute("DELETE FROM TB_WBS_VOC")
+            for i, v in enumerate(get("vocData"), 1):
+                cur.execute("INSERT INTO TB_WBS_VOC VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (v.get("id", ""), v.get("system", ""), v.get("priority", ""), v.get("title", ""), v.get("requester", ""),
+                             v.get("reqDate", ""), v.get("targetDate", ""), v.get("status", ""), v.get("action", ""), i))
+        if "noticesData" in keys:
+            cur.execute("DELETE FROM TB_WBS_NOTICE")
+            for n in get("noticesData"):
+                cur.execute("INSERT INTO TB_WBS_NOTICE VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (str(n.get("id", "")), n.get("title", ""), n.get("content", ""), n.get("author", ""), n.get("authorEmpNo", ""),
+                             n.get("date", ""), n.get("priority", ""), 1 if n.get("isPinned") else 0, int(n.get("viewCount") or 0)))
+        if "communicationsData" in keys:
+            cur.execute("DELETE FROM TB_WBS_COMMUNICATION")
+            for c in get("communicationsData"):
+                cur.execute("INSERT INTO TB_WBS_COMMUNICATION VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            (str(c.get("id", "")), c.get("channel", ""), str(c.get("taskId", "")), c.get("author", ""), c.get("authorEmpNo", ""),
+                             c.get("role", ""), c.get("content", ""), c.get("date", ""), json.dumps(c.get("replies", []), ensure_ascii=False)))
+
+    # ---- 사용자 등록 / 비밀번호 ----
+    @classmethod
+    def register_user(cls, new_user):
+        emp = str(new_user.get("empNo", "")).strip()
+        if not emp or len(emp) > 30 or not all(ch.isalnum() or ch in "_.-" for ch in emp):
+            raise AuthError("사번은 영문/숫자/_.- 2~30자로 입력하세요.", 400)
+        pwd = str(new_user.get("pwdHash", ""))
+        if len(pwd) != 64:
+            raise AuthError("비밀번호 형식이 올바르지 않습니다.", 400)
+        row = {
+            "empNo": emp,
+            "name": str(new_user.get("name", "")).strip()[:50] or emp,
+            "role": "MEMBER",  # 자가 등록은 항상 일반 사용자
+            "subsystem": str(new_user.get("subsystem", "")).strip()[:50] or "ALL",
+            "dept": str(new_user.get("dept", "")).strip()[:100],
+            "pwdHash": pwd,
+            "lang": "en" if new_user.get("lang") == "en" else "ko",
+            "registeredAt": now_str(),
+        }
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                users, revs = cls._read_dataset(cur, "projectUsers")
+                users = users or []
+                if any(str(u.get("empNo", "")).lower() == emp.lower() for u in users):
+                    raise AuthError(f"이미 등록된 사번({emp})입니다.", 409)
+                users.append(row)
+                revs[emp] = {"rev": int((revs.get(emp) or {}).get("rev", 0)) + 1, "by": f"self-register({emp})", "at": now_str()}
+                cls._write_dataset(cur, "projectUsers", users, revs, f"self-register({emp})")
+                cls._write_mirror(cur, ["projectUsers"])
+                conn.commit()
+            finally:
+                conn.close()
+        return row
+
+    @classmethod
+    def change_password(cls, emp, old_hash, new_hash):
+        if len(str(new_hash)) != 64:
+            raise AuthError("비밀번호 형식이 올바르지 않습니다.", 400)
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                users, revs = cls._read_dataset(cur, "projectUsers")
+                target = next((u for u in (users or []) if str(u.get("empNo", "")).lower() == emp.lower()), None)
+                if not target:
+                    raise AuthError("사용자를 찾을 수 없습니다.", 404)
+                if (target.get("pwdHash") or DEFAULT_PWD_HASH) != old_hash:
+                    raise AuthError("현재 비밀번호가 일치하지 않습니다.", 403)
+                target["pwdHash"] = new_hash
+                key = target["empNo"]
+                revs[key] = {"rev": int((revs.get(key) or {}).get("rev", 0)) + 1, "by": f"password({emp})", "at": now_str()}
+                cls._write_dataset(cur, "projectUsers", users, revs, emp)
+                conn.commit()
+            finally:
+                conn.close()
+
+    # ---- 채팅 ----
+    @classmethod
+    def chat_list(cls, channel):
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                sql = "SELECT MSG_ID, CHANNEL, SENDER_NAME, SENDER_EMP_NO, USER_ROLE, MESSAGE, CREATED_AT FROM TB_WBS_CHAT"
+                if channel == "전체":
+                    cur.execute(sql + " ORDER BY CREATED_AT DESC LIMIT 300")
+                else:
+                    cur.execute(sql + " WHERE CHANNEL = ? ORDER BY CREATED_AT DESC LIMIT 300", (channel,))
+                rows = list(reversed(cur.fetchall()))
+            finally:
+                conn.close()
+        return [{"id": r[0], "channel": r[1], "senderName": r[2], "senderEmpNo": r[3], "userRole": r[4], "message": r[5], "createdAt": r[6]} for r in rows]
+
+    @classmethod
+    def chat_send(cls, user, channel, message, client_id):
+        msg_id = "CHAT-" + str(client_id or int(time.time() * 1000))
+        created = now_str()
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                conn.execute("INSERT OR REPLACE INTO TB_WBS_CHAT VALUES (?, ?, ?, ?, ?, ?, ?)",
+                             (msg_id, channel, user["name"], user["empNo"], user["role"], message, created))
+                conn.commit()
+            finally:
+                conn.close()
+        return {"id": msg_id, "channel": channel, "senderName": user["name"], "senderEmpNo": user["empNo"],
+                "userRole": user["role"], "message": message, "createdAt": created}
+
+    @classmethod
+    def chat_clear(cls):
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                conn.execute("DELETE FROM TB_WBS_CHAT")
+                conn.commit()
+            finally:
+                conn.close()
 
 
+# ---------------------------------------------------------------------------
+# 세션 (메모리 토큰)
+# ---------------------------------------------------------------------------
+class Sessions:
+    _items = {}
+    _lock = threading.Lock()
 
-# =========================================================================
-# [ver1.0.4 신규] 날짜별 일일 로그 기록 및 무소음(Silent) 로깅 엔진
-# =========================================================================
+    @classmethod
+    def create(cls, user_row):
+        token = secrets.token_urlsafe(32)
+        info = {
+            "empNo": user_row["empNo"],
+            "name": user_row.get("name") or user_row["empNo"],
+            "role": normalize_role(user_row.get("role")),
+            "subsystem": user_row.get("subsystem") or "ALL",
+            "dept": user_row.get("dept", ""),
+            "lang": user_row.get("lang", "ko"),
+            "exp": time.time() + SESSION_TTL_SEC,
+        }
+        with cls._lock:
+            cls._items[token] = info
+        return token, info
+
+    @classmethod
+    def get(cls, token):
+        with cls._lock:
+            info = cls._items.get(token or "")
+            if not info:
+                return None
+            if info["exp"] < time.time():
+                cls._items.pop(token, None)
+                return None
+            info["exp"] = time.time() + SESSION_TTL_SEC  # 사용 시 연장
+            return info
+
+    @classmethod
+    def refresh_user(cls, token):
+        """권한 변경이 즉시 반영되도록 매 요청 시 최신 사용자 정보로 갱신"""
+        info = cls.get(token)
+        if not info:
+            return None
+        row = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == info["empNo"].lower()), None)
+        if not row:
+            cls.drop(token)
+            return None
+        info.update({"name": row.get("name") or info["name"], "role": normalize_role(row.get("role")),
+                     "subsystem": row.get("subsystem") or "ALL", "lang": row.get("lang", info.get("lang", "ko"))})
+        return info
+
+    @classmethod
+    def drop(cls, token):
+        with cls._lock:
+            cls._items.pop(token or "", None)
+
+
+def public_user(info):
+    return {k: info.get(k) for k in ("empNo", "name", "role", "subsystem", "dept", "lang")}
+
+
+# ---------------------------------------------------------------------------
+# 로그
+# ---------------------------------------------------------------------------
 LOG_DATE_MODE = False
 LOG_SILENT_MODE = False
 LOG_DIR = None
-_current_log_file = None
-_current_log_date = None
+_log_state = {"file": None, "date": None}
 _log_lock = threading.Lock()
 
-def get_daily_log_file(log_dir_path):
-    global _current_log_file, _current_log_date
-    today_str = datetime.datetime.now().strftime("%Y%m%d")
-    with _log_lock:
-        if _current_log_file is None or _current_log_date != today_str:
-            if _current_log_file and not _current_log_file.closed:
-                try: _current_log_file.close()
-                except Exception: pass
-            log_dir_path.mkdir(parents=True, exist_ok=True)
-            log_path = log_dir_path / f"server_{today_str}.log"
-            _current_log_file = open(log_path, "a", encoding="utf-8", buffering=1)
-            _current_log_date = today_str
-        return _current_log_file
 
 def write_server_log(msg):
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted = f"[{now_str}] {msg.rstrip()}\n"
+    formatted = f"[{now_str()}] {msg.rstrip()}\n"
     if LOG_DATE_MODE and LOG_DIR:
+        today = datetime.datetime.now().strftime("%Y%m%d")
         try:
-            f = get_daily_log_file(LOG_DIR)
-            f.write(formatted)
-            f.flush()
+            with _log_lock:
+                if _log_state["file"] is None or _log_state["date"] != today:
+                    if _log_state["file"]:
+                        _log_state["file"].close()
+                    LOG_DIR.mkdir(parents=True, exist_ok=True)
+                    _log_state["file"] = open(LOG_DIR / f"server_{today}.log", "a", encoding="utf-8", buffering=1)
+                    _log_state["date"] = today
+                _log_state["file"].write(formatted)
         except Exception as e:
             sys.stderr.write(f"[LOG ERROR] {e}\n")
     if not LOG_SILENT_MODE:
@@ -510,252 +754,229 @@ def write_server_log(msg):
         sys.stderr.flush()
 
 
-# =========================================================================
-# [ver1.0.4 신규] 날짜별 일일 로그 기록 및 무소음(Silent) 로깅 엔진
-# =========================================================================
-LOG_DATE_MODE = False
-LOG_SILENT_MODE = False
-LOG_DIR = None
-_current_log_file = None
-_current_log_date = None
-_log_lock = threading.Lock()
-
-def get_daily_log_file(log_dir_path):
-    global _current_log_file, _current_log_date
-    today_str = datetime.datetime.now().strftime("%Y%m%d")
-    with _log_lock:
-        if _current_log_file is None or _current_log_date != today_str:
-            if _current_log_file and not _current_log_file.closed:
-                try: _current_log_file.close()
-                except Exception: pass
-            log_dir_path.mkdir(parents=True, exist_ok=True)
-            log_path = log_dir_path / f"server_{today_str}.log"
-            _current_log_file = open(log_path, "a", encoding="utf-8", buffering=1)
-            _current_log_date = today_str
-        return _current_log_file
-
-def write_server_log(msg):
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    formatted = f"[{now_str}] {msg.rstrip()}\n"
-    if LOG_DATE_MODE and LOG_DIR:
-        try:
-            f = get_daily_log_file(LOG_DIR)
-            f.write(formatted)
-            f.flush()
-        except Exception as e:
-            sys.stderr.write(f"[LOG ERROR] {e}\n")
-    if not LOG_SILENT_MODE:
-        sys.stderr.write(formatted)
-        sys.stderr.flush()
-
+# ---------------------------------------------------------------------------
+# HTTP 핸들러
+# ---------------------------------------------------------------------------
 class WbsHttpHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
+
+    def log_message(self, fmt, *args):
+        write_server_log(f"{self.address_string()} {fmt % args}")
 
     def end_headers(self):
         origin = self.headers.get("Origin")
         self.send_header("Access-Control-Allow-Origin", origin if origin and origin != "null" else "*")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-WBS-Client, Accept, Origin")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin")
         self.send_header("Access-Control-Allow-Private-Network", "true")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
-        self.send_header("X-XSS-Protection", "1; mode=block")
         super().end_headers()
 
-    def do_GET(self):
-        clean_path = self.path.split("?", 1)[0].split("#", 1)[0]
-        if clean_path == "/api/chat/messages":
-            import urllib.parse
-            query = urllib.parse.urlparse(self.path).query
-            params = urllib.parse.parse_qs(query)
-            channel = urllib.parse.unquote(params.get("channel", ["전체"])[0])
-            with DB_LOCK:
-                try:
-                    conn = DatabaseAdapter.sqlite_connect({"sqliteFile": "data/wbs_master.db"})
-                    cur = conn.cursor()
-                    cur.execute("""CREATE TABLE IF NOT EXISTS TB_WBS_CHAT (
-                        MSG_ID TEXT PRIMARY KEY,
-                        CHANNEL TEXT DEFAULT '전체',
-                        SENDER_NAME TEXT NOT NULL,
-                        SENDER_EMP_NO TEXT,
-                        USER_ROLE TEXT,
-                        MESSAGE TEXT NOT NULL,
-                        CREATED_AT TEXT DEFAULT (datetime('now','localtime'))
-                    )""")
-                    if channel == "전체":
-                        cur.execute("SELECT MSG_ID, CHANNEL, SENDER_NAME, SENDER_EMP_NO, USER_ROLE, MESSAGE, CREATED_AT FROM TB_WBS_CHAT ORDER BY CREATED_AT ASC LIMIT 300")
-                    else:
-                        cur.execute("SELECT MSG_ID, CHANNEL, SENDER_NAME, SENDER_EMP_NO, USER_ROLE, MESSAGE, CREATED_AT FROM TB_WBS_CHAT WHERE CHANNEL = ? ORDER BY CREATED_AT ASC LIMIT 300", (channel,))
-                    rows = cur.fetchall()
-                    conn.close()
-                    msgs = []
-                    for r in rows:
-                        msgs.append({
-                            "id": r[0], "channel": r[1], "senderName": r[2], "senderEmpNo": r[3],
-                            "userRole": r[4], "message": r[5], "createdAt": r[6]
-                        })
-                    self._send_json(200, {"ok": True, "messages": msgs, "channel": channel, "serverTime": str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))})
-                except Exception as ex:
-                    self._send_json(500, {"ok": False, "message": f"채팅 조회 오류: {str(ex)}"})
-            return
-
-        if clean_path == "/api/db/ping":
-            self._send_json(200, {"ok": True, "version": "ver1.0.5", "message": "AX Project Management by YS ver1.0.5 DB Server Running"})
-            return
-        lower_path = clean_path.lower()
-        ext = pathlib.Path(lower_path).suffix
-        if any(lower_path.startswith(p) for p in BLOCKED_URL_PREFIXES) or ext in BLOCKED_URL_EXTENSIONS:
-            self.send_error(403, "Forbidden: Direct access to server or database files is restricted.")
-            return
-        super().do_GET()
-
-    def _send_json(self, status: int, payload: dict):
+    def _send_json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _token(self):
+        auth = self.headers.get("Authorization", "")
+        return auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+
+    def _require_user(self, roles=None):
+        info = Sessions.refresh_user(self._token())
+        if not info:
+            raise AuthError("로그인이 필요합니다. (세션 만료 또는 미인증)", 401)
+        if roles and info["role"] not in roles:
+            raise AuthError("이 작업에 대한 권한이 없습니다.", 403)
+        return info
 
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        try:
+            if path == "/api/db/ping":
+                self._send_json(200, {"ok": True, "version": VERSION, "message": f"{APP_NAME} DB Server Running", "authRequired": True})
+                return
+            if path == "/api/chat/messages":
+                self._require_user()
+                channel = urllib.parse.parse_qs(parsed.query).get("channel", ["전체"])[0]
+                self._send_json(200, {"ok": True, "messages": Store.chat_list(channel), "channel": channel, "serverTime": now_str()})
+                return
+        except AuthError as ae:
+            self._send_json(ae.status, {"ok": False, "message": str(ae), "authRequired": ae.status == 401})
+            return
+        lower = path.lower()
+        if any(lower.startswith(p) for p in BLOCKED_URL_PREFIXES) or pathlib.Path(lower).suffix in BLOCKED_URL_EXTENSIONS:
+            self.send_error(403, "Forbidden: Direct access to server or database files is restricted.")
+            return
+        super().do_GET()
+
     def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
+        length = int(self.headers.get("Content-Length", 0) or 0)
         if length > MAX_BODY_BYTES:
             self._send_json(413, {"ok": False, "message": "요청 데이터 크기가 허용 한도(15MB)를 초과했습니다."})
             return
-
-        raw = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
         try:
-            req = json.loads(raw)
+            req = json.loads(self.rfile.read(length).decode("utf-8") if length else "{}")
         except Exception:
             self._send_json(400, {"ok": False, "message": "잘못된 JSON 요청 형식입니다."})
             return
-
-        cfg = req.get("config", {})
-        mode = cfg.get("mode", "SQLITE")
-
+        path = urllib.parse.urlparse(self.path).path
         try:
-            if self.path == "/api/chat/clear":
-                with DB_LOCK:
-                    try:
-                        conn = DatabaseAdapter.sqlite_connect({"sqliteFile": "data/wbs_master.db"})
-                        cur = conn.cursor()
-                        cur.execute("""CREATE TABLE IF NOT EXISTS TB_WBS_CHAT (
-                            MSG_ID TEXT PRIMARY KEY,
-                            CHANNEL TEXT DEFAULT '전체',
-                            SENDER_NAME TEXT NOT NULL,
-                            SENDER_EMP_NO TEXT,
-                            USER_ROLE TEXT,
-                            MESSAGE TEXT NOT NULL,
-                            CREATED_AT TEXT DEFAULT (datetime('now','localtime'))
-                        )""")
-                        cur.execute("DELETE FROM TB_WBS_CHAT")
-                        conn.commit()
-                        conn.close()
-                        self._send_json(200, {"ok": True, "message": "채팅 대화내역이 모두 삭제되었습니다."})
-                    except Exception as ex:
-                        self._send_json(500, {"ok": False, "message": f"채팅 삭제 실패: {str(ex)}"})
-                return
-
-            if self.path == "/api/chat/send":
-                channel = req.get("channel", "전체")
-                sender_name = req.get("senderName", "익명")
-                sender_emp_no = req.get("senderEmpNo", "user")
-                user_role = req.get("userRole", "MEMBER")
-                message = str(req.get("message", "")).strip()
-                if not message:
-                    self._send_json(400, {"ok": False, "message": "채팅 메시지 내용을 입력해주세요."})
-                    return
-                msg_id = "CHAT-" + str(req.get("id", int(time.time() * 1000)))
-                now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                with DB_LOCK:
-                    try:
-                        conn = DatabaseAdapter.sqlite_connect({"sqliteFile": "data/wbs_master.db"})
-                        cur = conn.cursor()
-                        cur.execute("""CREATE TABLE IF NOT EXISTS TB_WBS_CHAT (
-                            MSG_ID TEXT PRIMARY KEY,
-                            CHANNEL TEXT DEFAULT '전체',
-                            SENDER_NAME TEXT NOT NULL,
-                            SENDER_EMP_NO TEXT,
-                            USER_ROLE TEXT,
-                            MESSAGE TEXT NOT NULL,
-                            CREATED_AT TEXT DEFAULT (datetime('now','localtime'))
-                        )""")
-                        cur.execute("""INSERT INTO TB_WBS_CHAT (MSG_ID, CHANNEL, SENDER_NAME, SENDER_EMP_NO, USER_ROLE, MESSAGE, CREATED_AT)
-                                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                                    (msg_id, channel, sender_name, sender_emp_no, user_role, message, now_str))
-                        conn.commit()
-                        conn.close()
-                        self._send_json(200, {
-                            "ok": True,
-                            "message": {
-                                "id": msg_id, "channel": channel, "senderName": sender_name,
-                                "senderEmpNo": sender_emp_no, "userRole": user_role,
-                                "message": message, "createdAt": now_str
-                            }
-                        })
-                    except Exception as ex:
-                        self._send_json(500, {"ok": False, "message": f"메시지 저장 실패: {str(ex)}"})
-                return
-
-            if self.path == "/api/db/test":
-                if mode == "SQLITE":
-                    conn = DatabaseAdapter.sqlite_connect(cfg)
-                    conn.close()
-                    self._send_json(200, {"ok": True, "message": "SQLite 3 파일 DB 연결이 확인되었습니다."})
-                elif mode == "ORACLE":
-                    conn = DatabaseAdapter.oracle_connect(cfg)
-                    conn.close()
-                    self._send_json(200, {"ok": True, "message": "Oracle DB 연결이 확인되었습니다."})
-                elif mode == "EXCEL_ACCESS":
-                    msg = DatabaseAdapter.excel_access_test(cfg)
-                    self._send_json(200, {"ok": True, "message": msg})
-                else:
-                    self._send_json(200, {"ok": True, "message": "LOCAL 모드 확인 완료"})
-            elif self.path == "/api/db/init":
-                msg = DatabaseAdapter.sqlite_init(cfg)
-                self._send_json(200, {"ok": True, "message": msg})
-            elif self.path == "/api/db/save":
-                msg = DatabaseAdapter.sqlite_save(cfg, req.get("data", {}))
-                self._send_json(200, {"ok": True, "message": msg})
-            elif self.path == "/api/db/load":
-                data = DatabaseAdapter.sqlite_load(cfg)
-                self._send_json(200, {"ok": True, "data": data})
-            else:
+            handler = self.ROUTES.get(path)
+            if not handler:
                 self._send_json(404, {"ok": False, "message": "알 수 없는 API 경로입니다."})
+                return
+            handler(self, req)
+        except AuthError as ae:
+            self._send_json(ae.status, {"ok": False, "message": str(ae), "authRequired": ae.status == 401})
         except SecurityError as se:
             self._send_json(403, {"ok": False, "message": str(se)})
-        except Exception as e:
+        except Exception as e:  # pragma: no cover - 예기치 못한 오류
+            write_server_log(f"[ERROR] {path}: {e}")
             self._send_json(500, {"ok": False, "message": str(e)})
 
+    # ---- 인증 API ----
+    def api_bootstrap(self, req):
+        cfg, _ = Store.load(["projectConfig"])
+        self._send_json(200, {"ok": True, "version": VERSION,
+                              "projectName": (cfg.get("projectConfig") or {}).get("projectName", ""),
+                              "subsystems": Store.get_subsystem_names()})
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AX Project Management by YS ver1.0.5 Secure Multi-DB Server")
+    def api_login(self, req):
+        emp = str(req.get("empNo", "")).strip()
+        pwd_hash = str(req.get("pwdHash", ""))
+        row = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == emp.lower()), None)
+        if not row or (row.get("pwdHash") or DEFAULT_PWD_HASH) != pwd_hash:
+            write_server_log(f"[AUTH] 로그인 실패: {emp} ({self.address_string()})")
+            raise AuthError("사번 또는 비밀번호가 일치하지 않습니다.", 401)
+        token, info = Sessions.create(row)
+        if req.get("lang") in ("ko", "en"):
+            info["lang"] = req["lang"]
+        write_server_log(f"[AUTH] 로그인: {info['empNo']} ({info['role']})")
+        self._send_json(200, {"ok": True, "token": token, "user": public_user(info)})
+
+    def api_logout(self, req):
+        Sessions.drop(self._token())
+        self._send_json(200, {"ok": True})
+
+    def api_me(self, req):
+        info = self._require_user()
+        self._send_json(200, {"ok": True, "user": public_user(info)})
+
+    def api_register(self, req):
+        row = Store.register_user(req.get("user") or {})
+        write_server_log(f"[AUTH] 신규 사용자 등록: {row['empNo']} ({row['subsystem']})")
+        self._send_json(200, {"ok": True, "user": Store.public_value("projectUsers", [row])[0]})
+
+    def api_password(self, req):
+        info = self._require_user()
+        Store.change_password(info["empNo"], str(req.get("oldHash", "")), str(req.get("newHash", "")))
+        self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
+
+    # ---- 데이터 API ----
+    def api_db_test(self, req):
+        self._require_user()
+        conn = Store.connect()
+        conn.close()
+        self._send_json(200, {"ok": True, "message": f"SQLite DB 연결 확인 ({DB_PATH.name})"})
+
+    def api_db_init(self, req):
+        self._require_user(roles={"SYS_ADMIN"})
+        self._send_json(200, {"ok": True, "message": Store.init_schema()})
+
+    def api_db_load(self, req):
+        self._require_user()
+        keys = req.get("keys")
+        data, revs = Store.load(keys if isinstance(keys, list) else None)
+        self._send_json(200, {"ok": True, "data": data, "revs": revs})
+
+    def api_db_save(self, req):
+        info = self._require_user()
+        result = Store.save(info, req.get("changes") or {}, bool(req.get("force")))
+        if result.get("conflict"):
+            self._send_json(409, result)
+            return
+        if result.get("blocked"):
+            write_server_log(f"[AUTH] 권한 없는 저장 거부: {info['empNo']} → {result['blocked']}")
+        self._send_json(200, result)
+
+    # ---- 채팅 API ----
+    def api_chat_send(self, req):
+        info = self._require_user()
+        message = str(req.get("message", "")).strip()
+        if not message:
+            self._send_json(400, {"ok": False, "message": "채팅 메시지 내용을 입력해주세요."})
+            return
+        msg = Store.chat_send(info, str(req.get("channel") or "전체"), message[:2000], req.get("id"))
+        self._send_json(200, {"ok": True, "message": msg})
+
+    def api_chat_clear(self, req):
+        self._require_user(roles=MANAGER_ROLES)
+        Store.chat_clear()
+        self._send_json(200, {"ok": True, "message": "채팅 대화내역이 모두 삭제되었습니다."})
+
+    ROUTES = {
+        "/api/auth/bootstrap": api_bootstrap,
+        "/api/auth/login": api_login,
+        "/api/auth/logout": api_logout,
+        "/api/auth/me": api_me,
+        "/api/auth/register": api_register,
+        "/api/auth/password": api_password,
+        "/api/db/test": api_db_test,
+        "/api/db/init": api_db_init,
+        "/api/db/load": api_db_load,
+        "/api/db/save": api_db_save,
+        "/api/chat/send": api_chat_send,
+        "/api/chat/clear": api_chat_clear,
+    }
+
+
+def main():
+    global LOG_DATE_MODE, LOG_SILENT_MODE, LOG_DIR, DB_PATH
+    parser = argparse.ArgumentParser(description=f"{APP_NAME} Secure Multi-User DB Server")
     parser.add_argument("--port", type=int, default=8080, help="HTTP Server Port")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind address")
+    parser.add_argument("--db", type=str, default="wbs_enterprise.db", help="SQLite DB file name (inside ./data)")
     parser.add_argument("--log-dir", type=str, default="logs", help="Directory for daily log files")
     parser.add_argument("--log-date", action="store_true", help="Enable date-based log file (logs/server_YYYYMMDD.log)")
-    parser.add_argument("--silent", action="store_true", help="Suppress real-time console log display (logs to file only)")
+    parser.add_argument("--silent", action="store_true", help="Suppress console log (file only)")
     parser.add_argument("--no-console", action="store_true", help="Alias for --silent")
     args = parser.parse_args()
 
-    LOG_DATE_MODE = args.log_date or bool(args.log_dir and args.silent)
+    db_name = pathlib.Path(args.db).name
+    if not db_name.lower().endswith((".db", ".sqlite", ".sqlite3")):
+        raise SystemExit("[ERROR] --db 는 .db/.sqlite/.sqlite3 파일명만 허용됩니다.")
+    DB_PATH = DATA_DIR / db_name
     LOG_SILENT_MODE = args.silent or args.no_console
+    LOG_DATE_MODE = args.log_date or LOG_SILENT_MODE
     LOG_DIR = BASE_DIR / args.log_dir if not pathlib.Path(args.log_dir).is_absolute() else pathlib.Path(args.log_dir)
-    server = ThreadingHTTPServer(("0.0.0.0", args.port), WbsHttpHandler)
+
+    Store.init_schema()
+    server = ThreadingHTTPServer((args.host, args.port), WbsHttpHandler)
     print("============================================================================")
-    print(f"[AX Project Management by YS ver1.0.5] 다중 사용자 DB 연동 웹 서버가 시작되었습니다!")
-    print(f"  * 웹 브라우저 접속 주소: http://127.0.0.1:{args.port}")
+    print(f"[{APP_NAME}] 다중 사용자 DB 서버가 시작되었습니다! (로그인 인증 필수)")
+    print(f"  * 웹 브라우저 접속 주소: http://127.0.0.1:{args.port}  (사내망: http://<서버IP>:{args.port})")
     print(f"  * 웹 루트 디렉터리 경로: {BASE_DIR}")
-    print(f"  * SQLite DB 저장 폴더  : {DATA_DIR}")
+    print(f"  * SQLite DB 파일       : {DB_PATH}")
+    print("  * 초기 관리자 계정     : admin / 1234  (로그인 후 반드시 비밀번호 변경)")
     print("============================================================================")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\n[서버 종료] 사용자 요청으로 서버를 종료합니다.")
+
+
+if __name__ == "__main__":
+    main()

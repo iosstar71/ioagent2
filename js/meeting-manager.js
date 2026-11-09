@@ -1,6 +1,6 @@
 /**
  * =========================================================================
- * AX Project Management by YS ver1.0.4
+ * AX Project Management by YS ver1.0.6
  * 모듈명: MeetingManager (회의일정 캘린더 · 회의록 작성 · Action Item 통합 관리)
  * =========================================================================
  * 주요 기능:
@@ -8,6 +8,8 @@
  * 2) 📝 회의록 작성: 회의 기본정보, 참석자 관리, 안건별 상세 논의/결정사항, 도출 Action Item 연계
  * 3) ⚡ Action Item 현황: 전사/서브시스템/일자/상태별 통합 트래커 및 원클릭 상태 전환
  * 4) 📄 보고서 연동: 회의록 독립 DOCX/XLSX 다운로드 및 주간보고 연계
+ * [v1.0.6] 회의록은 편집본(draft)에 작성 → [✅ 작성 완료] 클릭 시 저장
+ *          저장하지 않고 다른 회의록/화면으로 이동하면 [저장 / 무시 / 취소] 선택
  */
 
 var MeetingManager = {
@@ -17,6 +19,112 @@ var MeetingManager = {
   calendarMonth: 5, // 1-indexed (5 = 5월)
   editingMeetingId: null,
   editingActionItemId: null,
+  _draft: null,      // 회의록 편집본 (작성 완료 전까지 meetingsData 에 반영하지 않음)
+  _draftBase: "",    // 편집 시작 시점 원본 (변경 여부 판단)
+
+  _now() { return new Date().toISOString().replace("T", " ").substring(0, 19); },
+  _clone(v) { return JSON.parse(JSON.stringify(v)); },
+  _findMeeting(id) { return (meetingsData || []).find(x => x.id === id) || null; },
+  _canon(m) {
+    if (!m) return "";
+    const c = Object.assign({}, m);
+    delete c.actionItems;
+    delete c.updatedAt;
+    return JSON.stringify(c);
+  },
+
+  // 현재 회의록 편집본 (없으면 원본에서 생성)
+  _ensureDraft(id) {
+    const src = this._findMeeting(id);
+    if (!src) { this._draft = null; return null; }
+    if (!this._draft || this._draft.id !== id) {
+      this._draft = this._clone(src);
+      this._draftBase = this._canon(src);
+    }
+    // Action Item 은 별도 저장(모달) 대상이므로 항상 원본을 표시
+    this._draft.actionItems = src.actionItems || [];
+    return this._draft;
+  },
+  _editMeeting() { return this._ensureDraft(this.currentMeetingId); },
+
+  isDraftDirty() {
+    return !!(this._draft && this._findMeeting(this._draft.id) && this._canon(this._draft) !== this._draftBase);
+  },
+
+  discardDraft() {
+    this._draft = null;
+    this._draftBase = "";
+  },
+
+  // 다른 회의록/화면으로 이동 전 확인: 미저장이면 [저장/무시/취소] → 선택 후 onProceed 실행
+  confirmLeave(onProceed) {
+    if (!this.isDraftDirty()) return true;
+    SyncUI.ask(
+      "📝 회의록 미저장",
+      `작성 중인 회의록 [${this._draft.title}] 이 저장되지 않았습니다.\n저장하시겠습니까?`,
+      [
+        { id: "save", label: "💾 저장 (작성 완료)", cls: "btn-primary" },
+        { id: "ignore", label: "무시 (변경 취소)", cls: "btn-danger" },
+        { id: "cancel", label: "계속 작성", cls: "btn-secondary" }
+      ]
+    ).then(async choice => {
+      if (choice === "cancel") { this._restoreFilterSelections(); return; }
+      if (choice === "save") await this.completeMinutes(false);
+      else this.discardDraft();
+      if (typeof onProceed === "function") onProceed();
+    });
+    return false;
+  },
+
+  _rememberFilterSelections() {
+    this._filterSnapshot = ["minutesFilterSubsystem", "minutesFilterMonth", "minutesMeetingSelector"].map(id => {
+      const el = document.getElementById(id);
+      return [id, el ? el.value : null];
+    });
+  },
+  _restoreFilterSelections() {
+    (this._filterSnapshot || []).forEach(([id, v]) => {
+      const el = document.getElementById(id);
+      if (el && v !== null) el.value = v;
+    });
+    this.renderMinutesEditor(this.currentMeetingId);
+  },
+
+  // 저장소에서 다시 불러온 경우: 미저장 편집본은 유지, 삭제된 회의는 편집본 폐기
+  onDataReloaded() {
+    if (this._draft && (!this._findMeeting(this._draft.id) || !this.isDraftDirty())) this.discardDraft();
+    if (this.currentMeetingId && !this._findMeeting(this.currentMeetingId)) this.currentMeetingId = meetingsData[0] ? meetingsData[0].id : null;
+    const pane = document.getElementById("tab-meeting");
+    if (pane && pane.classList.contains("active")) this.render();
+  },
+
+  // [✅ 작성 완료] 편집본을 확정하여 저장
+  async completeMinutes(notify = true) {
+    const d = this._draft;
+    if (!d) return;
+    const target = this._findMeeting(d.id);
+    if (!target) return;
+    const actionItems = target.actionItems || [];
+    Object.assign(target, this._clone(d), { actionItems, status: "완료", minutesCompleted: true, updatedAt: this._now() });
+    this.discardDraft();
+    const res = await SyncManager.save(["meetingsData"], { notify: false });
+    if (notify && (res.ok || res.nothing)) showToast(`✅ [회의록 작성 완료] '${target.title}' 회의록이 저장되었습니다.`);
+    this.render();
+  },
+
+  // 회의 일정·Action Item 등 모달 저장 시 즉시 저장
+  _saveNow() {
+    return SyncManager.save(["meetingsData"], { notify: false });
+  },
+
+  // 모달에서 회의 기본정보가 바뀐 경우 작성 중인 편집본에도 반영 (편집본의 다른 변경은 유지)
+  _syncDraftFields(target, fields) {
+    if (!this._draft || !target || this._draft.id !== target.id) return;
+    fields.forEach(f => { this._draft[f] = target[f]; });
+    const pending = this._canon(this._draft) !== this._draftBase;
+    this._draftBase = this._canon(target);
+    if (!pending) this._draft = this._clone(target);
+  },
 
   init() {
     this.ensureInitialData();
@@ -68,6 +176,7 @@ var MeetingManager = {
   },
 
   onMinutesMonthFilterChanged() {
+    if (!this.confirmLeave(() => this.onMinutesMonthFilterChanged())) return;
     this.updateMinutesMeetingSelector();
     const sel = document.getElementById("minutesMeetingSelector");
     if (sel && sel.value) {
@@ -146,6 +255,7 @@ var MeetingManager = {
   },
 
   onMinutesSubsystemFilterChanged() {
+    if (!this.confirmLeave(() => this.onMinutesSubsystemFilterChanged())) return;
     this.updateMinutesMeetingSelector();
     const sel = document.getElementById("minutesMeetingSelector");
     if (sel && sel.value) {
@@ -506,6 +616,7 @@ var MeetingManager = {
   },
 
   switchSubTab(tabName) {
+    if (this.activeSubTab === "minutes" && tabName !== "minutes" && !this.confirmLeave(() => this.switchSubTab(tabName))) return;
     this.activeSubTab = tabName;
     document.querySelectorAll(".meeting-sub-tab").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.subtab === tabName);
@@ -878,6 +989,7 @@ var MeetingManager = {
         target.status = status;
         target.notes = notes;
         target.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
+        this._syncDraftFields(target, ["title", "system", "date", "startTime", "endTime", "location", "host", "status", "notes"]);
       }
       showToast("✅ 회의 일정이 성공적으로 수정되었습니다.");
     } else {
@@ -915,7 +1027,7 @@ var MeetingManager = {
     }
 
     this.closeMeetingModal();
-    if (typeof persistChanges === "function") persistChanges();
+    this._saveNow();
     this.render();
   },
 
@@ -927,7 +1039,7 @@ var MeetingManager = {
         if (this.currentMeetingId === id) {
           this.currentMeetingId = meetingsData[0] ? meetingsData[0].id : null;
         }
-        if (typeof persistChanges === "function") persistChanges();
+        this._saveNow();
         this.render();
         showToast("🗑️ 회의 일정이 삭제되었습니다.");
       }
@@ -938,6 +1050,8 @@ var MeetingManager = {
   // 2. 회의록 작성 및 상세 편집 (Minutes Editor)
   // =========================================================================
   openMinutesForMeeting(id) {
+    if (this._draft && this._draft.id !== id && !this.confirmLeave(() => this.openMinutesForMeeting(id))) return;
+    this._rememberFilterSelections();
     this.currentMeetingId = id;
     this.switchSubTab("minutes");
   },
@@ -995,6 +1109,7 @@ var MeetingManager = {
     }
 
     this.currentMeetingId = mtg.id;
+    mtg = this._ensureDraft(mtg.id);
     const sysColor = this.getSubsystemColor(mtg.system);
     const stBadge = mtg.status === "완료"
       ? `<span class="badge" style="background:#15803d; color:white;">완료</span>`
@@ -1144,10 +1259,11 @@ var MeetingManager = {
       <!-- 5) 하단 회의록 전용 내보내기 툴바 -->
       <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:8px;">
         <span style="font-size:12px; color:#64748b;">
-          💡 작성된 회의록은 실시간 자동 저장되며, 언제든지 공식 Word 문서(DOCX) 및 엑셀(XLSX)로 즉시 출력할 수 있습니다.
+          💡 회의록 작성 후 [✅ 작성 완료 (저장)] 버튼을 눌러야 저장됩니다. 저장하지 않고 다른 회의록을 선택하면 저장 여부를 확인합니다.
         </span>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary btn-sm" onclick="MeetingManager.saveCurrentMinutes()">💾 회의록 저장</button>
+          <button class="btn btn-primary btn-sm" onclick="MeetingManager.completeMinutes(true)">✅ 작성 완료 (저장)</button>
+          <button class="btn btn-secondary btn-sm" onclick="MeetingManager.discardDraft(); MeetingManager.render();" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
           <button class="btn btn-info btn-sm" onclick="MeetingManager.exportMeetingDocx('${mtg.id}')" style="background:#2563eb; color:white; border-color:#2563eb;">📄 회의록 DOCX 다운로드</button>
           <button class="btn btn-success btn-sm" onclick="MeetingManager.exportMeetingExcel('${mtg.id}')">📊 회의록 엑셀 다운로드</button>
         </div>
@@ -1160,22 +1276,21 @@ var MeetingManager = {
     if (!m) return;
     m.status = (m.status === "완료") ? "진행중" : "완료";
     m.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
-    if (typeof persistChanges === "function") persistChanges();
+    this._syncDraftFields(m, ["status"]);
+    this._saveNow();
     this.render();
     showToast(`회의 상태가 [${m.status}]로 갱신되었습니다.`);
   },
 
   updateMinutesSummary(val) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m) {
       m.summary = val.trim();
-      m.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
-      if (typeof persistChanges === "function") persistChanges();
     }
   },
 
   addAttendee() {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (!m) return;
     const quickSel = document.getElementById("selQuickAddUser");
     const customIn = document.getElementById("inCustomAttendee");
@@ -1202,30 +1317,27 @@ var MeetingManager = {
 
     if (!Array.isArray(m.attendees)) m.attendees = [];
     m.attendees.push({ name, dept, role, attendance: "참석" });
-    if (typeof persistChanges === "function") persistChanges();
     this.renderMinutesEditor(this.currentMeetingId);
     showToast(`[${name}] 참석자가 명단에 추가되었습니다.`);
   },
 
   removeAttendee(idx) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m && Array.isArray(m.attendees)) {
       m.attendees.splice(idx, 1);
-      if (typeof persistChanges === "function") persistChanges();
       this.renderMinutesEditor(this.currentMeetingId);
     }
   },
 
   updateAttendance(idx, status) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m && Array.isArray(m.attendees) && m.attendees[idx]) {
       m.attendees[idx].attendance = status;
-      if (typeof persistChanges === "function") persistChanges();
     }
   },
 
   addAgenda() {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (!m) return;
     if (!Array.isArray(m.agendas)) m.agendas = [];
     const newOrder = m.agendas.length + 1;
@@ -1236,55 +1348,42 @@ var MeetingManager = {
       discussion: "",
       decision: ""
     });
-    if (typeof persistChanges === "function") persistChanges();
     this.renderMinutesEditor(this.currentMeetingId);
     showToast(`안건 #${newOrder} 항목이 추가되었습니다.`);
   },
 
   removeAgenda(idx) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (!m || !Array.isArray(m.agendas)) return;
     m.agendas.splice(idx, 1);
     m.agendas.forEach((a, i) => a.order = i + 1);
-    if (typeof persistChanges === "function") persistChanges();
     this.renderMinutesEditor(this.currentMeetingId);
     showToast("안건이 삭제되었습니다.");
   },
 
   updateAgendaTitle(idx, val) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m && m.agendas && m.agendas[idx]) {
       m.agendas[idx].title = val.trim();
-      if (typeof persistChanges === "function") persistChanges();
     }
   },
 
   updateAgendaDiscussion(idx, val) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m && m.agendas && m.agendas[idx]) {
       m.agendas[idx].discussion = val.trim();
-      if (typeof persistChanges === "function") persistChanges();
     }
   },
 
   updateAgendaDecision(idx, val) {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
+    const m = this._editMeeting();
     if (m && m.agendas && m.agendas[idx]) {
       m.agendas[idx].decision = val.trim();
-      if (typeof persistChanges === "function") persistChanges();
     }
   },
 
   saveCurrentMinutes() {
-    const m = (meetingsData || []).find(x => x.id === this.currentMeetingId);
-    if (m) {
-      m.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
-    }
-    if (typeof persistChanges === "function") persistChanges();
-    if (typeof StorageManager !== "undefined" && typeof StorageManager.saveAll === "function") {
-      StorageManager.saveAll(false);
-    }
-    showToast("💾 [회의록 저장 완료] 회의록 및 안건, Action Item이 성공적으로 저장되었습니다.");
+    return this.completeMinutes(true);
   },
 
   // =========================================================================
@@ -1536,7 +1635,7 @@ var MeetingManager = {
     }
 
     this.closeActionItemModal();
-    if (typeof persistChanges === "function") persistChanges();
+    this._saveNow();
     this.render();
   },
 
@@ -1548,7 +1647,7 @@ var MeetingManager = {
         }
       });
     });
-    if (typeof persistChanges === "function") persistChanges();
+    this._saveNow();
     this.render();
     showToast(`Action Item 상태가 [${newStatus}]로 갱신되었습니다.`);
   },
@@ -1561,7 +1660,7 @@ var MeetingManager = {
           m.actionItems.splice(idx, 1);
         }
       });
-      if (typeof persistChanges === "function") persistChanges();
+      this._saveNow();
       this.render();
       showToast("🗑️ Action Item이 삭제되었습니다.");
     });

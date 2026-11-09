@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageBrowserTitle">AX Project Management by YS ver1.0.5</title>
+  <title id="pageBrowserTitle">AX Project Management by YS ver1.0.6</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/themes.css">
   <style>
@@ -1365,7 +1365,7 @@ header {
     <div class="brand-title">
       <span id="headerSystemTitleText">⚡ AX Project Management by YS</span>
       <span id="headerProjectNameBadge" class="brand-badge" style="background:#0284c7;">27년 가동률 시스템 개선</span>
-      <span class="brand-badge" style="background:#6366f1; color:white;">ver1.0.5</span>
+      <span class="brand-badge" style="background:#6366f1; color:white;">ver1.0.6</span>
     </div>
 
     <div class="header-right-wrap">
@@ -1416,11 +1416,9 @@ header {
           <option value="dark">8. High-Contrast Dark (다크 모드)</option>
         </select>
         <span class="zone-badge-label" style="margin-left: 2px;">동작</span>
-        <!-- [요건 3] 수동 저장 모드 선택 시 활성화되는 저장 버튼 -->
-        <button id="btnHeaderManualSave" class="btn btn-secondary btn-sm" onclick="DbConnector.manualCommitAll(true)" disabled title="수동 저장 모드 선택 시 활성화되며, 클릭할 때만 저장소 및 DB에 반영됩니다.">
-          💾 저장
-        </button>
-        
+        <!-- [v1.0.6] 전체 저장 / 전체 새로고침 (DB 서버 모드: 저장 버튼 방식, 로컬 모드: 실시간 자동저장 + 즉시 저장) -->
+        <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" onclick="SyncManager.save(null, {notify:true, forceFile:true})" title="모든 화면의 변경 내용을 한 번에 저장합니다.">💾 전체 저장</button>
+        <button id="btnHeaderRefreshAll" class="btn btn-secondary btn-sm" onclick="SyncManager.refresh(null)" title="저장소(DB 서버/로컬)의 최신 데이터를 다시 불러와 모든 화면을 새로고침합니다.">🔄 전체 새로고침</button>
         <button id="btnHeaderRealtimeSync" class="btn btn-success btn-sm" onclick="MasterSyncEngine.syncAll(true)" title="변경된 기준정보 및 시스템 설정을 모든 탭에 즉시 실시간 동기화">
           ⚡ 전체 동기화
         </button>
@@ -2359,13 +2357,13 @@ header {
             <select id="wrWeekSelect" onchange="WeeklyReportManager.onWeekOrSubsystemChanged()" style="font-weight:bold; min-width:200px;"></select>
           </div>
           <div class="filter-item">
-            <label style="font-weight:bold; font-size:11px;">🏢 서브시스템 필터:</label>
-            <select id="wrSubsystemSelect" onchange="WeeklyReportManager.onWeekOrSubsystemChanged()" style="font-weight:bold; min-width:140px;">
-              <option value="ALL">전체 서브시스템 (통합)</option>
+            <label style="font-weight:bold; font-size:11px;">🧭 작성 단위:</label>
+            <select id="wrSubsystemSelect" onchange="WeeklyReportManager.onWeekOrSubsystemChanged()" style="font-weight:bold; min-width:170px;" title="통합(전체) / 분야별 / 서브시스템별 주간보고를 생성·작성합니다. 일반 사용자는 담당 서브시스템, PM은 통합 단위로 작성합니다.">
+              <option value="ALL|">📊 통합 (전체)</option>
             </select>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="WeeklyReportManager.saveCurrentReport()" title="작성된 주간보고서 저장">
-            💾 주간보고 저장
+          <button id="btnWrComplete" class="btn btn-primary btn-sm" onclick="WeeklyReportManager.completeReport(true)" title="작성한 주간보고서를 확정하여 저장합니다.">
+            ✅ 작성 완료 (저장)
           </button>
           <button class="btn btn-secondary btn-sm" onclick="WeeklyReportManager.openHistoryModal()" title="이전 주차 보고서 이력 조회 및 이번주로 복사">
             📋 이전 보고서 조회·복사
@@ -2374,11 +2372,11 @@ header {
             🔄 WBS 동기화
           </button>
           <div style="display:flex; gap:4px; border-left:1px solid #cbd5e1; padding-left:8px; margin-left:4px;">
-            <button class="btn btn-success btn-sm" onclick="WeeklyReportManager.exportExcel(true)" title="전체 서브시스템 통합 주간보고 엑셀 다운로드 (XLSX)">
-              📊 전체 엑셀(XLSX)
+            <button class="btn btn-success btn-sm" onclick="WeeklyReportManager.exportExcel(false)" title="현재 작성 단위(통합/분야/서브시스템) 주간보고 엑셀 다운로드 (XLSX)">
+              📊 엑셀(XLSX)
             </button>
-            <button class="btn btn-success btn-sm" onclick="WeeklyReportManager.exportExcel(false)" title="선택된 서브시스템 주간보고 엑셀 다운로드 (XLSX)">
-              🏢 서브시스템 엑셀(XLSX)
+            <button class="btn btn-success btn-sm" onclick="WeeklyReportManager.exportExcel(true)" title="전체 서브시스템 통합 주간보고 엑셀 다운로드 (XLSX)">
+              📊 통합 엑셀
             </button>
             <button class="btn btn-info btn-sm" onclick="WeeklyReportManager.exportDocx(true)" style="background:#2563eb; color:white; border-color:#2563eb;" title="5대 목차 표준 표 형식 통합 서술형 주간보고서 DOCX 생성">
               📄 서술형 DOCX (표 포함)
@@ -2387,6 +2385,22 @@ header {
               📝 완전 서술형 DOCX (표 없음)
             </button>
           </div>
+        </div>
+      </div>
+
+      <div id="wrScopeBanner" style="margin:6px 0 10px; padding:7px 12px; border-radius:6px; background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.25); font-size:12px;"></div>
+
+      <!-- [v1.0.6] 저장된 주간보고 목록 -->
+      <div class="card">
+        <div class="card-title">
+          <span>🗂️ 저장된 주간보고 목록 <span id="wrSavedListCount" class="badge" style="background:#e0f2fe; color:#0369a1;">0건</span></span>
+          <span style="font-size:11px; color:var(--text-muted);">* 행을 클릭하면 해당 보고서를 엽니다. (⭐ 내 담당 서브시스템)</span>
+        </div>
+        <div style="max-height:220px; overflow:auto;">
+          <table class="matrix-table" style="width:100%;">
+            <thead><tr><th>보고 주차</th><th>작성 단위</th><th>작성자</th><th>상태</th><th>금주/차주 과업</th><th>저장 일시</th><th>열기</th></tr></thead>
+            <tbody id="wrSavedListBody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -3135,10 +3149,10 @@ header {
           <!-- 오프라인/서버 미연결 안내 배너 (서버 연결 시 display: none 처리됨) -->
           <div id="chatServerOfflineBanner" class="chat-offline-banner">
             <div style="font-size: 42px; margin-bottom: 12px;">🔌</div>
-            <h3 style="font-size: 18px; margin-bottom: 8px; color: #f8fafc;">실시간 채팅 서버 연결 대기 중</h3>
+            <h3 style="font-size: 18px; margin-bottom: 8px; color: #f8fafc;">채팅 오프라인</h3>
             <p style="font-size: 13px; color: #cbd5e1; max-width: 520px; line-height: 1.6; margin-bottom: 18px;">
-              본 기능은 다중 사용자 실시간 연동을 위해 <strong>파이썬 HTTP DB 웹서버(<code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px;">wbs_db_server.py</code>)</strong>가 기동되어 있어야 합니다.<br>
-              패키지 폴더의 <code style="background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px;">run_server.bat</code>를 실행하신 후 아래 [연결 확인]을 눌러주세요.
+              실시간 채팅은 <strong>DB 서버 모드</strong>(run_server.bat 실행 후 http://서버IP:8080 접속, 시스템 설정 &gt; DB 연동에서 SQLite 선택)에서만 사용할 수 있습니다.<br>
+              로컬 저장소(LocalStorage) 모드에서는 채팅 기능이 비활성화됩니다.
             </p>
             <div style="display: flex; gap: 10px;">
               <button class="btn btn-primary" onclick="RealtimeChatManager.checkServerConnection(true)">
@@ -3301,7 +3315,7 @@ header {
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="AX Project Management by YS ver1.0.5" style="width:100%;" onchange="updateProjectTitles()">
+                <input type="text" id="cfgSystemTitle" value="AX Project Management by YS ver1.0.6" style="width:100%;" onchange="updateProjectTitles()">
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
@@ -4049,10 +4063,10 @@ header {
 
             <div style="display:flex; gap:10px;">
               <div style="flex:1;">
-                <label style="display:block; font-size:11px; font-weight:bold; margin-bottom:4px;">💾 데이터 저장 반영 방식 선택 (자동 / 수동):</label>
-                <select id="dbSaveModeSelect" style="width:100%; font-weight:bold;" onchange="DbConnector.setSaveMode(this.value)">
-                  <option value="AUTO">⚡ 실시간 자동저장 (변경 즉시 자동 반영)</option>
-                  <option value="MANUAL">🖐️ 저장버튼 수동저장 (상단 [💾 저장] 클릭 시에만 저장)</option>
+                <label style="display:block; font-size:11px; font-weight:bold; margin-bottom:4px;">💾 데이터 저장 방식 (저장소 모드에 따라 자동 결정):</label>
+                <select id="dbSaveModeSelect" style="width:100%; font-weight:bold;" disabled title="저장 방식은 저장소 모드에 따라 자동 결정됩니다.">
+                  <option value="AUTO">⚡ 실시간 자동저장 (로컬 저장소 모드 전용)</option>
+                  <option value="MANUAL">🖐️ 저장 버튼 저장 (DB 서버 모드 · 충돌 경고)</option>
                 </select>
               </div>
               <div style="flex:1;">
@@ -4471,6 +4485,8 @@ header {
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
 
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+  <script src="js/i18n.js"></script>
+  <script src="js/i18n-en.js"></script>
   <script src="js/initial-data.js"></script>
   <script src="js/wbs-engine.js"></script>
   <script src="js/dashboard-chart.js"></script>
@@ -4481,6 +4497,7 @@ header {
   <script src="js/manual-viewer.js"></script>
   <script src="js/meeting-manager.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/data-store.js"></script>
   <script src="js/access-control.js"></script>
 
 <!-- [ver1.0.4 신규] 주간보고서 이전 이력 조회 및 복사 모달 -->
