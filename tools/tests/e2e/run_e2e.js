@@ -1,5 +1,5 @@
 // =============================================================================
-// [AX Project Management by YS v1.0.10] 브라우저 E2E 자동 테스트 (Playwright)
+// [IOSTAR-PM v1.0.10] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)

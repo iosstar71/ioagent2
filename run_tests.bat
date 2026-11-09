@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.10] Automated tests (API + browser E2E)
+rem [IOSTAR-PM - ver1.0.10] Automated tests (API + browser E2E)
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"

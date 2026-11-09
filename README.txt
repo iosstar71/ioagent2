@@ -1,8 +1,17 @@
 ================================================================================
-⚡ AX Project Management by YS ver1.0.10
-   - 프로그램 공식 명칭: AX_Project_Management_by YS (약칭: AX_PMYS)
+⚡ IOSTAR-PM ver1.0.10
+   - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
    - 최신 버전: ver1.0.10
+   - 공식 크레딧: Developed & Designed by Iostar
 ================================================================================
+
+■ [IOSTAR-PM 이름의 뜻]
+  - In-situ Operations   : 외부 클라우드 통신 없이 폐쇄망 현장에서 완결되는 운용
+  - Smart Tasks          : 4레벨 WBS 기준선, 공정률 자동 롤업, 공휴일 보정의 지능형 과업 체계
+  - Accurate Resources   : 투입 공수(M/M) 누적과 지연 조기 감지로 오차 없는 자원 통제
+  - Project Manager      : 실무진과 C-Level이 직관적으로 지휘하는 실전 프로젝트 사령탑
+  핵심 강점: 폐쇄망 완전 자립(Zero-dependency, 경량 SQLite) · 핵심 리소스 정밀 추적(S-Curve, 크리티컬 패스)
+            · 순수 바이트스트림 산출물 생성(DOCX 보고서, 다중 시트 XLSX)
 
 ■ [빠른 시작]
   1) 압축 해제 후 index.html (또는 Standalone.html) 더블클릭 → 로컬 저장소(LocalStorage) 모드로 실행
@@ -42,13 +51,20 @@
 5. 법적 문서: legal/LICENSE_ko.txt (사용권 계약 초안), legal/PRIVACY_ko.txt (개인정보 처리 안내 초안),
    legal/THIRD_PARTY_NOTICES.txt (오픈소스 고지) — 로그인 화면·머리글 [⚖️ 법적 고지]에서 보기
    ※ 초안의 [ ] 항목(저작권자·관할·보관 기간 등)은 배포 전에 채우고 법률 검토를 받으십시오.
-6. Windows 패키지 (Python 내장): AX_Project_Management_by_YS_v1.0.10_win64.zip
+6. Windows 패키지 (Python 내장): IOSTAR-PM_v1.0.10_win64.zip
    - python 폴더에 Python 3.13 실행본(PSF 라이선스, 서버 실행에 필요 없는 개발용 파일 제외) 포함
    - run_server.bat · make_cert.bat · run_tests.bat · build_standalone.bat 은 python\python.exe 를 먼저 사용
    - 패키지 만들기: python tools/make_release_win.py --python <python.버전.nupkg 또는 embed zip>
 7. 기타: 표준 산출물 [기본 복원]·[+ 산출물 추가], ID [재채번] 버튼이 없는 함수를 호출하여 동작하지 않던 문제 수정
    - 배포 zip 에서 data/*.db (운영 DB) · certs · python 폴더 제외 (서버 첫 기동 시 initial_data.json 으로 DB 생성)
-8. 자동 테스트: API 19건 (보안·HTTPS·여러 프로젝트 추가), 화면 E2E 39건 (CSP 아래 실제 클릭·입력, 여러 프로젝트 추가)
+8. 시스템 명칭 변경: AX Project Management by YS → IOSTAR-PM
+   (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager, Developed & Designed by Iostar)
+   - 로고·아이콘 교체: 머리글 · 로그인 화면 · 브라우저 탭 아이콘 · 매뉴얼 · 아키텍처 문서
+     (제공 이미지를 줄여 사용: 아이콘 32/64/128/256px PNG 1~6KB, 가로형 로고 JPG 29KB — 원본 약 18MB)
+   - 이전 명칭으로 저장된 시스템 타이틀은 자동으로 새 명칭으로 표시
+   - 배포 파일 이름: IOSTAR-PM_v1.0.10.zip / IOSTAR-PM_v1.0.10_win64.zip
+   - 브라우저 저장소 키(AX_PMYS_*)는 기존 데이터 호환을 위해 그대로 사용
+9. 자동 테스트: API 19건 (보안·HTTPS·여러 프로젝트 추가), 화면 E2E 39건 (CSP 아래 실제 클릭·입력, 여러 프로젝트 추가)
 
 ■ [ver1.0.9 개선 내역]
 1. 주간보고 통합 다운로드
@@ -64,7 +80,7 @@
    - 분야별 주간보고 제외: 목록·작성 단위는 통합 / 서브시스템만 사용
    - 워드 표 오류 수정: 금주 실적 표 머리글 7열 / 내용 6열 어긋남, 차주 계획 표 열 정의 1열 부족 → 하나의 열 정의로 생성
      (계획일정 열 추가, 직접 입력 항목 WBS ID "직접입력" 표시, 여러 줄 요약 줄바꿈 유지, 표 머리글 페이지마다 반복)
-2. 프로젝트 로고: 상단 머리글 · 로그인 화면 · 브라우저 탭 아이콘 · 매뉴얼 표시 (img/ax_pm_logo.svg)
+2. 프로젝트 로고: 상단 머리글 · 로그인 화면 · 브라우저 탭 아이콘 · 매뉴얼 표시 (img/ax_pm_logo.svg → v1.0.10 에서 IOSTAR-PM 로고로 교체)
    - 일정 막대 3개(계단식 공정) + 기준일 점선 + 마일스톤 마름모로 자체 제작한 기하 도형, 외부 이미지·폰트·상표 미사용
 3. 명령 창(콘솔) 출력 영어화: run_server.bat / run_tests.bat / build_standalone.bat 와 서버 시작·로그 문구,
    빌드 도구, 자동 테스트 결과 문구를 언어 설정과 관계없이 영어로 표시
@@ -228,7 +244,7 @@
    - [이그제큐티브 브리핑 룸] 전사 달성률 히어로 배너 및 5대 핵심 경영 KPI 스트립(WBS, 지연, REQ, 산출물/VOC) 클릭 시 WBS 및 각 관리 탭으로 즉시 전환
 
 4. 시스템 명칭 및 버전 정보 전사 표준 일원화
-   - 상단 메뉴탑(Header), 오프라인 매뉴얼(manual.html), 소프트웨어 아키텍처 정의서(architecture.html), 배치 프로그램(run_server.bat), 파이썬 DB 서버(wbs_db_server.py), README.txt 모두 동일하게 [AX_Project_Management_by YS ver1.0.4]으로 통일
+   - 상단 메뉴탑(Header), 오프라인 매뉴얼(manual.html), 소프트웨어 아키텍처 정의서(architecture.html), 배치 프로그램(run_server.bat), 파이썬 DB 서버(wbs_db_server.py), README.txt 모두 동일하게 [IOSTAR-PM ver1.0.4]으로 통일
 
 5. 엑셀 / DOCX 통합 스타일 엔진 및 파스텔 소프트 테마군 추가
    - [단일 스타일 일원화] 엑셀과 DOCX 보고서의 스타일 선택을 완전히 하나로 통합하여 설정 변경 시 엑셀과 워드에 즉시 동일 반영
@@ -264,7 +280,7 @@
 
 ================================================================================
 ■ [시스템 폴더 구성]
-- index.html                : AX_PMYS ver1.0.10 메인 웹 애플리케이션
+- index.html                : IOSTAR-PM ver1.0.10 메인 웹 애플리케이션
 - Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (build_standalone.bat 로 재생성)
 - build_standalone.bat      : Standalone.html 및 js/initial-data.js 재생성 배치
 - tools/                    : build_standalone.py, build_initial_data.py, build_manual_docx.py(워드 매뉴얼), make_release.py(배포 zip)
@@ -289,7 +305,7 @@
 - css/                      : 스타일시트 (style.css 단일 파일 — v1.0.8 에서 themes.css·인라인 스타일 통합)
 - legal/                    : 사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지 (v1.0.10)
 - certs/                    : HTTPS 인증서 (make_cert.bat 으로 생성, 배포·반출 금지)
-- img/ax_pm_logo.svg        : 프로젝트 로고 원본 (v1.0.9, 자체 제작 도형 — 외부 이미지·폰트 미사용)
+- img/iostar_*             : IOSTAR-PM 로고·아이콘 (아이콘 32/64/128/256px PNG, 가로형 로고 JPG — 원본 이미지를 줄여 약 41KB)
 - data/                     : SQLite 프로젝트 DB (wbs_enterprise.db), 초기 데이터 initial_data.json
 - Sample/                   : 표준 WBS 4레벨 샘플 데이터 엑셀 파일
 - template/                 : WBS 마스터 템플릿 양식 CSV

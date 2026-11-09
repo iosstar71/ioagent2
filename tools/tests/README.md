@@ -1,4 +1,4 @@
-# AX Project Management by YS — 자동 테스트 (v1.0.10)
+# IOSTAR-PM — 자동 테스트 (v1.0.10)
 
 프로그램 폴더에서 실행합니다. 두 테스트 모두 **임시 폴더에 복사본을 만들어** 실행하므로 운영 DB(`data/wbs_enterprise.db`)는 변경되지 않습니다.
 

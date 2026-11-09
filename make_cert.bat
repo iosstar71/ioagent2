@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.10] HTTPS certificate generator
+rem [IOSTAR-PM - ver1.0.10] HTTPS certificate generator
 rem  - Creates certs\ca.crt (install on client PCs) and certs\server.crt / server.key
 rem  - Extra host names / IPs: make_cert.bat --host 10.10.1.20 --host pms.company.local
 rem  - Renew only the server certificate (keep CA): make_cert.bat --renew

@@ -1,9 +1,10 @@
-AX Project Management by YS — 소프트웨어 사용권 계약 (초안)
+IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
+소프트웨어 사용권 계약 (초안) — Developed & Designed by Iostar
 ==========================================================================
 ※ 이 문서는 초안입니다. 배포·판매 전에 저작권자 확인과 법률 검토를 거쳐 [ ] 표시 항목을 채우십시오.
 
 제1조 (목적)
-이 계약은 [저작권자 이름 또는 회사명](이하 "저작권자")가 제공하는 "AX Project Management by YS"
+이 계약은 [저작권자 이름 또는 회사명](이하 "저작권자")가 제공하는 "IOSTAR-PM"
 소프트웨어와 그 문서(이하 "본 소프트웨어")의 사용 조건을 정합니다. 본 소프트웨어를 설치·복사·실행하면
 이 계약에 동의한 것으로 봅니다.
 

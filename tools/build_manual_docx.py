@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] 워드(DOCX) 매뉴얼 빌더
+[IOSTAR-PM v1.0.10] 워드(DOCX) 매뉴얼 빌더
 
 manual.html  →  워드 매뉴얼(DOCX) 생성 후 js/manual-viewer.js 에 내장(docxBase64)
   - 화면 [📘 도움말 > 워드 다운로드] 매뉴얼이 manual.html 과 항상 같은 내용/버전이 되도록 함
@@ -153,7 +153,7 @@ def build() -> int:
     data = build_docx(html_text)
     js = VIEWER.read_text(encoding="utf-8")
     js = re.sub(r'docxBase64: "[A-Za-z0-9+/=]*"', 'docxBase64: "' + base64.b64encode(data).decode() + '"', js, count=1)
-    js = re.sub(r'docxFilename: "[^"]*"', f'docxFilename: "AX_Project_Management_by_YS_v{version}_설치가이드_및_운영매뉴얼.docx"', js, count=1)
+    js = re.sub(r'docxFilename: "[^"]*"', f'docxFilename: "IOSTAR-PM_v{version}_설치가이드_및_운영매뉴얼.docx"', js, count=1)
     js = re.sub(r'standaloneManualHtmlB64: "[A-Za-z0-9+/=]*"', 'standaloneManualHtmlB64: "' + base64.b64encode(html_text.encode("utf-8")).decode() + '"', js, count=1)
     VIEWER.write_text(js, encoding="utf-8")
     return len(data)

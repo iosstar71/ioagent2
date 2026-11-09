@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AX Project Management by YS ver1.0.10 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
+IOSTAR-PM ver1.0.10 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
@@ -38,7 +38,7 @@ import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 VERSION = "ver1.0.10"
-APP_NAME = f"AX Project Management by YS {VERSION}"
+APP_NAME = f"IOSTAR-PM {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
 if hasattr(sys.stdout, "reconfigure"):
@@ -1252,6 +1252,16 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             return
         self._csp = path in CSP_PAGES
         super().do_GET()
+
+    def do_HEAD(self):
+        # GET 과 같은 차단 규칙·보안 헤더 적용 (서버·DB·인증서 파일 정보 노출 방지)
+        path = urllib.parse.urlparse(self.path).path
+        lower = path.lower()
+        if lower.startswith("/api/") or any(lower.startswith(p) for p in BLOCKED_URL_PREFIXES) or pathlib.Path(lower).suffix in BLOCKED_URL_EXTENSIONS:
+            self.send_error(403, "Forbidden")
+            return
+        self._csp = path in CSP_PAGES
+        super().do_HEAD()
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length", 0) or 0)

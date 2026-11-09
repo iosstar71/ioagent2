@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
+[IOSTAR-PM v1.0.10] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
 
 프로그램 폴더를 임시 폴더로 복사한 뒤 빈 DB 로 wbs_db_server.py 를 기동하여 검증합니다.
 (실제 운영 DB data/wbs_enterprise.db 는 건드리지 않음)
@@ -223,6 +223,11 @@ class ServerApiTest(unittest.TestCase):
             csp = r.headers.get("Content-Security-Policy", "")
         self.assertIn("script-src 'self';", csp)
         self.assertNotIn("unsafe-inline' ; script", csp)
+        with urllib.request.urlopen(urllib.request.Request(self.base + "/index.html", method="HEAD")) as r:
+            self.assertIn("script-src 'self';", r.headers.get("Content-Security-Policy", ""))
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(urllib.request.Request(self.base + "/data/wbs_enterprise.db", method="HEAD"))
+        self.assertEqual(ctx.exception.code, 403)
         req = urllib.request.Request(self.base + "/api/db/ping", headers={"Origin": "http://evil.example"})
         with urllib.request.urlopen(req) as r:
             self.assertIsNone(r.headers.get("Access-Control-Allow-Origin"))

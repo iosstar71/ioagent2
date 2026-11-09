@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] 배포용 zip 생성기
+[IOSTAR-PM v1.0.10] 배포용 zip 생성기
 
 - Standalone.html / js/initial-data.js 를 최신으로 다시 빌드한 뒤
-  AX_Project_Management_by_YS_v<버전>.zip 을 생성합니다.
+  IOSTAR-PM_v<버전>.zip 을 생성합니다.
 - 한글 파일명(Sample/*.xlsx 등)이 Windows 탐색기·알집 등에서 깨지지 않도록
   zip 항목에 UTF-8 파일명 플래그(General purpose bit 11)를 명시합니다.
   (v1.0.5 배포본은 파일명이 '#Uc81c...' 형태로 깨져 있었음)
 
 사용법 (프로그램 폴더에서):
-    python tools/make_release.py            → ../AX_Project_Management_by_YS_v1.0.10.zip
+    python tools/make_release.py            → ../IOSTAR-PM_v1.0.10.zip
     python tools/make_release.py <출력폴더>
 """
 import sys
@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_standalone  # noqa: E402
 
 VERSION = "1.0.10"
-PKG = f"AX_Project_Management_by_YS_v{VERSION}"
+PKG = f"IOSTAR-PM_v{VERSION}"
 EXCLUDE_DIRS = {".git", "logs", "__pycache__", ".claude", "node_modules", "certs", "python"}
 EXCLUDE_FILES = {".gitattributes", ".gitignore"}
 EXCLUDE_SUFFIX = {".pyc", ".db", ".db-wal", ".db-shm", ".zip", ".nupkg"}

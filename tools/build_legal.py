@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] 법적 고지 문서 내장 빌더
+[IOSTAR-PM v1.0.10] 법적 고지 문서 내장 빌더
 
 legal/*.txt (사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지)를 js/legal-text.js 로 내장합니다.
 index.html 을 파일로 직접 열거나 Standalone.html 로 실행해도 [⚖️ 법적 고지] 창에서 볼 수 있게 하기 위함입니다.
@@ -26,7 +26,7 @@ def build():
         items.append({"key": key, "title": title, "file": "legal/" + name, "text": path.read_text(encoding="utf-8") if path.exists() else ""})
     out = ROOT / "js" / "legal-text.js"
     out.write_text(
-        "// [AX Project Management by YS] 법적 고지 문서 (자동 생성 파일 - 직접 수정 금지)\n"
+        "// [IOSTAR-PM] 법적 고지 문서 (자동 생성 파일 - 직접 수정 금지)\n"
         "// 원본: legal/*.txt  /  생성: python tools/build_legal.py\n"
         "var LEGAL_DOCS = " + json.dumps(items, ensure_ascii=False, indent=1) + ";\n",
         encoding="utf-8",

@@ -1,5 +1,5 @@
 // =============================================================================
-// [AX Project Management by YS v1.0.6] English UI dictionary (영어 화면 사전)
+// [IOSTAR-PM v1.0.6] English UI dictionary (영어 화면 사전)
 // -----------------------------------------------------------------------------
 //  exact    : 화면 문구 전체 일치 번역 (공백 정규화 기준)
 //  patterns : 숫자/날짜가 포함된 동적 문구 번역 규칙
@@ -164,6 +164,7 @@ var I18N_EN = (function () {
     "DB 비밀번호 입력": "Enter DB password",
     "DB 서버 모드": "DB Server Mode",
     "DELETE (기본 단일모드)": "DELETE (default single mode)",
+    "Developed & Designed by Iostar": "Developed & Designed by Iostar",
     "ID": "ID",
     "ID 채번 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)": "ID numbering rules (incl. Action Items) changed. (Applies to newly created items)",
     "ID 채번 접두 코드": "ID prefix code",

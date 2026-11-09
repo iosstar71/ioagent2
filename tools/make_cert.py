@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] HTTPS 인증서 생성기 (파이썬 표준 라이브러리만 사용, OpenSSL 불필요)
+[IOSTAR-PM v1.0.10] HTTPS 인증서 생성기 (파이썬 표준 라이브러리만 사용, OpenSSL 불필요)
 
 폐쇄망 PC 에 OpenSSL 이 없어도 HTTPS 를 켤 수 있도록 다음 파일을 만듭니다.
   certs/ca.crt      사내 전용 인증기관(CA) 인증서  → 접속하는 PC 의 [신뢰할 수 있는 루트 인증 기관]에 설치
@@ -160,7 +160,7 @@ OID_CN, OID_O, OID_OU = "2.5.4.3", "2.5.4.10", "2.5.4.11"
 SHA256_DIGEST_INFO = bytes.fromhex("3031300d060960864801650304020105000420")
 
 
-def name(cn, org="AX Project Management", ou=""):
+def name(cn, org="IOSTAR-PM", ou=""):
     rdns = [der_set(der_seq(der_oid(OID_O), der_utf8(org)))]
     if ou:
         rdns.append(der_set(der_seq(der_oid(OID_OU), der_utf8(ou))))
@@ -316,7 +316,7 @@ def main():
     ap.add_argument("--host", action="append", default=[], help="Server host name or IP to include (repeatable)")
     ap.add_argument("--out", default=str(CERT_DIR), help="Output folder (default: certs)")
     ap.add_argument("--renew", action="store_true", help="Keep the existing CA and issue a new server certificate")
-    ap.add_argument("--org", default="AX Project Management", help="Organization name in the certificate")
+    ap.add_argument("--org", default="IOSTAR-PM", help="Organization name in the certificate")
     args = ap.parse_args()
 
     out = pathlib.Path(args.out)
@@ -332,14 +332,14 @@ def main():
     else:
         print("[*] Generating CA key (RSA 2048)... this can take a few seconds")
         ca_key = gen_rsa()
-        ca_name = name("AX PM Local CA " + datetime.date.today().strftime("%Y%m%d"), args.org, "Local Certificate Authority")
+        ca_name = name("IOSTAR-PM Local CA " + datetime.date.today().strftime("%Y%m%d"), args.org, "Local Certificate Authority")
         ca_der, ca_ski = make_cert(ca_key, ca_name, ca_key, ca_name, 3650, True)
         (out / "ca.crt").write_text(pem("CERTIFICATE", ca_der), encoding="ascii")
         (out / "ca.key").write_text(pem("RSA PRIVATE KEY", private_key_der(ca_key)), encoding="ascii")
 
     print("[*] Generating server key (RSA 2048)...")
     srv_key = gen_rsa()
-    srv_der, _ = make_cert(srv_key, name(hosts[-1] if len(hosts) > 2 else "localhost", args.org, "AX PM Server"),
+    srv_der, _ = make_cert(srv_key, name(hosts[-1] if len(hosts) > 2 else "localhost", args.org, "IOSTAR-PM Server"),
                            ca_key, ca_name, 397, False, hosts, ca_ski)
     (out / "server.crt").write_text(pem("CERTIFICATE", srv_der), encoding="ascii")
     (out / "server.key").write_text(pem("RSA PRIVATE KEY", private_key_der(srv_key)), encoding="ascii")

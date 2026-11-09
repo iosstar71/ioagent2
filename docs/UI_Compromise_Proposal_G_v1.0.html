@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AX PM 절충 UI 및 G v1.0</title>
+<title>IOSTAR-PM 절충 UI 및 G v1.0</title>
 <style>
 /* Layout: 문서형 제안서(최대 980px) + 테마 전환이 되는 축소 앱 화면(목업은 앱 자체 색을 쓰므로 페이지 테마와 분리) */
 :root {
@@ -200,7 +200,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
     <div class="mock" id="mock" data-mt="navy" role="img" aria-label="절충안 B의 WBS 공정 화면 예시">
       <div class="m-bar">
         <svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="15" fill="#1E3A8A" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2"/><rect x="10" y="14" width="23" height="8" rx="4" fill="#FFFFFF"/><rect x="18" y="28" width="27" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.85"/><rect x="26" y="42" width="17" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.7"/><path d="M51.5 39.5l5.5 6.5-5.5 6.5-5.5-6.5z" fill="#FBBF24"/></svg>
-        <b>AX PM</b>
+        <b>IOSTAR-PM</b>
         <span class="m-pill">Plant Uptime 2027 ▾</span>
         <span class="m-pill">Report date 2027-06-01 (Tue)</span>
         <span class="grow"></span>
@@ -299,12 +299,12 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
     <div class="grid3">
       <div class="panel">
         <span class="k eyebrow">국내 로컬판</span>
-        <h3>AX PM v1.0.x (현행)</h3>
+        <h3>IOSTAR-PM v1.0.x (현행)</h3>
         <p class="legend">현재 저장소·배포 방식 그대로 국내에서 사용. 오류 수정과 소규모 개선만 v1.0.10, v1.0.11 … 로 이어 감. 새 UI는 넣지 않음.</p>
       </div>
       <div class="panel">
         <span class="k eyebrow">글로벌판</span>
-        <h3>AX PM G v1.0</h3>
+        <h3>IOSTAR-PM G v1.0</h3>
         <p class="legend">별도 저장소·별도 배포 파일. 절충안 B UI, 영어 기본 다국어, 판매용 라이선스·보안·문서를 갖춘 제품. 국내 외부 판매도 이 판으로.</p>
       </div>
       <div class="panel">
@@ -319,7 +319,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
         <tbody>
           <tr><td>저장소 · 브랜치</td><td>현재 저장소 <code>main</code></td><td>새 저장소 (예: <code>axpm-global</code>), v1.0.9에서 분기</td></tr>
           <tr><td>버전 표기</td><td>ver1.0.10 …</td><td>G v1.0.0 → G v1.0.1 (오류 수정) → G v1.1.0 (기능 추가)</td></tr>
-          <tr><td>배포 파일</td><td><code>AX_Project_Management_by_YS_v1.0.x.zip</code></td><td><code>AXPM-G-1.0.0-win64.zip</code>, <code>AXPM-G-1.0.0-linux.tar.gz</code>, 컨테이너 이미지(선택)</td></tr>
+          <tr><td>배포 파일</td><td><code>IOSTAR-PM_v1.0.x.zip</code></td><td><code>AXPM-G-1.0.0-win64.zip</code>, <code>AXPM-G-1.0.0-linux.tar.gz</code>, 컨테이너 이미지(선택)</td></tr>
           <tr><td>파이썬</td><td>설치된 Python 사용</td><td>Windows용은 Python 내장 실행본(python.org embeddable, PSF 라이선스) 포함 — 고객 PC에 설치 불필요</td></tr>
           <tr><td>기본 언어</td><td>한국어 (영어 사전으로 번역)</td><td>영어 기본, 한국어 포함. 화면 문구를 키 기반 언어 파일로 전환 (en, ko 먼저, ja·vi 등 추가 가능)</td></tr>
           <tr><td>날짜 · 휴일</td><td>한국 공휴일 목록</td><td>국가별 휴일 파일(CSV/ICS) 가져오기, 주 시작 요일·날짜 형식을 지역 설정으로</td></tr>
@@ -341,7 +341,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
           <tr><td>스크립트 실행 제한</td><td>HTML 인라인 <code>onclick</code>을 이벤트 연결로 바꾸고 서버 모드에 CSP 헤더 적용. 감사 로그(로그인, 권한 변경, 데이터 내려받기).</td><td><span class="chip bad">필수</span></td></tr>
           <tr><td>라이선스 키</td><td>오프라인에서도 확인되는 서명된 라이선스 파일(고객명 · 사용자 수 · 만료일). 서명은 공개키 방식으로, 검증 코드에는 공개키만 포함.</td><td><span class="chip warn">권장</span></td></tr>
           <tr><td>법적 문서</td><td>최종 사용자 사용권 계약(EULA), 개인정보 처리 안내(GDPR 대상 국가 판매 시 사용자 데이터 내보내기·삭제 기능 포함), 오픈소스 고지 파일(<code>THIRD_PARTY_NOTICES</code>).</td><td><span class="chip bad">필수</span></td></tr>
-          <tr><td>상표 · 이름</td><td>판매 국가에서 제품명 "AX PM" 상표 검색 후 확정. 로고는 v1.0.9 자체 제작본 사용 (등록 권장).</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>상표 · 이름</td><td>판매 국가에서 제품명 "IOSTAR-PM" 상표 검색 후 확정. 로고는 v1.0.9 자체 제작본 사용 (등록 권장).</td><td><span class="chip bad">필수</span></td></tr>
           <tr><td>여러 프로젝트</td><td>현재 1개 프로젝트 구조를 여러 프로젝트로 확장 (머리글 프로젝트 선택). 판매 시 가장 많이 요구되는 기능.</td><td><span class="chip warn">권장</span></td></tr>
           <tr><td>접근성</td><td>키보드만으로 조작, 화면 낭독기용 라벨, 명도 대비 AA. 해외 공공기관 납품 시 요구.</td><td><span class="chip warn">권장</span></td></tr>
           <tr><td>문서 · 지원</td><td>영문 설치·관리자·사용자 매뉴얼, 릴리스 노트, 업그레이드 절차, 지원 연락 체계.</td><td><span class="chip bad">필수</span></td></tr>

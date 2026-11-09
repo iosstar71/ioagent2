@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] Windows 배포 패키지 생성기 (Python 내장)
+[IOSTAR-PM v1.0.10] Windows 배포 패키지 생성기 (Python 내장)
 
 일반 배포 zip 과 같은 프로그램 파일에 Windows 용 Python 실행본(python 폴더)을 함께 넣어
 Python 이 설치되지 않은 PC 에서도 run_server.bat 을 바로 실행할 수 있게 합니다.
@@ -12,7 +12,7 @@ Python 실행본 준비 (인터넷이 되는 PC 에서 1회 내려받아 반입)
 
 사용법 (프로그램 폴더에서):
     python tools/make_release_win.py --python <nupkg 또는 embed zip 경로> [--out <출력 폴더>]
-    → AX_Project_Management_by_YS_v<버전>_win64.zip
+    → IOSTAR-PM_v<버전>_win64.zip
 
 ※ 라이선스: Python 은 PSF License 로 재배포가 허용됩니다. python/LICENSE.txt (Python 과 포함 구성요소,
    Microsoft Visual C++ 런타임 재배포 조건 포함)를 그대로 함께 배포합니다. legal/THIRD_PARTY_NOTICES.txt 참고.

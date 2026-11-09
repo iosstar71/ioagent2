@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] 초기 데이터 빌더
+[IOSTAR-PM v1.0.10] 초기 데이터 빌더
 
 data/initial_data.json  ->  js/initial-data.js  (window.AX_INITIAL_DATA = {...})
 
@@ -27,7 +27,7 @@ def build(src: Path = SRC, dst: Path = DST) -> Path:
     body = body.replace("</", "<\\/")
     js = (
         "// =============================================================================\n"
-        "// [AX Project Management by YS] 최초 실행 초기 데이터 (자동 생성 파일 - 직접 수정 금지)\n"
+        "// [IOSTAR-PM] 최초 실행 초기 데이터 (자동 생성 파일 - 직접 수정 금지)\n"
         "// 원본: data/initial_data.json  /  생성: python tools/build_initial_data.py\n"
         "// LocalStorage 에 저장 데이터가 없을 때만 적용됩니다.\n"
         "// =============================================================================\n"

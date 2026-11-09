@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.10] 단일 파일 실행본(Standalone.html) 빌더
+[IOSTAR-PM v1.0.10] 단일 파일 실행본(Standalone.html) 빌더
 
 index.html 이 참조하는 css/*.css, js/*.js 를 모두 인라인하여
 파일 1개(Standalone.html)만으로 오프라인 실행되는 포터블 배포본을 생성합니다.
@@ -66,7 +66,7 @@ def build() -> Path:
 
     banner = (
         "<!-- =========================================================================\n"
-        "     AX Project Management by YS - Standalone All-in-One (단일 파일 실행본)\n"
+        "     IOSTAR-PM - Standalone All-in-One (단일 파일 실행본)\n"
         "     자동 생성 파일: python tools/build_standalone.py  (원본: index.html + css/ + js/)\n"
         "     이 파일 1개만 복사해도 서버 없이 브라우저에서 바로 실행됩니다.\n"
         "     ========================================================================= -->\n"
