@@ -290,7 +290,7 @@ var AuthManager = {
   openLogin(title, desc) {
     this.lockMode = "LOGIN";
     this.pendingTabId = null;
-    this.showRegister(false);
+    this._showPane("loginFormPane");
     const server = !SyncManager.isLocal();
     this._setText("lockModalTitle", title || "🔐 시스템 로그인");
     this._setText("lockModalDesc",
@@ -335,7 +335,7 @@ var AuthManager = {
     const meta = this.getTabMeta(tabId);
     this.lockMode = "CONFIG";
     this.pendingTabId = tabId;
-    this.showRegister(false);
+    this._showPane("loginFormPane");
     this._setText("lockModalTitle", `${meta.name} 권한 인증`);
     this._setText("lockModalDesc",
       `<b>[${meta.name}]</b> 메뉴는 <b>${meta.reqRoleLabel}</b> 권한이 필요합니다.<br>` +
@@ -531,11 +531,59 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // 신규 사용자 등록 (기본 권한: 일반 사용자)
   // ---------------------------------------------------------------------------
+  _showPane(name) {
+    ["loginFormPane", "registerFormPane", "pwdChangeFormPane"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = id === name ? "block" : "none";
+    });
+  },
+
+  // [v1.0.7] 로그인 화면 비밀번호 변경
+  showPwdChange(show) {
+    if (!show) { this.openLogin(); return; }
+    this._showPane("pwdChangeFormPane");
+    this._setText("lockModalTitle", "🔑 비밀번호 변경");
+    this._setText("lockModalDesc", "사번과 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.");
+    this._err("pcErrorMessage", "");
+    const emp = document.getElementById("pcEmpNo");
+    const loginEmp = document.getElementById("inputSecurityEmpNo");
+    if (emp) emp.value = loginEmp ? loginEmp.value : "";
+    ["pcOldPwd", "pcNewPwd", "pcNewPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("securityLockOverlay"));
+    setTimeout(() => { const f = emp && emp.value ? document.getElementById("pcOldPwd") : emp; if (f) f.focus(); }, 60);
+  },
+
+  async changePasswordFromLogin() {
+    const v = id => (document.getElementById(id) ? document.getElementById(id).value : "");
+    const empNo = v("pcEmpNo").trim();
+    const oldPwd = v("pcOldPwd"), n1 = v("pcNewPwd"), n2 = v("pcNewPwd2");
+    if (!empNo || !oldPwd || !n1 || !n2) return this._err("pcErrorMessage", "모든 항목을 입력하세요.");
+    if (n1.length < 4) return this._err("pcErrorMessage", "비밀번호는 4자리 이상이어야 합니다.");
+    if (n1 !== n2) return this._err("pcErrorMessage", "새 비밀번호와 확인 입력이 일치하지 않습니다.");
+    if (n1 === oldPwd) return this._err("pcErrorMessage", "현재 비밀번호와 다른 비밀번호를 입력하세요.");
+    const newHash = await this.hashPassword(n1);
+    if (SyncManager.isLocal()) {
+      const chk = await this._verifyLocal(empNo, oldPwd);
+      if (!chk.ok) return this._err("pcErrorMessage", chk.message);
+      const row = Object.assign({}, chk.user, { pwdHash: newHash });
+      delete row.pwdReset;
+      const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password(${row.empNo})`);
+      if (!res.ok) return this._err("pcErrorMessage", res.error || "변경 실패");
+      projectUsers = res.data.projectUsers;
+      SyncManager.setBaseline(["projectUsers"], res.revs);
+      if (String(row.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(this.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
+    } else {
+      const res = await ServerBackend.request("/api/auth/change-password", { empNo, oldHash: await this.hashPassword(oldPwd), newHash });
+      if (!res.ok) return this._err("pcErrorMessage", res.network ? "DB 서버에 연결할 수 없습니다." : (res.message || "변경 실패"));
+    }
+    showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.`);
+    const emp = document.getElementById("inputSecurityEmpNo");
+    if (emp) emp.value = empNo;
+    this.openLogin();
+  },
+
   async showRegister(show) {
-    const lp = document.getElementById("loginFormPane");
-    const rp = document.getElementById("registerFormPane");
-    if (lp) lp.style.display = show ? "none" : "block";
-    if (rp) rp.style.display = show ? "block" : "none";
+    this._showPane(show ? "registerFormPane" : "loginFormPane");
     if (!show) return;
     this._setText("lockModalTitle", "👤 신규 사용자 등록");
     this._setText("lockModalDesc", "등록 후 바로 로그인할 수 있습니다. (기본 권한: 일반 사용자)");

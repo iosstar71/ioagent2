@@ -1383,3 +1383,42 @@ body[data-density="spacious"] table td {
 .wr-list-row { cursor:pointer; }
 .wr-list-row:hover { background:rgba(59,130,246,0.06); }
 .wr-list-row.active { background:rgba(59,130,246,0.12); font-weight:bold; }
+
+/* ===================== v1.0.7 간트 기준일선 · 마일스톤 ===================== */
+.gantt-report-line { position:absolute; top:0; bottom:0; width:0; border-left:2px dashed #ef4444; z-index:6; pointer-events:none; }
+.gantt-report-tag { position:absolute; top:0; transform:translateX(-50%); background:#ef4444; color:#fff; font-size:10px; font-weight:bold; padding:1px 6px; border-radius:0 0 4px 4px; z-index:7; white-space:nowrap; pointer-events:none; }
+.gantt-pm-milestone { position:absolute; top:2px; display:flex; align-items:center; gap:3px; z-index:5; white-space:nowrap; cursor:help; }
+.gantt-pm-diamond { color:#f59e0b; font-size:15px; line-height:18px; text-shadow:0 0 1px #92400e; }
+.gantt-pm-milestone.integrated .gantt-pm-diamond { color:#7c3aed; text-shadow:0 0 1px #4c1d95; }
+.gantt-pm-diamond.passed { opacity:0.55; }
+.gantt-pm-label { font-size:10px; font-weight:bold; color:var(--text-main); background:rgba(255,255,255,0.85); padding:0 3px; border-radius:3px; }
+.merge-collab-item { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:rgba(124,58,237,0.04); cursor:pointer; font-size:12px; }
+.merge-collab-item span { color:var(--text-muted); font-size:11px; }
+/* v1.0.7 주간보고 상세 */
+.wr-detail-head { position:sticky; top:0; z-index:20; background:var(--bg-main); padding:8px 0; margin-bottom:8px; border-bottom:2px solid var(--primary); }
+.wr-detail-title { font-size:13px; padding:6px 10px; border-radius:6px; background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.25); margin-bottom:6px; }
+.wr-toolbar { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; }
+.wr-toolbar-group { display:flex; gap:6px; flex-wrap:wrap; padding:0 8px 0 0; border-right:1px solid var(--border-color); }
+.wr-toolbar-group:last-child { border-right:none; }
+.wr-manual-tag { background:#fef3c7; color:#92400e; font-size:10px; font-weight:bold; padding:1px 5px; border-radius:3px; }
+
+/* ===================== v1.0.7 버튼 · 바로가기 스타일 표준 ===================== */
+.btn[data-btn] { border-width:1px; border-style:solid; font-weight:600; transition:filter .15s, box-shadow .15s; }
+.btn[data-btn]:hover:not(:disabled) { filter:brightness(0.95); box-shadow:0 1px 4px rgba(15,23,42,0.18); }
+.btn[data-btn]:disabled { opacity:0.5; cursor:not-allowed; }
+.btn[data-btn="save"]       { background:#2563eb !important; border-color:#1d4ed8 !important; color:#fff !important; }
+.btn[data-btn="refresh"]    { background:#fff !important; border-color:#0284c7 !important; color:#0369a1 !important; }
+.btn[data-btn="add"]        { background:#0d9488 !important; border-color:#0f766e !important; color:#fff !important; }
+.btn[data-btn="danger"]     { background:#dc2626 !important; border-color:#b91c1c !important; color:#fff !important; }
+.btn[data-btn="warn"]       { background:#d97706 !important; border-color:#b45309 !important; color:#fff !important; }
+.btn[data-btn="cancel"]     { background:#fff !important; border-color:#cbd5e1 !important; color:#475569 !important; }
+.btn[data-btn="neutral"]    { background:#f8fafc !important; border-color:#cbd5e1 !important; color:#334155 !important; }
+.btn[data-btn="nav"]        { background:#eef2ff !important; border-color:#c7d2fe !important; color:#4338ca !important; }
+.btn[data-btn="excel-down"] { background:#1d6f42 !important; border-color:#185c37 !important; color:#fff !important; }
+.btn[data-btn="excel-up"]   { background:#fff !important; border-color:#1d6f42 !important; color:#1d6f42 !important; }
+.btn[data-btn="word-down"]  { background:#2b579a !important; border-color:#234a83 !important; color:#fff !important; }
+.btn[data-btn="word-up"]    { background:#fff !important; border-color:#2b579a !important; color:#2b579a !important; }
+.btn[data-btn="json-down"]  { background:#475569 !important; border-color:#334155 !important; color:#fff !important; }
+.btn[data-btn="json-up"]    { background:#fff !important; border-color:#475569 !important; color:#334155 !important; }
+header .btn[data-btn="refresh"], header .btn[data-btn="cancel"], header .btn[data-btn="neutral"] { background:rgba(255,255,255,0.92) !important; }
+.btn-legend { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:11px; }

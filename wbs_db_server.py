@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AX Project Management by YS ver1.0.6 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
+AX Project Management by YS ver1.0.7 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
@@ -35,7 +35,7 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "ver1.0.6"
+VERSION = "ver1.0.7"
 APP_NAME = f"AX Project Management by YS {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
@@ -378,7 +378,7 @@ class Store:
     def public_value(key, value):
         """응답에서 비밀번호 해시 제거"""
         if key == "projectUsers" and isinstance(value, list):
-            return [dict(u, pwdHash="") for u in value if isinstance(u, dict)]
+            return [{k: v for k, v in dict(u, pwdHash="").items() if k != "pwdReset"} for u in value if isinstance(u, dict)]
         return value
 
     @classmethod
@@ -489,7 +489,10 @@ class Store:
                 return "BLOCK"
             return None
         row = dict(incoming)
-        if stored and not row.get("pwdHash"):
+        reset = bool(row.pop("pwdReset", False)) and user["role"] in MANAGER_ROLES
+        if reset:
+            row["pwdHash"] = ""  # 관리자/PM 비밀번호 초기화 → 기본값(1234)
+        elif stored and not row.get("pwdHash"):
             row["pwdHash"] = stored.get("pwdHash", "")
         if user["role"] not in MANAGER_ROLES:
             if not stored:
@@ -720,6 +723,31 @@ class Sessions:
             cls._items.pop(token or "", None)
 
 
+class LoginThrottle:
+    """사번별 연속 실패 5회 시 60초간 로그인/비밀번호 변경 차단 (무차별 대입 방지)"""
+    _fails = {}
+    _lock = threading.Lock()
+
+    @classmethod
+    def check(cls, emp):
+        with cls._lock:
+            cnt, until = cls._fails.get(emp.lower(), (0, 0))
+            if until > time.time():
+                raise AuthError(f"로그인 5회 실패로 {int(until - time.time())}초 후 다시 시도할 수 있습니다.", 429)
+
+    @classmethod
+    def fail(cls, emp):
+        with cls._lock:
+            cnt, _ = cls._fails.get(emp.lower(), (0, 0))
+            cnt += 1
+            cls._fails[emp.lower()] = (0, time.time() + 60) if cnt >= 5 else (cnt, 0)
+
+    @classmethod
+    def ok(cls, emp):
+        with cls._lock:
+            cls._fails.pop(emp.lower(), None)
+
+
 def public_user(info):
     return {k: info.get(k) for k in ("empNo", "name", "role", "subsystem", "dept", "lang")}
 
@@ -857,10 +885,13 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def api_login(self, req):
         emp = str(req.get("empNo", "")).strip()
         pwd_hash = str(req.get("pwdHash", ""))
+        LoginThrottle.check(emp)
         row = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == emp.lower()), None)
         if not row or (row.get("pwdHash") or DEFAULT_PWD_HASH) != pwd_hash:
+            LoginThrottle.fail(emp)
             write_server_log(f"[AUTH] 로그인 실패: {emp} ({self.address_string()})")
             raise AuthError("사번 또는 비밀번호가 일치하지 않습니다.", 401)
+        LoginThrottle.ok(emp)
         token, info = Sessions.create(row)
         if req.get("lang") in ("ko", "en"):
             info["lang"] = req["lang"]
@@ -879,6 +910,21 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         row = Store.register_user(req.get("user") or {})
         write_server_log(f"[AUTH] 신규 사용자 등록: {row['empNo']} ({row['subsystem']})")
         self._send_json(200, {"ok": True, "user": Store.public_value("projectUsers", [row])[0]})
+
+    def api_change_password(self, req):
+        """로그인 화면 비밀번호 변경 (토큰 없이 사번 + 현재 비밀번호 검증)"""
+        emp = str(req.get("empNo", "")).strip()
+        if not emp:
+            raise AuthError("사번을 입력하세요.", 400)
+        LoginThrottle.check(emp)
+        try:
+            Store.change_password(emp, str(req.get("oldHash", "")), str(req.get("newHash", "")))
+        except AuthError:
+            LoginThrottle.fail(emp)
+            raise
+        LoginThrottle.ok(emp)
+        write_server_log(f"[AUTH] 비밀번호 변경(로그인 화면): {emp}")
+        self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
 
     def api_password(self, req):
         info = self._require_user()
@@ -934,6 +980,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         "/api/auth/me": api_me,
         "/api/auth/register": api_register,
         "/api/auth/password": api_password,
+        "/api/auth/change-password": api_change_password,
         "/api/db/test": api_db_test,
         "/api/db/init": api_db_init,
         "/api/db/load": api_db_load,

@@ -6,12 +6,12 @@
 window.AX_INITIAL_DATA = {
  "_meta": {
   "name": "AX Project Management by YS - 초기 프로젝트 데이터",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "최초 실행(LocalStorage 비어있음) 시 자동 적용되는 초기 데이터. 편집 후 tools/build_initial_data.py 실행 → js/initial-data.js 재생성",
   "generatedAt": "2026-11-09"
  },
  "projectConfig": {
-  "systemTitle": "AX Project Management by YS ver1.0.6",
+  "systemTitle": "AX Project Management by YS ver1.0.7",
   "projectName": "27년 가동률 시스템 개선",
   "domains": [
    "관리공통",
@@ -771,7 +771,52 @@ window.AX_INITIAL_DATA = {
    }
   ],
   "layoutType": "top-nav",
-  "uiDensity": "standard"
+  "uiDensity": "standard",
+  "milestones": [
+   {
+    "id": "MS-01",
+    "scope": "ALL",
+    "name": "프로젝트 착수 보고",
+    "date": "2027-01-08",
+    "desc": "착수 보고회 및 사업수행계획서 승인"
+   },
+   {
+    "id": "MS-02",
+    "scope": "ALL",
+    "name": "1단계 분석설계 감리",
+    "date": "2027-05-31",
+    "desc": "5월말 1회차 표준 산출물 감리"
+   },
+   {
+    "id": "MS-03",
+    "scope": "ALL",
+    "name": "2단계 종료 감리",
+    "date": "2027-10-29",
+    "desc": "10월말 2회차 표준 산출물 감리"
+   },
+   {
+    "id": "MS-04",
+    "scope": "ALL",
+    "name": "시스템 오픈",
+    "date": "2027-11-01",
+    "desc": "전 라인 이행 및 운영 전환"
+   },
+   {
+    "id": "MS-05",
+    "scope": "W1",
+    "name": "W1 PLC 연계 완료",
+    "date": "2027-07-23",
+    "desc": "가공1라인 PLC 실시간 수집 연계"
+   },
+   {
+    "id": "MS-06",
+    "scope": "A1",
+    "name": "A1 신규라인 시운전",
+    "date": "2027-09-17",
+    "desc": "조립1라인 센서 IoT 시운전"
+   }
+  ],
+  "progressBasis": "CALENDAR"
  },
  "subsystemsMeta": [
   {

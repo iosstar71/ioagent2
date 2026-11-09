@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.6] Standalone.html (single-file) builder
+rem [AX Project Management by YS - ver1.0.7] Standalone.html (single-file) builder
 rem  - Rebuilds js/initial-data.js from data/initial_data.json
 rem  - Inlines css/*.css and js/*.js into Standalone.html
 rem ============================================================================

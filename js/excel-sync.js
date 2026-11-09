@@ -713,7 +713,6 @@ const ExcelSync = {
     const a = document.createElement("a");
     a.href = url;
     a.download = safeName;
-    a.rel = "noopener";
     a.style.display = "none";
     document.body.appendChild(a);
     a.click();

@@ -1,13 +1,13 @@
 /**
  * =========================================================================
- * AX Project Management by YS ver1.0.6
+ * AX Project Management by YS ver1.0.7
  * 모듈명: MeetingManager (회의일정 캘린더 · 회의록 작성 · Action Item 통합 관리)
  * =========================================================================
  * 주요 기능:
  * 1) 🗓️ 회의일정 관리: 연도/월별 인터랙티브 프로젝트 캘린더 및 일정 CRUD
  * 2) 📝 회의록 작성: 회의 기본정보, 참석자 관리, 안건별 상세 논의/결정사항, 도출 Action Item 연계
  * 3) ⚡ Action Item 현황: 전사/서브시스템/일자/상태별 통합 트래커 및 원클릭 상태 전환
- * 4) 📄 보고서 연동: 회의록 독립 DOCX/XLSX 다운로드 및 주간보고 연계
+ * 4) 📄 보고서 연동: 회의록 독립 워드/XLSX 다운로드 및 주간보고 연계
  * [v1.0.6] 회의록은 편집본(draft)에 작성 → [✅ 작성 완료] 클릭 시 저장
  *          저장하지 않고 다른 회의록/화면으로 이동하면 [저장 / 무시 / 취소] 선택
  */
@@ -1264,8 +1264,8 @@ var MeetingManager = {
         <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" onclick="MeetingManager.completeMinutes(true)">✅ 작성 완료 (저장)</button>
           <button class="btn btn-secondary btn-sm" onclick="MeetingManager.discardDraft(); MeetingManager.render();" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" onclick="MeetingManager.exportMeetingDocx('${mtg.id}')" style="background:#2563eb; color:white; border-color:#2563eb;">📄 회의록 DOCX 다운로드</button>
-          <button class="btn btn-success btn-sm" onclick="MeetingManager.exportMeetingExcel('${mtg.id}')">📊 회의록 엑셀 다운로드</button>
+          <button class="btn btn-info btn-sm" onclick="MeetingManager.exportMeetingDocx('${mtg.id}')" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
+          <button class="btn btn-success btn-sm" onclick="MeetingManager.exportMeetingExcel('${mtg.id}')">📥 엑셀 다운로드 (회의록)</button>
         </div>
       </div>
     `;
@@ -1677,13 +1677,13 @@ var MeetingManager = {
     return (meetingsData || []).filter(m => m.date >= startDate && m.date <= endDate);
   },
 
-  // 회의록 단독 DOCX 생성
+  // 회의록 단독 워드 생성
   exportMeetingDocx(meetingId) {
     const m = (meetingsData || []).find(x => x.id === meetingId) || meetingsData[0];
     if (!m) return;
 
     if (typeof DocxBuilder === "undefined" || typeof DocxBuilder.buildMeetingMinutesDocx !== "function") {
-      showToast("⚠️ DOCX 생성 엔진을 초기화할 수 없습니다.", "error");
+      showToast("⚠️ 워드 생성 엔진을 초기화할 수 없습니다.", "error");
       return;
     }
 
@@ -1693,7 +1693,7 @@ var MeetingManager = {
     if (typeof ExcelSync !== "undefined" && typeof ExcelSync._triggerDownload === "function") {
       ExcelSync._triggerDownload(blob, filename);
     }
-    showToast(`📄 [회의록 DOCX 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📄 [회의록 워드 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
   // 회의록 엑셀(XLSX) 다운로드

@@ -984,7 +984,7 @@ var FileAutoSyncManager = {
   async syncNow(showAlert = false) {
     if (!this.fileHandle) return;
     try {
-      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.6" }, DataRegistry.collect());
+      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.7" }, DataRegistry.collect());
       const writable = await this.fileHandle.createWritable();
       await writable.write(JSON.stringify(payload, null, 2));
       await writable.close();

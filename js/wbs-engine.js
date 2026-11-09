@@ -301,7 +301,10 @@ const WBSEngine = {
     return parts.length > 0 ? parts.join("-") + "-" : "";
   },
 
+  lastIdMap: null, // [v1.0.7] 직전 재채번에서 바뀐 ID (이전 → 신규)
+
   sortAndAutoNumber(data) {
+    const prevIds = new Map(data.map(it => [it, it.id]));
     const getSystemPriority = (sys) => {
       const s = (sys || "").trim();
       if (s.toUpperCase() === "PMO") return "0000_PMO";
@@ -345,6 +348,7 @@ const WBSEngine = {
     let currentL1Index = 0;
     let currentSystem = null;
     let hasL1InSystem = false;
+    let prevLvl = 1;
     const counters = [0, 0, 0, 0, 0];
 
     for (let i = 0; i < data.length; i++) {
@@ -363,9 +367,13 @@ const WBSEngine = {
       if (!hasL1InSystem) {
         lvl = 1;
         hasL1InSystem = true;
+        prevLvl = 1;
       } else if (lvl === 1) {
         lvl = 2;
       }
+      // [v1.0.7] 레벨 건너뜀 보정 (예: L2 바로 아래 L4 → L3) — ID 에 존재하지 않는 중간 번호가 생기지 않도록
+      if (lvl > prevLvl + 1) lvl = prevLvl + 1;
+      prevLvl = lvl;
       item.level = lvl;
 
       const prefixStr = this.buildWbsIdPrefix(sys);
@@ -387,6 +395,12 @@ const WBSEngine = {
     }
 
     this.markLeafNodes(data);
+    const idMap = new Map();
+    data.forEach(it => {
+      const old = prevIds.get(it);
+      if (old && old !== it.id) idMap.set(old, it.id);
+    });
+    this.lastIdMap = idMap.size ? idMap : null;
   },
 
   markLeafNodes(data) {

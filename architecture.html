@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AX Project Management by YS ver1.0.6 - 소프트웨어 아키텍처 정의서</title>
+  <title>AX Project Management by YS ver1.0.7 - 소프트웨어 아키텍처 정의서</title>
   <style>
     :root {
       --primary: #1e3a8a;
@@ -256,7 +256,7 @@
     .btn-return:hover { background: var(--primary-light); }
   
     /* =================================================================== */
-    /* [2026 ver1.0.6 신규] 현대적 고품질 아키텍처 비주얼 컴포넌트 스타일   */
+    /* [2026 ver1.0.7 신규] 현대적 고품질 아키텍처 비주얼 컴포넌트 스타일   */
     /* =================================================================== */
     .visual-arch-card {
       background: #0f172a;
@@ -652,7 +652,7 @@
         🏛️ WBS Architecture
       </div>
       <div class="sidebar-sub">
-        ver1.0.6 Enterprise System Guide
+        ver1.0.7 Enterprise System Guide
       </div>
       <ul class="nav-list">
         <li class="nav-item"><a class="nav-link active" href="#sec-overview">1. 시스템 개요 및 아키텍처 비전</a></li>
@@ -683,9 +683,9 @@
           <span class="badge badge-purple">Notion-Style Meeting Manager</span>
           <span class="badge badge-amber">Production Ready</span>
         </div>
-        <h1>AX Project Management by YS ver1.0.6</h1>
+        <h1>AX Project Management by YS ver1.0.7</h1>
         <p class="lead-desc">
-          본 문서는 <strong>AX Project Management by YS ver1.0.6</strong>의 소프트웨어 아키텍처 원칙, 4계층 레이어 구조,
+          본 문서는 <strong>AX Project Management by YS ver1.0.7</strong>의 소프트웨어 아키텍처 원칙, 4계층 레이어 구조,
           디렉토리 및 모듈별 단일 책임 원칙(SRP), WBS-산출물-회의록-ActionItem 통합 데이터 모델, 순수 클라이언트 기반
           OpenXML(DOCX/XLSX) 변환 파이프라인 명세를 기술한 시스템 관리자 및 개발자용 공식 아키텍처 정의서입니다.
         </p>
@@ -720,7 +720,7 @@
             <strong>State & Storage(상태 및 저장 계층)</strong>, <strong>Integration & Export(연계 및 변환 계층)</strong>의 4계층 구조로 엄격히 분리되어 있습니다.
           </p>
           <!-- ============================================================= -->
-        <!-- [2026 ver1.0.6 고도화] 4계층 소프트웨어 아키텍처 비주얼 컴포넌트 -->
+        <!-- [2026 ver1.0.7 고도화] 4계층 소프트웨어 아키텍처 비주얼 컴포넌트 -->
         <!-- ============================================================= -->
         <div class="visual-arch-card">
           <!-- Tier 1: Presentation Tier -->
@@ -805,7 +805,7 @@
                 </div>
               </div>
               <div class="tier-engine-card highlight-engine">
-                <div class="engine-card-header"><span class="engine-badge new-badge">ver1.0.6 Core</span> <strong>MeetingManager</strong></div>
+                <div class="engine-card-header"><span class="engine-badge new-badge">ver1.0.7 Core</span> <strong>MeetingManager</strong></div>
                 <div class="engine-card-body">
                   • 월별 인터랙티브 캘린더 엔진 (휴일/상태 색상 배지 표출)<br>
                   • 회의록 안건, 참석자 명단, 결정 사항 및 서브시스템 매핑<br>
@@ -815,7 +815,7 @@
               <div class="tier-engine-card">
                 <div class="engine-card-header"><span class="engine-badge">Engine</span> <strong>WeeklyReportManager</strong></div>
                 <div class="engine-card-body">
-                  • 금주 실적/차주 계획 과업 엄격 선별 로직 (ver1.0.6 규격)<br>
+                  • 금주 실적/차주 계획 과업 엄격 선별 로직 (ver1.0.7 규격)<br>
                   • 금주 회의 실적 및 차주 예정 회관 자동 연동 집계<br>
                   • 5대 표준 목차 기반 서술형 보고서 생성 및 이력 복사
                 </div>
@@ -926,7 +926,7 @@
         <h2>3. 디렉토리 및 파일 분류 표준 (Modular Directory & Source Taxonomy)</h2>
         <div class="spec-card">
           <p>
-            ver1.0.6에서는 엔터프라이즈 유지보수성과 배포 편의성을 극대화하기 위해 중복 파일을 전면 제거하고 단일 책임 원칙에 따라 소스 코드를 재분류했습니다.
+            ver1.0.7에서는 엔터프라이즈 유지보수성과 배포 편의성을 극대화하기 위해 중복 파일을 전면 제거하고 단일 책임 원칙에 따라 소스 코드를 재분류했습니다.
           </p>
           <table class="arch-table">
             <thead>
@@ -950,7 +950,7 @@
               <tr>
                 <td><strong>architecture.html</strong></td>
                 <td>Documentation</td>
-                <td>[ver1.0.6 신규] 시스템 소프트웨어 아키텍처, 데이터 모델, 호출 플로우 공식 명세서.</td>
+                <td>[ver1.0.7 신규] 시스템 소프트웨어 아키텍처, 데이터 모델, 호출 플로우 공식 명세서.</td>
               </tr>
               <tr>
                 <td><strong>manual.html</strong></td>
@@ -975,7 +975,7 @@
               <tr>
                 <td><strong>js/meeting-manager.js</strong></td>
                 <td>Domain Component</td>
-                <td>[ver1.0.6 신규] 회의일정 캘린더, 회의록 작성·안건 편집, Action Item 통합 트래커.</td>
+                <td>[ver1.0.7 신규] 회의일정 캘린더, 회의록 작성·안건 편집, Action Item 통합 트래커.</td>
               </tr>
               <tr>
                 <td><strong>js/excel-sync.js</strong></td>
@@ -990,7 +990,7 @@
               <tr>
                 <td><strong>js/gantt-renderer.js</strong></td>
                 <td>Visualization</td>
-                <td>WBS 일정 기반 인터랙티브 간트차트 렌더러 (주간 모드 및 ver1.0.6 월간 모드 지원).</td>
+                <td>WBS 일정 기반 인터랙티브 간트차트 렌더러 (주간 모드 및 ver1.0.7 월간 모드 지원).</td>
               </tr>
               <tr>
                 <td><strong>js/report-exporter.js</strong></td>
@@ -1011,6 +1011,11 @@
                 <td><strong>js/access-control.js</strong></td>
                 <td>Auth &amp; RBAC (v1.0.6)</td>
                 <td>로그인·신규 사용자 등록·서버 토큰 인증, 4단계 권한(SYS_ADMIN/PM/LEAD/MEMBER), 탭 접근 제어 단일 정의.</td>
+              </tr>
+              <tr>
+                <td><strong>js/ui-standards.js</strong></td>
+                <td>UI Standard (v1.0.7)</td>
+                <td>버튼·바로가기의 기능별 색상·스타일 표준 자동 적용 (저장/새로고침/추가/삭제/이동/엑셀/워드/JSON).</td>
               </tr>
               <tr>
                 <td><strong>js/i18n.js · js/i18n-en.js</strong></td>
@@ -1050,7 +1055,7 @@
             시스템의 모든 엔티티는 JSON 직렬화가 가능한 자바스크립트 객체 구조로 관리되며, 엔티티 간 식별자(ID) 기반의 느슨한 결합(Loose Coupling)을 형성합니다.
           </p>
           <!-- ============================================================= -->
-        <!-- [2026 ver1.0.6 고도화] 데이터 모델 & 통합 엔티티 관계도 (ERD)  -->
+        <!-- [2026 ver1.0.7 고도화] 데이터 모델 & 통합 엔티티 관계도 (ERD)  -->
         <!-- ============================================================= -->
         <div class="visual-erd-container">
           <div class="erd-grid-row">
@@ -1161,7 +1166,7 @@
             <div class="erd-entity-card highlight-erd">
               <div class="erd-entity-header" style="background:#4f46e5;">
                 <span>📅 <strong>MeetingsData</strong></span>
-                <span class="erd-badge" style="background:#4338ca;">Meetings (ver1.0.6)</span>
+                <span class="erd-badge" style="background:#4338ca;">Meetings (ver1.0.7)</span>
               </div>
               <div class="erd-entity-body">
                 <div class="erd-field"><span class="key-tag">PK</span> id (예: MTG-20270528-01)</div>
@@ -1205,7 +1210,7 @@
         <div class="spec-card">
           <h3>부트스트랩 및 초기화 시퀀스:</h3>
           <!-- ============================================================= -->
-        <!-- [2026 ver1.0.6 고도화] 런타임 수명주기 및 데이터 플로우 시퀀스 -->
+        <!-- [2026 ver1.0.7 고도화] 런타임 수명주기 및 데이터 플로우 시퀀스 -->
         <!-- ============================================================= -->
         <div class="visual-flow-container">
           <div class="flow-sequence-track">
@@ -1312,10 +1317,10 @@
         <h2>7. 회의록 & Action Item 아키텍처 (Meeting Management Subsystem)</h2>
         <div class="spec-card">
           <p>
-            ver1.0.6의 핵심 신규 모듈인 <code>MeetingManager</code>는 회의 일정 관리, 회의록 작성, Action Item 추적을 상호 유기적으로 연동합니다.
+            ver1.0.7의 핵심 신규 모듈인 <code>MeetingManager</code>는 회의 일정 관리, 회의록 작성, Action Item 추적을 상호 유기적으로 연동합니다.
           </p>
           <!-- ============================================================= -->
-        <!-- [2026 ver1.0.6 고도화] 회의 관리 및 Action Item 라이프사이클   -->
+        <!-- [2026 ver1.0.7 고도화] 회의 관리 및 Action Item 라이프사이클   -->
         <!-- ============================================================= -->
         <div class="visual-pipeline-container">
           <div class="pipeline-track">

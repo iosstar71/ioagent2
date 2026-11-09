@@ -1,7 +1,7 @@
 // =============================================================================
 // AX Project Management by YS - 코어 앱 엔진
 // =============================================================================
-const APP_VERSION = { version: "1.0.6", title: "AX Project Management by YS ver1.0.6" };
+const APP_VERSION = { version: "1.0.7", title: "AX Project Management by YS ver1.0.7" };
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼
 let _confirmCallback = null;
@@ -536,7 +536,7 @@ function resetStandardDeliverablesMeta() {
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
-  systemTitle: "AX Project Management by YS ver1.0.6",
+  systemTitle: "AX Project Management by YS ver1.0.7",
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
   channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
@@ -907,7 +907,7 @@ function buildNextEntityId(entityType, sysName) {
 }
 
 // =============================================================================
-// [기준정보 > d. 사용자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
+// [기준정보 > 사용자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
 // =============================================================================
 function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
@@ -940,7 +940,8 @@ function renderProjectUsersTable() {
         <td>
           <div style="display:flex; gap:4px; align-items:center;">
             <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:11px;">
-            <button class="btn btn-secondary btn-sm" onclick="updateProjectUserPassword(${idx})">변경</button>
+            <button class="btn btn-sm" data-btn="save" onclick="updateProjectUserPassword(${idx})">변경</button>
+            <button class="btn btn-sm" data-btn="warn" onclick="resetProjectUserPassword(${idx})" title="비밀번호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteProjectUser(${idx})" ${isAdminAccount ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다.'" : ""}>×</button></td>
@@ -970,20 +971,91 @@ function applyBulkUserLanguage() {
   });
 }
 
-// 기준정보 서브탭 (a. 프로젝트 기본정보 / b. 공정단계정보 / c. 휴일정보 / d. 사용자 정보)
-var MasterSubTabs = {
-  KEY: "AX_PMYS_MASTER_SUBTAB",
-  show(name) {
-    document.querySelectorAll(".master-subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
-    document.querySelectorAll(".master-subpane").forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
-    try { sessionStorage.setItem(this.KEY, name); } catch (e) {}
-    if (name === "holiday") ProgressBasisManager.render();
-    if (name === "users") renderProjectUsersTable();
+// 서브탭 공통 관리자 (기준정보 / 시스템 설정)
+var SubTabs = {
+  KEY: "AX_PMYS_SUBTAB_",
+  show(group, name) {
+    document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
+    document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
+    try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
+    if (group === "master") {
+      if (name === "holiday") ProgressBasisManager.render();
+      if (name === "users") renderProjectUsersTable();
+      if (name === "basic") MilestoneManager.render();
+    }
+    if (group === "config" && name === "db") DbConnector.renderConfigForm();
   },
-  restore() {
-    let name = "basic";
-    try { name = sessionStorage.getItem(this.KEY) || "basic"; } catch (e) {}
-    this.show(name);
+  restore(group, def) {
+    let name = def;
+    try { name = sessionStorage.getItem(this.KEY + group) || def; } catch (e) {}
+    this.show(group, name);
+  }
+};
+
+// 기준정보 서브탭 (프로젝트 기본정보 / 공정단계정보 / 휴일정보 / 사용자 정보)
+var MasterSubTabs = {
+  show(name) { SubTabs.show("master", name); },
+  restore() { SubTabs.restore("master", "basic"); }
+};
+
+// [v1.0.7] 주요 마일스톤 (통합 / 서브시스템별) — projectConfig.milestones
+var MilestoneManager = {
+  list() {
+    if (!Array.isArray(projectConfig.milestones)) projectConfig.milestones = [];
+    return projectConfig.milestones;
+  },
+  render() {
+    const body = document.getElementById("milestoneTableBody");
+    if (!body) return;
+    const list = this.list();
+    const rep = projectConfig.reportDate || "";
+    if (!list.length) {
+      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px; color:var(--text-muted);">등록된 마일스톤이 없습니다. [➕ 마일스톤 추가]로 등록하세요.</td></tr>`;
+      return;
+    }
+    const subs = getAllSubsystemNames();
+    body.innerHTML = list
+      .map((m, idx) => ({ m, idx }))
+      .sort((a, b) => String(a.m.date).localeCompare(String(b.m.date)))
+      .map(({ m, idx }) => {
+        const opts = [`<option value="ALL" ${!m.scope || m.scope === "ALL" ? "selected" : ""}>🏁 통합 (프로젝트 전체)</option>`]
+          .concat(subs.map(s => `<option value="${escapeHtml(s)}" ${m.scope === s ? "selected" : ""}>🔧 ${escapeHtml(s)}</option>`)).join("");
+        const passed = m.date && m.date <= rep;
+        return `<tr>
+          <td><select style="width:150px;" onchange="MilestoneManager.update(${idx}, 'scope', this.value)">${opts}</select></td>
+          <td><input type="text" value="${escapeHtml(m.name || "")}" style="width:100%; font-weight:bold;" onchange="MilestoneManager.update(${idx}, 'name', this.value)"></td>
+          <td><input type="date" value="${escapeHtml(m.date || "")}" onchange="MilestoneManager.update(${idx}, 'date', this.value)"></td>
+          <td><input type="text" value="${escapeHtml(m.desc || "")}" style="width:100%;" onchange="MilestoneManager.update(${idx}, 'desc', this.value)"></td>
+          <td style="text-align:center;">${passed ? '<span class="status-tag tag-completed">경과</span>' : '<span class="status-tag tag-ready">예정</span>'}</td>
+          <td style="text-align:center;"><button class="btn btn-sm" data-btn="danger" onclick="MilestoneManager.remove(${idx})">×</button></td>
+        </tr>`;
+      }).join("");
+  },
+  add(kind) {
+    const subs = getAllSubsystemNames();
+    const own = Permission.ownSubsystem();
+    const scope = kind === "ALL" ? "ALL" : (subs.includes(own) ? own : (subs[0] || "ALL"));
+    this.list().push({ id: `MS-${Date.now().toString(36)}`, scope, name: kind === "ALL" ? "신규 통합 마일스톤" : "신규 서브시스템 마일스톤", date: projectConfig.reportDate || projectConfig.projectStartDate, desc: "" });
+    this.changed();
+  },
+  update(idx, field, value) {
+    const m = this.list()[idx];
+    if (!m) return;
+    m[field] = String(value || "").trim();
+    this.changed();
+  },
+  remove(idx) {
+    const m = this.list()[idx];
+    if (!m) return;
+    openConfirmDialog(`[${m.name}] 마일스톤을 삭제하시겠습니까?`, () => {
+      this.list().splice(idx, 1);
+      this.changed();
+    });
+  },
+  changed() {
+    this.render();
+    renderGantt();
+    persistChanges();
   }
 };
 
@@ -1048,6 +1120,19 @@ async function updateProjectUserPassword(idx) {
   input.value = "";
   persistChanges();
   showToast(`[${u.name}(${u.empNo})] 인력의 비밀번호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
+}
+
+// [v1.0.7] 사용자별 비밀번호 초기화 (초기 비밀번호 1234)
+function resetProjectUserPassword(idx) {
+  const u = projectUsers[idx];
+  if (!u) return;
+  openConfirmDialog(`[${u.name}(${u.empNo})] 사용자의 비밀번호를 초기값(1234)으로 초기화하시겠습니까?`, () => {
+    u.pwdHash = "";
+    u.pwdReset = true;
+    if (String(u.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(AuthManager.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
+    persistChanges();
+    showToast(`🔄 [${u.name}(${u.empNo})] 비밀번호가 1234로 초기화되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
+  });
 }
 
 function deleteProjectUser(idx) {
@@ -1202,6 +1287,7 @@ var AppBoot = {
 
   async start() {
     DbConnector.init();
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.init();
     if (typeof I18N !== "undefined") I18N.init();
     SyncUI.init();
     if (SyncManager.isLocal()) {
@@ -1572,17 +1658,41 @@ function updateProjectPeriod(triggerAlert = true) {
   if (triggerAlert) showToast(`프로젝트 기간이 [${periodStr}] 로 설정되었습니다.`);
 }
 
-function syncGlobalDate(newDate) {
-  projectConfig.reportDate = newDate;
-  const dayName = WBSEngine.getDayOfWeekText(newDate);
+// [v1.0.7] WBS ID 재채번 시 다른 데이터의 WBS 참조를 새 ID 로 갱신
+//  - 소통 피드 연계 Task(taskId), 작성 중인 주간보고 편집본(wbsId / 제외 목록)
+//  - 저장 완료된 과거 주간보고는 작성 시점 기록이므로 변경하지 않음
+function remapWbsReferences(idMap) {
+  if (!idMap || !idMap.size) return;
+  const strip = v => String(v || "").replace(/^#/, "");
+  (communicationsData || []).forEach(c => {
+    const k = strip(c.taskId);
+    if (k && idMap.has(k)) c.taskId = idMap.get(k);
+  });
+  const rep = typeof WeeklyReportManager !== "undefined" ? WeeklyReportManager.currentWeekReport : null;
+  if (rep) {
+    ["currentWeekTasks", "nextWeekTasks"].forEach(key => (rep[key] || []).forEach(t => { if (t.wbsId && idMap.has(t.wbsId)) t.wbsId = idMap.get(t.wbsId); }));
+    ["excludedCurWbsIds", "excludedNxtWbsIds"].forEach(key => { if (Array.isArray(rep[key])) rep[key] = rep[key].map(id => idMap.get(id) || id); });
+  }
+}
+
+// 화면 곳곳의 기준일 표시 갱신
+function renderReportDateLabels() {
+  const d = projectConfig.reportDate;
+  if (!d) return;
+  const dayName = WBSEngine.getDayOfWeekText(d);
   const dayTag = document.getElementById("globalReportDayOfWeek");
   if (dayTag) {
     dayTag.innerText = `(${dayName})`;
     dayTag.className = `day-of-week-tag ${dayName === "토" ? "day-sat" : (dayName === "일" ? "day-sun" : "")}`;
   }
-  document.querySelectorAll(".lbl-current-date").forEach(el => {
-    el.innerText = `${newDate} (${dayName})`;
-  });
+  const rEl = document.getElementById("globalReportDate");
+  if (rEl && rEl.value !== d) rEl.value = d;
+  document.querySelectorAll(".lbl-current-date").forEach(el => { el.innerText = `${d} (${dayName})`; });
+}
+
+function syncGlobalDate(newDate) {
+  projectConfig.reportDate = newDate;
+  renderReportDateLabels();
   rebuildAll();
 }
 
@@ -1678,14 +1788,14 @@ function renderWbsTable() {
       <td>
         <div class="wbs-lvl-ctrl">
           <button class="btn-xs" title="상위 레벨로 올리기" onclick="changeTaskLevel(${idx}, -1)" ${row.level <= 2 ? "disabled" : ""}>◀</button>
-          <select style="padding:2px 3px; font-size:11px;" onchange="wbsData[${idx}].level=parseInt(this.value,10); rebuildAll();" ${row.level === 1 ? 'disabled title="Level 1은 서브시스템 단위로 고정됩니다."' : ""}>
+          <select style="padding:2px 3px; font-size:11px;" onchange="setTaskLevel(${idx}, this.value)" ${row.level === 1 ? 'disabled title="Level 1은 서브시스템 단위로 고정됩니다."' : ""}>
             ${[1, 2, 3, 4, 5].map(l => `<option value="${l}" ${row.level === l ? "selected" : ""}>L${l}</option>`).join("")}
           </select>
           <button class="btn-xs" title="하위 레벨로 내리기" onclick="changeTaskLevel(${idx}, 1)" ${row.level === 1 || row.level >= 5 ? "disabled" : ""}>▶</button>
         </div>
       </td>
       <td>
-        <select style="width:104px; padding:2px 4px; font-size:11px;" onchange="wbsData[${idx}].system=this.value; rebuildAll();">
+        <select style="width:104px; padding:2px 4px; font-size:11px;" onchange="changeTaskSystem(${idx}, this.value)">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -1839,27 +1949,64 @@ function addSiblingTask(idx) {
   showToast(`[${target.id}] 다음에 L${sibLevel} 동위 과업이 추가되었습니다.`);
 }
 
+// [v1.0.7] 레벨 변경: 선택 과업과 하위 과업(서브트리)을 함께 이동하고 WBS ID 를 자동 재채번·재정렬
 function changeTaskLevel(idx, delta) {
   const row = wbsData[idx];
-  if (!row) return;
+  if (!row || !delta) return;
   if (row.level === 1) {
     showToast("서브시스템 루트(L1)의 레벨은 고정되어 있습니다.");
     return;
   }
+  const end = getSubtreeEndIndex(idx);
+  const subtree = wbsData.slice(idx, end);
   const nextLvl = row.level + delta;
-  if (nextLvl < 2 || nextLvl > 5) {
-    showToast("단위 과업 레벨은 L2 ~ L5 범위 내에서만 조정 가능합니다.");
+  const maxLvl = Math.max(...subtree.map(t => t.level || 1)) + delta;
+  if (nextLvl < 2 || maxLvl > 5) {
+    showToast(`단위 과업 레벨은 L2 ~ L5 범위 내에서만 조정 가능합니다. (하위 과업 포함 최대 L${maxLvl})`);
     return;
   }
-  if (delta > 0 && idx > 0) {
+  if (delta > 0) {
     const prev = wbsData[idx - 1];
-    if (prev && (prev.system || "").trim() === (row.system || "").trim() && nextLvl > (prev.level || 1) + 1) {
-      showToast(`직전 상위 과업(L${prev.level})보다 2단계 이상 깊은 레벨(L${nextLvl})로 내릴 수 없습니다.`);
+    if (!prev || (prev.system || "").trim() !== (row.system || "").trim() || nextLvl > (prev.level || 1) + 1) {
+      showToast(`직전 과업(L${prev ? prev.level : "-"}) 아래로만 내릴 수 있습니다. (최대 L${prev ? (prev.level || 1) + 1 : 2})`);
       return;
     }
   }
-  row.level = nextLvl;
+  const oldId = row.id;
+  subtree.forEach(t => { t.level = (t.level || 1) + delta; });
   rebuildAll();
+  showToast(`🔢 [${oldId} → ${row.id}] 레벨 L${nextLvl - delta} → L${nextLvl} 변경 (하위 ${subtree.length - 1}건 포함) · WBS ID 자동 재채번 완료`);
+}
+
+// 레벨 선택 상자 변경
+function setTaskLevel(idx, lvl) {
+  const row = wbsData[idx];
+  if (!row) return;
+  const delta = parseInt(lvl, 10) - (row.level || 1);
+  if (delta) changeTaskLevel(idx, delta);
+  else renderWbsTable();
+}
+
+// 서브시스템 변경: 하위 과업을 함께 대상 서브시스템 마지막으로 이동 후 재채번
+function changeTaskSystem(idx, sys) {
+  const row = wbsData[idx];
+  if (!row || !sys || row.system === sys) return;
+  if (row.level === 1) {
+    showToast("서브시스템 루트(L1)는 다른 서브시스템으로 이동할 수 없습니다. 기준정보에서 서브시스템명을 변경하세요.");
+    renderWbsTable();
+    return;
+  }
+  const end = getSubtreeEndIndex(idx);
+  const block = wbsData.splice(idx, end - idx);
+  const baseLvl = block[0].level;
+  block.forEach(t => { t.system = sys; t.level = Math.max(2, t.level - baseLvl + 2); });
+  let insertAt = wbsData.length;
+  for (let i = wbsData.length - 1; i >= 0; i--) {
+    if ((wbsData[i].system || "").trim() === sys) { insertAt = i + 1; break; }
+  }
+  wbsData.splice(insertAt, 0, ...block);
+  rebuildAll();
+  showToast(`🔀 과업(하위 ${block.length - 1}건 포함)을 [${sys}] 서브시스템 마지막으로 이동하고 WBS ID 를 재채번했습니다.`);
 }
 
 function moveTaskOrder(idx, direction) {
@@ -3198,6 +3345,7 @@ function activateTab(tabId) {
       DbConnector.renderConfigForm();
       HomeScreenManager.syncConfigUi();
       NoticeCommManager.renderSettingsChannelTable();
+      SubTabs.restore("config", "screen");
       break;
   }
   if (typeof LayoutManager !== "undefined") LayoutManager.adjustSidebar();
@@ -4720,6 +4868,11 @@ const SmartMergeCenter = {
     return norm === "SYS_ADMIN" || norm === "PM";
   },
 
+  // [v1.0.7] 업무·협업 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더
+  canBulkWork() {
+    return Permission.canEditAllSubsystems();
+  },
+
   refreshMergeUiPermissions() {
     const isPrivileged = this.isAdminOrPm();
     const list = getAllSubsystemNames();
@@ -4727,15 +4880,16 @@ const SmartMergeCenter = {
     const normRole = AuthManager.normalizeRole(curUser.role);
 
     // 상단 권한 안내 배지 갱신
+    const bulk = this.canBulkWork();
     const badge = document.getElementById("mergeRoleNoticeBadge");
     if (badge) {
-      if (isPrivileged) {
-        badge.className = "status-badge-chip chip-completed";
-        badge.innerHTML = `👑 현재 접속: <b>${escapeHtml(curUser.name || curUser.empNo)} (${normRole})</b> — 기준정보·서브시스템·전체(ALL) 및 서브시스템별 업로드/다운로드 모든 권한 활성`;
-      } else {
-        badge.className = "status-badge-chip chip-progress";
-        badge.innerHTML = `👤 현재 접속: <b>${escapeHtml(curUser.name || curUser.empNo)} (일반사용자)</b> — 모든 항목 다운로드 가능 | 업로드는 서브시스템별(WBS·REQ·VOC·산출물)만 가능`;
-      }
+      const who = `${escapeHtml(curUser.name || curUser.empNo)} (${AuthManager.roleLabel(normRole)})`;
+      badge.className = "status-badge-chip " + (isPrivileged ? "chip-completed" : bulk ? "chip-progress" : "chip-ready");
+      badge.innerHTML = isPrivileged
+        ? `👑 ${who} — 모든 데이터 내려받기 · 올리기 가능 (기준정보 포함)`
+        : bulk
+          ? `⭐ ${who} — 모든 데이터 내려받기 · 업무/협업 데이터 전체(ALL) 올리기 가능 (기준정보 올리기 제외)`
+          : `👤 ${who} — 모든 데이터 내려받기 · 담당 서브시스템 데이터만 올리기 가능`;
     }
 
     // 분야 드롭다운 갱신
@@ -4757,9 +4911,9 @@ const SmartMergeCenter = {
 
       const allOpt = document.createElement("option");
       allOpt.value = "ALL";
-      allOpt.textContent = isPrivileged
-        ? `🌐 전체 서브시스템 통합 (${list.length}개 전체 다운/업로드)`
-        : `🌐 전체 서브시스템 통합 (다운로드 전용 · 업로드 시 개별 선택)`;
+      allOpt.textContent = bulk
+        ? `🌐 전체 서브시스템 (${list.length}개 · 내려받기/올리기)`
+        : `🌐 전체 서브시스템 (내려받기 전용 · 올릴 때는 담당 서브시스템 선택)`;
       sSel.appendChild(allOpt);
 
       list.forEach(sys => {
@@ -4773,10 +4927,10 @@ const SmartMergeCenter = {
 
       if (prevVal && (prevVal === "ALL" || list.includes(prevVal))) {
         sSel.value = prevVal;
-      } else if (!isPrivileged && curUser.subsystem && curUser.subsystem !== "ALL" && list.includes(curUser.subsystem)) {
+      } else if (!bulk && curUser.subsystem && curUser.subsystem !== "ALL" && list.includes(curUser.subsystem)) {
         sSel.value = curUser.subsystem;
       } else {
-        sSel.value = isPrivileged ? "ALL" : (list[0] || "ALL");
+        sSel.value = bulk ? "ALL" : (list[0] || "ALL");
       }
     });
 
@@ -4857,6 +5011,10 @@ const SmartMergeCenter = {
     });
     rows.push({ category: "BASIC", key: "progressBasis", value: projectConfig.progressBasis || "CALENDAR", extra1: "CALENDAR=달력일수, BUSINESS=영업일", extra2: "계획 진척률 산정 기준", extra3: "" });
 
+    (projectConfig.milestones || []).forEach(m => {
+      rows.push({ category: "MILESTONE", key: m.scope || "ALL", value: m.name || "", extra1: m.date || "", extra2: m.desc || "", extra3: m.id || "" });
+    });
+
     return rows;
   },
 
@@ -4928,6 +5086,10 @@ const SmartMergeCenter = {
       });
     }
     if (holidays.length > 0) projectConfig.holidays = holidays;
+    const milestones = rows.filter(r => r.category === "MILESTONE" && r.value).map((r, i) => ({
+      id: r.extra3 || `MS-${Date.now().toString(36)}-${i}`, scope: r.key || "ALL", name: r.value, date: r.extra1 || "", desc: r.extra2 || ""
+    }));
+    if (milestones.length > 0) projectConfig.milestones = milestones;
     rows.forEach(r => {
       if (r.category === "PROJECT_INFO" && r.key === "layoutType" && r.value) {
         LayoutManager.setLayout(r.value.trim(), false);
@@ -5221,6 +5383,10 @@ const SmartMergeCenter = {
         reqMasterData: isAll ? reqMasterData : reqMasterData.filter(r => r.system === scope),
         vocData: isAll ? vocData : vocData.filter(v => v.system === scope)
       };
+      Object.keys(this.COLLAB_DEFS).forEach(k => {
+        const def = this.COLLAB_DEFS[k];
+        payload[def.dataKey] = this._collabRecords(k, scope);
+      });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = `WBS_Master_Package_${scope}_${repDate}.json`;
       ExcelSync._triggerDownload(blob, filename);
@@ -5262,6 +5428,7 @@ const SmartMergeCenter = {
       sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
     });
 
+    Object.keys(this.COLLAB_DEFS).forEach(k => sheets.push(this._collabSheet(k, "ALL")));
     const blob = ExcelSync._buildXlsxBlob(sheets);
     const filename = `WBS_Master_All_Data_${repDate}.xlsx`;
     ExcelSync._triggerDownload(blob, filename);
@@ -5276,9 +5443,9 @@ const SmartMergeCenter = {
 
     const sel = document.getElementById("masterPkgSubsysSelect");
     const targetScope = sel ? sel.value : "ALL";
-    const isPrivileged = this.isAdminOrPm();
+    const isPrivileged = this.isAdminOrPm(); // 기준정보 반영 권한
 
-    if (targetScope === "ALL" && !isPrivileged) {
+    if (targetScope === "ALL" && !this.canBulkWork()) {
       showToast("🚫 [권한 제한] 전체(ALL) 통합 업로드는 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다. 개별 서브시스템을 선택해주세요.");
       return;
     }
@@ -5289,6 +5456,7 @@ const SmartMergeCenter = {
         const data = JSON.parse(text);
         const backupName = BackupHistoryManager.createBackupSnapshot(`통합JSON업로드(${targetScope})`, targetScope, true);
 
+        this._applyCollabPayload(data, targetScope);
         if (targetScope === "ALL" && isPrivileged) {
           if (data.projectConfig) projectConfig = Object.assign({}, projectConfig, data.projectConfig);
           if (Array.isArray(data.standardDeliverablesMeta)) standardDeliverablesMeta = data.standardDeliverablesMeta;
@@ -5313,7 +5481,17 @@ const SmartMergeCenter = {
         rebuildAll(true);
         showToast(`[통합 JSON(${targetScope}) 병합 완료]\n• 백업 생성: ${backupName}`);
       } else {
-        if (targetScope === "ALL") {
+        const collabApplied = this._applyCollabSheets(await ExcelSync._parseUploadedFile(file), targetScope);
+        if (collabApplied.length) showToast(`🤝 협업 데이터 반영: ${collabApplied.join(", ")}`);
+        if (targetScope === "ALL" && !isPrivileged) {
+          // 총괄리더: 기준정보를 제외한 업무 데이터만 서브시스템 단위로 병합
+          const sheets = await ExcelSync._parseUploadedFile(file);
+          ["wbs", "req", "deliverables", "voc"].forEach(k => {
+            const rows = this._extractRowsFromSheets(sheets, k);
+            if (rows.length) this._mergeWorkArrayData(k, rows, "ALL");
+          });
+          rebuildAll(true);
+        } else if (targetScope === "ALL") {
           await ExcelSync.importMasterWorkbook({ target: { files: [file], value: "" } });
           normalizeAndDeduplicateSubsystems();
       if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.cleanObsoleteChannelData === "function") {
@@ -5347,6 +5525,178 @@ const SmartMergeCenter = {
     if (wEl) wEl.value = projectConfig.weekStartDay;
     if (mEl) mEl.value = projectConfig.maxDeliverableRounds || 2;
     LayoutManager.init();
+  },
+
+  // ---- [v1.0.7] 협업 데이터 (주간보고 · 회의록 · 공지사항 · 소통 피드) 입출력 — 채팅 제외 ----
+  COLLAB_DEFS: {
+    weekly: {
+      dataKey: "weeklyReportsData", sheet: "7_주간보고", label: "주간보고",
+      cols: [["id", "보고서ID"], ["weekLabel", "보고주차"], ["scope", "작성단위"], ["scopeValue", "단위값"], ["status", "상태"], ["author", "작성자"], ["updatedAt", "저장일시"], ["currentWeekSummary", "금주요약"], ["nextWeekSummary", "차주요약"], ["issuesNotes", "현안"]],
+      inScope: (r, sc) => r.scope === "SYS" ? r.scopeValue === sc : false
+    },
+    meetings: {
+      dataKey: "meetingsData", sheet: "8_회의록", label: "회의록",
+      cols: [["id", "회의ID"], ["system", "서브시스템"], ["title", "회의명"], ["date", "회의일자"], ["startTime", "시작"], ["endTime", "종료"], ["location", "장소"], ["host", "주관"], ["status", "상태"], ["summary", "요약"]],
+      inScope: (r, sc) => r.system === sc || r.system === "ALL"
+    },
+    notices: {
+      dataKey: "noticesData", sheet: "9_공지사항", label: "공지사항",
+      cols: [["id", "공지ID"], ["title", "제목"], ["priority", "중요도"], ["author", "작성자"], ["date", "등록일"], ["isPinned", "상단고정"], ["content", "내용"]],
+      inScope: () => true
+    },
+    comms: {
+      dataKey: "communicationsData", sheet: "10_소통피드", label: "소통피드",
+      cols: [["id", "게시ID"], ["channel", "채널"], ["title", "제목"], ["taskId", "연계 Task"], ["author", "작성자"], ["date", "작성일"], ["content", "내용"]],
+      inScope: (r, sc) => r.channel === sc || r.channel === "전체"
+    }
+  },
+  COLLAB_JSON_COL: "원본데이터(JSON)",
+
+  toggleCollabCheckboxes(checked) {
+    Object.keys(this.COLLAB_DEFS).forEach(k => {
+      const el = document.getElementById(`chkCollab_${k}`);
+      if (el) el.checked = checked;
+    });
+  },
+  getSelectedCollabKeys() {
+    return Object.keys(this.COLLAB_DEFS).filter(k => {
+      const el = document.getElementById(`chkCollab_${k}`);
+      return el && el.checked;
+    });
+  },
+  _collabScope() {
+    const sel = document.getElementById("workDataSubsysSelect");
+    return sel && sel.value ? sel.value : "ALL";
+  },
+  _collabRecords(k, scope) {
+    const def = this.COLLAB_DEFS[k];
+    const all = DataRegistry.get(def.dataKey) || [];
+    return !scope || scope === "ALL" ? all : all.filter(r => def.inScope(r, scope));
+  },
+  _collabSheet(k, scope) {
+    const def = this.COLLAB_DEFS[k];
+    const rows = [{ cells: def.cols.map(c => c[1]).concat(this.COLLAB_JSON_COL), styleId: 1, height: 25 }];
+    this._collabRecords(k, scope).forEach(r => {
+      const json = JSON.stringify(r);
+      rows.push({ cells: def.cols.map(c => ExcelSync.sanitizeFormulaInjection(r[c[0]] === undefined ? "" : String(r[c[0]]))).concat(json.length > 32000 ? "" : json), styleId: 2, height: 20 });
+    });
+    return { name: def.sheet, colWidths: def.cols.map(() => 18).concat(40), rows };
+  },
+
+  downloadCollabData(format) {
+    const keys = this.getSelectedCollabKeys();
+    if (!keys.length) {
+      showToast("⚠️ 내려받을 협업 데이터 항목을 1개 이상 선택하세요.");
+      return;
+    }
+    const scope = this._collabScope();
+    const repDate = projectConfig.reportDate || "";
+    if (format === "JSON") {
+      const payload = { schemaVersion: "AX_PMYS_1.0.7_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
+      keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+      const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.json`;
+      ExcelSync._triggerDownload(blob, filename);
+      showToast(`📥 [협업 데이터 JSON 다운로드] ${filename}`);
+      return;
+    }
+    const blob = ExcelSync._buildXlsxBlob(keys.map(k => this._collabSheet(k, scope)));
+    const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.xlsx`;
+    ExcelSync._triggerDownload(blob, filename);
+    showToast(`📥 [협업 데이터 엑셀 다운로드] ${filename}`);
+  },
+
+  // 같은 ID 는 갱신, 새 ID 는 추가 (범위 밖 항목은 제외)
+  _upsertCollab(k, records, scope) {
+    const def = this.COLLAB_DEFS[k];
+    const list = DataRegistry.get(def.dataKey) || [];
+    let added = 0, updated = 0;
+    (records || []).forEach(r => {
+      if (!r || typeof r !== "object") return;
+      if (scope && scope !== "ALL" && !def.inScope(r, scope)) return;
+      if (!r.id) r.id = `${k.toUpperCase()}-${Date.now().toString(36)}-${added + updated}`;
+      const idx = list.findIndex(x => x.id === r.id);
+      if (idx >= 0) { list[idx] = Object.assign({}, list[idx], r); updated++; }
+      else { list.push(r); added++; }
+    });
+    DataRegistry.set(def.dataKey, list);
+    return added + updated ? `${def.label}(추가 ${added} · 갱신 ${updated})` : "";
+  },
+
+  _applyCollabPayload(data, scope) {
+    const applied = [];
+    Object.keys(this.COLLAB_DEFS).forEach(k => {
+      const arr = data && data[this.COLLAB_DEFS[k].dataKey];
+      if (Array.isArray(arr)) {
+        const r = this._upsertCollab(k, arr, scope);
+        if (r) applied.push(r);
+      }
+    });
+    return applied;
+  },
+
+  _applyCollabSheets(sheets, scope, onlyKeys) {
+    const applied = [];
+    Object.keys(this.COLLAB_DEFS).filter(k => !onlyKeys || onlyKeys.includes(k)).forEach(k => {
+      const def = this.COLLAB_DEFS[k];
+      const sheet = (sheets || []).find(sh => String(sh.name || "").replace(/\s/g, "") === def.sheet || String(sh.name || "").includes(def.label));
+      if (!sheet || !sheet.rows || !sheet.rows.length) return;
+      const hdrIdx = sheet.rows.findIndex(cells => (cells || []).map(c => String(c || "").trim()).includes(def.cols[0][1]));
+      if (hdrIdx < 0) return;
+      const hdr = sheet.rows[hdrIdx].map(c => String(c || "").trim());
+      const jsonCol = hdr.indexOf(this.COLLAB_JSON_COL);
+      const records = sheet.rows.slice(hdrIdx + 1).map(cells => {
+        let rec = {};
+        if (jsonCol >= 0 && cells[jsonCol]) {
+          try { rec = JSON.parse(cells[jsonCol]); } catch (e) { rec = {}; }
+        }
+        def.cols.forEach(([key, label]) => {
+          const ci = hdr.indexOf(label);
+          if (ci >= 0 && cells[ci] !== undefined && cells[ci] !== "") rec[key] = key === "isPinned" ? String(cells[ci]) === "true" : cells[ci];
+        });
+        return rec.id || rec.title || rec.name ? rec : null;
+      }).filter(Boolean);
+      const r = this._upsertCollab(k, records, scope);
+      if (r) applied.push(r);
+    });
+    return applied;
+  },
+
+  async uploadCollabData(e, format) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (e && e.target) e.target.value = "";
+    if (!file) return;
+    const keys = this.getSelectedCollabKeys();
+    if (!keys.length) {
+      showToast("⚠️ 올릴 협업 데이터 항목을 1개 이상 선택하세요.");
+      return;
+    }
+    const scope = this._collabScope();
+    if (scope === "ALL" && !this.canBulkWork()) {
+      showToast("🚫 [권한 제한] 일반 사용자는 전체(ALL) 범위로 올릴 수 없습니다. ①에서 담당 서브시스템을 선택하세요.");
+      return;
+    }
+    try {
+      const backupName = BackupHistoryManager.createBackupSnapshot(`협업데이터업로드(${scope})`, scope, true);
+      let applied;
+      if (format === "JSON") {
+        const data = JSON.parse(await file.text());
+        const filtered = {};
+        keys.forEach(k => { const dk = this.COLLAB_DEFS[k].dataKey; if (data[dk]) filtered[dk] = data[dk]; });
+        applied = this._applyCollabPayload(filtered, scope);
+      } else {
+        applied = this._applyCollabSheets(await ExcelSync._parseUploadedFile(file), scope, keys);
+      }
+      if (!applied.length) throw new Error("파일에서 선택한 협업 데이터 항목을 찾지 못했습니다.");
+      rebuildAll(true);
+      NoticeCommManager.renderAll();
+      MeetingManager.onDataReloaded();
+      WeeklyReportManager.onDataReloaded();
+      this.updateCountBadges();
+      showToast(`✅ [협업 데이터 반영 완료] ${applied.join(", ")} · 백업: ${backupName}`);
+    } catch (err) {
+      showToast("협업 데이터 업로드 오류: " + err.message);
+    }
   },
 
   // ---- 다중선택(Multi-select) 기준정보 & Task데이터 입출력 ----
@@ -5408,6 +5758,7 @@ const SmartMergeCenter = {
     setTxt("cntBadge_voc", vCnt);
     setTxt("cntBadge_subsystems", subsystemsMeta.length);
     setTxt("cntBadge_users", projectUsers.length);
+    Object.keys(this.COLLAB_DEFS).forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, scope).length));
   },
 
   // 기준정보 다중선택 다운로드 (프로젝트 기준정보, 서브시스템 정보, 사용자 목록)
@@ -5713,10 +6064,9 @@ const SmartMergeCenter = {
 
     const scopeSel = document.getElementById("workDataSubsysSelect");
     const targetScope = scopeSel ? scopeSel.value : "ALL";
-    const isPrivileged = this.isAdminOrPm();
 
-    // 권한 체크: 전체(ALL) 업로드는 관리자/PM 전용
-    if (targetScope === "ALL" && !isPrivileged) {
+    // 권한 체크: 전체(ALL) 업로드는 관리자·PM·총괄리더
+    if (targetScope === "ALL" && !this.canBulkWork()) {
       showToast("🚫 [권한 제한] 일반 사용자는 [전체 서브시스템(ALL)] 일괄 업로드를 수행할 수 없습니다. STEP 1에서 담당 서브시스템을 선택한 뒤 업로드해주세요.");
       return;
     }
@@ -5860,7 +6210,7 @@ var StorageManager = {
     const now = new Date();
     const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
     const fullPayload = Object.assign({
-      schemaVersion: "AX_PMYS_1.0.6_FULL_BACKUP",
+      schemaVersion: "AX_PMYS_1.0.7_FULL_BACKUP",
       exportedAt: now.toISOString(),
       exportedBy: AuthManager.getCurrentUser().empNo,
       systemSettings: {
@@ -6087,6 +6437,7 @@ var MasterSyncEngine = {
       // 2. Rollup and recalculations in WBSEngine
       if (typeof WBSEngine !== "undefined") {
         WBSEngine.sortAndAutoNumber(wbsData);
+        if (WBSEngine.lastIdMap && source !== "data-applied") remapWbsReferences(WBSEngine.lastIdMap);
         WBSEngine.calculatePlanProgress(wbsData, projectConfig.reportDate);
         WBSEngine.rollup(wbsData);
       }
@@ -6098,6 +6449,7 @@ var MasterSyncEngine = {
       this.syncAllDropdowns();
 
       // 4. Master tab & Header components
+      renderReportDateLabels();
       if (typeof renderProjectTitles === "function") renderProjectTitles();
       if (typeof renderIdPrefixSettings === "function") renderIdPrefixSettings();
       if (typeof renderDomainChips === "function") renderDomainChips();
@@ -6249,7 +6601,7 @@ window.addEventListener("storage", function (e) {
 var weeklyReportsData = [];
 
 // =========================================================================
-// [ver1.0.4 신규] 주간보고 작성 및 서술형 DOCX / 엑셀 통합 매니저
+// [ver1.0.4 신규] 주간보고 작성 및 서술형 워드 / 엑셀 통합 매니저
 // =========================================================================
 var WeeklyReportManager = {
   currentWeekReport: null, // 작성 중인 편집본 (작성 완료 시 weeklyReportsData 에 반영)
@@ -6306,6 +6658,7 @@ var WeeklyReportManager = {
       this.selectedWeek = wObj ? wObj.weekNum : 1;
       this.openReport(this.selectedWeek, this.scope, this.scopeValue);
     }
+    if (!this.listWeek) this.listWeek = this.selectedWeek;
     this.populateWeekDropdown();
     this.populateSubsystemDropdown();
     this.render();
@@ -6484,7 +6837,7 @@ var WeeklyReportManager = {
   populateWeekDropdown() {
     const sel = document.getElementById("wrWeekSelect");
     if (!sel) return;
-    const curW = this.selectedWeek || 1;
+    const curW = this.listWeek || this.selectedWeek || 1;
     sel.innerHTML = this.getAllWeeks().map(w => `<option value="${w.weekNum}">${escapeHtml(w.fullLabel)}</option>`).join("");
     sel.value = String(curW);
   },
@@ -6513,6 +6866,7 @@ var WeeklyReportManager = {
 
   _switchTo(wNum, scope, value) {
     this.openReport(wNum, scope, value);
+    this.listWeek = parseInt(wNum, 10);
     this.populateWeekDropdown();
     this.populateSubsystemDropdown();
     this.render();
@@ -6526,32 +6880,187 @@ var WeeklyReportManager = {
     this._switchTo(r.weekNo, sc.scope, sc.value);
   },
 
-  // 저장된 주간보고 목록
+  // [v1.0.7] 보고 주차별 보고서 목록 (선택 주차의 통합·분야·서브시스템 작성 현황) / 저장된 전체 주차
+  listWeek: null,
+
+  _unitsOfWeek() {
+    const units = [{ scope: "ALL", value: "" }];
+    getProjectDomains().forEach(d => units.push({ scope: "DOMAIN", value: d }));
+    getAllSubsystemNames().forEach(sys => units.push({ scope: "SYS", value: sys }));
+    return units;
+  },
+
+  _findSaved(weekObj, scope, value) {
+    const id = this.reportId(weekObj, scope, value);
+    return (weeklyReportsData || []).find(r => r.id === id)
+      || (scope === "ALL" ? (weeklyReportsData || []).find(r => r.weekNo === weekObj.weekNum && !r.scope) : null);
+  },
+
+  _listRow(weekLabel, weekNum, sc, r, isCur, mine) {
+    const status = r ? ((r.status || "DONE") === "DONE" ? '<span class="status-tag tag-completed">작성완료</span>' : '<span class="status-tag tag-progress">작성중</span>') : '<span class="status-tag tag-ready">미작성</span>';
+    const arg = `${weekNum}, '${sc.scope}', '${escapeHtml(String(sc.value).replace(/'/g, "\\'"))}'`;
+    return `<tr class="wr-list-row ${isCur ? "active" : ""}" onclick="WeeklyReportManager.openUnit(${arg})">
+      <td>${escapeHtml(weekLabel)}</td>
+      <td>${sc.scope === "ALL" ? "📊 " : sc.scope === "DOMAIN" ? "🏢 " : "🔧 "}${escapeHtml(this.scopeLabel(sc.scope, sc.value))}${mine ? " ⭐" : ""}</td>
+      <td>${escapeHtml(r ? (r.author || "-") : "-")}</td>
+      <td style="text-align:center;">${status}</td>
+      <td style="text-align:center;">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
+      <td style="font-size:11px;">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
+      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" onclick="event.stopPropagation(); WeeklyReportManager.openUnit(${arg})">${r ? "보기" : "작성"}</button></td>
+    </tr>`;
+  },
+
   renderSavedList() {
     const body = document.getElementById("wrSavedListBody");
     if (!body) return;
     const own = Permission.ownSubsystem();
-    const list = [...(weeklyReportsData || [])].sort((a, b) => (b.weekNo - a.weekNo) || String(a.id).localeCompare(String(b.id)));
-    const cnt = document.getElementById("wrSavedListCount");
-    if (cnt) cnt.textContent = `${list.length}건`;
-    if (!list.length) {
-      body.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">저장된 주간보고가 없습니다. 작성 후 [✅ 작성 완료 (저장)]을 누르세요.</td></tr>`;
+    const cur = this.currentWeekReport;
+    const isCurRow = (weekNum, sc) => !!cur && cur.weekNo === weekNum && (cur.scope || "ALL") === sc.scope && (cur.scopeValue || "") === (sc.value || "");
+    const showAll = document.getElementById("wrListShowAll") && document.getElementById("wrListShowAll").checked;
+    const summary = document.getElementById("wrListSummary");
+    if (showAll) {
+      const list = [...(weeklyReportsData || [])].sort((a, b) => (b.weekNo - a.weekNo) || String(a.id).localeCompare(String(b.id)));
+      if (summary) summary.textContent = `저장된 보고서 ${list.length}건`;
+      body.innerHTML = list.length
+        ? list.map(r => { const sc = this.reportScope(r); return this._listRow(r.weekLabel || ("W" + r.weekNo), r.weekNo, sc, r, isCurRow(r.weekNo, sc), sc.scope === "SYS" && sc.value === own); }).join("")
+        : `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">저장된 주간보고가 없습니다.</td></tr>`;
       return;
     }
-    const curId = this.currentWeekReport ? this.currentWeekReport.id : "";
-    body.innerHTML = list.map(r => {
-      const sc = this.reportScope(r);
-      const mine = sc.scope === "SYS" && sc.value === own;
-      return `<tr class="wr-list-row ${r.id === curId ? "active" : ""}" onclick="WeeklyReportManager.openSavedReport('${escapeHtml(r.id)}')">
-        <td>${escapeHtml(r.weekLabel || ("W" + r.weekNo))}</td>
-        <td>${escapeHtml(this.scopeLabel(sc.scope, sc.value))}${mine ? " ⭐" : ""}</td>
-        <td>${escapeHtml(r.author || "-")}</td>
-        <td style="text-align:center;">${(r.status || "DONE") === "DONE" ? '<span class="status-tag tag-completed">작성완료</span>' : '<span class="status-tag tag-ready">작성중</span>'}</td>
-        <td style="text-align:center;">${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}</td>
-        <td style="font-size:11px;">${escapeHtml(r.updatedAt || "-")}</td>
-        <td style="text-align:center;"><button class="btn btn-outline btn-xs" onclick="event.stopPropagation(); WeeklyReportManager.openSavedReport('${escapeHtml(r.id)}')">열기</button></td>
-      </tr>`;
-    }).join("");
+    const weeks = this.getAllWeeks();
+    const wNum = this.listWeek || this.selectedWeek || (this.findWeekForDate(projectConfig.reportDate) || {}).weekNum;
+    const wObj = weeks.find(w => w.weekNum === wNum) || weeks[0];
+    if (!wObj) { body.innerHTML = ""; return; }
+    let units = this._unitsOfWeek();
+    // 일반 사용자: 담당 서브시스템을 맨 위에 표시
+    if (!Permission.canEditAllSubsystems()) units = units.sort((a, b) => (b.scope === "SYS" && b.value === own) - (a.scope === "SYS" && a.value === own));
+    const rows = units.map(sc => ({ sc, r: this._findSaved(wObj, sc.scope, sc.value) }));
+    const done = rows.filter(x => x.r).length;
+    if (summary) summary.textContent = `작성 ${done} / ${rows.length} 단위`;
+    body.innerHTML = rows.map(({ sc, r }) => this._listRow(wObj.fullLabel, wObj.weekNum, sc, r, isCurRow(wObj.weekNum, sc), sc.scope === "SYS" && sc.value === own)).join("");
+  },
+
+  onListWeekChanged() {
+    const sel = document.getElementById("wrWeekSelect");
+    this.listWeek = sel ? parseInt(sel.value, 10) : this.listWeek;
+    const all = document.getElementById("wrListShowAll");
+    if (all) all.checked = false;
+    this.renderSavedList();
+  },
+  shiftWeek(delta) {
+    const weeks = this.getAllWeeks();
+    const cur = this.listWeek || this.selectedWeek || 1;
+    const next = Math.min(weeks.length, Math.max(1, cur + delta));
+    const sel = document.getElementById("wrWeekSelect");
+    if (sel) sel.value = String(next);
+    this.onListWeekChanged();
+  },
+  goToReportWeek() {
+    const w = this.findWeekForDate(projectConfig.reportDate);
+    if (!w) return;
+    const sel = document.getElementById("wrWeekSelect");
+    if (sel) sel.value = String(w.weekNum);
+    this.onListWeekChanged();
+  },
+  // 목록에서 보고서 선택 → 상세 열기 (미저장 변경 시 저장/무시 확인)
+  openUnit(weekNum, scope, value) {
+    const cur = this.currentWeekReport;
+    if (cur && cur.weekNo === weekNum && (cur.scope || "ALL") === scope && (cur.scopeValue || "") === (value || "")) {
+      const panel = document.getElementById("wrDetailPanel");
+      if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (cur && !this.confirmLeave(() => this.openUnit(weekNum, scope, value))) return;
+    this._switchTo(weekNum, scope, value);
+    const panel = document.getElementById("wrDetailPanel");
+    if (panel) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  },
+
+  discardChanges() {
+    if (!this.currentWeekReport) return;
+    this.openReport(this.selectedWeek, this.scope, this.scopeValue);
+    this.render();
+    showToast("↩️ 저장하지 않은 주간보고 변경 내용을 취소했습니다.");
+  },
+
+  // ---- 항목 추가 / 제외 ----
+  _listOf(kind) {
+    const rep = this.currentWeekReport;
+    if (!rep) return [];
+    const key = kind === "cur" ? "currentWeekTasks" : "nextWeekTasks";
+    if (!Array.isArray(rep[key])) rep[key] = [];
+    return rep[key];
+  },
+  _excludedOf(kind) {
+    const rep = this.currentWeekReport;
+    const key = kind === "cur" ? "excludedCurWbsIds" : "excludedNxtWbsIds";
+    if (!Array.isArray(rep[key])) rep[key] = [];
+    return rep[key];
+  },
+  removeItem(kind, itemId) {
+    this.readInputsIntoCurrentReport();
+    const list = this._listOf(kind);
+    const idx = list.findIndex(t => t.id === itemId);
+    if (idx < 0) return;
+    const t = list[idx];
+    list.splice(idx, 1);
+    if (t.wbsId && !t.manual) {
+      const ex = this._excludedOf(kind);
+      if (!ex.includes(t.wbsId)) ex.push(t.wbsId);
+    }
+    this.render();
+    showToast(`➖ [${t.wbsId || "직접입력"}] ${t.name} 항목을 ${kind === "cur" ? "금주 실적" : "차주 계획"}에서 제외했습니다. (작성 완료 시 저장)`);
+  },
+  _candidateTasks(kind) {
+    const rep = this.currentWeekReport;
+    const systems = this.scopeSystems(this.scope, this.scopeValue);
+    const used = new Set(this._listOf(kind).map(t => t.wbsId).filter(Boolean));
+    return wbsData.filter(t => t.isLeaf && systems.includes(t.system) && !used.has(t.id));
+  },
+  _fillAddSelects() {
+    [["cur", "wrAddCurWbsSelect"], ["nxt", "wrAddNxtWbsSelect"]].forEach(([kind, id]) => {
+      const sel = document.getElementById(id);
+      if (!sel || !this.currentWeekReport) return;
+      const cands = this._candidateTasks(kind);
+      sel.innerHTML = `<option value="">-- 추가할 WBS 과업 선택 (${cands.length}건) --</option>` +
+        cands.map(t => `<option value="${escapeHtml(t.id)}">[${escapeHtml(t.system)}] ${escapeHtml(t.id)} ${escapeHtml(t.name)}</option>`).join("");
+    });
+  },
+  addWbsItem(kind) {
+    const sel = document.getElementById(kind === "cur" ? "wrAddCurWbsSelect" : "wrAddNxtWbsSelect");
+    const t = sel && sel.value ? wbsData.find(x => x.id === sel.value) : null;
+    if (!t) { showToast("⚠️ 추가할 WBS 과업을 먼저 선택하세요."); return; }
+    this.readInputsIntoCurrentReport();
+    const list = this._listOf(kind);
+    if (kind === "cur") {
+      const st = t.aProg >= 100 ? "완료" : (t.aProg > 0 ? "진행중" : "계획");
+      list.push({ id: `CT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, pProg: t.pProg, aProg: t.aProg, pStart: t.pStart, pEnd: t.pEnd, aStart: t.aStart, aEnd: t.aEnd, status: st, detail: "" });
+    } else {
+      list.push({ id: `NT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, pProg: t.pProg, pStart: t.pStart, pEnd: t.pEnd, status: "계획", detail: "" });
+    }
+    const ex = this._excludedOf(kind);
+    const i = ex.indexOf(t.id);
+    if (i >= 0) ex.splice(i, 1);
+    this.render();
+  },
+  addManualItem(kind) {
+    this.readInputsIntoCurrentReport();
+    const systems = this.scopeSystems(this.scope, this.scopeValue);
+    const sys = this.scope === "SYS" ? this.scopeValue : (systems.includes(Permission.ownSubsystem()) ? Permission.ownSubsystem() : (systems[0] || ""));
+    this._listOf(kind).push({
+      id: `MT-${kind}-${Date.now().toString(36)}`, manual: true, system: sys, wbsId: "", level: "",
+      name: "", pStart: "", pEnd: "", status: kind === "cur" ? "진행중" : "계획", detail: ""
+    });
+    this.render();
+    setTimeout(() => {
+      const body = document.getElementById(kind === "cur" ? "wrCurrentTasksBody" : "wrNextTasksBody");
+      const inputs = body ? body.querySelectorAll("input.wr-manual-name") : [];
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }, 30);
+  },
+  updateItem(kind, itemId, field, value) {
+    const t = this._listOf(kind).find(x => x.id === itemId);
+    if (!t) return;
+    t[field] = typeof value === "string" ? value.trim() : value;
   },
 
   renderScopeBanner() {
@@ -6560,14 +7069,49 @@ var WeeklyReportManager = {
     const rep = this.currentWeekReport;
     const writable = this.canWrite(rep);
     const saved = (weeklyReportsData || []).some(r => r.id === rep.id);
-    el.innerHTML = `📌 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b> · ${escapeHtml(rep.weekLabel)}
-      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>
+    const dirty = this._canon(rep) !== this._draftBase;
+    el.innerHTML = `📝 <b>${escapeHtml(rep.weekLabel)}</b> · 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b>
+      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:#d97706; font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
       ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}`;
     const btn = document.getElementById("btnWrComplete");
     if (btn) {
       btn.disabled = !writable;
       btn.style.opacity = writable ? "1" : "0.5";
     }
+  },
+
+  // 금주/차주 항목 행 (WBS 연동 항목 / 직접 입력 항목)
+  _taskRow(kind, t) {
+    const tr = document.createElement("tr");
+    const id = escapeHtml(t.id);
+    const k = `'${kind}', '${id}'`;
+    const sysCell = t.manual
+      ? `<select style="font-size:11px; width:96px;" onchange="WeeklyReportManager.updateItem(${k}, 'system', this.value)">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
+      : `<span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span>`;
+    const nameCell = t.manual
+      ? `<input type="text" class="wr-manual-name" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" onchange="WeeklyReportManager.updateItem(${k}, 'name', this.value)">`
+      : escapeHtml(t.name);
+    const sched = t.manual
+      ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:10px; width:120px;" title="목표일 (선택)" onchange="WeeklyReportManager.updateItem(${k}, 'pEnd', this.value)">`
+      : `<span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
+    const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
+      .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
+    const detail = `<input type="text" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateItem(${k}, 'detail', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">`;
+    const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" onclick="WeeklyReportManager.removeItem(${k})">✕</button>`;
+    const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
+    const lvl = t.manual ? "-" : `L${t.level || 4}`;
+    tr.innerHTML = kind === "cur" ? `
+      <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
+      <td><span style="font-size:10px; color:#1e40af; font-weight:bold;">${escapeHtml(t.manual ? "-" : (t.aEnd || (t.aProg >= 100 ? (t.pEnd || "-") : "-")))}</span></td>
+      <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td><td><strong>${t.manual ? "-" : (t.aProg ?? 0) + "%"}</strong></td>
+      <td><select onchange="WeeklyReportManager.updateItem(${k}, 'status', this.value)" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td>${detail}</td><td style="text-align:center;">${remove}</td>` : `
+      <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
+      <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td>
+      <td><select onchange="WeeklyReportManager.updateItem(${k}, 'status', this.value)" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td>${detail}</td><td style="text-align:center;">${remove}</td>`;
+    if (t.manual) tr.style.background = "rgba(254,243,199,0.35)";
+    return tr;
   },
 
   render() {
@@ -6578,6 +7122,10 @@ var WeeklyReportManager = {
     const inScope = sys => this.scope === "ALL" || scopeSystems.includes(sys);
     this.renderScopeBanner();
     this.renderSavedList();
+    this._fillAddSelects();
+    const setCnt = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    setCnt("wrCurCount", (rep.currentWeekTasks || []).length);
+    setCnt("wrNxtCount", (rep.nextWeekTasks || []).length);
 
     const inAuthor = document.getElementById("wrAuthorInput");
     const inCurSum = document.getElementById("wrCurrentSummary");
@@ -6594,33 +7142,9 @@ var WeeklyReportManager = {
       curTbody.innerHTML = "";
       const tasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        curTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 해당 주차 및 서브시스템에 계획/실적 과업이 없습니다.</td></tr>`;
+        curTbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
-        tasks.forEach((t, idx) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td><span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span></td>
-            <td><strong>${escapeHtml(t.wbsId)}</strong></td>
-            <td>L${t.level || 4}</td>
-            <td style="text-align:left;">${escapeHtml(t.name)}</td>
-            <td><span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span></td>
-            <td><span style="font-size:10px; color:#1e40af; font-weight:bold; white-space:nowrap; background:#eff6ff; padding:2px 5px; border-radius:3px;">${escapeHtml(t.aEnd || (t.aProg >= 100 ? (t.pEnd || "-") : "-"))}</span></td>
-            <td>${t.pProg ?? 0}%</td>
-            <td><strong>${t.aProg ?? 0}%</strong></td>
-            <td>
-              <select onchange="WeeklyReportManager.updateTaskStatus('${t.id}', this.value)" style="font-size:11px; padding:2px 4px;">
-                <option value="완료" ${t.status === "완료" ? "selected" : ""}>완료</option>
-                <option value="진행중" ${t.status === "진행중" ? "selected" : ""}>진행중</option>
-                <option value="지연" ${t.status === "지연" ? "selected" : ""}>지연</option>
-                <option value="계획" ${t.status === "계획" ? "selected" : ""}>계획</option>
-              </select>
-            </td>
-            <td>
-              <input type="text" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateTaskDetail('${t.id}', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">
-            </td>
-          `;
-          curTbody.appendChild(tr);
-        });
+        tasks.forEach(t => curTbody.appendChild(this._taskRow("cur", t)));
       }
     }
 
@@ -6629,24 +7153,9 @@ var WeeklyReportManager = {
       nxtTbody.innerHTML = "";
       const tasks = (rep.nextWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        nxtTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 차주 예정된 계획 과업이 없습니다.</td></tr>`;
+        nxtTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 차주 계획 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
-        tasks.forEach((t, idx) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td><span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span></td>
-            <td><strong>${escapeHtml(t.wbsId)}</strong></td>
-            <td>L${t.level || 4}</td>
-            <td style="text-align:left;">${escapeHtml(t.name)}</td>
-            <td><span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span></td>
-            <td>${t.pProg ?? 0}%</td>
-            <td><span class="status-tag tag-ready">계획</span></td>
-            <td>
-              <input type="text" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateNextTaskDetail('${t.id}', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">
-            </td>
-          `;
-          nxtTbody.appendChild(tr);
-        });
+        tasks.forEach(t => nxtTbody.appendChild(this._taskRow("nxt", t)));
       }
     // [ver1.0.4] 금주 진행 회의 및 차주 예정 회의 실시간 렌더링
     if (typeof MeetingManager !== "undefined") {
@@ -6703,24 +7212,6 @@ var WeeklyReportManager = {
       }
     }
     }
-  },
-
-  updateTaskStatus(taskId, newStatus) {
-    if (!this.currentWeekReport) return;
-    const t = (this.currentWeekReport.currentWeekTasks || []).find(x => x.id === taskId);
-    if (t) t.status = newStatus;
-  },
-
-  updateTaskDetail(taskId, newDetail) {
-    if (!this.currentWeekReport) return;
-    const t = (this.currentWeekReport.currentWeekTasks || []).find(x => x.id === taskId);
-    if (t) t.detail = newDetail.trim();
-  },
-
-  updateNextTaskDetail(taskId, newDetail) {
-    if (!this.currentWeekReport) return;
-    const t = (this.currentWeekReport.nextWeekTasks || []).find(x => x.id === taskId);
-    if (t) t.detail = newDetail.trim();
   },
 
   readInputsIntoCurrentReport() {
@@ -6795,6 +7286,24 @@ var WeeklyReportManager = {
       }
     });
 
+    // 제외한 WBS 항목은 다시 넣지 않고, 직접 입력 항목은 그대로 유지
+    const exCur = this._excludedOf("cur").slice();
+    const exNxt = this._excludedOf("nxt").slice();
+    // 사용자가 직접 추가한 WBS 과업(added)은 자동 편성 대상이 아니어도 유지하고 일정·진척만 최신화
+    const keepAdded = (list, freshList) => (list || []).filter(t => t.added && t.wbsId && !freshList.some(f => f.wbsId === t.wbsId)).map(t => {
+      const w = wbsData.find(x => x.id === t.wbsId);
+      return w ? Object.assign({}, t, { name: w.name, level: w.level, pProg: w.pProg, aProg: w.aProg, pStart: w.pStart, pEnd: w.pEnd, aStart: w.aStart, aEnd: w.aEnd }) : t;
+    });
+    const curFresh = freshReport.currentWeekTasks.filter(t => !exCur.includes(t.wbsId));
+    const nxtFresh = freshReport.nextWeekTasks.filter(t => !exNxt.includes(t.wbsId));
+    freshReport.currentWeekTasks = curFresh
+      .concat(keepAdded(this.currentWeekReport.currentWeekTasks, curFresh))
+      .concat((this.currentWeekReport.currentWeekTasks || []).filter(t => t.manual));
+    freshReport.nextWeekTasks = nxtFresh
+      .concat(keepAdded(this.currentWeekReport.nextWeekTasks, nxtFresh))
+      .concat((this.currentWeekReport.nextWeekTasks || []).filter(t => t.manual));
+    freshReport.excludedCurWbsIds = exCur;
+    freshReport.excludedNxtWbsIds = exNxt;
     freshReport.currentWeekSummary = this.currentWeekReport.currentWeekSummary;
     freshReport.nextWeekSummary = this.currentWeekReport.nextWeekSummary;
     freshReport.issuesNotes = this.currentWeekReport.issuesNotes;
@@ -6803,7 +7312,7 @@ var WeeklyReportManager = {
     this.currentWeekReport = freshReport; // 저장은 [작성 완료] 시 반영
 
     this.render();
-    showToast("🔄 [WBS 동기화 완료] 최신 WBS 공정표 과업과 성공적으로 연동되었습니다.");
+    showToast("🔄 [WBS 과업 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
   },
 
   openHistoryModal() {
@@ -7013,7 +7522,7 @@ var WeeklyReportManager = {
     const curTasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
     curTasks.forEach(t => {
       s2Rows.push({
-        cells: [t.system, t.wbsId, `L${t.level || 4}`, t.name, `${t.pProg ?? 0}%`, `${t.aProg ?? 0}%`, t.status || "완료", t.detail || ""],
+        cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.manual ? "-" : `L${t.level || 4}`, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "완료", t.detail || ""],
         styleId: 2,
         height: 22
       });
@@ -7027,7 +7536,7 @@ var WeeklyReportManager = {
     const nxtTasks = (rep.nextWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
     nxtTasks.forEach(t => {
       s3Rows.push({
-        cells: [t.system, t.wbsId, `L${t.level || 4}`, t.name, `${t.pProg ?? 0}%`, "계획", t.detail || ""],
+        cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.manual ? "-" : `L${t.level || 4}`, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.status || "계획", t.detail || ""],
         styleId: 2,
         height: 22
       });
@@ -7112,7 +7621,7 @@ var WeeklyReportManager = {
     const scopeSystems = this.scopeSystems(sc.scope, sc.value);
     const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
     const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.6";
+    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.7";
     const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
     const repDay = WBSEngine.getDayOfWeekText(repDate);
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
@@ -7147,7 +7656,7 @@ var WeeklyReportManager = {
     };
 
     if (typeof DocxBuilder === "undefined" || typeof DocxBuilder.buildDocxBlob !== "function") {
-      showToast("⚠️ DOCX 생성 엔진을 초기화할 수 없습니다.", "error");
+      showToast("⚠️ 워드 생성 엔진을 초기화할 수 없습니다.", "error");
       return;
     }
 
@@ -7156,7 +7665,7 @@ var WeeklyReportManager = {
     const filename = `[주간보고서]_${projName}_${this.scopeFileLabel(sc.scope, sc.value)}_${rep.weekLabel.replace(/\s+/g, "_")}_${modeTag}.docx`;
 
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📄 [주간보고 DOCX 다운로드 완료] ${filename} 파일이 다운로드되었습니다.`);
+    showToast(`📄 [주간보고 워드 다운로드 완료] ${filename} 파일이 다운로드되었습니다.`);
   },
 
   exportNarrativeDoc() {
@@ -7299,7 +7808,7 @@ var HomeScreenManager = {
       projectConfig.exportSettings.xlsxFontSize = num;
     }
     if (typeof persistChanges === "function") persistChanges();
-    showToast(`📊 공통 보고서 스타일이 '${value}'(으)로 일원화 설정되었습니다. 주간보고 DOCX, 회의록 DOCX, 공정표 XLSX 다운로드 시 즉시 반영됩니다.`);
+    showToast(`📊 공통 보고서 스타일이 '${value}'(으)로 일원화 설정되었습니다. 주간보고 워드, 회의록 워드, 공정표 XLSX 다운로드 시 즉시 반영됩니다.`);
   },
 
   render() {
