@@ -70,7 +70,9 @@ var GShell = {
     return Array.prototype.find.call(document.querySelectorAll(".tab-bar .tab-btn"), b =>
       tabId === "tab-notices" ? b.getAttribute("data-click") === "NoticeCommManager.goToNotice" : (b.getAttribute("data-click-args") || "").indexOf(`"${tabId}"`) !== -1);
   },
+  // 권한 없는 관리 화면(기준정보·시스템 설정)은 메뉴에서 숨김 (B2) — 다른 계정이 필요하면 [잠금 / 계정 전환]
   allowed(tabId) {
+    if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY[tabId] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), tabId)) return false;
     const b = this._btn(tabId);
     return !b || b.style.display !== "none";
   },

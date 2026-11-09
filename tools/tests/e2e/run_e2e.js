@@ -131,7 +131,7 @@ async function localMain() {
   //   계정 전환·프로젝트 전환처럼 화면을 다시 불러오는 검사는 http:// 에서 수행)
   page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(STATIC_URL); await page.waitForTimeout(900);
-  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === "ver" + APP_CONFIG.version));
+  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent.indexOf("ver" + APP_CONFIG.version) === 0));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
@@ -250,6 +250,7 @@ async function localMain() {
 
   // 7-2) 여러 프로젝트 (로컬): 만들기 → 전환 → 데이터 분리 → 프로젝트별 역할 → 기본 프로젝트 복귀
   const defaultWbs = await page.evaluate(() => wbsData.length);
+  await page.click("#gAdminBtn"); await page.waitForTimeout(200);
   await page.click("#btnProjectManager"); await page.waitForTimeout(400);
   await page.fill("#pmNewName", "E2E 신규 프로젝트"); await page.fill("#pmNewStart", "2028-01-01"); await page.fill("#pmNewEnd", "2028-12-31");
   await page.click('#projectManagerModal [data-click="ProjectManager.create"]'); await page.waitForTimeout(600);
@@ -264,9 +265,34 @@ async function localMain() {
   const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: AuthManager.normalizeRole(AuthManager.findUser("lead_lee").role) }));
   check("Local: back to default project keeps data; per-project role (P001=PM, base=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
 
+  // 7-3) G 화면 틀 (B2)
+  const gfit = [];
+  for (const w of [1024, 1280, 1366]) {
+    await page.setViewportSize({ width: w, height: 900 }); await page.waitForTimeout(150);
+    for (const g of ["ov", "sc", "sq", "co"]) {
+      await page.click(`.g-group[data-group="${g}"]`); await page.waitForTimeout(120);
+      gfit.push(await page.evaluate(() => { const n = document.querySelector(".g-nav-top"), h = document.querySelector("header"); return n.scrollWidth <= n.clientWidth && h.scrollWidth <= h.clientWidth + 1; }));
+    }
+  }
+  await page.setViewportSize({ width: 1500, height: 950 });
+  check("G: one-row header and two-level menu fit at 1024/1280/1366px (no horizontal scroll)", gfit.every(Boolean), JSON.stringify(gfit));
+  await page.click('.g-group[data-group="co"]'); await page.waitForTimeout(200);
+  const grp = await page.evaluate(() => document.querySelector(".tab-pane.active").id);
+  await page.keyboard.press("Control+k"); await page.waitForTimeout(200);
+  await page.keyboard.type("VOC-"); await page.waitForTimeout(200); await page.keyboard.press("Enter"); await page.waitForTimeout(600);
+  const pal = await page.evaluate(() => document.querySelector(".tab-pane.active").id);
+  check("G: group click opens group screen; Ctrl+K search navigates", ["tab-weekly-report", "tab-meeting", "tab-notices"].indexOf(grp) !== -1 && pal === "tab-voc", grp + " / " + pal);
+  await page.evaluate(() => LayoutManager.setLayout("sidebar-left", false)); await page.waitForTimeout(300);
+  const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
+  await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
+  const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
+  check("G: left menu option + 3 themes (navy, teal, graphite)", side && themes === "navy,teal,dark", themes);
+
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);
   await login(page, "lead_lee"); await page.waitForTimeout(800);
+  const memberAdmin = await page.evaluate(() => [GShell.allowed("tab-master"), GShell.allowed("tab-config"), document.querySelectorAll('#gAdminItems [data-click-args*="tab-master"], #gAdminItems [data-click-args*="tab-config"]').length]);
+  check("G: member does not see Master data / Settings in the ⚙ menu", !memberAdmin[0] && !memberAdmin[1] && memberAdmin[2] === 0, JSON.stringify(memberAdmin));
   const weak = await page.evaluate(() => [AuthManager.validateNewPassword("abcd1234") === "", AuthManager.validateNewPassword("abc12") !== "", AuthManager.validateNewPassword("abcdefgh") !== ""]);
   check("Password rule: 8+ chars with letters and digits", weak.every(Boolean), JSON.stringify(weak));
   const perm = await page.evaluate(async () => {
@@ -313,14 +339,26 @@ async function serverScenarios() {
     check("index.html served with CSP (script-src 'self')", /script-src 'self'(;|$)/.test(csp), csp);
     await login(a, "admin", SERVER_PWD);
     // 실제 클릭으로 모든 탭 이동 + 표 입력 (CSP 위반 없이 동작)
-    const tabIds = await a.$$eval(".tab-btn", bs => bs.map(b => ((b.getAttribute("data-click-args") || "").match(/tab-[a-z-]+/) || [])[0]).filter(Boolean));
-    for (const t of tabIds) { await a.click(`.tab-btn[data-click-args*='"${t}"']`); await a.waitForTimeout(150); }
-    const tabOk = await a.evaluate(() => document.querySelector(".tab-pane.active") !== null);
-    await a.click(`.tab-btn[data-click-args*='"tab-wbs"']`); await a.waitForTimeout(400);
+    // G: 묶음 → 하위 메뉴를 실제로 눌러 모든 업무 화면 이동, ⚙ 관리 메뉴로 관리 화면 이동
+    let visited = 0;
+    for (const g of ["ov", "sc", "sq", "co"]) {
+      await a.click(`.g-group[data-group="${g}"]`); await a.waitForTimeout(150);
+      const subs = await a.$$eval(".g-nav-top .g-sub", bs => bs.map(b => b.getAttribute("data-tab")));
+      for (const t of subs) { await a.click(`.g-nav-top .g-sub[data-tab="${t}"]`); await a.waitForTimeout(120); visited += await a.evaluate(t => document.querySelector(".tab-pane.active").id === t ? 1 : 0, t); }
+    }
+    await a.click("#gAdminBtn"); await a.click('#gAdminItems [data-click-args*="tab-master"]'); await a.waitForTimeout(200);
+    const tabOk = visited >= 11 && await a.evaluate(() => document.querySelector(".tab-pane.active").id === "tab-master");
+    await a.click('.g-group[data-group="sc"]'); await a.waitForTimeout(150);
+    await a.click('.g-nav-top .g-sub[data-tab="tab-wbs"]'); await a.waitForTimeout(400);
     const nameInput = a.locator(`#tab-wbs [data-change="UiH.set"][data-change-args*='"name"']`).first();
     await nameInput.fill("CSP-UI-EDIT"); await nameInput.press("Tab"); await a.waitForTimeout(300);
     const edited = await a.evaluate(() => wbsData.some(t => t.name === "CSP-UI-EDIT"));
     check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
+    await a.waitForTimeout(300);
+    const bar = await a.evaluate(() => { const b = document.getElementById("gSaveBar"); return !!b && !b.hidden && /1/.test(document.getElementById("gSaveBarText").textContent); });
+    await a.keyboard.press("Control+s"); await a.waitForTimeout(1200);
+    const barAfter = await a.evaluate(() => document.getElementById("gSaveBar").hidden);
+    check("G: unsaved-changes bar appears in server mode and Ctrl+S saves all", bar && barAfter, JSON.stringify([bar, barAfter]));
     // 서버 주소 + 로컬 모드 저장값 → 전환 질문
     const b = await newPage({ init: () => { if (!localStorage.getItem("__seen")) { localStorage.setItem("__seen", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "LOCAL" })); } } });
     await b.goto(url); await b.waitForTimeout(1500);
