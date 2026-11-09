@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.8] 초기 데이터 빌더
+[AX Project Management by YS v1.0.9] 초기 데이터 빌더
 
 data/initial_data.json  ->  js/initial-data.js  (window.AX_INITIAL_DATA = {...})
 
@@ -39,5 +39,5 @@ def build(src: Path = SRC, dst: Path = DST) -> Path:
 
 if __name__ == "__main__":
     out = build()
-    print(f"[OK] {out.relative_to(ROOT)} 생성 완료 ({out.stat().st_size:,} bytes)")
+    print(f"[OK] {out.relative_to(ROOT)} built ({out.stat().st_size:,} bytes)")
     sys.exit(0)

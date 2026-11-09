@@ -1819,51 +1819,6 @@ const ExcelSync = {
 // 5대 목차: 1) 프로젝트 기본정보 2) 통합/서브시스템 진척률 3) 요구사항 진척율 4) VOC 진행 현황 5) 서브시스템별 금주/차주 상세
 // ===================================================================
 const DocxBuilder = {
-  // [v1.0.8] 주간보고 통합 묶음 워드: 목차 + 통합 / 분야별 / 서브시스템별 보고서
-  buildWeeklyBundleDocx(meta) {
-    const esc = s => ExcelSync.escapeXml(s);
-    const pal = ExcelSync.getExportThemePalette();
-    const font = pal.fontName, sz = pal.fontSize * 2;
-    const run = (t, o = {}) => `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:eastAsia="${font}" w:hAnsi="${font}"/>${o.b ? "<w:b/>" : ""}<w:sz w:val="${o.sz || sz}"/><w:color w:val="${o.color || "1F2937"}"/></w:rPr><w:t xml:space="preserve">${esc(t)}</w:t></w:r>`;
-    const para = (t, o = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.center ? '<w:jc w:val="center"/>' : ""}${o.pageBreak ? '<w:pageBreakBefore/>' : ""}<w:spacing w:before="${o.before || 0}" w:after="${o.after || 80}"/>${o.indent ? `<w:ind w:left="${o.indent}"/>` : ""}</w:pPr>${run(t, o)}</w:p>`;
-    const cell = (t, head) => `<w:tc><w:tcPr><w:tcBorders><w:top w:val="single" w:sz="4" w:color="${pal.border}"/><w:left w:val="single" w:sz="4" w:color="${pal.border}"/><w:bottom w:val="single" w:sz="4" w:color="${pal.border}"/><w:right w:val="single" w:sz="4" w:color="${pal.border}"/></w:tcBorders>${head ? `<w:shd w:val="clear" w:color="auto" w:fill="${pal.headerBg}"/>` : ""}</w:tcPr><w:p>${run(t, { b: head, color: head ? pal.headerTextColor : "1F2937", sz: sz - 2 })}</w:p></w:tc>`;
-    const table = (headers, rows) => `<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tr>${headers.map(h => cell(h, true)).join("")}</w:tr>${rows.map(r => `<w:tr>${r.map(c => cell(c === undefined || c === null ? "" : String(c), false)).join("")}</w:tr>`).join("")}</w:tbl>${para("")}`;
-    const body = [];
-    body.push(para(`[주간보고 통합 묶음] ${meta.projectName}`, { b: true, sz: sz + 20, center: true, after: 60, color: "0F172A" }));
-    body.push(para(`${meta.weekLabel}  |  공정 기준일: ${meta.reportDate}`, { center: true, after: 300, color: pal.secondary, b: true }));
-    body.push(para("목차", { style: "Heading1", b: true, sz: sz + 8, color: pal.primary, after: 120 }));
-    meta.groups.forEach(g => {
-      body.push(para(`${g.no}. ${g.title}`, { b: true, indent: 200 }));
-      meta.sections.filter(sec => sec.groupNo === g.no).forEach(sec => body.push(para(`${sec.no}  ${sec.title}  ${sec.written ? "" : "(미작성 · 자동생성)"}`, { indent: 600 })));
-    });
-    let lastGroup = 0;
-    meta.sections.forEach((sec, idx) => {
-      const r = sec.rep;
-      if (sec.groupNo !== lastGroup) {
-        body.push(para(`${sec.groupNo}. ${sec.group}`, { style: "Heading1", b: true, sz: sz + 8, color: pal.primary, pageBreak: true, after: 120 }));
-        lastGroup = sec.groupNo;
-      }
-      body.push(para(`${sec.no}  ${sec.title}${sec.written ? "" : "  ※ 미작성: WBS 기준 자동 생성"}`, { style: "Heading2", b: true, sz: sz + 4, color: pal.secondary, before: idx ? 200 : 0 }));
-      body.push(para(`작성자: ${r.author || "-"}   |   금주: ${r.startDate} ~ ${r.endDate}   |   차주: ${r.nextStartDate} ~ ${r.nextEndDate}`, { color: "475569", sz: sz - 2 }));
-      body.push(para("■ 금주 실적 요약", { b: true })); body.push(para(r.currentWeekSummary || "-", { indent: 300 }));
-      body.push(para("■ 차주 계획 요약", { b: true })); body.push(para(r.nextWeekSummary || "-", { indent: 300 }));
-      body.push(para("■ 주요 현안", { b: true })); body.push(para(r.issuesNotes || "-", { indent: 300 }));
-      body.push(para("■ 금주 실적", { b: true }));
-      body.push(table(["서브시스템", "WBS ID", "항목명", "실적(%)", "상태", "상세 실적"],
-        (r.currentWeekTasks || []).map(t => [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "", t.detail || ""])));
-      body.push(para("■ 차주 계획", { b: true }));
-      body.push(table(["서브시스템", "WBS ID", "항목명", "목표(%)", "상태", "추진계획"],
-        (r.nextWeekTasks || []).map(t => [t.system, t.manual ? "직접입력" : t.wbsId, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.status || "계획", t.detail || ""])));
-    });
-    const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join("")}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1200" w:right="1100" w:bottom="1200" w:left="1100"/></w:sectPr></w:body></w:document>`;
-    const files = [
-      { name: "[Content_Types].xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>` },
-      { name: "_rels/.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
-      { name: "word/document.xml", content: ExcelSync._normalizeWordXml ? ExcelSync._normalizeWordXml(docXml) : docXml }
-    ];
-    return ExcelSync._createZipBlob(files, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-  },
-
   buildDocxBlob(reportMeta, useTables = true) {
     const esc = s => ExcelSync.escapeXml(s);
     const bodyParts = [];
@@ -1970,7 +1925,7 @@ const DocxBuilder = {
             <w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${subHeaderBg}"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${colorPrimary}"/></w:rPr><w:t>사업 수행 기간</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="2900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:t>${esc(reportMeta.projectStartDate)} ~ ${esc(reportMeta.projectEndDate)}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${subHeaderBg}"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${colorPrimary}"/></w:rPr><w:t>보고 대상 주차</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="2900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="0369A1"/></w:rPr><w:t>${esc(weekLabel)} (${esc(reportMeta.startDate)} ~ ${esc(reportMeta.endDate)})</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="2900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="0369A1"/></w:rPr><w:t>${esc(String(weekLabel).includes(reportMeta.startDate) ? weekLabel : `${weekLabel} (${reportMeta.startDate} ~ ${reportMeta.endDate})`)}</w:t></w:r></w:p></w:tc>
           </w:tr>
           <w:tr>
             <w:tc><w:tcPr><w:tcW w:w="1800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${subHeaderBg}"/></w:tcPr><w:p><w:pPr><w:spacing w:before="60" w:after="60"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${colorPrimary}"/></w:rPr><w:t>공정 기준 일자</w:t></w:r></w:p></w:tc>
@@ -1995,6 +1950,10 @@ const DocxBuilder = {
       `);
     }
 
+    // [v1.0.9] 값에 이미 % 가 붙어 있으면 제거 후 표기 (43%% 중복 방지)
+    const pctText = v => String(v === undefined || v === null ? "" : v).replace(/%+$/, "");
+    // [v1.0.9] 여러 줄 텍스트(서브시스템별 요약 취합 등)를 줄바꿈 유지하여 출력
+    const mlRun = text => `<w:r>${String(text || "").split(/\r?\n/).map((l, i) => `${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${esc(l)}</w:t>`).join("")}</w:r>`;
     // 주간 요약 박스 (금주 실적 요약, 차주 계획 요약, 현안사항)
     bodyParts.push(`
       <w:p>
@@ -2005,7 +1964,7 @@ const DocxBuilder = {
           <w:spacing w:before="120" w:after="60"/>
         </w:pPr>
         <w:r><w:rPr><w:b/><w:color w:val="${colorSecondary}"/></w:rPr><w:t>【금주 중점 추진 실적 총괄 요약】: </w:t></w:r>
-        <w:r><w:t>${esc(reportMeta.currentWeekSummary || "WBS 공정 기준선에 따라 금주 계획 과업 및 연계 산출물 완성을 정상 추진하였습니다.")}</w:t></w:r>
+        ${mlRun(reportMeta.currentWeekSummary || "WBS 공정 기준선에 따라 금주 계획 과업 및 연계 산출물 완성을 정상 추진하였습니다.")}
       </w:p>
       <w:p>
         <w:pPr>
@@ -2015,7 +1974,7 @@ const DocxBuilder = {
           <w:spacing w:before="60" w:after="60"/>
         </w:pPr>
         <w:r><w:rPr><w:b/><w:color w:val="0369A1"/></w:rPr><w:t>【차주 중점 추진 목표 및 계획 요약】: </w:t></w:r>
-        <w:r><w:t>${esc(reportMeta.nextWeekSummary || "차주 예정 WBS 과업의 선행 조건 확인 및 산출물 보완 작업을 적기 착수할 예정입니다.")}</w:t></w:r>
+        ${mlRun(reportMeta.nextWeekSummary || "차주 예정 WBS 과업의 선행 조건 확인 및 산출물 보완 작업을 적기 착수할 예정입니다.")}
       </w:p>
       <w:p>
         <w:pPr>
@@ -2025,9 +1984,12 @@ const DocxBuilder = {
           <w:spacing w:before="60" w:after="140"/>
         </w:pPr>
         <w:r><w:rPr><w:b/><w:color w:val="B45309"/></w:rPr><w:t>【주요 현안 및 PMO 지원 요청사항】: </w:t></w:r>
-        <w:r><w:t>${esc(reportMeta.issuesNotes || "현재 공정상 중대 리스크 없음. 일정 계획에 따른 실적 진척 유지 중.")}</w:t></w:r>
+        ${mlRun(reportMeta.issuesNotes || "현재 공정상 중대 리스크 없음. 일정 계획에 따른 실적 진척 유지 중.")}
       </w:p>
     `);
+    if (reportMeta.coverageNote) {
+      bodyParts.push(`<w:p><w:pPr><w:ind w:left="200" w:right="200"/><w:spacing w:before="0" w:after="140"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="475569"/></w:rPr><w:t xml:space="preserve">【주간보고 작성 현황】: </w:t></w:r>${mlRun(reportMeta.coverageNote)}</w:p>`);
+    }
 
     // 2. 통합 및 서브시스템별 공정 진척률 현황
     const m = reportMeta.metrics || {};
@@ -2087,9 +2049,9 @@ const DocxBuilder = {
             <w:tc><w:tcPr><w:tcW w:w="1900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(r[1])}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(r[2])}</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="1100" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(r[3])}</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(r[6])}%</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(r[7])}%</w:t></w:r></w:p></w:tc>
-            <w:tc><w:tcPr><w:tcW w:w="1100" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${rateCol}"/></w:rPr><w:t>${esc(r[8])}%</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(pctText(r[6]))}%</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(pctText(r[7]))}%</w:t></w:r></w:p></w:tc>
+            <w:tc><w:tcPr><w:tcW w:w="1100" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${rateCol}"/></w:rPr><w:t>${esc(pctText(r[8]))}%</w:t></w:r></w:p></w:tc>
             <w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(r[9])}건</w:t></w:r></w:p></w:tc>
           </w:tr>
         `;
@@ -2121,8 +2083,8 @@ const DocxBuilder = {
           <w:p>
             <w:pPr><w:ind w:left="240"/><w:spacing w:before="30" w:after="30"/><w:line w:line="260" w:lineRule="auto"/></w:pPr>
             <w:r><w:rPr><w:b/><w:color w:val="${colorSecondary}"/></w:rPr><w:t>• [${esc(r[1])}] (${esc(r[0])} / ${esc(r[3])} PM): </w:t></w:r>
-            <w:r><w:t>계획 진척률 ${esc(r[6])}%, 실적 진척률 ${esc(r[7])}% (공정 달성률 </w:t></w:r>
-            <w:r><w:rPr><w:b/><w:color w:val="${rateVal >= 90 ? "15803D" : "B91C1C"}"/></w:rPr><w:t>${esc(r[8])}%</w:t></w:r>
+            <w:r><w:t>계획 진척률 ${esc(pctText(r[6]))}%, 실적 진척률 ${esc(pctText(r[7]))}% (공정 달성률 </w:t></w:r>
+            <w:r><w:rPr><w:b/><w:color w:val="${rateVal >= 90 ? "15803D" : "B91C1C"}"/></w:rPr><w:t>${esc(pctText(r[8]))}%</w:t></w:r>
             <w:r><w:t>, ${statusText}). 지연 건수 ${esc(r[9])}건으로 안정적인 공정을 유지하고 있습니다.</w:t></w:r>
           </w:p>
         `);
@@ -2347,6 +2309,17 @@ const DocxBuilder = {
       </w:p>
     `);
 
+    // [v1.0.9] 금주/차주 표: 머리글·열 정의(gridCol)·데이터 셀 개수를 하나의 정의로 생성 (열 어긋남 방지)
+    const idOf = t => (t.manual || !t.wbsId) ? "직접입력" : t.wbsId;
+    const wkCell = (text, w, o = {}) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${o.head ? `<w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/>` : ""}</w:tcPr><w:p><w:pPr>${o.center ? '<w:jc w:val="center"/>' : ""}<w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr>${o.head || o.bold ? "<w:b/>" : ""}${o.head ? `<w:color w:val="${headerTextColor}"/>` : ""}</w:rPr>${String(text).split("\n").map((l, i) => `${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${esc(l)}</w:t>`).join("")}</w:r></w:p></w:tc>`;
+    const wkTable = (cols, rows) => {
+      const total = cols.reduce((n, c) => n + c[1], 0);
+      const border = ["top", "left", "bottom", "right", "insideH", "insideV"].map(k => `<w:${k} w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/>`).join("");
+      const head = `<w:tr><w:trPr><w:tblHeader/></w:trPr>${cols.map(c => wkCell(c[0], c[1], { head: true, center: true })).join("")}</w:tr>`;
+      const body = rows.map(r => `<w:tr>${r.map((v, i) => wkCell(v === undefined || v === null ? "" : String(v), cols[i][1], { center: i !== 1 && i !== r.length - 1, bold: i === 0 })).join("")}</w:tr>`).join("");
+      return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${border}</w:tblBorders></w:tblPr><w:tblGrid>${cols.map(c => `<w:gridCol w:w="${c[1]}"/>`).join("")}</w:tblGrid>${head}${body}</w:tbl>`;
+    };
+
     allSubs.forEach(sys => {
       const sCur = curTasks.filter(t => t.system === sys);
       const sNxt = nxtTasks.filter(t => t.system === sys);
@@ -2383,46 +2356,10 @@ const DocxBuilder = {
             <w:p><w:pPr><w:ind w:left="200"/><w:spacing w:after="60"/></w:pPr><w:r><w:t style="color:#64748b;">(금주 중점 추진 과업 내역 없음)</w:t></w:r></w:p>
           `);
         } else {
-          let curTblTrs = `
-            <w:tr>
-              <w:tc><w:tcPr><w:tcW w:w="1200" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>WBS ID</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>Task명</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="1500" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>계획일정</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>계획(%)</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>실적(%)</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>상태</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="1900" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>상세 추진실적 및 조치내역</w:t></w:r></w:p></w:tc>
-            </w:tr>
-          `;
-          sCur.forEach(t => {
-            curTblTrs += `
-              <w:tr>
-                <w:tc><w:tcPr><w:tcW w:w="1400" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(t.wbsId)}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="3000" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.name)}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.pProg ?? 0)}%</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(t.aProg ?? 0)}%</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="900" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.status || "진행")}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="2300" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.detail || "(상세 추진실적 정상 완료)")}</w:t></w:r></w:p></w:tc>
-              </w:tr>
-            `;
-          });
-          bodyParts.push(`
-            <w:tbl>
-              <w:tblPr>
-                <w:tblW w:w="9400" w:type="dxa"/>
-                <w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:left w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:right w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/></w:tblBorders>
-              </w:tblPr>
-              <w:tblGrid>
-                <w:gridCol w:w="1400"/>
-                <w:gridCol w:w="3000"/>
-                <w:gridCol w:w="900"/>
-                <w:gridCol w:w="900"/>
-                <w:gridCol w:w="900"/>
-                <w:gridCol w:w="2300"/>
-              </w:tblGrid>
-              ${curTblTrs}
-            </w:tbl>
-          `);
+          bodyParts.push(wkTable(
+            [["WBS ID", 1050], ["Task명", 1950], ["계획일정", 1700], ["계획(%)", 800], ["실적(%)", 800], ["상태", 850], ["상세 추진실적 및 조치내역", 2250]],
+            sCur.map(t => [idOf(t), t.name, t.manual ? "-" : `${t.pStart || "-"}\n~ ${t.pEnd || "-"}`, t.manual ? "-" : `${t.pProg ?? 0}%`, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "진행", t.detail || "(상세 추진실적 정상 완료)"])
+          ));
         }
 
         // Table 2: 차주 계획
@@ -2437,41 +2374,10 @@ const DocxBuilder = {
             <w:p><w:pPr><w:ind w:left="200"/><w:spacing w:after="100"/></w:pPr><w:r><w:t style="color:#64748b;">(차주 예정 과업 없음)</w:t></w:r></w:p>
           `);
         } else {
-          let nxtTblTrs = `
-            <w:tr>
-              <w:tc><w:tcPr><w:tcW w:w="1400" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>WBS ID</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="2800" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>Task명</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="1600" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>계획일정</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="1000" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>목표계획(%)</w:t></w:r></w:p></w:tc>
-              <w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${headerBg}"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/><w:color w:val="${headerTextColor}"/></w:rPr><w:t>차주 중점 추진계획 및 준비사항</w:t></w:r></w:p></w:tc>
-            </w:tr>
-          `;
-          sNxt.forEach(t => {
-            nxtTblTrs += `
-              <w:tr>
-                <w:tc><w:tcPr><w:tcW w:w="1400" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>${esc(t.wbsId)}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="2800" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.name)}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="1600" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>${esc(t.pStart || "-")}~${esc(t.pEnd || "-")}</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="1000" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.pProg ?? 0)}%</w:t></w:r></w:p></w:tc>
-                <w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="40" w:after="40"/></w:pPr><w:r><w:t>${esc(t.detail || "(차주 중점 추진 및 일정 준수 예정)")}</w:t></w:r></w:p></w:tc>
-              </w:tr>
-            `;
-          });
-          bodyParts.push(`
-            <w:tbl>
-              <w:tblPr>
-                <w:tblW w:w="9400" w:type="dxa"/>
-                <w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:left w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:right w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="${tableBorder}"/></w:tblBorders>
-              </w:tblPr>
-              <w:tblGrid>
-                <w:gridCol w:w="1600"/>
-                <w:gridCol w:w="3600"/>
-                <w:gridCol w:w="1200"/>
-                <w:gridCol w:w="3000"/>
-              </w:tblGrid>
-              ${nxtTblTrs}
-            </w:tbl>
-          `);
+          bodyParts.push(wkTable(
+            [["WBS ID", 1050], ["Task명", 2500], ["계획일정", 1700], ["목표계획(%)", 1050], ["차주 중점 추진계획 및 준비사항", 3100]],
+            sNxt.map(t => [idOf(t), t.name, t.manual ? "-" : `${t.pStart || "-"}\n~ ${t.pEnd || "-"}`, t.manual ? "-" : `${t.pProg ?? 0}%`, t.detail || "(차주 중점 추진 및 일정 준수 예정)"])
+          ));
         }
       } else {
         // 완전 서술형 (표 없음)
@@ -2490,7 +2396,7 @@ const DocxBuilder = {
             bodyParts.push(`
               <w:p>
                 <w:pPr><w:ind w:left="360"/><w:spacing w:before="20" w:after="30"/><w:line w:line="260" w:lineRule="auto"/></w:pPr>
-                <w:r><w:rPr><w:b/></w:rPr><w:t>• [${esc(t.wbsId)}] ${esc(t.name)}: </w:t></w:r>
+                <w:r><w:rPr><w:b/></w:rPr><w:t>• [${esc(idOf(t))}] ${esc(t.name)}: </w:t></w:r>
                 <w:r><w:t>계획 ${esc(t.pProg ?? 0)}%, 실적 ${esc(t.aProg ?? 0)}% (상태: ${esc(t.status || "진행")}) - ${esc(t.detail || "과업 상세 실적 및 세부 테스트 정상 완료.")}</w:t></w:r>
               </w:p>
             `);
@@ -2512,7 +2418,7 @@ const DocxBuilder = {
             bodyParts.push(`
               <w:p>
                 <w:pPr><w:ind w:left="360"/><w:spacing w:before="20" w:after="30"/><w:line w:line="260" w:lineRule="auto"/></w:pPr>
-                <w:r><w:rPr><w:b/></w:rPr><w:t>• [${esc(t.wbsId)}] ${esc(t.name)}: </w:t></w:r>
+                <w:r><w:rPr><w:b/></w:rPr><w:t>• [${esc(idOf(t))}] ${esc(t.name)}: </w:t></w:r>
                 <w:r><w:t>목표 계획 ${esc(t.pProg ?? 0)}% 달성 추진 - ${esc(t.detail || "선행 산출물 점검 및 과업 일정 준수 준비 완료.")}</w:t></w:r>
               </w:p>
             `);

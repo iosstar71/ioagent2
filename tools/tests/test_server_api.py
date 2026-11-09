@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.8] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
+[AX Project Management by YS v1.0.9] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
 
 프로그램 폴더를 임시 폴더로 복사한 뒤 빈 DB 로 wbs_db_server.py 를 기동하여 검증합니다.
 (실제 운영 DB data/wbs_enterprise.db 는 건드리지 않음)

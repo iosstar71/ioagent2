@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.8] 배포용 zip 생성기
+[AX Project Management by YS v1.0.9] 배포용 zip 생성기
 
 - Standalone.html / js/initial-data.js 를 최신으로 다시 빌드한 뒤
   AX_Project_Management_by_YS_v<버전>.zip 을 생성합니다.
@@ -9,7 +9,7 @@
   (v1.0.5 배포본은 파일명이 '#Uc81c...' 형태로 깨져 있었음)
 
 사용법 (프로그램 폴더에서):
-    python tools/make_release.py            → ../AX_Project_Management_by_YS_v1.0.8.zip
+    python tools/make_release.py            → ../AX_Project_Management_by_YS_v1.0.9.zip
     python tools/make_release.py <출력폴더>
 """
 import sys
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_standalone  # noqa: E402
 
-VERSION = "1.0.8"
+VERSION = "1.0.9"
 PKG = f"AX_Project_Management_by_YS_v{VERSION}"
 EXCLUDE_DIRS = {".git", "logs", "__pycache__", ".claude", "node_modules"}
 EXCLUDE_FILES = {".gitattributes", ".gitignore"}
@@ -55,4 +55,4 @@ if __name__ == "__main__":
     target = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT.parent
     target.mkdir(parents=True, exist_ok=True)
     result = make(target)
-    print(f"[OK] {result} 생성 완료 ({result.stat().st_size:,} bytes)")
+    print(f"[OK] {result} created ({result.stat().st_size:,} bytes)")

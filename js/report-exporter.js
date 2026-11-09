@@ -289,11 +289,11 @@ const ReportExporter = {
     };
   },
 
-  // 대시보드 [📥 엑셀 보고서] = 주간보고 탭의 [전체 통합 엑셀]과 동일한 출력물 (v1.0.5부터 일원화)
+  // 대시보드 [📥 엑셀 보고서] = 주간보고 탭 상단 [엑셀 주간보고]와 동일한 출력물 (보고 기준일 주차 통합 주간보고, v1.0.9)
   exportExcelReport() {
     try {
-      if (!WeeklyReportManager.currentWeekReport) WeeklyReportManager.init();
-      WeeklyReportManager.exportExcel(true);
+      const w = WeeklyReportManager.findWeekForDate(projectConfig.reportDate);
+      WeeklyReportManager.exportWeek("EXCEL", w ? w.weekNum : null);
     } catch (e) {
       console.error("주간보고 엑셀 생성 실패:", e);
       showToast("⚠️ 엑셀 보고서 생성 중 오류가 발생했습니다: " + e.message, "error");

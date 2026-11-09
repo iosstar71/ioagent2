@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.8] 워드(DOCX) 매뉴얼 빌더
+[AX Project Management by YS v1.0.9] 워드(DOCX) 매뉴얼 빌더
 
 manual.html  →  워드 매뉴얼(DOCX) 생성 후 js/manual-viewer.js 에 내장(docxBase64)
   - 화면 [📘 도움말 > 워드 다운로드] 매뉴얼이 manual.html 과 항상 같은 내용/버전이 되도록 함
@@ -149,7 +149,7 @@ def build_docx(html_text: str) -> bytes:
 def build() -> int:
     html_text = SRC.read_text(encoding="utf-8")
     m = re.search(r"ver(1\.\d+\.\d+)", html_text)
-    version = m.group(1) if m else "1.0.8"
+    version = m.group(1) if m else "1.0.9"
     data = build_docx(html_text)
     js = VIEWER.read_text(encoding="utf-8")
     js = re.sub(r'docxBase64: "[A-Za-z0-9+/=]*"', 'docxBase64: "' + base64.b64encode(data).decode() + '"', js, count=1)
@@ -161,5 +161,5 @@ def build() -> int:
 
 if __name__ == "__main__":
     size = build()
-    print(f"[OK] 워드 매뉴얼 생성 및 js/manual-viewer.js 내장 완료 ({size:,} bytes)")
+    print(f"[OK] Word manual built and embedded in js/manual-viewer.js ({size:,} bytes)")
     sys.exit(0)

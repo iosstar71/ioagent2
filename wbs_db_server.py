@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AX Project Management by YS ver1.0.8 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
+AX Project Management by YS ver1.0.9 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
@@ -35,7 +35,7 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "ver1.0.8"
+VERSION = "ver1.0.9"
 APP_NAME = f"AX Project Management by YS {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
@@ -284,14 +284,14 @@ class Store:
         if cur.fetchone()[0] > 0:
             return
         data = cls._legacy_load(conn)
-        source = "v1.0.5 관계형 테이블 이관"
+        source = "migrated from v1.0.5 relational tables"
         if not data.get("wbsData") and not data.get("projectConfig"):
             data, source = {}, "initial_data.json"
             if INITIAL_DATA_PATH.exists():
                 try:
                     data = json.loads(INITIAL_DATA_PATH.read_text(encoding="utf-8"))
                 except Exception as ex:
-                    write_server_log(f"[WARN] initial_data.json 읽기 실패: {ex}")
+                    write_server_log(f"[WARN] Failed to read initial_data.json: {ex}")
         users = data.get("projectUsers") or []
         if not any(str(u.get("empNo", "")).lower() == "admin" for u in users):
             users.insert(0, {"empNo": "admin", "name": "시스템관리자", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "", "pwdHash": "", "lang": "ko"})
@@ -300,7 +300,7 @@ class Store:
             if key in data:
                 cls._write_dataset(cur, key, data[key], {p: {"rev": 1, "by": "bootstrap", "at": now_str()} for p in split_parts(key, data[key])}, "bootstrap")
         conn.commit()
-        write_server_log(f"[INIT] 데이터셋 초기화 완료 ({source})")
+        write_server_log(f"[INIT] Datasets initialized ({source})")
 
     @staticmethod
     def _legacy_load(conn):
@@ -889,13 +889,13 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         row = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == emp.lower()), None)
         if not row or (row.get("pwdHash") or DEFAULT_PWD_HASH) != pwd_hash:
             LoginThrottle.fail(emp)
-            write_server_log(f"[AUTH] 로그인 실패: {emp} ({self.address_string()})")
+            write_server_log(f"[AUTH] Login failed: {emp} ({self.address_string()})")
             raise AuthError("사번 또는 비밀번호가 일치하지 않습니다.", 401)
         LoginThrottle.ok(emp)
         token, info = Sessions.create(row)
         if req.get("lang") in ("ko", "en"):
             info["lang"] = req["lang"]
-        write_server_log(f"[AUTH] 로그인: {info['empNo']} ({info['role']})")
+        write_server_log(f"[AUTH] Login: {info['empNo']} ({info['role']})")
         self._send_json(200, {"ok": True, "token": token, "user": public_user(info)})
 
     def api_logout(self, req):
@@ -908,7 +908,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
 
     def api_register(self, req):
         row = Store.register_user(req.get("user") or {})
-        write_server_log(f"[AUTH] 신규 사용자 등록: {row['empNo']} ({row['subsystem']})")
+        write_server_log(f"[AUTH] New user registered: {row['empNo']} ({row['subsystem']})")
         self._send_json(200, {"ok": True, "user": Store.public_value("projectUsers", [row])[0]})
 
     def api_change_password(self, req):
@@ -923,7 +923,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             LoginThrottle.fail(emp)
             raise
         LoginThrottle.ok(emp)
-        write_server_log(f"[AUTH] 비밀번호 변경(로그인 화면): {emp}")
+        write_server_log(f"[AUTH] Password changed (login screen): {emp}")
         self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
 
     def api_password(self, req):
@@ -955,7 +955,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             self._send_json(409, result)
             return
         if result.get("blocked"):
-            write_server_log(f"[AUTH] 권한 없는 저장 거부: {info['empNo']} → {result['blocked']}")
+            write_server_log(f"[AUTH] Unauthorized save rejected: {info['empNo']} -> {result['blocked']}")
         self._send_json(200, result)
 
     # ---- 채팅 API ----
@@ -1004,7 +1004,7 @@ def main():
 
     db_name = pathlib.Path(args.db).name
     if not db_name.lower().endswith((".db", ".sqlite", ".sqlite3")):
-        raise SystemExit("[ERROR] --db 는 .db/.sqlite/.sqlite3 파일명만 허용됩니다.")
+        raise SystemExit("[ERROR] --db accepts only a .db/.sqlite/.sqlite3 file name.")
     DB_PATH = DATA_DIR / db_name
     LOG_SILENT_MODE = args.silent or args.no_console
     LOG_DATE_MODE = args.log_date or LOG_SILENT_MODE
@@ -1013,16 +1013,16 @@ def main():
     Store.init_schema()
     server = ThreadingHTTPServer((args.host, args.port), WbsHttpHandler)
     print("============================================================================")
-    print(f"[{APP_NAME}] 다중 사용자 DB 서버가 시작되었습니다! (로그인 인증 필수)")
-    print(f"  * 웹 브라우저 접속 주소: http://127.0.0.1:{args.port}  (사내망: http://<서버IP>:{args.port})")
-    print(f"  * 웹 루트 디렉터리 경로: {BASE_DIR}")
-    print(f"  * SQLite DB 파일       : {DB_PATH}")
-    print("  * 초기 관리자 계정     : admin / 1234  (로그인 후 반드시 비밀번호 변경)")
+    print(f"[{APP_NAME}] Multi-user DB server started (login authentication required)")
+    print(f"  * Browser URL        : http://127.0.0.1:{args.port}  (LAN: http://<server-ip>:{args.port})")
+    print(f"  * Web root directory : {BASE_DIR}")
+    print(f"  * SQLite DB file     : {DB_PATH}")
+    print("  * Initial admin      : admin / 1234  (change the password after first login)")
     print("============================================================================")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n[서버 종료] 사용자 요청으로 서버를 종료합니다.")
+        print("\n[SHUTDOWN] Server stopped by user request.")
 
 
 if __name__ == "__main__":

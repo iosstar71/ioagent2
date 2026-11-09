@@ -1,5 +1,5 @@
 // =============================================================================
-// [AX Project Management by YS v1.0.8] 브라우저 E2E 자동 테스트 (Playwright)
+// [AX Project Management by YS v1.0.9] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)
@@ -22,7 +22,7 @@ let browser;
 
 function check(name, cond, detail = "") {
   results.push({ name, ok: !!cond, detail });
-  console.log(`${cond ? "  ✅" : "  ❌"} ${name}${detail ? "  — " + detail : ""}`);
+  console.log(`  ${cond ? "[PASS]" : "[FAIL]"} ${name}${!cond && detail ? "  -- " + detail : ""}`);
 }
 
 async function newPage(opts = {}) {
@@ -41,6 +41,23 @@ async function dismissAsk(page) {
   if (vis === "flex") { await page.click("#syncAskBtns button:first-child"); await page.waitForTimeout(300); }
 }
 
+// docx(zip) 안의 파일 1개를 읽음 (외부 라이브러리 없이 zlib 사용)
+function readZipEntry(file, name) {
+  const zlib = require("zlib");
+  const buf = fs.readFileSync(file);
+  let off = 0;
+  while (off < buf.length - 30 && buf.readUInt32LE(off) === 0x04034b50) {
+    const method = buf.readUInt16LE(off + 8), csize = buf.readUInt32LE(off + 18);
+    const nlen = buf.readUInt16LE(off + 26), xlen = buf.readUInt16LE(off + 28);
+    const fname = buf.slice(off + 30, off + 30 + nlen).toString("utf8");
+    const start = off + 30 + nlen + xlen;
+    const data = buf.slice(start, start + csize);
+    if (fname === name) return (method === 8 ? zlib.inflateRawSync(data) : data).toString("utf8");
+    off = start + csize;
+  }
+  return "";
+}
+
 async function login(page, emp, pwd = "1234") {
   await page.fill("#inputSecurityEmpNo", emp);
   await page.fill("#inputSecurityPassword", pwd);
@@ -49,28 +66,28 @@ async function login(page, emp, pwd = "1234") {
 }
 
 async function localScenarios() {
-  console.log("\n[로컬 저장소 모드 시나리오]");
+  console.log("\n[Local storage mode scenarios]");
   // 1) 파일 직접 실행 + 서버 모드 설정 → 로컬 모드 안내 후 전환
   let page = await newPage({ init: () => { if (!sessionStorage.getItem("__t")) { sessionStorage.setItem("__t", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "SQLITE" })); } } });
   await page.goto(FILE_URL); await page.waitForTimeout(1000);
   const ask = await page.$eval("#syncAskTitle", e => e.textContent).catch(() => "");
-  check("파일 직접 실행 시 로컬 저장소 모드 안내", ask.includes("로컬 저장소"), ask);
+  check("file:// launch shows local storage mode notice", ask.includes("로컬 저장소"), ask);
   await dismissAsk(page);
-  check("파일 직접 실행 → LOCAL 모드 전환", await page.evaluate(() => DbConnector.config.mode) === "LOCAL");
+  check("file:// launch -> switched to LOCAL mode", await page.evaluate(() => DbConnector.config.mode) === "LOCAL");
   await page.context().close();
 
   page = await newPage();
   await page.goto(FILE_URL); await page.waitForTimeout(900);
-  check("로그인 화면 표시", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
+  check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   await login(page, "admin");
-  check("관리자 로그인", await page.evaluate(() => AuthManager.getCurrentRole()) === "SYS_ADMIN");
+  check("Admin login", await page.evaluate(() => AuthManager.getCurrentRole()) === "SYS_ADMIN");
 
   // 2) 모든 탭 이동
   const tabs = await page.$$eval(".tab-btn", bs => bs.map(b => ((b.getAttribute("onclick") || "").match(/tab-[a-z-]+/) || [])[0]).filter(Boolean));
   let tabOk = true;
   for (const t of tabs) { await page.evaluate(t => switchTab(t), t); await page.waitForTimeout(120); if (await page.evaluate(() => document.querySelector(".tab-pane.active").id) !== t) tabOk = false; }
-  check(`전체 탭 이동 (${tabs.length}개)`, tabOk);
-  check("Oracle · Excel/Access 비활성화", await page.evaluate(() => document.getElementById("btnDbMode_ORACLE").disabled && document.getElementById("btnDbMode_EXCEL_ACCESS").disabled));
+  check(`Navigate all tabs (${tabs.length})`, tabOk);
+  check("Oracle / Excel-Access disabled", await page.evaluate(() => document.getElementById("btnDbMode_ORACLE").disabled && document.getElementById("btnDbMode_EXCEL_ACCESS").disabled));
 
   // 3) WBS 레벨 변경 → 하위 과업 동반 + 재채번
   const lvl = await page.evaluate(() => {
@@ -80,8 +97,8 @@ async function localScenarios() {
     changeTaskLevel(idx, -1);
     return { parent: ref.level, child: child.level, childId: child.id, parentId: ref.id };
   });
-  check("레벨 변경 시 하위 과업 동반 이동", lvl.parent === 2 && lvl.child === 3, JSON.stringify(lvl));
-  check("WBS ID 재채번 (중간 번호 누락 없음)", lvl.childId.startsWith(lvl.parentId + ".") && lvl.childId.split(".").length === lvl.parentId.split(".").length + 1);
+  check("Level change moves child tasks together", lvl.parent === 2 && lvl.child === 3, JSON.stringify(lvl));
+  check("WBS ID renumbered (no gaps)", lvl.childId.startsWith(lvl.parentId + ".") && lvl.childId.split(".").length === lvl.parentId.split(".").length + 1);
 
   // 4) 실적 자동반영 날짜 규칙 + 지연 상태
   const act = await page.evaluate(() => {
@@ -93,9 +110,9 @@ async function localScenarios() {
     const st = WBSEngine.getTaskStatus({ pProg: 50, aProg: 49 }, rep).label;
     return { t1: t1.aEnd === wk.end, t2: t2.aEnd === rep, t2s: t2.aStart === t2.aEnd, st };
   });
-  check("100% 반영: 계획완료일이 기준일 주차 → 계획완료일", act.t1);
-  check("100% 반영: 그 외 → 기준일, 실적시작일 보정", act.t2 && act.t2s);
-  check("계획 대비 실적 1%p 부족 → 지연", act.st === "지연");
+  check("100% apply: plan end in report week -> plan end date", act.t1);
+  check("100% apply: otherwise -> report date, actual start corrected", act.t2 && act.t2s);
+  check("Actual 1%p below plan -> Delayed", act.st === "지연");
   const delayed = await page.evaluate(() => {
     const t = wbsData.find(x => x.isLeaf && x.pProg >= 10 && x.pProg < 100);
     if (t) { t.aProg = t.pProg - 5; rebuildAll(); }
@@ -105,7 +122,7 @@ async function localScenarios() {
     document.getElementById("wbsStatusFilter").value = "ALL"; renderWbsTable();
     return { rows, leaf, stored: t ? t.status : "-" };
   });
-  check("지연 상태 저장 · 최하위 지연 Task 조회", delayed.stored === "지연" && delayed.rows === delayed.leaf && delayed.rows > 0, JSON.stringify(delayed));
+  check("Delayed status saved / leaf delayed task filter", delayed.stored === "지연" && delayed.rows === delayed.leaf && delayed.rows > 0, JSON.stringify(delayed));
 
   // 5) 간트 목록·차트 스크롤 정렬
   await page.evaluate(() => activateTab("tab-gantt")); await page.waitForTimeout(400);
@@ -114,13 +131,14 @@ async function localScenarios() {
     const t = document.querySelectorAll("#ganttTreeList .gantt-row"), c = document.querySelectorAll("#ganttRowsContainer .gantt-row");
     return { a: Math.round(t[30].getBoundingClientRect().top), b: Math.round(c[30].getBoundingClientRect().top), line: !!document.querySelector(".gantt-report-line"), ms: document.querySelectorAll(".gantt-pm-milestone").length };
   });
-  check("간트 목록·차트 행 정렬 유지 (스크롤 후)", g.a === g.b && g.a > 0, `${g.a}/${g.b}`);
-  check("간트 기준일선 · 마일스톤 표시", g.line && g.ms > 0, `milestones=${g.ms}`);
+  check("Gantt list/chart rows aligned after scroll", g.a === g.b && g.a > 0, `${g.a}/${g.b}`);
+  check("Gantt base-date line / milestones shown", g.line && g.ms > 0, `milestones=${g.ms}`);
 
   // 6) 주간보고: 목록 → 생성 → 항목 제외/추가 → 작성 완료 → 묶음 다운로드
   await page.evaluate(() => activateTab("tab-weekly-report")); await page.waitForTimeout(400);
   const listRows = await page.$$eval("#wrSavedListBody tr", r => r.length);
-  check("주차별 보고서 목록 (통합+분야+서브시스템)", listRows > 3, `${listRows}행`);
+  const expectRows = await page.evaluate(() => 1 + getAllSubsystemNames().length);
+  check("Weekly report list = integrated + subsystems (no domain rows)", listRows === expectRows, `${listRows}/${expectRows}`);
   await page.evaluate(() => WeeklyReportManager.openUnit(WeeklyReportManager.listWeek, "SYS", "W1")); await page.waitForTimeout(300);
   const wr = await page.evaluate(() => {
     const r = WeeklyReportManager.currentWeekReport;
@@ -132,20 +150,35 @@ async function localScenarios() {
     const r2 = WeeklyReportManager.currentWeekReport;
     return { excludedKept: !first || !r2.currentWeekTasks.some(t => t.wbsId === first.wbsId), manualKept: r2.currentWeekTasks.some(t => t.manual && t.name === "E2E 직접 입력") };
   });
-  check("주간보고 항목 제외 유지 (WBS 다시 불러오기 후)", wr.excludedKept);
-  check("주간보고 직접 입력 항목 유지", wr.manualKept);
+  check("Weekly report: excluded item kept after WBS reload", wr.excludedKept);
+  check("Weekly report: manual item kept", wr.manualKept);
   const saved = await page.evaluate(async () => {
     const ok = await WeeklyReportManager.completeReport(false);
     const stored = (JSON.parse(localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164")).weeklyReportsData || []);
     return { ok, stored: stored.some(r => r.scope === "SYS" && r.scopeValue === "W1" && r.currentWeekTasks.some(t => t.manual)) };
   });
-  check("주간보고 작성 완료 저장", saved.ok && saved.stored, JSON.stringify(saved));
+  check("Weekly report: complete & save", saved.ok && saved.stored, JSON.stringify(saved));
   const sizeBlocked = await page.evaluate(() => { const r = WeeklyReportManager.currentWeekReport; const big = "가".repeat(33000); r.issuesNotes = big; const ok = WeeklyReportManager._checkSize(0, false); r.issuesNotes = ""; return !ok; });
-  check("주간보고 32,000자 초과 차단", sizeBlocked);
+  check("Weekly report: >32,000 chars blocked", sizeBlocked);
   const before = page.downloads.length;
-  await page.evaluate(() => { WeeklyReportManager.exportWeekBundle("EXCEL"); WeeklyReportManager.exportWeekBundle("WORD"); });
+  const integ = await page.evaluate(() => {
+    const r = WeeklyReportManager.buildWeekIntegrated(WeeklyReportManager.listWeek);
+    return { done: r.integratedFrom.done, manual: r.currentWeekTasks.some(t => t.manual && t.name === "E2E 직접 입력"), note: !!r.coverageNote };
+  });
+  check("Integrated weekly report merges completed subsystem reports", integ.done.includes("W1") && integ.manual && integ.note, JSON.stringify(integ));
+  await page.evaluate(() => { WeeklyReportManager.exportWeek("EXCEL"); WeeklyReportManager.exportWeek("WORD"); WeeklyReportManager.exportWeek("WORD_TEXT"); });
   await page.waitForTimeout(1500);
-  check("주차 통합 묶음 엑셀/워드 다운로드", page.downloads.length - before === 2);
+  check("Top Excel / Word (tables) / Word (text) weekly downloads", page.downloads.length - before === 3);
+  const docx = page.downloads[before + 1];
+  const docxPath = path.join(os.tmpdir(), `axpmys_weekly_${Date.now()}.docx`);
+  await docx.saveAs(docxPath);
+  const xml = readZipEntry(docxPath, "word/document.xml");
+  const tables = [...xml.matchAll(/<w:tbl>[\s\S]*?<\/w:tbl>/g)].map(m => m[0]);
+  const badTables = tables.filter(t => {
+    const grid = (t.match(/<w:gridCol /g) || []).length;
+    return [...t.matchAll(/<w:tr>[\s\S]*?<\/w:tr>/g)].some(r => (r[0].match(/<w:tc>/g) || []).length !== grid);
+  }).length;
+  check("Word weekly report tables: header/data/grid columns consistent", tables.length > 0 && badTables === 0, `tables=${tables.length}, bad=${badTables}`);
 
   // 7) 협업 데이터 JSON 왕복
   await page.evaluate(() => activateTab("tab-merge")); await page.waitForTimeout(300);
@@ -157,7 +190,7 @@ async function localScenarios() {
   await d.saveAs(tmp);
   const j = JSON.parse(fs.readFileSync(tmp, "utf8")); j.noticesData[0].title = "E2E-ROUNDTRIP"; fs.writeFileSync(tmp, JSON.stringify(j));
   await page.setInputFiles("#collabJsonInput", tmp); await page.waitForTimeout(800);
-  check("협업 데이터(JSON) 내보내기 → 가져오기", await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP");
+  check("Collaboration data (JSON) export -> import", await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP");
   fs.unlinkSync(tmp);
 
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
@@ -168,8 +201,8 @@ async function localScenarios() {
     await new Promise(r => setTimeout(r, 1200));
     return wbsData.find(t => t.id === w2.id).name === orig;
   });
-  check("일반 사용자: 타 서브시스템 변경 원복", perm);
-  check("로컬 모드 화면 오류 없음", page.errors.length === 0, page.errors.join(" | "));
+  check("Member: other subsystem changes reverted", perm);
+  check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
 
@@ -185,7 +218,7 @@ function copyApp(dst) {
 }
 
 async function serverScenarios() {
-  console.log("\n[DB 서버 모드 시나리오]");
+  console.log("\n[DB server mode scenarios]");
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "axpmys_e2e_"));
   copyApp(tmp);
   const port = await freePort();
@@ -197,15 +230,15 @@ async function serverScenarios() {
     // 서버 주소 + 처음 접속 → 서버 DB 모드 기본값
     let a = await newPage();
     await a.goto(url); await a.waitForTimeout(1200);
-    check("서버 주소 첫 접속 → 서버 DB 모드 기본", await a.evaluate(() => DbConnector.config.mode) === "SQLITE");
+    check("First visit via server URL -> server DB mode by default", await a.evaluate(() => DbConnector.config.mode) === "SQLITE");
     await login(a, "admin");
     // 서버 주소 + 로컬 모드 저장값 → 전환 질문
     const b = await newPage({ init: () => { if (!localStorage.getItem("__seen")) { localStorage.setItem("__seen", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "LOCAL" })); } } });
     await b.goto(url); await b.waitForTimeout(1500);
     const q = await b.$eval("#syncAskTitle", e => e.textContent).catch(() => "");
-    check("서버 주소 + 로컬 모드 → 서버 DB 모드 전환 질문", q.includes("서버 DB 모드로 전환"), q);
+    check("Server URL + local mode -> asks to switch to server DB mode", q.includes("서버 DB 모드로 전환"), q);
     await dismissAsk(b);
-    check("전환 선택 → 서버 DB 모드", await b.evaluate(() => DbConnector.config.mode) === "SQLITE");
+    check("Switch chosen -> server DB mode", await b.evaluate(() => DbConnector.config.mode) === "SQLITE");
     await login(b, "pmo_kim");
 
     // 동시 저장 충돌
@@ -213,16 +246,16 @@ async function serverScenarios() {
     await a.waitForTimeout(800);
     await b.evaluate(() => { wbsData.find(t => t.system === "W1" && t.isLeaf).name += "_B"; SyncManager.save(["wbsData"]); });
     await b.waitForTimeout(1000);
-    check("다른 사용자 선저장 → 충돌 경고", (await b.$eval("#syncAskTitle", e => e.textContent)).includes("저장 충돌"));
+    check("Another user saved first -> conflict warning", (await b.$eval("#syncAskTitle", e => e.textContent)).includes("저장 충돌"));
     await b.click("#syncAskBtns button:nth-child(2)"); await b.waitForTimeout(1000);
-    check("무시하기 → 최신본 적용", await b.evaluate(() => wbsData.find(t => t.system === "W1" && t.isLeaf).name.endsWith("_A")));
+    check("Ignore -> latest version applied", await b.evaluate(() => wbsData.find(t => t.system === "W1" && t.isLeaf).name.endsWith("_A")));
 
     // 서버 중지 → 연결 끊김 표시
     srv.kill();
     await new Promise(r => setTimeout(r, 800));
     await a.evaluate(() => ServerHeartbeat.check()); await a.waitForTimeout(800);
-    check("서버 중지 → 연결 끊김 배너", await a.evaluate(() => { const bar = document.getElementById("serverOfflineBar"); return !!bar && bar.style.display === "block"; }));
-    check("서버 모드 화면 오류 없음", a.errors.length === 0 && b.errors.length === 0, a.errors.concat(b.errors).join(" | "));
+    check("Server stopped -> disconnected banner", await a.evaluate(() => { const bar = document.getElementById("serverOfflineBar"); return !!bar && bar.style.display === "block"; }));
+    check("No page errors in server mode", a.errors.length === 0 && b.errors.length === 0, a.errors.concat(b.errors).join(" | "));
   } finally {
     try { srv.kill(); } catch (e) {}
     setTimeout(() => fs.rmSync(tmp, { recursive: true, force: true }), 500);
@@ -235,11 +268,11 @@ async function serverScenarios() {
     await localScenarios();
     if (!process.argv.includes("--local")) await serverScenarios();
   } catch (e) {
-    check("테스트 실행 오류", false, e.message);
+    check("Test runner error", false, e.message);
   } finally {
     await browser.close();
   }
   const fail = results.filter(r => !r.ok);
-  console.log(`\n결과: ${results.length - fail.length} / ${results.length} 통과`);
+  console.log(`\nResult: ${results.length - fail.length} / ${results.length} passed`);
   process.exit(fail.length ? 1 : 0);
 })();

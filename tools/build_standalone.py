@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.8] 단일 파일 실행본(Standalone.html) 빌더
+[AX Project Management by YS v1.0.9] 단일 파일 실행본(Standalone.html) 빌더
 
 index.html 이 참조하는 css/*.css, js/*.js 를 모두 인라인하여
 파일 1개(Standalone.html)만으로 오프라인 실행되는 포터블 배포본을 생성합니다.
@@ -60,7 +60,7 @@ def build() -> Path:
     html = SCRIPT_RE.sub(js_repl, html)
 
     if missing:
-        raise SystemExit(f"[ERROR] 인라인 대상 파일을 찾을 수 없습니다: {missing}")
+        raise SystemExit(f"[ERROR] Files to inline were not found: {missing}")
 
     banner = (
         "<!-- =========================================================================\n"
@@ -77,4 +77,4 @@ def build() -> Path:
 
 if __name__ == "__main__":
     out = build()
-    print(f"[OK] {out.name} 생성 완료 ({out.stat().st_size:,} bytes)")
+    print(f"[OK] {out.name} built ({out.stat().st_size:,} bytes)")

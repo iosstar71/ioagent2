@@ -1,5 +1,5 @@
 /* =============================================================================
- * AX Project Management by YS ver1.0.8 — 통합 스타일시트 (단일 CSS 파일)
+ * AX Project Management by YS ver1.0.9 — 통합 스타일시트 (단일 CSS 파일)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -1962,3 +1962,10 @@ header {
 .wr-size-meter.warn .wr-size-bar span { background:#f59e0b; }
 .wr-size-meter.over { border-color:#dc2626; color:#dc2626; }
 .wr-size-meter.over .wr-size-bar span { background:#dc2626; }
+
+/* ---------- [v1.0.9] 프로젝트 로고 (img/ax_pm_logo.svg 와 동일 도형, 인라인 SVG) ---------- */
+.brand-logo { flex: 0 0 auto; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+.login-brand { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 0 auto 12px auto; }
+.brand-logo-lg { display: block; filter: drop-shadow(0 4px 10px rgba(30,58,138,0.35)); }
+.login-brand-name { font-size: 13px; font-weight: 800; letter-spacing: 0.2px; color: var(--text-main); }
+.login-brand-name span { font-weight: 600; color: var(--text-muted); }
