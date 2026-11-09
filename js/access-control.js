@@ -590,8 +590,7 @@ var AuthManager = {
     ["regEmpNo", "regName", "regDept", "regPwd", "regPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;
-    const ls = document.getElementById("inputLoginLang");
-    if (ls) ls.value = lang;
+    if (typeof I18N !== "undefined") I18N.preview(lang);
     this.openLogin();
   },
 

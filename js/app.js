@@ -906,52 +906,114 @@ function buildNextEntityId(entityType, sysName) {
   }
 }
 
-// [ver1.0.4 신규] 프로젝트 및 시스템 접근 인력 관리 렌더링 및 조작
+// =============================================================================
+// [기준정보 > d. 사용자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
+// =============================================================================
 function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
-  if (!tbody) return;
-  tbody.innerHTML = "";
+  if (tbody) {
+    tbody.innerHTML = "";
+    projectUsers.forEach((u, idx) => {
+      const isAdminAccount = (u.empNo || "").toLowerCase() === "admin";
+      const role = AuthManager.normalizeRole(u.role);
+      const roleOpts = AuthManager.ROLES.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${isAdminAccount ? "readonly title='기본 관리자 사번(admin)은 고정되어 있습니다.'" : ""} onchange="projectUsers[${idx}].empNo=this.value.trim(); persistChanges();"></td>
+        <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" onchange="projectUsers[${idx}].name=this.value.trim(); persistChanges();"></td>
+        <td>
+          <select style="width:250px; font-weight:bold;" onchange="projectUsers[${idx}].role=this.value; renderProjectUsersTable(); persistChanges();" ${isAdminAccount ? "disabled title='admin 계정은 항상 시스템 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
+        </td>
+        <td>
+          <select style="width:125px;" onchange="projectUsers[${idx}].subsystem=this.value; persistChanges();">
+            <option value="ALL" ${u.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
+            ${getSubsystemOptionsHtml(u.subsystem)}
+          </select>
+        </td>
+        <td><input type="text" value="${escapeHtml(u.dept || "")}" style="width:100%;" onchange="projectUsers[${idx}].dept=this.value; persistChanges();"></td>
+        <td>
+          <select style="width:90px;" onchange="projectUsers[${idx}].lang=this.value; persistChanges();">
+            <option value="ko" ${(u.lang || "ko") === "ko" ? "selected" : ""}>한국어</option>
+            <option value="en" ${u.lang === "en" ? "selected" : ""}>English</option>
+          </select>
+        </td>
+        <td>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:11px;">
+            <button class="btn btn-secondary btn-sm" onclick="updateProjectUserPassword(${idx})">변경</button>
+          </div>
+        </td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteProjectUser(${idx})" ${isAdminAccount ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다.'" : ""}>×</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  // 권한 등급별 인원 통계
+  const count = r => projectUsers.filter(u => AuthManager.normalizeRole(u.role) === r).length;
+  const setText = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = `${n} 명`; };
+  setText("userStatTotal", projectUsers.length);
+  setText("userStatAdmin", count("SYS_ADMIN"));
+  setText("userStatPm", count("PM"));
+  setText("userStatLead", count("LEAD"));
+  setText("userStatMember", count("MEMBER"));
+}
 
-  projectUsers.forEach((u, idx) => {
-    const isAdminAccount = (u.empNo || "").toLowerCase() === "admin";
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-      <td>
-        <input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${isAdminAccount ? "readonly title='기본 관리자 사번(admin)은 고정되어 있습니다.'" : ""} onchange="projectUsers[${idx}].empNo=this.value.trim(); persistChanges();">
-      </td>
-      <td>
-        <input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" onchange="projectUsers[${idx}].name=this.value.trim(); AuthManager.updateUserBadge(); persistChanges();">
-      </td>
-      <td>
-        <select style="width:225px; font-weight:bold;" onchange="projectUsers[${idx}].role=this.value; AuthManager.updateUserBadge(); persistChanges();" ${isAdminAccount ? "disabled title='admin 계정은 항상 시스템 관리자 권한을 유지합니다.'" : ""}>
-          <option value="SYS_ADMIN" ${(u.role === "SYS_ADMIN" || u.role === "ADMIN") ? "selected" : ""}>👑 시스템 관리자 (전체 메뉴·시스템설정)</option>
-          <option value="PM" ${u.role === "PM" ? "selected" : ""}>🛡️ 프로젝트 관리자 (기준정보·스마트병합)</option>
-          <option value="MEMBER" ${(u.role !== "SYS_ADMIN" && u.role !== "ADMIN" && u.role !== "PM") ? "selected" : ""}>👤 일반 사용자 (실무 탭만 가능)</option>
-        </select>
-      </td>
-      <td>
-        <select style="width:125px;" onchange="projectUsers[${idx}].subsystem=this.value; persistChanges();">
-          <option value="ALL" ${u.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
-          ${getSubsystemOptionsHtml(u.subsystem)}
-        </select>
-      </td>
-      <td>
-        <input type="text" value="${escapeHtml(u.dept || "")}" style="width:100%;" onchange="projectUsers[${idx}].dept=this.value; persistChanges();">
-      </td>
-      <td>
-        <div style="display:flex; gap:4px; align-items:center;">
-          <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:11px;">
-          <button class="btn btn-secondary btn-sm" onclick="updateProjectUserPassword(${idx})">변경</button>
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-danger btn-sm" onclick="deleteProjectUser(${idx})" ${isAdminAccount ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다.'" : ""}>×</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
+// 언어 일괄 설정 (전체 사용자)
+function applyBulkUserLanguage() {
+  const sel = document.getElementById("bulkUserLangSelect");
+  const lang = sel && sel.value === "en" ? "en" : "ko";
+  openConfirmDialog(`모든 사용자(${projectUsers.length}명)의 언어를 [${lang === "en" ? "English" : "한국어"}]로 설정하시겠습니까? (다음 로그인부터 적용)`, () => {
+    projectUsers.forEach(u => { u.lang = lang; });
+    renderProjectUsersTable();
+    persistChanges();
+    showToast(`🌐 전체 사용자 언어가 [${lang === "en" ? "English" : "한국어"}]로 설정되었습니다. 저장 후 다음 로그인부터 적용됩니다.`);
   });
 }
+
+// 기준정보 서브탭 (a. 프로젝트 기본정보 / b. 공정단계정보 / c. 휴일정보 / d. 사용자 정보)
+var MasterSubTabs = {
+  KEY: "AX_PMYS_MASTER_SUBTAB",
+  show(name) {
+    document.querySelectorAll(".master-subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
+    document.querySelectorAll(".master-subpane").forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
+    try { sessionStorage.setItem(this.KEY, name); } catch (e) {}
+    if (name === "holiday") ProgressBasisManager.render();
+    if (name === "users") renderProjectUsersTable();
+  },
+  restore() {
+    let name = "basic";
+    try { name = sessionStorage.getItem(this.KEY) || "basic"; } catch (e) {}
+    this.show(name);
+  }
+};
+
+// 계획 진척률 산정 기준 (달력 일수 / 영업일) — 선택 후 [적용] 시 전체 재계산
+var ProgressBasisManager = {
+  LABELS: { CALENDAR: "달력 일수 기준 (주말·공휴일 포함)", BUSINESS: "영업일 기준 (주말·공휴일 제외)" },
+  current() { return projectConfig.progressBasis === "BUSINESS" ? "BUSINESS" : "CALENDAR"; },
+  render() {
+    const sel = document.getElementById("cfgProgressBasisSelect");
+    if (sel) sel.value = this.current();
+    this.onSelectChanged();
+  },
+  onSelectChanged() {
+    const sel = document.getElementById("cfgProgressBasisSelect");
+    const st = document.getElementById("progressBasisStatus");
+    if (!sel || !st) return;
+    const pending = sel.value !== this.current();
+    st.innerHTML = pending
+      ? `<span style="color:#d97706; font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
+      : `현재 적용: <b>${this.LABELS[this.current()]}</b>`;
+  },
+  apply() {
+    const sel = document.getElementById("cfgProgressBasisSelect");
+    if (!sel) return;
+    projectConfig.progressBasis = sel.value === "BUSINESS" ? "BUSINESS" : "CALENDAR";
+    rebuildAll();
+    this.onSelectChanged();
+    showToast(`📐 계획 진척률 산정 기준이 [${this.LABELS[projectConfig.progressBasis]}]으로 적용되어 전체 진척률을 다시 계산했습니다.`);
+  }
+};
 
 function addNewProjectUser() {
   const nextSeq = projectUsers.length;
@@ -962,6 +1024,7 @@ function addNewProjectUser() {
     role: "MEMBER",
     subsystem: subsystemsMeta[0] ? subsystemsMeta[0].name : "ALL",
     dept: "프로젝트 수행팀",
+    lang: "ko",
     pwdHash: "" // 초기 기본 비밀번호 '1234' 적용
   });
   renderProjectUsersTable();
@@ -982,12 +1045,9 @@ async function updateProjectUserPassword(idx) {
   const u = projectUsers[idx];
   const hash = await AuthManager.hashPassword(input.value);
   u.pwdHash = hash;
-  if ((u.empNo || "").toLowerCase() === "admin") {
-    try { localStorage.setItem(AuthManager.STORAGE_PWD_KEY, hash); } catch (e) {}
-  }
   input.value = "";
   persistChanges();
-  showToast(`[${u.name}(${u.empNo})] 인력의 비밀번호가 변경되었습니다.`);
+  showToast(`[${u.name}(${u.empNo})] 인력의 비밀번호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
 }
 
 function deleteProjectUser(idx) {
@@ -1156,6 +1216,10 @@ var AppBoot = {
     if (!SyncManager.isLocal()) {
       await SyncManager.initialLoad();
     }
+    // 사용자 권한에 맞는 주간보고 작성 단위로 초기화 (일반: 담당 서브시스템 / PM: 통합)
+    WeeklyReportManager.scope = null;
+    WeeklyReportManager.currentWeekReport = null;
+    if (document.getElementById("tab-weekly-report").classList.contains("active")) WeeklyReportManager.init();
     AuthManager.applyTabPermissions();
     if (typeof HomeScreenManager !== "undefined") {
       HomeScreenManager.applyRoleMode();
@@ -6014,10 +6078,11 @@ var MasterSyncEngine = {
     this._isSyncing = true;
     try {
       // 1. Read or populate input values between DOM and projectConfig
-      if (source === "reset" || source === "rebuildAll") {
-        populateConfigInputsFromState();
-      } else {
+      // 화면 입력값 → 기준정보 반영은 사용자가 [⚡ 전체 동기화]를 누른 경우에만 수행
+      if (source === "manual") {
         this.readAllDomInputs();
+      } else {
+        populateConfigInputsFromState();
       }
 
       // 2. Rollup and recalculations in WBSEngine

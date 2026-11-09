@@ -397,25 +397,52 @@ const WBSEngine = {
     }
   },
 
-  calculatePlanProgress(data, reportDateStr) {
+  // 영업일 수 계산: [startStr, endStr) 구간의 평일(주말·공휴일 제외) 일수
+  countBusinessDays(startStr, endStr, holidaySet) {
+    const start = new Date(startStr + "T00:00:00");
+    const end = new Date(endStr + "T00:00:00");
+    if (isNaN(start) || isNaN(end) || end <= start) return 0;
+    let n = 0;
+    const d = new Date(start);
+    while (d < end) {
+      const day = d.getDay();
+      if (day !== 0 && day !== 6) {
+        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (!holidaySet.has(iso)) n++;
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return n;
+  },
+
+  // 계획 진척률 계산
+  //  - basis "CALENDAR": 주말·공휴일 포함 달력 일수 기준 (기본)
+  //  - basis "BUSINESS": 주말·공휴일 제외 영업일 기준 ([기준정보 > 휴일정보]에서 선택 후 [적용])
+  calculatePlanProgress(data, reportDateStr, opts) {
+    const cfg = typeof projectConfig !== "undefined" ? projectConfig : {};
+    const basis = (opts && opts.basis) || cfg.progressBasis || "CALENDAR";
+    const holidaySet = new Set(((opts && opts.holidays) || cfg.holidays || []).map(h => h.date));
     const repDate = new Date(reportDateStr);
     data.forEach(task => {
-      if (task.isLeaf) {
-        if (!task.pStart || !task.pEnd) {
-          task.pProg = 0;
-          return;
-        }
-        const start = new Date(task.pStart);
-        const end = new Date(task.pEnd);
-        if (repDate < start) {
-          task.pProg = 0;
-        } else if (repDate >= end) {
-          task.pProg = 100;
-        } else {
-          const total = Math.max(1, (end - start) / (1000 * 60 * 60 * 24));
-          const elapsed = Math.max(0, (repDate - start) / (1000 * 60 * 60 * 24));
-          task.pProg = Math.min(100, Math.round((elapsed / total) * 100));
-        }
+      if (!task.isLeaf) return;
+      if (!task.pStart || !task.pEnd) {
+        task.pProg = 0;
+        return;
+      }
+      const start = new Date(task.pStart);
+      const end = new Date(task.pEnd);
+      if (repDate < start) {
+        task.pProg = 0;
+      } else if (repDate >= end) {
+        task.pProg = 100;
+      } else if (basis === "BUSINESS") {
+        const total = this.countBusinessDays(task.pStart, task.pEnd, holidaySet);
+        const elapsed = this.countBusinessDays(task.pStart, reportDateStr, holidaySet);
+        task.pProg = total <= 0 ? 0 : Math.min(100, Math.round((elapsed / total) * 100));
+      } else {
+        const total = Math.max(1, (end - start) / (1000 * 60 * 60 * 24));
+        const elapsed = Math.max(0, (repDate - start) / (1000 * 60 * 60 * 24));
+        task.pProg = Math.min(100, Math.round((elapsed / total) * 100));
       }
     });
   },

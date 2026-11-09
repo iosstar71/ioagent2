@@ -1451,7 +1451,6 @@ header {
     <button class="tab-btn" onclick="switchTab('tab-merge')" style="color:#0284c7; font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 스마트 병합</button>
     <button class="tab-btn" onclick="NoticeCommManager.goToNotice()" style="color:#059669; font-weight:800;" title="프로젝트 공지사항 및 업무 소통 광장">📢 공지/소통</button>
     <button class="tab-btn" onclick="switchTab('tab-master')" style="color:#0f766e; font-weight:800;" title="프로젝트 기본정보, 분야/서브시스템, SDLC, REQ, 휴일, 채번 규칙">🗂️ 기준정보</button>
-    <button class="tab-btn" onclick="switchTab('tab-users')" style="color:#b45309; font-weight:800;" title="투입 인력 계정 등록 및 역할(SYS_ADMIN/PM/MEMBER) 권한 설정">👥 사용자</button>
     <button class="tab-btn" onclick="switchTab('tab-config')" style="color:#7c3aed; font-weight:800;" title="화면 레이아웃, 보안 인증 정책, DB 연동 및 백업 복원">⚙️ 시스템 설정</button>
   </div>
 
@@ -3288,7 +3287,7 @@ header {
                 <div id="tab-master" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🗂️ 프로젝트 기준정보 (기본정보 · 서브시스템 · SDLC · REQ단계 · 산출물 · 휴일 · 채번)</span>
+          <span class="sub-title">🗂️ 프로젝트 기준정보 (a. 기본정보 · b. 공정단계 · c. 휴일 · d. 사용자)</span>
           <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 시스템 관리자(SYS_ADMIN)</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -3299,13 +3298,23 @@ header {
         <span style="font-size:11px; font-weight:normal; opacity:0.85;">1.기본정보 ➔ 2.서브시스템 ➔ 3.SDLC ➔ 4.개선단계 ➔ 5.산출물 ➔ 6.휴일 ➔ 7.채번 규칙 순으로 설정합니다.</span>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- [v1.0.6] 기준정보 기능별 서브탭 -->
+      <div class="master-subtab-bar">
+        <button class="master-subtab-btn active" data-subtab="basic" onclick="MasterSubTabs.show('basic')">📋 a. 프로젝트 기본정보</button>
+        <button class="master-subtab-btn" data-subtab="phase" onclick="MasterSubTabs.show('phase')">🔄 b. 공정단계정보</button>
+        <button class="master-subtab-btn" data-subtab="holiday" onclick="MasterSubTabs.show('holiday')">📅 c. 휴일정보</button>
+        <button class="master-subtab-btn" data-subtab="users" onclick="MasterSubTabs.show('users')">👥 d. 사용자 정보</button>
+      </div>
+
+      <div class="master-subpane" id="masterSub-basic" data-subpane="basic">
+        <div style="display:flex; flex-direction:column; gap:16px;">
         <!-- [1-1] 프로젝트 기본정보 -->
         <div class="card" style="border-left: 4px solid var(--primary);">
           <div class="card-title">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <div>
-                <strong>1-1. 프로젝트 기본정보 (타이틀 · 프로젝트명 · 수행기간 · 주차시작요일 · 산출물 운영회차)</strong>
+                <strong>a-1. 프로젝트 기본정보 (타이틀 · 프로젝트명 · 수행기간 · 주차시작요일 · 산출물 운영회차)</strong>
                 <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 프로젝트 식별 명칭, 수행 캘린더 및 상위 관리 정책을 정의합니다.</span>
               </div>
               <button class="btn btn-success btn-sm" style="font-weight:bold; padding:4px 12px; font-size:11.5px;" onclick="MasterSyncEngine.syncAll(true)" title="변경된 프로젝트 기준정보를 모든 탭에 즉시 실시간 동기화">⚡ 기준정보 적용</button>
@@ -3381,7 +3390,7 @@ header {
         <div class="card" style="border-left: 4px solid #0284c7;">
           <div class="card-title">
             <div>
-              <strong>1-2. 분야 및 서브시스템 기준정보 (조직 및 과업 분할체계)</strong>
+              <strong>a-2. 분야 및 서브시스템 기준정보 (조직 및 과업 분할체계)</strong>
               <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 상위 분야별 서브시스템의 관리 유형(SDLC 공정형 vs 개선타입 REQ), 배정 SDLC, 가중치, 담당자를 관리합니다.</span>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
@@ -3410,11 +3419,49 @@ header {
           </div>
         </div>
 
+        <!-- [1-7] WBS · REQ · VOC 코드 채번 Prefix 규칙 -->
+        <div class="card" style="border-left: 4px solid #6366f1;">
+          <div class="card-title">
+            <div>
+              <strong>a-3. WBS · REQ · VOC 코드 채번 규칙 (ID Prefix)</strong>
+              <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 작업번호, 요구사항 ID, VOC 식별 접두사 및 서브시스템 코드 결합 규칙을 설정합니다.</span>
+            </div>
+            <button class="btn btn-warning btn-sm" onclick="applyIdPrefixRulesAndRenumber()">🔄 ID 재채번</button>
+          </div>
+          <div class="grid-4" style="gap:12px; grid-template-columns: repeat(4, 1fr);">
+            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
+              <strong style="display:block; font-size:12px; margin-bottom:4px; color:var(--primary);">1. WBS ID 접두사:</strong>
+              <input type="text" id="cfgWbsPrefix" placeholder="접두사 없음" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
+              <label style="font-size:11px;"><input type="checkbox" id="cfgWbsUseSubCode" onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
+            </div>
+            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
+              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#0f766e;">2. REQ ID 접두사:</strong>
+              <input type="text" id="cfgReqPrefix" value="REQ" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
+              <label style="font-size:11px;"><input type="checkbox" id="cfgReqUseSubCode" checked onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
+            </div>
+            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
+              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#d97706;">3. VOC ID 접두사:</strong>
+              <input type="text" id="cfgVocPrefix" value="VOC" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
+              <label style="font-size:11px;"><input type="checkbox" id="cfgVocUseSubCode" onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
+            </div>
+            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
+              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#4338ca;">4. Action Item 접두사:</strong>
+              <input type="text" id="cfgActPrefix" value="ACT" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
+              <label style="font-size:11px;"><input type="checkbox" id="cfgActUseSubCode" checked onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="master-subpane" id="masterSub-phase" data-subpane="phase">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
         <!-- [1-3] SDLC 생명주기 공정 기준정보 -->
         <div class="card" style="border-left: 4px solid #3b82f6;">
           <div class="card-title">
             <div>
-              <strong>1-3. SDLC 생명주기 공정 기준정보 (마스터 8종 풀 &amp; 프로젝트 활성 SDLC)</strong>
+              <strong>b-1. SDLC 생명주기 공정 기준정보 (마스터 8종 풀 &amp; 프로젝트 활성 SDLC)</strong>
               <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 프로젝트 표준 개발 공정 단계를 관리합니다. (마스터 풀 최대 8개 / 프로젝트당 최대 4개 활성화)</span>
             </div>
             <div style="display:flex; gap:6px;">
@@ -3430,7 +3477,7 @@ header {
           <div class="card-title">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:16px;">🔄</span>
-              <strong style="font-size:13.5px; color:#0f766e;">1-4. 개선과제형(REQ) 공정 단계 기준정보 (개선 파이프라인 관리)</strong>
+              <strong style="font-size:13.5px; color:#0f766e;">b-2. 개선과제형(REQ) 공정 단계 기준정보 (개선 파이프라인 관리)</strong>
               <span class="badge" style="background:#0f766e; color:#fff;">ver1.0.4</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
@@ -3473,7 +3520,7 @@ header {
         <div class="card" style="border-left: 4px solid #10b981;">
           <div class="card-title">
             <div>
-              <strong>1-5. 단계별 표준 산출물 기준정보 (회차별 필수 제출물)</strong>
+              <strong>b-3. 단계별 표준 산출물 기준정보 (회차별 필수 제출물)</strong>
               <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 1회차 ~ 4회차 마일스톤별 필수 산출물 양식 및 품질 검수 기준을 관리합니다.</span>
             </div>
             <div style="display:flex; gap:6px;">
@@ -3498,12 +3545,36 @@ header {
             </table>
           </div>
         </div>
+        </div>
+      </div>
+
+      <div class="master-subpane" id="masterSub-holiday" data-subpane="holiday">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- [v1.0.6] 계획 진척률 산정 기준 (달력일수 / 영업일) -->
+        <div class="card" style="border-left: 4px solid #0ea5e9;">
+          <div class="card-title">
+            <div>
+              <strong>c-1. 계획 진척률 산정 기준 (달력 일수 / 영업일)</strong>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">* 계획 진척률(기준일 대비 계획 공정률)을 주말·공휴일 포함 <b>달력 일수</b> 또는 주말·공휴일을 제외한 <b>영업일</b> 기준으로 계산합니다. 변경 후 [적용]을 누르면 전체 진척률을 다시 계산합니다.</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label style="font-weight:bold; font-size:12px;">산정 기준:</label>
+            <select id="cfgProgressBasisSelect" style="min-width:300px; font-weight:bold;" onchange="ProgressBasisManager.onSelectChanged()">
+              <option value="CALENDAR">📅 달력 일수 기준 (주말·공휴일 포함)</option>
+              <option value="BUSINESS">🏢 영업일 기준 (주말·공휴일 제외)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="ProgressBasisManager.apply()">✅ 적용 (진척률 재계산)</button>
+            <span id="progressBasisStatus" style="font-size:11px; color:var(--text-muted);"></span>
+          </div>
+        </div>
+
 
         <!-- [1-6] 휴일 및 비작업일 캘린더 관리 -->
         <div class="card" style="border-left: 4px solid #f59e0b;">
           <div class="card-title">
             <div>
-              <strong>1-6. 공휴일 및 비작업일 캘린더 (공정 일정 자동 연동)</strong>
+              <strong>c-2. 공휴일 및 비작업일 캘린더 (공정 일정 자동 연동)</strong>
               <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 2027년 대한민국 법정공휴일/대체공휴일 및 프로젝트 전용 휴일을 관리하며 간트차트 작업일수에 즉시 반영됩니다.</span>
             </div>
             <div style="display:flex; gap:6px;">
@@ -3526,62 +3597,19 @@ header {
             </table>
           </div>
         </div>
-
-        <!-- [1-7] WBS · REQ · VOC 코드 채번 Prefix 규칙 -->
-        <div class="card" style="border-left: 4px solid #6366f1;">
-          <div class="card-title">
-            <div>
-              <strong>1-7. WBS · REQ · VOC 코드 채번 규칙 (ID Prefix)</strong>
-              <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">* 작업번호, 요구사항 ID, VOC 식별 접두사 및 서브시스템 코드 결합 규칙을 설정합니다.</span>
-            </div>
-            <button class="btn btn-warning btn-sm" onclick="applyIdPrefixRulesAndRenumber()">🔄 ID 재채번</button>
-          </div>
-          <div class="grid-4" style="gap:12px; grid-template-columns: repeat(4, 1fr);">
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:12px; margin-bottom:4px; color:var(--primary);">1. WBS ID 접두사:</strong>
-              <input type="text" id="cfgWbsPrefix" placeholder="접두사 없음" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
-              <label style="font-size:11px;"><input type="checkbox" id="cfgWbsUseSubCode" onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
-            </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#0f766e;">2. REQ ID 접두사:</strong>
-              <input type="text" id="cfgReqPrefix" value="REQ" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
-              <label style="font-size:11px;"><input type="checkbox" id="cfgReqUseSubCode" checked onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
-            </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#d97706;">3. VOC ID 접두사:</strong>
-              <input type="text" id="cfgVocPrefix" value="VOC" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
-              <label style="font-size:11px;"><input type="checkbox" id="cfgVocUseSubCode" onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
-            </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:12px; margin-bottom:4px; color:#4338ca;">4. Action Item 접두사:</strong>
-              <input type="text" id="cfgActPrefix" value="ACT" style="width:100%; margin-bottom:4px;" onchange="updateIdPrefixConfig()">
-              <label style="font-size:11px;"><input type="checkbox" id="cfgActUseSubCode" checked onchange="updateIdPrefixConfig()"> 서브시스템 코드 결합</label>
-            </div>
-          </div>
         </div>
       </div>
-    </div>
 
-    <div id="tab-users" class="tab-pane">
-      <div class="sub-header-bar">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">👥 사용자 관리 (프로젝트 투입인력 계정 · 3단계 권한 등급 · 담당 서브시스템 배정)</span>
-          <span class="status-badge-chip chip-completed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">🔑 접근 권한: 시스템 관리자(admin) / 프로젝트 관리자(PM)</span>
-          <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="SmartMergeCenter.downloadSelectedMasterData('EXCEL', ['users'])">📥 사용자 엑셀 다운</button>
-          <button class="btn btn-primary btn-sm" onclick="addNewProjectUser()">+ 신규 사용자(사번) 등록</button>
-        </div>
-      </div>
+      <div class="master-subpane" id="masterSub-users" data-subpane="users">
+      
 
       <div class="config-group-banner" style="background: linear-gradient(90deg, #b45309, #d97706);">
-        <span>👥 프로젝트 투입인력 및 시스템 접근 권한 등급 관리 (시스템 관리자 / 프로젝트 관리자(PM) / 서브시스템 담당자(PL·일반))</span>
+        <span>👥 d. 사용자 정보 — 투입인력 계정 · 권한 등급(시스템관리자 / PM / 총괄리더 / 일반) · 담당 서브시스템 · 언어</span>
         <span style="font-size:11px; font-weight:normal; opacity:0.95;">초기 비밀번호는 1234이며, 스마트 데이터 병합 탭에서도 사용자 목록을 다중선택하여 엑셀/JSON으로 일괄 업·다운로드할 수 있습니다.</span>
       </div>
 
       <!-- 권한 등급별 요약 카드 -->
-      <div class="grid-4" style="margin-bottom: 14px;">
+      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
         <div class="kpi-card" style="border-left-color: #1e293b;">
           <div class="kpi-title">전체 등록 사용자</div>
           <div class="kpi-value" id="userStatTotal">9 명</div>
@@ -3597,10 +3625,15 @@ header {
           <div class="kpi-value" id="userStatPm">2 명</div>
           <div class="kpi-sub">기준정보 · 사용자관리 · 전체 데이터 병합</div>
         </div>
+        <div class="kpi-card" style="border-left-color: #f59e0b;">
+          <div class="kpi-title">⭐ 총괄 리더 (LEAD)</div>
+          <div class="kpi-value" id="userStatLead">0 명</div>
+          <div class="kpi-sub">전체 서브시스템 업무 데이터 수정</div>
+        </div>
         <div class="kpi-card" style="border-left-color: #10b981;">
           <div class="kpi-title">👤 일반 담당자 (PL / 실무자)</div>
           <div class="kpi-value" id="userStatMember">6 명</div>
-          <div class="kpi-sub">담당 서브시스템 공정·산출물·이슈 관리</div>
+          <div class="kpi-sub">담당 서브시스템 데이터만 저장</div>
         </div>
       </div>
 
@@ -3609,10 +3642,18 @@ header {
           <div>
             <span>📋 프로젝트 투입인력 계정 및 권한 일람표</span>
             <span style="font-size:11px; color:var(--text-muted); font-weight:normal; margin-left:8px;">
-              * <b>시스템 관리자(admin)</b>: 전 메뉴 접근 | <b>프로젝트 관리자(pm)</b>: 기준정보·사용자관리·전체병합 가능 | <b>일반 담당자(MEMBER)</b>: 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+              * <b>시스템 관리자</b>: 전 메뉴 | <b>PM</b>: 기준정보·사용자·전체 데이터 | <b>총괄리더(LEAD)</b>: 전체 서브시스템 데이터 수정 | <b>일반(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
             </span>
           </div>
-          <button class="btn btn-primary btn-sm" onclick="addNewProjectUser()">+ 신규 사용자 추가</button>
+          <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:11px; font-weight:bold;">🌐 언어 일괄 설정:</label>
+            <select id="bulkUserLangSelect" style="font-size:11px;">
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="applyBulkUserLanguage()">전체 사용자에 적용</button>
+            <button class="btn btn-primary btn-sm" onclick="addNewProjectUser()">+ 신규 사용자 추가</button>
+          </div>
         </div>
         <div class="table-container" style="max-height: 460px;">
           <table id="projectUsersTable">
@@ -3620,9 +3661,10 @@ header {
               <tr>
                 <th style="width: 130px;">사번 (로그인 ID)</th>
                 <th style="width: 120px;">성명</th>
-                <th style="width: 260px;">시스템 권한 등급 (3단계 RBAC)</th>
+                <th style="width: 260px;">시스템 권한 등급 (4단계 RBAC)</th>
                 <th style="width: 150px;">담당 서브시스템</th>
                 <th>소속 부서 / 담당 역할</th>
+                <th style="width: 100px;">언어</th>
                 <th style="width: 190px;">비밀번호 초기화/변경</th>
                 <th style="width: 55px;">삭제</th>
               </tr>
@@ -3631,7 +3673,12 @@ header {
           </table>
         </div>
       </div>
+    
+      </div>
+
     </div>
+
+    
 
     <!-- =================================================================== -->
     <!-- 11. 시스템 환경설정 (tab-config) - [권한: 시스템 관리자(SYS_ADMIN) 전용] -->
@@ -4006,10 +4053,10 @@ header {
               <div>
                 <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">🔐 1. 로그인 및 관리 메뉴 접근 시 비밀번호 인증 정책:</label>
                 <select id="cfgAuthPolicySelect" style="width:100%; font-weight:bold;" onchange="AuthManager.setAuthPolicy(this.value)">
-                  <option value="CONFIG_ONLY">⚙️ 관리 메뉴(기준정보·사용자관리·시스템설정) 진입 시 권한/비번 체크 (권장 기본)</option>
-                  <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속(로그인) 시 + 관리 메뉴 진입 시 모두 체크 (고보안 모드)</option>
-                  <option value="STARTUP_ONLY">🔑 최초 접속(로그인) 시 1회 체크 (이후 접속 계정 권한으로 자동 검증)</option>
-                  <option value="OFF">🔓 비밀번호 체크 사용 안 함 (단독 PC 빠른 작업 모드)</option>
+                  <option value="STARTUP_ONLY">🔑 최초 접속(로그인) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+                  <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(기준정보·시스템설정) 진입 시 재인증 (고보안)</option>
+                  <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
+                  <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>
                 </select>
               </div>
               <div>
@@ -4024,7 +4071,7 @@ header {
             </div>
 
             <div style="display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--border-color); padding-left:16px;">
-              <label style="font-weight:bold; font-size:12px;">🔑 3. 시스템 관리자(admin) 대표 비밀번호 변경:</label>
+              <label style="font-weight:bold; font-size:12px;">🔑 3. 내 계정(로그인 사용자) 비밀번호 변경:</label>
               <input type="password" id="cfgCurrentPassword" placeholder="현재 비밀번호 입력 (초기: 1234)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgNewPassword" placeholder="새 비밀번호 입력 (4자리 이상)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgConfirmPassword" placeholder="새 비밀번호 확인 입력" autocomplete="off" style="width:100%;">
