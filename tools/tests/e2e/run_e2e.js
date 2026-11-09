@@ -25,10 +25,17 @@ function check(name, cond, detail = "") {
   console.log(`  ${cond ? "[PASS]" : "[FAIL]"} ${name}${!cond && detail ? "  -- " + detail : ""}`);
 }
 
+// opts.persistent: 디스크에 저장되는 브라우저 프로필 사용 (실제 사용 환경과 같음)
+//   임시(시크릿) 프로필에서는 file:// 페이지를 다시 불러오는 순간 브라우저 저장소가 비워질 수 있어
+//   계정 전환·프로젝트 전환(화면 다시 불러오기)을 검사하는 로컬 모드 시나리오는 이 옵션을 사용
 async function newPage(opts = {}) {
-  const ctx = await browser.newContext(Object.assign({ viewport: { width: 1500, height: 950 }, acceptDownloads: true }, opts.ctx || {}));
+  const ctxOpts = Object.assign({ viewport: { width: 1500, height: 950 }, acceptDownloads: true }, opts.ctx || {});
+  const ctx = opts.persistent
+    ? await chromium.launchPersistentContext(fs.mkdtempSync(path.join(os.tmpdir(), "axpmys_profile_")),
+        Object.assign(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}, ctxOpts))
+    : await browser.newContext(ctxOpts);
   if (opts.init) await ctx.addInitScript(opts.init);
-  const page = await ctx.newPage();
+  const page = opts.persistent && ctx.pages().length ? ctx.pages()[0] : await ctx.newPage();
   page.errors = [];
   page.downloads = [];
   page.on("pageerror", e => page.errors.push(e.message));
@@ -105,7 +112,7 @@ async function localScenarios() {
   await page.context().close();
 
   // 이전에 English 를 쓴 브라우저여도 로그인 화면은 app.ini 기본 언어(한국어)로 시작
-  page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
+  page = await newPage({ persistent: true, init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(FILE_URL); await page.waitForTimeout(900);
   check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === "ver" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
