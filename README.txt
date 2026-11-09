@@ -1,7 +1,8 @@
 ================================================================================
-⚡ IOSTAR-PM Standard v1.0.1
+⚡ IOSTAR-PM Neo v2.0.0 (개발 중)
    - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
-   - 최신 버전: Standard v1.0.1 (브랜치 iostar-pm-standard, G v1.0.0 에서 이름 변경)
+   - 이 브랜치: Neo v2.0.0 (브랜치 iostar-pm-neo, Standard v1.0.1 에서 분기 — 개발 계획 docs/NEO_PLAN.md)
+   - 안정 판: Standard v1.0.1 (브랜치 iostar-pm-standard, G v1.0.0 에서 이름 변경)
    - 판 구성: Standard v1.0.x (현재 기본 판) / Neo v2.x (다음 세대 화면, 브랜치 iostar-pm-neo)
              국내판 v1.2.0 은 개발 종료 (더 이상 기능 추가·수정 없음)
    - 공식 크레딧: Developed & Designed by Iostar
@@ -23,6 +24,11 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [Neo v2.0.0] — Standard v1.0.1 에서 분기 (화면·기능은 Standard v1.0.1 과 같음)
+1. app.ini: edition=NEO, edition_name=Neo, version=2.0.0 → 배포 파일 IOSTAR-PM-Neo_v2.0.0[_win64].zip
+2. 개발 계획: 2.1 대시보드 "확인할 일"·WBS 상세 패널·메뉴 건수 배지·상태 칩 필터 / 2.2 화면 머리줄 통일·주간보고 2단 화면
+   / 2.3 선 아이콘·Pretendard 글꼴 (docs/NEO_PLAN.md)
 
 ■ [Standard v1.0.1] — G v1.0.0 의 이름을 Standard 로 바꾸고 화면 다듬기
 1. 메뉴 구분 강화: 1단 메뉴(업무 묶음)와 2단 메뉴(하위 화면)가 한눈에 구분되도록 디자인 변경
