@@ -86,6 +86,7 @@
    빌드 도구, 자동 테스트 결과 문구를 언어 설정과 관계없이 영어로 표시
 4. UI 개편 제안서: docs/UI_Redesign_Proposal_v1.0.9.html (구현 방안 · 보안 · 라이선스 · 기능 대체안)
 5. UI 절충안 · 글로벌판 계획: docs/UI_Compromise_Proposal_G_v1.0.html
+   + 개선안 B2: docs/UI_Proposal_B2_G_v1.0.html (위쪽 메뉴 스크롤 없는 2단 메뉴, 기본 언어 한국어, v1.1.0 공용 배치 파일 계획)
    (원본 + 개편안 A 절충 B안, 기본 테마 3종 Navy/Teal/Graphite 미리보기, G v1.0 별도 패키징·판매 준비 항목)
 
 ■ [ver1.0.8 개선 내역]
