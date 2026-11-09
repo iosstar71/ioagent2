@@ -1573,6 +1573,7 @@ function renderCustomSdlcCards() {
 
   // Header Summary info
   const summaryDiv = document.createElement("div");
+  summaryDiv.className = "phase-summary-box";
   summaryDiv.style.marginBottom = "12px";
   summaryDiv.style.padding = "8px 12px";
   summaryDiv.style.background = "#f0fdf4";
@@ -1935,6 +1936,7 @@ function renderWbsTable() {
 
     const tr = document.createElement("tr");
     tr.className = `wbs-row-lvl-${row.level}`;
+    tr.setAttribute("data-wbs-id", row.id);
 
     const status = WBSEngine.getTaskStatus(row, projectConfig.reportDate);
     tr.classList.add(`task-state-${status.code}`);
@@ -1955,7 +1957,7 @@ function renderWbsTable() {
     const foldBadge = hasHiddenChildren ? `<span style="font-size:10px; color:var(--accent); font-weight:bold; margin-right:3px;" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
 
     tr.innerHTML = `
-      <td><strong>${row.id}</strong></td>
+      <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
       <td>
         <div class="wbs-lvl-ctrl">
           <button class="btn-xs" title="상위 레벨로 올리기" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, -1)}" ${row.level <= 2 ? "disabled" : ""}>◀</button>
@@ -2035,6 +2037,9 @@ function renderWbsTable() {
     `;
     tbody.appendChild(tr);
   });
+
+  // [Neo 2.1] 상태 칩 필터 건수 · 상세 패널 선택 행 표시
+  if (typeof NeoChips !== "undefined") { NeoChips.render(); NeoDetail.afterTable(); }
 
   const errChip = document.getElementById("stat-chip-error");
   const errCount = document.getElementById("stat-count-error");
@@ -3112,6 +3117,8 @@ function renderDashboard() {
     if (selSubsys !== "ALL" && sys !== selSubsys) return false;
     return true;
   });
+  // [Neo 2.1] 확인할 일 (대시보드 조회 범위 기준)
+  if (typeof NeoTodo !== "undefined") { try { NeoTodo.render(activeSystems); } catch (e) { console.error(e); } }
 
   // KPI 계산 (선택 서브시스템에 맞춰 동적 집계)
   const scopeTasks = (selDomain === "ALL" && selSubsys === "ALL")

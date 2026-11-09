@@ -786,7 +786,7 @@ var MeetingManager = {
         
         mtgsHtml += `
           <div class="cal-meeting-pill ${isDone ? 'done' : (isCanceled ? 'canceled' : 'scheduled')}" 
-               style="display:flex; align-items:center; gap:4px; padding:3px 6px; margin-bottom:4px; border-radius:4px; border:1px solid ${pillBorder}; border-left:3.5px solid ${statusBorder} !important; background:${pillBg} !important; cursor:pointer;"
+               style="display:flex; align-items:center; gap:4px; padding:3px 6px; margin-bottom:4px; border-radius:4px; border:1px solid ${pillBorder}; border-left:3.5px solid ${statusBorder} !important; background:${pillBg}; cursor:pointer;"
                data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(mtg.id))}" data-click-stop="1" 
                title="[${mtg.system}] ${escapeHtml(mtg.title)} (${mtg.startTime}~${mtg.endTime})">
             <span class="cal-sys-tag" style="background:${sysColor}; color:#ffffff !important; padding:1px 4px; border-radius:3px; font-size:8.5px; font-weight:800; flex-shrink:0;">${escapeHtml(mtg.system)}</span>

@@ -17,3 +17,7 @@
 
 ## 현재 상태
 - v2.0.0: 분기만 완료 (화면·기능은 Standard v1.0.1 과 같음)
+- v2.1.0: 완료 — 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면 정리
+  - Neo 전용 코드: `js/neo.js`, `css/style.css` 끝의 `[Neo 2.1]` 영역
+  - 공통 파일에 넣은 연결 지점(Standard 에서 cherry-pick 할 때 충돌 주의): `renderDashboard`(NeoTodo.render),
+    `renderWbsTable`(행 data-wbs-id · ID 버튼 · NeoChips/NeoDetail), `GShell.renderNav`(NeoBadges.apply)
