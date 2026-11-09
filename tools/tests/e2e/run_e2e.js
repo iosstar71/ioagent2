@@ -252,9 +252,10 @@ async function localScenarios() {
       await new Promise(r => setTimeout(r, 200));
       if (wbsData.find(t => t.id === w2.id).name === orig) return true;
     }
-    return false;
+    const u = AuthManager.getCurrentUser();
+    return JSON.stringify({ user: u.empNo, role: u.role, sub: u.subsystem, pid: ProjectContext.current, busy: SyncManager._busy, susp: SyncManager._suspendAuto, timer: !!SyncManager._autoTimer, sw: ProjectManager._switching, auto: SyncManager.isAutoSave(), name: wbsData.find(t => t.id === w2.id).name });
   });
-  check("Member: other subsystem changes reverted", perm);
+  check("Member: other subsystem changes reverted", perm === true, String(perm));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
