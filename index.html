@@ -98,84 +98,85 @@
   </div>
 
   <!-- [요건 1] 상단 헤더: 상태 표시 영역(Status Zone)과 동작 버튼 영역(Action Zone) 분리 -->
-  <header>
-    <div class="brand-title">
+  <!-- [G v1.0.0] 한 줄 머리글 (B2): 로고 · 프로젝트 · 기준일 · 검색 · 저장 상태 + 전체 저장 · 공지 · 도움말 · ⚙ 관리 · 사용자 -->
+  <header class="g-header">
+    <div class="brand-title g-brand">
       <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
       <span id="headerSystemTitleText">IOSTAR-PM</span>
-      <span id="headerProjectNameBadge" class="brand-badge" style="background:#0284c7;">27년 가동률 시스템 개선</span>
+      <span id="headerVersionBadge" class="brand-badge g-ver">ver1.0.0</span>
+      <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">27년 가동률 시스템 개선</span>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
-      <button id="btnProjectManager" class="btn btn-xs header-project-btn" data-btn="nav" data-click="ProjectManager.open" title="프로젝트 만들기·이름 변경·참여자·보관·삭제">🗂️ 프로젝트 관리</button>
-      <span id="headerVersionBadge" class="brand-badge" style="background:#6366f1; color:white;">ver1.2.0</span>
     </div>
-
-    <div class="header-right-wrap">
-      <!-- 영역 1: 상태 표시 영역 (Status Display Area) -->
-      <div class="header-zone" title="현재 프로젝트 기준일 및 저장소·DB·파일 동기화 상태를 표시합니다.">
-        <div class="global-report-date-box" style="padding: 2px 8px;">
-          <span class="report-date-icon">📅</span>
-          <span class="report-date-label">기준일:</span>
-          <input type="date" id="globalReportDate" data-change="syncGlobalDate" data-change-args='["$value"]' title="모든 탭의 진척율, 달성률, 지연 상태 계산의 기준일자입니다.">
-          <span id="globalReportDayOfWeek" class="day-of-week-tag">(수)</span>
-        </div>
-        <span class="zone-badge-label" style="margin-left: 2px;">상태</span>
-        <div class="storage-status-box" id="storageStatusBox" title="저장 모드 및 최근 저장 상태">
-          <span class="storage-icon" id="storageIcon">💾</span>
-          <span class="storage-text" id="storageStatusText">자동저장 켬</span>
-        </div>
-        <span id="headerDbStatusBadge" class="status-badge-chip chip-hold" style="font-size:11px; padding:2px 8px;">
-          🟡 DB: SQLite(대기)
-        </span>
-        <span id="fileSyncBadge" class="status-badge-chip chip-ready" style="font-size:10px; padding:2px 7px; display:none;">
-          동기화 대기
-        </span>
-        
-        <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress" style="font-size:11px; padding:2px 8px; cursor:pointer;" data-click="AuthManager.manualLock" title="클릭하여 접속 사번 전환 또는 잠금">
-          👤 admin (관리자)
-        </span>
-        
-
+    <div class="global-report-date-box g-date" title="모든 화면의 진척률·달성률·지연 상태 계산 기준일">
+      <span class="report-date-label">기준일</span>
+      <input type="date" id="globalReportDate" data-change="syncGlobalDate" data-change-args='["$value"]'>
+      <span id="globalReportDayOfWeek" class="day-of-week-tag">(수)</span>
+    </div>
+    <span class="g-grow"></span>
+    <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·사용자 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
+    <div class="g-menu-wrap">
+      <button type="button" class="storage-status-box g-status" id="storageStatusBox" data-click="GShell.toggleMenu" data-click-args='["gStatusMenu"]' data-click-stop="1" title="저장 상태 · 새로고침 · 동기화">
+        <span class="storage-icon" id="storageIcon">💾</span>
+        <span class="storage-text" id="storageStatusText">자동저장 켬</span> ▾
+      </button>
+      <div class="g-menu" id="gStatusMenu" hidden>
+        <div class="g-menu-title">저장소</div>
+        <div class="g-menu-row"><span id="headerDbStatusBadge" class="status-badge-chip chip-hold">🟡 DB: SQLite(대기)</span></div>
+        <div class="g-menu-row"><span id="fileSyncBadge" class="status-badge-chip chip-ready" style="display:none;">동기화 대기</span></div>
+        <button type="button" id="btnHeaderRefreshAll" class="g-menu-item" data-click="SyncManager.refresh" data-click-args='[null]'>🔄 전체 새로고침</button>
+        <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (기준정보 다시 적용)</button>
       </div>
-
-      <!-- 영역 2: 동작 버튼 영역 (Action Buttons Area) -->
-      <div class="header-zone header-zone-action">
-        <select id="headerLayoutSelector" data-change="LayoutManager.setLayout" data-change-args='["$value", true]' title="화면 레이아웃 타입 즉시 전환 (시스템 환경설정에서도 변경 가능)" style="font-weight:bold;">
-          <option value="top-nav">📐 표준 상단탭형</option>
-          <option value="sidebar-left">📑 좌측 사이드바형</option>
-          <option value="compact-nav">⚡ 고밀도 슬림형</option>
-          <option value="split-header">⚖️ 업무·관리 분리형</option>
-          <option value="focused-card">🖥️ 브리핑 집중형</option>
-        </select>
-                <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]' title="화면 컬러 테마 선택 (인기 8대 테마)">
-          <option value="navy">1. Enterprise Navy (표준 네이비)</option>
-          <option value="ocean">2. Ocean Deep Blue (오션 딥블루)</option>
-          <option value="emerald">3. Forest Emerald (에메랄드 그린)</option>
-          <option value="teal">4. Nordic Teal (노르딕 틸)</option>
-          <option value="brown">5. Warm Brown (클래식 웜 브라운)</option>
-          <option value="purple">6. Midnight Purple (로열 퍼플)</option>
-          <option value="charcoal">7. Slate Charcoal (슬레이트 차콜)</option>
-          <option value="dark">8. High-Contrast Dark (다크 모드)</option>
-        </select>
-        <span class="zone-badge-label" style="margin-left: 2px;">동작</span>
-        <!-- [v1.0.6] 전체 저장 / 전체 새로고침 (DB 서버 모드: 저장 버튼 방식, 로컬 모드: 실시간 자동저장 + 즉시 저장) -->
-        <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다.">💾 전체 저장</button>
-        <button id="btnHeaderRefreshAll" class="btn btn-secondary btn-sm" data-click="SyncManager.refresh" data-click-args='[null]' title="저장소(DB 서버/로컬)의 최신 데이터를 다시 불러와 모든 화면을 새로고침합니다.">🔄 전체 새로고침</button>
-        <button id="btnHeaderRealtimeSync" class="btn btn-success btn-sm" data-click="MasterSyncEngine.syncAll" data-click-args='[true]' title="변경된 기준정보 및 시스템 설정을 모든 탭에 즉시 실시간 동기화">
-          ⚡ 전체 동기화
-        </button>
-        <span id="headerNoticeCountBadge" class="brand-badge" style="background:#dc2626; color:#fff; font-size:11px; padding:3px 8px; border-radius:4px; font-weight:bold; cursor:pointer;" data-click="NoticeCommManager.goToNotice" title="긴급 공지사항 1건이 있습니다. 클릭 시 바로 이동합니다.">
-          🚨 긴급공지 1
-        </span>
-        <button id="btnHeaderManual" class="btn btn-info btn-sm" data-click="ManualViewer.openManualWindow" title="도움말 및 운영 매뉴얼 별도 팝업창 열람">
-          📘 도움말
-        </button>
-        <button class="btn btn-sm" data-btn="nav" data-click="LegalNotice.open" title="사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지">⚖️ 법적 고지</button>
-        
-        <button class="btn btn-warning btn-sm" data-click="AuthManager.manualLock" title="사번 전환 또는 화면 즉시 잠금">
-          🔒 잠금/전환
-        </button>
+    </div>
+    <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
+    <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
+    <button type="button" id="btnHeaderManual" class="g-icon-btn" data-click="ManualViewer.openManualWindow" title="도움말 · 운영 매뉴얼">?</button>
+    <div class="g-menu-wrap">
+      <button type="button" class="g-icon-btn" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" title="관리">⚙</button>
+      <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
+        <div class="g-menu-title">관리</div>
+        <div id="gAdminItems"></div>
+        <button type="button" id="btnProjectManager" class="g-menu-item" data-click="ProjectManager.open">🗂️ 프로젝트 관리</button>
+        <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 법적 고지</button>
+      </div>
+    </div>
+    <div class="g-menu-wrap">
+      <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="사용자 · 화면 설정">
+        <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress">👤 admin</span> ▾
+      </button>
+      <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
+        <div class="g-menu-title">화면 설정</div>
+        <label class="g-menu-field">테마
+          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
+            <option value="navy">Navy (기본)</option>
+            <option value="teal">Teal</option>
+            <option value="dark">Graphite (어두운 화면)</option>
+          </select>
+        </label>
+        <label class="g-menu-field">메뉴 위치
+          <select id="headerLayoutSelector" data-change="LayoutManager.setLayout" data-change-args='["$value", true]'>
+            <option value="top-nav">위쪽 메뉴 (기본)</option>
+            <option value="sidebar-left">왼쪽 메뉴</option>
+          </select>
+        </label>
+        <label class="g-menu-field">화면 밀도
+          <select id="gDensitySelect" data-change="LayoutManager.setDensity" data-change-args='["$value", true]'>
+            <option value="standard">기본</option>
+            <option value="compact">촘촘</option>
+          </select>
+        </label>
+        <label class="g-menu-field">언어
+          <select id="gLangSelect" data-change="GShell.setLanguage" data-change-args='["$value"]'>
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <div class="g-menu-sep"></div>
+        <button type="button" class="g-menu-item" data-click="GShell.goPassword">🔑 비밀번호 변경</button>
+        <button type="button" class="g-menu-item" data-click="AuthManager.manualLock">🔒 잠금 / 계정 전환</button>
       </div>
     </div>
   </header>
+  <nav class="g-nav" id="gNav" aria-label="메뉴"></nav>
   <div id="projectArchivedBar" class="project-archived-bar" style="display:none;">📦 보관된 프로젝트입니다. 시스템관리자 외에는 읽기 전용이며 변경 내용은 저장되지 않습니다.</div>
 
   <!-- [요건 1] 메인 메뉴: 명칭 간략화 및 8개 탭 순서 정리 -->
@@ -3388,6 +3389,7 @@
   <script src="js/project-manager.js"></script>
   <script src="js/legal-text.js"></script>
   <script src="js/legal-notice.js"></script>
+  <script src="js/g-shell.js"></script>
   <script src="js/access-control.js"></script>
   <script src="js/ui-standards.js"></script>
 

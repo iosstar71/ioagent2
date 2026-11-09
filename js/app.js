@@ -689,7 +689,8 @@ function renderProjectTitles() {
   const hSys = document.getElementById("headerSystemTitleText");
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
-  if (hSys) hSys.textContent = sysTitle;
+  // G 버전: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
+  if (hSys) hSys.textContent = APP_VERSION.edition !== "KR" ? sysTitle.replace(/\s*ver\d+(\.\d+)*.*$/, "") : sysTitle;
   const hVer = document.getElementById("headerVersionBadge");
   if (hVer) hVer.textContent = "ver" + APP_VERSION.version + (APP_VERSION.edition !== "KR" ? " · " + APP_VERSION.edition : "");
   if (hProj) hProj.textContent = projName;
@@ -1462,6 +1463,7 @@ var AppBoot = {
       HomeScreenManager.render();
     }
     if (typeof RealtimeChatManager !== "undefined") RealtimeChatManager.init();
+    if (typeof GShell !== "undefined") { GShell.refresh(); GShell.syncSettings(); }
   },
 
   initUi() {
@@ -1483,6 +1485,7 @@ var AppBoot = {
     LayoutManager.init();
     HomeScreenManager.init();
     rebuildAll();
+    if (typeof GShell !== "undefined") GShell.init(); // [G v1.0.0] 2단 메뉴·머리글
     this.uiReady = true;
   }
 };
