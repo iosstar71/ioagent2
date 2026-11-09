@@ -115,6 +115,18 @@ var AuthManager = {
     return this._sha256PureJs(bytes);
   },
 
+  // [v1.0.10] 새 비밀번호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 비밀번호(1234) 사용 불가
+  PWD_MIN_LENGTH: 8,
+  validateNewPassword(pwd) {
+    const p = String(pwd || "");
+    if (p.length < this.PWD_MIN_LENGTH) return `비밀번호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
+    if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "비밀번호는 영문과 숫자를 모두 포함해야 합니다.";
+    if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 비밀번호는 사용할 수 없습니다.";
+    return "";
+  },
+  // 초기 비밀번호(1234) 사용 중이거나 관리자가 지정한 임시 비밀번호이면 첫 로그인 때 변경 필수
+  mustChangeLocal(u) { return !!u && (!u.pwdHash || !!u.pwdTemp); },
+
   // ---------------------------------------------------------------------------
   // 보안 정책
   // ---------------------------------------------------------------------------
@@ -174,13 +186,17 @@ var AuthManager = {
   },
 
   _buildSessionUser(u) {
+    // [v1.0.10] 프로젝트별 역할: 서버 모드는 서버가 계산한 값, 로컬 모드는 사용자 행의 projectRoles 로 계산
+    const eff = (u.projectId && u.baseRole) ? u : ProjectContext.effective(u);
     return {
-      empNo: u.empNo,
-      name: u.name || u.empNo,
-      role: this.normalizeRole(u.role),
-      subsystem: u.subsystem || "ALL",
-      dept: u.dept || "",
-      lang: u.lang || "ko"
+      empNo: eff.empNo,
+      name: eff.name || eff.empNo,
+      role: this.normalizeRole(eff.role),
+      baseRole: this.normalizeRole(eff.baseRole || u.role),
+      projectId: eff.projectId || ProjectContext.current,
+      subsystem: eff.subsystem || "ALL",
+      dept: eff.dept || "",
+      lang: eff.lang || "ko"
     };
   },
 
@@ -243,7 +259,9 @@ var AuthManager = {
       ServerBackend.loadToken();
       if (ServerBackend.token) {
         const me = await ServerBackend.request("/api/auth/me", {});
-        if (me.ok && me.user) {
+        if (me.ok && me.user && !me.user.mustChangePassword) {
+          if (Array.isArray(me.projects)) ProjectContext.projects = me.projects;
+          if (me.user.projectId && me.user.projectId !== ProjectContext.current) ProjectContext.set(me.user.projectId);
           await this._completeLogin(me.user, { silent: true });
           return;
         }
@@ -255,7 +273,7 @@ var AuthManager = {
 
     // 로컬 저장소 모드
     const policy = this.getAuthPolicy();
-    if (sess && sess.authenticated && this.findUser(sess.empNo)) {
+    if (sess && sess.authenticated && this.findUser(sess.empNo) && !(this.mustChangeLocal(this.findUser(sess.empNo)) && policy !== "OFF" && policy !== "CONFIG_ONLY")) {
       await this._completeLogin(this.findUser(sess.empNo), { silent: true });
       return;
     }
@@ -419,11 +437,14 @@ var AuthManager = {
     let result;
     if (SyncManager.isLocal()) {
       result = await this._verifyLocal(empNo, pwd);
+      if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
     } else {
       const res = await ServerBackend.request("/api/auth/login", { empNo, pwdHash: await this.hashPassword(pwd), lang });
       if (res.ok) {
         ServerBackend.setToken(res.token);
-        result = { ok: true, user: res.user };
+        if (Array.isArray(res.projects)) ProjectContext.projects = res.projects;
+        if (res.user && res.user.projectId && res.user.projectId !== ProjectContext.current) ProjectContext.set(res.user.projectId);
+        result = { ok: true, user: res.user, mustChange: !!(res.user && res.user.mustChangePassword) };
       } else {
         result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "로그인 실패") };
       }
@@ -452,6 +473,11 @@ var AuthManager = {
     this.failedAttempts = 0;
     pwdEl.value = "";
     const landing = this.lockMode === "CONFIG" ? this.pendingTabId : null;
+    if (result.mustChange) {
+      this._forced = { user: result.user, lang, landing, oldPwd: pwd };
+      this.showPwdChange(true, true);
+      return;
+    }
     await this._completeLogin(result.user, { lang, landing });
   },
 
@@ -541,18 +567,31 @@ var AuthManager = {
   },
 
   // [v1.0.7] 로그인 화면 비밀번호 변경
-  showPwdChange(show) {
-    if (!show) { this.openLogin(); return; }
+  showPwdChange(show, forced = false) {
+    if (!show) {
+      if (this._forced && !SyncManager.isLocal()) ServerBackend.setToken("");
+      this._forced = null;
+      this.openLogin();
+      return;
+    }
+    if (!forced) this._forced = null;
     this._showPane("pwdChangeFormPane");
-    this._setText("lockModalTitle", "🔑 비밀번호 변경");
-    this._setText("lockModalDesc", "사번과 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.");
+    this._setText("lockModalTitle", forced ? "🔑 비밀번호 변경 필요" : "🔑 비밀번호 변경");
+    this._setText("lockModalDesc", forced
+      ? "초기 비밀번호 또는 관리자가 지정한 임시 비밀번호로 로그인했습니다. 새 비밀번호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
+      : "사번과 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다. (8자 이상, 영문+숫자)");
     this._err("pcErrorMessage", "");
     const emp = document.getElementById("pcEmpNo");
     const loginEmp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = loginEmp ? loginEmp.value : "";
     ["pcOldPwd", "pcNewPwd", "pcNewPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+    if (forced && this._forced) {
+      if (emp) emp.value = this._forced.user.empNo;
+      const old = document.getElementById("pcOldPwd");
+      if (old) old.value = this._forced.oldPwd;
+    }
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("securityLockOverlay"));
-    setTimeout(() => { const f = emp && emp.value ? document.getElementById("pcOldPwd") : emp; if (f) f.focus(); }, 60);
+    setTimeout(() => { const f = forced ? document.getElementById("pcNewPwd") : (emp && emp.value ? document.getElementById("pcOldPwd") : emp); if (f) f.focus(); }, 60);
   },
 
   async changePasswordFromLogin() {
@@ -560,14 +599,15 @@ var AuthManager = {
     const empNo = v("pcEmpNo").trim();
     const oldPwd = v("pcOldPwd"), n1 = v("pcNewPwd"), n2 = v("pcNewPwd2");
     if (!empNo || !oldPwd || !n1 || !n2) return this._err("pcErrorMessage", "모든 항목을 입력하세요.");
-    if (n1.length < 4) return this._err("pcErrorMessage", "비밀번호는 4자리 이상이어야 합니다.");
+    const rule = this.validateNewPassword(n1);
+    if (rule) return this._err("pcErrorMessage", rule);
     if (n1 !== n2) return this._err("pcErrorMessage", "새 비밀번호와 확인 입력이 일치하지 않습니다.");
     if (n1 === oldPwd) return this._err("pcErrorMessage", "현재 비밀번호와 다른 비밀번호를 입력하세요.");
     const newHash = await this.hashPassword(n1);
     if (SyncManager.isLocal()) {
       const chk = await this._verifyLocal(empNo, oldPwd);
       if (!chk.ok) return this._err("pcErrorMessage", chk.message);
-      const row = Object.assign({}, chk.user, { pwdHash: newHash });
+      const row = Object.assign({}, chk.user, { pwdHash: newHash, pwdTemp: false });
       delete row.pwdReset;
       const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password(${row.empNo})`);
       if (!res.ok) return this._err("pcErrorMessage", res.error || "변경 실패");
@@ -577,6 +617,14 @@ var AuthManager = {
     } else {
       const res = await ServerBackend.request("/api/auth/change-password", { empNo, oldHash: await this.hashPassword(oldPwd), newHash });
       if (!res.ok) return this._err("pcErrorMessage", res.network ? "DB 서버에 연결할 수 없습니다." : (res.message || "변경 실패"));
+    }
+    const forced = this._forced;
+    this._forced = null;
+    if (forced && String(forced.user.empNo).toLowerCase() === empNo.toLowerCase()) {
+      showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다.`);
+      const user = SyncManager.isLocal() ? (this.findUser(empNo) || forced.user) : Object.assign({}, forced.user, { mustChangePassword: false });
+      await this._completeLogin(user, { lang: forced.lang, landing: forced.landing });
+      return;
     }
     showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.`);
     const emp = document.getElementById("inputSecurityEmpNo");
@@ -616,7 +664,8 @@ var AuthManager = {
     if (!/^[A-Za-z0-9_.-]{2,30}$/.test(empNo)) return this._err("regErrorMessage", "사번은 영문/숫자/_.- 2~30자로 입력하세요.");
     if (!name) return this._err("regErrorMessage", "성명을 입력하세요.");
     if (!subsystem) return this._err("regErrorMessage", "담당 서브시스템을 선택하세요.");
-    if (p1.length < 4) return this._err("regErrorMessage", "비밀번호는 4자리 이상이어야 합니다.");
+    const rule = this.validateNewPassword(p1);
+    if (rule) return this._err("regErrorMessage", rule);
     if (p1 !== p2) return this._err("regErrorMessage", "비밀번호 확인이 일치하지 않습니다.");
 
     const newUser = {
@@ -653,7 +702,8 @@ var AuthManager = {
     const n2 = document.getElementById("cfgConfirmPassword").value;
     if (!cur || !n1 || !n2) return showToast("모든 비밀번호 필드를 입력해주세요.");
     if (n1 !== n2) return showToast("새 비밀번호와 확인 입력이 일치하지 않습니다.");
-    if (n1.length < 4) return showToast("새 비밀번호는 최소 4자리 이상이어야 합니다.");
+    const rule = this.validateNewPassword(n1);
+    if (rule) return showToast(rule);
     const me = this.getCurrentUser();
     const newHash = await this.hashPassword(n1);
     if (SyncManager.isLocal()) {
@@ -661,6 +711,7 @@ var AuthManager = {
       if (!check.ok) return showToast("현재 비밀번호가 일치하지 않습니다.");
       const u = this.findUser(me.empNo);
       u.pwdHash = newHash;
+      u.pwdTemp = false;
       await SyncManager.save(["projectUsers"], { notify: false });
     } else {
       const res = await ServerBackend.request("/api/auth/password", { oldHash: await this.hashPassword(cur), newHash });
@@ -707,7 +758,7 @@ var AuthManager = {
   applyTabPermissions() {
     const role = this.getCurrentRole();
     document.querySelectorAll(".tab-btn").forEach(btn => {
-      const m = (btn.getAttribute("onclick") || "").match(/['"](tab-[a-z-]+)['"]/);
+      const m = UiEvents.describe(btn).match(/['"](tab-[a-z-]+)['"]/);
       if (!m || !this.TAB_POLICY[m[1]]) return;
       const ok = this.canAccessTab(role, m[1]);
       btn.classList.toggle("tab-locked", !ok);

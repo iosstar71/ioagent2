@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.9] Standalone.html (single-file) builder
+rem [AX Project Management by YS - ver1.0.10] Standalone.html (single-file) builder
 rem  - Rebuilds js/initial-data.js from data/initial_data.json
 rem  - Inlines css/*.css and js/*.js into Standalone.html
 rem ============================================================================
@@ -8,6 +8,10 @@ chcp 65001 > nul
 cd /d "%~dp0"
 
 set PY_CMD=
+if exist "%~dp0python\python.exe" (
+    set PY_CMD="%~dp0python\python.exe"
+    goto PY_FOUND
+)
 where python >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     set PY_CMD=python
@@ -21,5 +25,6 @@ if "%PY_CMD%"=="" (
     exit /b 1
 )
 
+:PY_FOUND
 %PY_CMD% tools\build_standalone.py
 pause

@@ -1,12 +1,12 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.9] Multi-User DB Server Launcher
+rem [AX Project Management by YS - ver1.0.10] Multi-User DB Server Launcher
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"
 
 echo ============================================================================
-echo [AX Project Management by YS - ver1.0.9] Multi-User DB Web Server (Port: 8080)
+echo [AX Project Management by YS - ver1.0.10] Multi-User DB Web Server (Port: 8080)
 echo Current Directory: %~dp0
 echo ============================================================================
 
@@ -21,6 +21,11 @@ if not exist "%TARGET_PY%" (
 )
 
 set PY_CMD=
+rem [v1.0.10] Prefer the bundled Python (python\python.exe) of the Windows package
+if exist "%~dp0python\python.exe" (
+    set PY_CMD="%~dp0python\python.exe"
+    goto PY_FOUND
+)
 where python >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     set PY_CMD=python
@@ -32,11 +37,22 @@ if %ERRORLEVEL% equ 0 (
 )
 
 if "%PY_CMD%"=="" (
-    echo [ERROR] Python 3 is either not installed or has not been added to your PATH.
-    echo Please install Python and try running it again.
+    echo [ERROR] Python 3 was not found.
+    echo Use the Windows package that includes the 'python' folder, or install Python 3 and add it to PATH.
     pause
     exit /b 1
 )
+
+:PY_FOUND
+rem [v1.0.10] HTTPS: start with TLS when certs\server.crt and certs\server.key exist (create them with make_cert.bat)
+set TLS_ARGS=
+set SCHEME=http
+if exist "certs\server.crt" if exist "certs\server.key" (
+    set TLS_ARGS=--cert certs\server.crt --key certs\server.key
+    set SCHEME=https
+)
+echo [*] Python  : %PY_CMD%
+echo [*] Protocol: %SCHEME%  (HTTPS certificate: certs\server.crt - run make_cert.bat to create one)
 
 if "%~1"=="--silent" goto RUN_SILENT
 if "%~1"=="--log-date" goto RUN_LOGDATE
@@ -59,19 +75,19 @@ goto RUN_STANDARD
 
 :RUN_STANDARD
 echo [*] Starting server in standard console mode... (login required: default admin / 1234)
-%PY_CMD% "%TARGET_PY%" --port 8080
+%PY_CMD% "%TARGET_PY%" --port 8080 %TLS_ARGS%
 goto END
 
 :RUN_LOGDATE
 echo [*] Starting server with date-based logging (creates 'logs/' folder)...
-%PY_CMD% "%TARGET_PY%" --port 8080 --log-date
+%PY_CMD% "%TARGET_PY%" --port 8080 --log-date %TLS_ARGS%
 goto END
 
 :RUN_SILENT
 echo [*] Starting server in silent mode...
 echo [*] Execution logs are saved to date-based files in the 'logs/' folder and will not appear in the console.
 echo [*] Press Ctrl+C in this window to stop the server.
-%PY_CMD% "%TARGET_PY%" --port 8080 --log-date --silent
+%PY_CMD% "%TARGET_PY%" --port 8080 --log-date --silent %TLS_ARGS%
 goto END
 
 :END

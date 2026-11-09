@@ -787,7 +787,7 @@ var MeetingManager = {
         mtgsHtml += `
           <div class="cal-meeting-pill ${isDone ? 'done' : (isCanceled ? 'canceled' : 'scheduled')}" 
                style="display:flex; align-items:center; gap:4px; padding:3px 6px; margin-bottom:4px; border-radius:4px; border:1px solid ${pillBorder}; border-left:3.5px solid ${statusBorder} !important; background:${pillBg} !important; cursor:pointer;"
-               onclick="event.stopPropagation(); MeetingManager.openMinutesForMeeting('${mtg.id}')" 
+               data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(mtg.id))}" data-click-stop="1" 
                title="[${mtg.system}] ${escapeHtml(mtg.title)} (${mtg.startTime}~${mtg.endTime})">
             <span class="cal-sys-tag" style="background:${sysColor}; color:#ffffff !important; padding:1px 4px; border-radius:3px; font-size:8.5px; font-weight:800; flex-shrink:0;">${escapeHtml(mtg.system)}</span>
             <span class="cal-time" style="font-size:9.5px; font-weight:700; color:var(--text-sub, #475569) !important; flex-shrink:0;">${escapeHtml(mtg.startTime || "")}</span>
@@ -800,7 +800,7 @@ var MeetingManager = {
         <div class="cal-date-header">
           <span class="cal-day-num ${isToday ? "badge-today" : ""}" style="font-size:12.5px; font-weight:800; color:${isToday ? "#ffffff !important" : ((isSun || isHoliday) ? "#dc2626 !important" : (isSat ? "#0284c7 !important" : "var(--text-main, #1e293b) !important"))};">${day}</span>
           ${isHoliday ? `<span class="cal-holiday-tag" title="${escapeHtml(holidayName)}" style="background:${isCustomHoliday ? "#fef3c7" : "#fee2e2"}; color:${isCustomHoliday ? "#b45309" : "#dc2626"}; font-size:10px; padding:1px 5px; border-radius:4px; font-weight:bold; margin-left:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:68px; display:inline-block;">${escapeHtml(holidayName)}</span>` : ""}
-          <button class="cal-quick-add-btn" onclick="MeetingManager.openNewMeetingModal('${dateStr}')" title="이 날짜에 회의 등록">＋</button>
+          <button class="cal-quick-add-btn" data-click="MeetingManager.openNewMeetingModal" data-click-args="${UiEvents.args(String(dateStr))}" title="이 날짜에 회의 등록">＋</button>
         </div>
         <div class="cal-meetings-list">${mtgsHtml}</div>
       `;
@@ -880,7 +880,7 @@ var MeetingManager = {
           <span class="badge" style="background:${sysColor}; color:white; font-size:11px; padding:2px 6px;">${escapeHtml(m.system)}</span>
         </td>
         <td>
-          <a href="javascript:void(0)" onclick="MeetingManager.openMinutesForMeeting('${m.id}')" style="font-weight:bold; color:#1e40af; text-decoration:none;">
+          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="font-weight:bold; color:#1e40af; text-decoration:none;">
             ${escapeHtml(m.title)}
           </a>
         </td>
@@ -894,9 +894,9 @@ var MeetingManager = {
           </span>
         </td>
         <td style="text-align:center; white-space:nowrap;">
-          <button class="btn btn-primary btn-xs" onclick="MeetingManager.openMinutesForMeeting('${m.id}')" title="회의록 작성 및 안건/ActionItem 편집">📝 회의록</button>
-          <button class="btn btn-outline btn-xs" onclick="MeetingManager.openEditMeetingModal('${m.id}')" title="회의 일정 기본정보 수정">✏️ 수정</button>
-          <button class="btn btn-outline btn-xs" onclick="MeetingManager.deleteMeeting('${m.id}')" style="color:var(--danger);" title="회의 삭제">🗑️ 삭제</button>
+          <button class="btn btn-primary btn-xs" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" title="회의록 작성 및 안건/ActionItem 편집">📝 회의록</button>
+          <button class="btn btn-outline btn-xs" data-click="MeetingManager.openEditMeetingModal" data-click-args="${UiEvents.args(String(m.id))}" title="회의 일정 기본정보 수정">✏️ 수정</button>
+          <button class="btn btn-outline btn-xs" data-click="MeetingManager.deleteMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="color:var(--danger);" title="회의 삭제">🗑️ 삭제</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -1072,7 +1072,7 @@ var MeetingManager = {
           <div style="text-align:center; padding:40px; color:var(--text-muted); background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
             📅 선택된 조회 조건(서브시스템: <b>${minSys === "ALL" ? "전체" : minSys}</b>, 회의 월: <b>${minMonth === "ALL" ? "전체" : minMonth}</b>)에 해당하는 회의 일정이 없습니다.
             <br><br>
-            <button class="btn btn-primary btn-sm" onclick="MeetingManager.openNewMeetingModal()">➕ 해당 월에 신규 회의 등록</button>
+            <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal">➕ 해당 월에 신규 회의 등록</button>
           </div>
         `;
       }
@@ -1102,7 +1102,7 @@ var MeetingManager = {
         <div style="text-align:center; padding:40px; color:var(--text-muted); background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
           📅 선택된 회의가 없습니다. 상단에서 회의를 선택하거나 신규 회의 일정을 먼저 등록해주세요.
           <br><br>
-          <button class="btn btn-primary btn-sm" onclick="MeetingManager.openNewMeetingModal()">➕ 신규 회의 일정 등록</button>
+          <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal">➕ 신규 회의 일정 등록</button>
         </div>
       `;
       return;
@@ -1125,8 +1125,8 @@ var MeetingManager = {
             ${stBadge}
           </div>
           <div style="display:flex; gap:6px;">
-            <button class="btn btn-outline btn-xs" onclick="MeetingManager.openEditMeetingModal('${mtg.id}')">✏️ 기본정보 수정</button>
-            <button class="btn btn-outline btn-xs" onclick="MeetingManager.toggleMeetingStatus('${mtg.id}')">
+            <button class="btn btn-outline btn-xs" data-click="MeetingManager.openEditMeetingModal" data-click-args="${UiEvents.args(String(mtg.id))}">✏️ 기본정보 수정</button>
+            <button class="btn btn-outline btn-xs" data-click="MeetingManager.toggleMeetingStatus" data-click-args="${UiEvents.args(String(mtg.id))}">
               ${mtg.status === "완료" ? "🔄 진행중으로 변경" : "✅ 회의 완료 처리"}
             </button>
           </div>
@@ -1139,7 +1139,7 @@ var MeetingManager = {
         </div>
         <div style="margin-top:8px; font-size:12px;">
           <b style="color:#475569;">💡 회의 목적 및 총괄 요약:</b>
-          <input type="text" id="minutesSummaryInput" value="${escapeHtml(mtg.summary || mtg.title)}" onchange="MeetingManager.updateMinutesSummary(this.value)" style="width:100%; margin-top:4px; font-size:12px; padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px;">
+          <input type="text" id="minutesSummaryInput" value="${escapeHtml(mtg.summary || mtg.title)}" data-change="MeetingManager.updateMinutesSummary" data-change-args='["$value"]' style="width:100%; margin-top:4px; font-size:12px; padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px;">
         </div>
       </div>
 
@@ -1153,7 +1153,7 @@ var MeetingManager = {
               ${((typeof projectUsers !== "undefined" && Array.isArray(projectUsers)) ? projectUsers : []).map(u => `<option value="${escapeHtml(u.name)}|${escapeHtml(u.dept)}">${escapeHtml(u.name)} (${escapeHtml(u.dept || u.role)})</option>`).join("")}
             </select>
             <input type="text" id="inCustomAttendee" placeholder="성명(소속/역할)" style="font-size:11px; padding:2px 6px; width:130px;">
-            <button class="btn btn-secondary btn-xs" onclick="MeetingManager.addAttendee()">＋ 참석자 추가</button>
+            <button class="btn btn-secondary btn-xs" data-click="MeetingManager.addAttendee">＋ 참석자 추가</button>
           </div>
         </div>
         <div id="attendeesChipsContainer" style="display:flex; flex-wrap:wrap; gap:8px; padding-top:6px;">
@@ -1161,12 +1161,12 @@ var MeetingManager = {
             <div class="attendee-chip" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:20px; padding:4px 10px; font-size:11px; display:inline-flex; align-items:center; gap:6px;">
               <span style="font-weight:bold; color:#1e3a8a;">${escapeHtml(att.name)}</span>
               <span style="color:#64748b; font-size:10px;">(${escapeHtml(att.dept || "부서")}/${escapeHtml(att.role || "참석")})</span>
-              <select onchange="MeetingManager.updateAttendance(${aIdx}, this.value)" style="font-size:10px; padding:1px 3px; border:none; background:transparent; font-weight:bold; color:${att.attendance === "불참" ? "#dc2626" : "#15803d"};">
+              <select data-change="MeetingManager.updateAttendance" data-change-args="${UiEvents.args(aIdx, "$value")}" style="font-size:10px; padding:1px 3px; border:none; background:transparent; font-weight:bold; color:${att.attendance === "불참" ? "#dc2626" : "#15803d"};">
                 <option value="참석" ${att.attendance !== "불참" && att.attendance !== "위임" ? "selected" : ""}>참석</option>
                 <option value="불참" ${att.attendance === "불참" ? "selected" : ""}>불참</option>
                 <option value="위임" ${att.attendance === "위임" ? "selected" : ""}>위임</option>
               </select>
-              <span onclick="MeetingManager.removeAttendee(${aIdx})" style="cursor:pointer; color:#94a3b8; font-weight:bold; margin-left:2px;" title="참석자 삭제">✕</span>
+              <span data-click="MeetingManager.removeAttendee" data-click-args="${UiEvents.args(aIdx)}" style="cursor:pointer; color:#94a3b8; font-weight:bold; margin-left:2px;" title="참석자 삭제">✕</span>
             </div>
           `)).join("")}
         </div>
@@ -1176,7 +1176,7 @@ var MeetingManager = {
       <div class="card" style="margin-bottom:14px;">
         <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
           <span>📋 회의 안건별 상세 논의 및 결정 사항 (${(mtg.agendas || []).length}개 안건)</span>
-          <button class="btn btn-primary btn-xs" onclick="MeetingManager.addAgenda()">➕ 신규 안건 추가</button>
+          <button class="btn btn-primary btn-xs" data-click="MeetingManager.addAgenda">➕ 신규 안건 추가</button>
         </div>
         <div id="agendasContainer" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
           ${((mtg.agendas || []).map((agd, gIdx) => `
@@ -1184,22 +1184,22 @@ var MeetingManager = {
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:6px;">
                 <div style="display:flex; align-items:center; gap:8px; width:75%;">
                   <span style="background:#1e3a8a; color:white; font-size:11px; font-weight:bold; padding:2px 8px; border-radius:10px;">안건 #${gIdx + 1}</span>
-                  <input type="text" value="${escapeHtml(agd.title)}" onchange="MeetingManager.updateAgendaTitle(${gIdx}, this.value)" placeholder="안건 명칭을 입력하세요" style="font-weight:bold; font-size:13px; width:100%; border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px;">
+                  <input type="text" value="${escapeHtml(agd.title)}" data-change="MeetingManager.updateAgendaTitle" data-change-args="${UiEvents.args(gIdx, "$value")}" placeholder="안건 명칭을 입력하세요" style="font-weight:bold; font-size:13px; width:100%; border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px;">
                 </div>
-                <button class="btn btn-outline btn-xs" onclick="MeetingManager.removeAgenda(${gIdx})" style="color:var(--danger);" title="안건 삭제">🗑️ 안건 삭제</button>
+                <button class="btn btn-outline btn-xs" data-click="MeetingManager.removeAgenda" data-click-args="${UiEvents.args(gIdx)}" style="color:var(--danger);" title="안건 삭제">🗑️ 안건 삭제</button>
               </div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
                   <label style="font-size:11px; font-weight:bold; color:#1e40af; display:block; margin-bottom:4px;">
                     💬 논의 내용 및 주요 발언 요지
                   </label>
-                  <textarea rows="4" onchange="MeetingManager.updateAgendaDiscussion(${gIdx}, this.value)" style="width:100%; font-size:11px; padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical;" placeholder="회의 중 논의된 기술적 쟁점, 원인 분석, 상호 발언 요점을 상세히 기록하세요.">${escapeHtml(agd.discussion || "")}</textarea>
+                  <textarea rows="4" data-change="MeetingManager.updateAgendaDiscussion" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:11px; padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical;" placeholder="회의 중 논의된 기술적 쟁점, 원인 분석, 상호 발언 요점을 상세히 기록하세요.">${escapeHtml(agd.discussion || "")}</textarea>
                 </div>
                 <div>
                   <label style="font-size:11px; font-weight:bold; color:#166534; display:block; margin-bottom:4px;">
                     ✅ 결정 사항 및 실행 합의 내용
                   </label>
-                  <textarea rows="4" onchange="MeetingManager.updateAgendaDecision(${gIdx}, this.value)" style="width:100%; font-size:11px; padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical; background:#f0fdf4;" placeholder="안건 논의 결과 도출된 합의 사항, 후속 일정, 정책 결정을 구체적으로 기록하세요.">${escapeHtml(agd.decision || "")}</textarea>
+                  <textarea rows="4" data-change="MeetingManager.updateAgendaDecision" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:11px; padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical; background:#f0fdf4;" placeholder="안건 논의 결과 도출된 합의 사항, 후속 일정, 정책 결정을 구체적으로 기록하세요.">${escapeHtml(agd.decision || "")}</textarea>
                 </div>
               </div>
             </div>
@@ -1211,7 +1211,7 @@ var MeetingManager = {
       <div class="card" style="margin-bottom:14px;">
         <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
           <span>⚡ 회의 결과 도출 Action Item (${(mtg.actionItems || []).length}건)</span>
-          <button class="btn btn-primary btn-xs" onclick="MeetingManager.openAddActionItemModal('${mtg.id}')">➕ Action Item 도출 등록</button>
+          <button class="btn btn-primary btn-xs" data-click="MeetingManager.openAddActionItemModal" data-click-args="${UiEvents.args(String(mtg.id))}">➕ Action Item 도출 등록</button>
         </div>
         <div class="table-container" style="max-height:260px; margin-top:8px;">
           <table class="matrix-table" id="meetingMinutesActionTable">
@@ -1239,15 +1239,15 @@ var MeetingManager = {
                     <td style="text-align:center; font-weight:bold; color:#0369a1;">${escapeHtml(act.assignee || "-")}</td>
                     <td style="text-align:center;">${escapeHtml(act.targetDate || "-")}</td>
                     <td style="text-align:center;">
-                      <select onchange="MeetingManager.updateActionItemStatusDirect('${act.id}', this.value)" style="font-size:11px; padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
+                      <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:11px; padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
                         <option value="진행중" ${act.status === "진행중" ? "selected" : ""}>진행중</option>
                         <option value="완료" ${act.status === "완료" ? "selected" : ""}>완료</option>
                         <option value="삭제" ${act.status === "삭제" ? "selected" : ""}>삭제</option>
                       </select>
                     </td>
                     <td style="text-align:center; white-space:nowrap;">
-                      <button class="btn btn-outline btn-xs" onclick="MeetingManager.openEditActionItemModal('${act.id}')">✏️ 수정</button>
-                      <button class="btn btn-outline btn-xs" onclick="MeetingManager.deleteActionItemDirect('${act.id}')" style="color:var(--danger);">🗑️</button>
+                      <button class="btn btn-outline btn-xs" data-click="MeetingManager.openEditActionItemModal" data-click-args="${UiEvents.args(String(act.id))}">✏️ 수정</button>
+                      <button class="btn btn-outline btn-xs" data-click="MeetingManager.deleteActionItemDirect" data-click-args="${UiEvents.args(String(act.id))}" style="color:var(--danger);">🗑️</button>
                     </td>
                   </tr>
                 `).join("")}
@@ -1262,10 +1262,10 @@ var MeetingManager = {
           💡 회의록 작성 후 [✅ 작성 완료 (저장)] 버튼을 눌러야 저장됩니다. 저장하지 않고 다른 회의록을 선택하면 저장 여부를 확인합니다.
         </span>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary btn-sm" onclick="MeetingManager.completeMinutes(true)">✅ 작성 완료 (저장)</button>
-          <button class="btn btn-secondary btn-sm" onclick="MeetingManager.discardDraft(); MeetingManager.render();" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" onclick="MeetingManager.exportMeetingDocx('${mtg.id}')" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
-          <button class="btn btn-success btn-sm" onclick="MeetingManager.exportMeetingExcel('${mtg.id}')">📥 엑셀 다운로드 (회의록)</button>
+          <button class="btn btn-primary btn-sm" data-click="MeetingManager.completeMinutes" data-click-args='[true]'>✅ 작성 완료 (저장)</button>
+          <button class="btn btn-secondary btn-sm" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
+          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
+          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 다운로드 (회의록)</button>
         </div>
       </div>
     `;
@@ -1494,7 +1494,7 @@ var MeetingManager = {
           <span class="badge" style="background:${sysColor}; color:white; font-size:10px;">${escapeHtml(sysTag)}</span>
         </td>
         <td>
-          <a href="javascript:void(0)" onclick="MeetingManager.openMinutesForMeeting('${act.meetingId}')" style="color:#0369a1; text-decoration:none; font-size:11px;">
+          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(act.meetingId))}" style="color:#0369a1; text-decoration:none; font-size:11px;">
             ${escapeHtml(act.meetingTitle || "-")}
           </a>
         </td>
@@ -1509,7 +1509,7 @@ var MeetingManager = {
           </span>
         </td>
         <td style="text-align:center;">
-          <select onchange="MeetingManager.updateActionItemStatusDirect('${act.id}', this.value)" style="font-size:11px; padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
+          <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:11px; padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
             <option value="진행중" ${act.status === "진행중" ? "selected" : ""}>진행중</option>
             <option value="완료" ${act.status === "완료" ? "selected" : ""}>완료</option>
             <option value="삭제" ${act.status === "삭제" ? "selected" : ""}>삭제</option>

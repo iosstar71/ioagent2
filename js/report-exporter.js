@@ -141,8 +141,8 @@ const BackupHistoryManager = {
         <td style="font-family:monospace; font-size:11px;">${escapeHtml(s.filename)}</td>
         <td style="font-size:11px;">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건</td>
         <td style="text-align:center;">
-          <button class="btn btn-primary btn-sm" onclick="BackupHistoryManager.downloadSnapshotByIndex(${idx})">📥 JSON 다운</button>
-          <button class="btn btn-warning btn-sm" onclick="BackupHistoryManager.restoreSnapshotByIndex(${idx})">⏪ 이 시점으로 복원</button>
+          <button class="btn btn-primary btn-sm" data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">📥 JSON 다운</button>
+          <button class="btn btn-warning btn-sm" data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">⏪ 이 시점으로 복원</button>
         </td>
       `;
       tbody.appendChild(tr);

@@ -238,92 +238,206 @@ var Permission = {
 // -----------------------------------------------------------------------------
 // 4. 저장소 백엔드
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// [v1.0.10] 현재 프로젝트 (여러 프로젝트 관리)
+//  - 사용자 계정(projectUsers)·화면 테마(theme)는 모든 프로젝트 공통, 그 밖의 데이터는 프로젝트별 저장
+//  - 기본 프로젝트(DEFAULT)는 v1.0.9 이하 저장 위치를 그대로 사용 (기존 데이터 이관 불필요)
+// -----------------------------------------------------------------------------
+var ProjectContext = {
+  DEFAULT: "DEFAULT",
+  KEY: "AX_PMYS_CURRENT_PROJECT",
+  REG_KEY: "AX_PMYS_PROJECTS",
+  GLOBAL_KEYS: ["projectUsers", "theme"],
+  current: "DEFAULT",
+  projects: [],
+
+  init() {
+    let pid = "";
+    try { pid = sessionStorage.getItem(this.KEY) || localStorage.getItem(this.KEY) || ""; } catch (e) {}
+    this.current = /^[A-Za-z0-9_-]{1,32}$/.test(pid) ? pid : this.DEFAULT;
+    return this.current;
+  },
+  set(pid) {
+    this.current = pid || this.DEFAULT;
+    try { sessionStorage.setItem(this.KEY, this.current); localStorage.setItem(this.KEY, this.current); } catch (e) {}
+  },
+  isGlobal(key) { return this.GLOBAL_KEYS.indexOf(key) !== -1; },
+  isDefault() { return this.current === this.DEFAULT; },
+  info(pid) { return (this.projects || []).find(p => p.id === (pid || this.current)) || null; },
+
+  // 로컬 저장소 모드의 프로젝트 목록
+  localList() {
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(this.REG_KEY) || "[]") || []; } catch (e) { list = []; }
+    if (!list.some(p => p.id === this.DEFAULT)) {
+      list.unshift({ id: this.DEFAULT, name: (typeof projectConfig !== "undefined" && projectConfig.projectName) || "기본 프로젝트", status: "ACTIVE", restricted: false, members: [], createdAt: "", createdBy: "system" });
+    }
+    return list;
+  },
+  saveLocalList(list) {
+    try { localStorage.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
+  },
+
+  // 프로젝트별 역할 (서버 wbs_db_server.py effective_user 와 같은 규칙)
+  effective(u, pid) {
+    const id = pid || this.current;
+    const out = Object.assign({}, u);
+    const base = (typeof AuthManager !== "undefined") ? AuthManager.normalizeRole(u.role) : u.role;
+    out.baseRole = base;
+    out.projectId = id;
+    if (base === "SYS_ADMIN" || id === this.DEFAULT) return out;
+    const a = u.projectRoles && u.projectRoles[id];
+    if (a && typeof a === "object") {
+      const r = AuthManager.normalizeRole(a.role);
+      out.role = r === "SYS_ADMIN" ? "PM" : r;
+      out.subsystem = a.subsystem || u.subsystem || "ALL";
+    }
+    return out;
+  },
+  canAccess(u, project) {
+    if (!project) return false;
+    if (AuthManager.normalizeRole(u.baseRole || u.role) === "SYS_ADMIN" || !project.restricted) return true;
+    return (project.members || []).some(m => String(m).toLowerCase() === String(u.empNo || "").toLowerCase());
+  }
+};
+
 var LocalBackend = {
-  STORAGE_KEY: "WBS_ENTERPRISE_SYSTEM_DATA_V164", // v1.0.5 이하 저장 데이터와 호환
+  STORAGE_KEY: "WBS_ENTERPRISE_SYSTEM_DATA_V164", // v1.0.5 이하 저장 데이터와 호환 (기본 프로젝트)
   REVS_KEY: "AX_PMYS_LOCAL_PART_REVS",
   name: "LOCAL",
 
-  _read() {
+  // 프로젝트별 저장 위치 (기본 프로젝트는 기존 키 그대로)
+  _skey(pid) { return pid === ProjectContext.DEFAULT ? this.STORAGE_KEY : `${this.STORAGE_KEY}::${pid}`; },
+  _rkey(pid) { return pid === ProjectContext.DEFAULT ? this.REVS_KEY : `${this.REVS_KEY}::${pid}`; },
+  _pidFor(key) { return ProjectContext.isGlobal(key) ? ProjectContext.DEFAULT : ProjectContext.current; },
+
+  _read(pid = ProjectContext.current) {
     try {
-      const raw = localStorage.getItem(this.STORAGE_KEY);
+      const raw = localStorage.getItem(this._skey(pid));
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   },
-  _readRevs() {
-    try { return JSON.parse(localStorage.getItem(this.REVS_KEY) || "{}") || {}; } catch (e) { return {}; }
+  _readRevs(pid = ProjectContext.current) {
+    try { return JSON.parse(localStorage.getItem(this._rkey(pid)) || "{}") || {}; } catch (e) { return {}; }
   },
-  hasData() { return !!this._read(); },
+  _write(pid, stored, revs) {
+    localStorage.setItem(this._skey(pid), JSON.stringify(stored));
+    localStorage.setItem(this._rkey(pid), JSON.stringify(revs));
+  },
+  hasData() { return !!this._read(ProjectContext.current); },
 
   async load(keys) {
-    const stored = this._read() || {};
-    const revs = this._readRevs();
     const data = {};
-    (keys || DataRegistry.KEYS).forEach(k => { if (k in stored) data[k] = stored[k]; });
-    return { ok: true, data, revs: this._pickRevs(revs, keys) };
-  },
-
-  _pickRevs(revs, keys) {
-    const out = {};
-    (keys || DataRegistry.KEYS).forEach(k => { out[k] = revs[k] || {}; });
-    return out;
+    const revs = {};
+    const cache = {};
+    (keys || DataRegistry.KEYS).forEach(k => {
+      const pid = this._pidFor(k);
+      if (!cache[pid]) cache[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid) };
+      if (k in cache[pid].stored) data[k] = cache[pid].stored[k];
+      revs[k] = cache[pid].revs[k] || {};
+    });
+    return { ok: true, data, revs };
   },
 
   async save(changes, force, who) {
-    const stored = this._read() || {};
-    const revs = this._readRevs();
-    const conflicts = [];
+    const groups = {};
     Object.keys(changes).forEach(k => {
-      const kRevs = revs[k] || {};
-      const ch = changes[k];
-      Object.keys(ch.parts).forEach(p => {
-        const cur = kRevs[p] ? kRevs[p].rev : 0;
-        const base = ch.base[p] || 0;
-        if (cur !== base) conflicts.push({ key: k, part: p, by: kRevs[p] ? kRevs[p].by : "", at: kRevs[p] ? kRevs[p].at : "" });
+      const pid = this._pidFor(k);
+      if (!groups[pid]) groups[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid), keys: [] };
+      groups[pid].keys.push(k);
+    });
+    const conflicts = [];
+    Object.keys(groups).forEach(pid => {
+      const g = groups[pid];
+      g.keys.forEach(k => {
+        const kRevs = g.revs[k] || {};
+        const ch = changes[k];
+        Object.keys(ch.parts).forEach(p => {
+          const cur = kRevs[p] ? kRevs[p].rev : 0;
+          const base = ch.base[p] || 0;
+          if (cur !== base) conflicts.push({ key: k, part: p, by: kRevs[p] ? kRevs[p].by : "", at: kRevs[p] ? kRevs[p].at : "" });
+        });
       });
     });
     if (conflicts.length && !force) return { ok: false, conflict: true, conflicts };
 
     const now = new Date().toLocaleString();
     const out = {};
-    Object.keys(changes).forEach(k => {
-      const ch = changes[k];
-      const base = (k in stored) ? stored[k] : DataRegistry.get(k);
-      stored[k] = Partition.merge(k, base, ch.parts);
-      revs[k] = revs[k] || {};
-      Object.keys(ch.parts).forEach(p => {
-        const cur = revs[k][p] ? revs[k][p].rev : 0;
-        revs[k][p] = { rev: cur + 1, by: who || "", at: now };
-      });
-      out[k] = stored[k];
-    });
-    stored.savedAt = new Date().toISOString();
+    const outRevs = {};
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stored));
-      localStorage.setItem(this.REVS_KEY, JSON.stringify(revs));
+      Object.keys(groups).forEach(pid => {
+        const g = groups[pid];
+        g.keys.forEach(k => {
+          const ch = changes[k];
+          const base = (k in g.stored) ? g.stored[k] : DataRegistry.get(k);
+          g.stored[k] = Partition.merge(k, base, ch.parts);
+          g.revs[k] = g.revs[k] || {};
+          Object.keys(ch.parts).forEach(p => {
+            const cur = g.revs[k][p] ? g.revs[k][p].rev : 0;
+            g.revs[k][p] = { rev: cur + 1, by: who || "", at: now };
+          });
+          out[k] = g.stored[k];
+          outRevs[k] = g.revs[k];
+        });
+        g.stored.savedAt = new Date().toISOString();
+        this._write(pid, g.stored, g.revs);
+      });
     } catch (e) {
       return { ok: false, error: "브라우저 저장소 용량 초과 또는 접근 불가: " + e.message };
     }
-    return { ok: true, data: out, revs: this._pickRevs(revs, Object.keys(changes)) };
+    if (out.projectConfig && out.projectConfig.projectName && typeof ProjectManager !== "undefined") ProjectManager.syncLocalName(out.projectConfig.projectName);
+    return { ok: true, data: out, revs: outRevs };
   },
 
-  // 전체 덮어쓰기 (초기화/샘플 복원/백업 복원 전용)
+  // 전체 덮어쓰기 (초기화/샘플 복원/백업 복원 전용) — 공통 데이터는 기본 프로젝트 위치에 저장
   replaceAll(data) {
-    const revs = this._readRevs();
     const now = new Date().toLocaleString();
+    const groups = {};
     DataRegistry.KEYS.forEach(k => {
-      revs[k] = revs[k] || {};
+      const pid = this._pidFor(k);
+      if (!groups[pid]) groups[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid) };
+      const g = groups[pid];
+      g.stored[k] = data[k];
+      g.revs[k] = g.revs[k] || {};
       Partition.split(k, data[k]).forEach((_, p) => {
-        revs[k][p] = { rev: (revs[k][p] ? revs[k][p].rev : 0) + 1, by: "reset", at: now };
+        g.revs[k][p] = { rev: (g.revs[k][p] ? g.revs[k][p].rev : 0) + 1, by: "reset", at: now };
       });
     });
-    const payload = Object.assign({ savedAt: new Date().toISOString() }, data);
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
-    localStorage.setItem(this.REVS_KEY, JSON.stringify(revs));
-    return this._pickRevs(revs);
+    const all = {};
+    Object.keys(groups).forEach(pid => {
+      groups[pid].stored.savedAt = new Date().toISOString();
+      this._write(pid, groups[pid].stored, groups[pid].revs);
+      Object.assign(all, groups[pid].revs);
+    });
+    const out = {};
+    DataRegistry.KEYS.forEach(k => { out[k] = all[k] || {}; });
+    return out;
+  },
+
+  // 새 프로젝트 저장 공간 만들기 / 지우기
+  createProjectStore(pid, data) {
+    const now = new Date().toLocaleString();
+    const revs = {};
+    Object.keys(data).forEach(k => {
+      revs[k] = {};
+      Partition.split(k, data[k]).forEach((_, p) => { revs[k][p] = { rev: 1, by: "create", at: now }; });
+    });
+    this._write(pid, Object.assign({ savedAt: new Date().toISOString() }, data), revs);
+  },
+  removeProjectStore(pid) {
+    if (pid === ProjectContext.DEFAULT) return;
+    try { localStorage.removeItem(this._skey(pid)); localStorage.removeItem(this._rkey(pid)); } catch (e) {}
   },
 
   usageBytes() {
-    try { return new Blob([localStorage.getItem(this.STORAGE_KEY) || ""]).size; } catch (e) { return 0; }
+    try {
+      let n = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(this.STORAGE_KEY) === 0) n += new Blob([localStorage.getItem(k) || ""]).size;
+      }
+      return n;
+    } catch (e) { return 0; }
   }
 };
 
@@ -349,7 +463,7 @@ var ServerBackend = {
   async request(path, body, method = "POST", timeoutMs = 8000) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json", "X-Project-Id": ProjectContext.current };
     if (this.token) headers["Authorization"] = "Bearer " + this.token;
     try {
       const res = await fetch(this.baseUrl() + path, {
@@ -534,6 +648,13 @@ var SyncManager = {
   // ---- 저장 ----
   async save(keys, opts = {}) {
     if (this._busy) { this._pendingSave = { keys, opts }; return { ok: false, busy: true }; }
+    // [v1.0.10] 보관된 프로젝트는 시스템관리자 외에는 읽기 전용
+    const proj = ProjectContext.info();
+    if (proj && proj.status === "ARCHIVED" && Permission.user().baseRole !== "SYS_ADMIN") {
+      if (opts.notify || !this._archivedNotified) showToast("📦 보관된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");
+      this._archivedNotified = true;
+      return { ok: false, archived: true };
+    }
     const scopeKeys = keys || DataRegistry.KEYS;
     const d = this.diff(scopeKeys);
     const blockedList = this.blockedSummary(d);
@@ -721,6 +842,10 @@ var SyncManager = {
   async initialLoad() {
     const be = this.backend();
     if (be === LocalBackend) {
+      if (!LocalBackend.hasData() && !ProjectContext.isDefault()) {
+        // 지워졌거나 없는 프로젝트 → 기본 프로젝트로
+        ProjectContext.set(ProjectContext.DEFAULT);
+      }
       if (!LocalBackend.hasData()) {
         if (typeof InitialDataLoader !== "undefined" && InitialDataLoader.apply()) {
           const revs = LocalBackend.replaceAll(DataRegistry.collect());
@@ -820,8 +945,8 @@ var SyncUI = {
     wrap.style.display = "inline-flex";
     wrap.style.gap = "6px";
     wrap.innerHTML = `
-      <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" onclick="SyncManager.save(null, {notify:true, forceFile:true})" title="모든 화면의 변경 내용을 한 번에 저장합니다.">💾 전체 저장</button>
-      <button id="btnHeaderRefreshAll" class="btn btn-secondary btn-sm" onclick="SyncManager.refresh(null)" title="저장소(DB 서버/로컬)에서 최신 데이터를 다시 불러와 모든 화면을 새로고침합니다.">🔄 전체 새로고침</button>`;
+      <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다.">💾 전체 저장</button>
+      <button id="btnHeaderRefreshAll" class="btn btn-secondary btn-sm" data-click="SyncManager.refresh" data-click-args='[null]' title="저장소(DB 서버/로컬)에서 최신 데이터를 다시 불러와 모든 화면을 새로고침합니다.">🔄 전체 새로고침</button>`;
     if (old) old.replaceWith(wrap);
     else zone.prepend(wrap);
   },
@@ -831,15 +956,14 @@ var SyncUI = {
       const pane = document.getElementById(tabId);
       if (!pane || pane.querySelector(":scope > .sync-toolbar")) return;
       const keys = SyncManager.TAB_KEYS[tabId];
-      const keysArg = keys ? JSON.stringify(keys).replace(/"/g, "'") : "null";
       const bar = document.createElement("div");
       bar.className = "sync-toolbar";
       bar.setAttribute("data-tab", tabId);
       bar.innerHTML = `
         <span class="sync-toolbar-scope">🗂️ ${keys ? keys.map(k => DataRegistry.DEFS[k].label).join(" · ") : "전체 데이터"}</span>
         <span class="sync-toolbar-state" data-keys="${keys ? keys.join(",") : ""}">-</span>
-        <button class="btn btn-primary btn-xs" onclick="SyncManager.save(${keysArg}, {notify:true})" title="이 화면의 변경 내용을 저장합니다.">💾 저장</button>
-        <button class="btn btn-secondary btn-xs" onclick="SyncManager.refresh(${keysArg})" title="이 화면의 데이터를 저장소의 최신 데이터로 다시 불러옵니다.">🔄 새로고침</button>`;
+        <button class="btn btn-primary btn-xs" data-click="SyncManager.save" data-click-args="${UiEvents.args(keys || null, { notify: true })}" title="이 화면의 변경 내용을 저장합니다.">💾 저장</button>
+        <button class="btn btn-secondary btn-xs" data-click="SyncManager.refresh" data-click-args="${UiEvents.args(keys || null)}" title="이 화면의 데이터를 저장소의 최신 데이터로 다시 불러옵니다.">🔄 새로고침</button>`;
       pane.insertBefore(bar, pane.firstChild);
     });
   },
@@ -984,7 +1108,7 @@ var FileAutoSyncManager = {
   async syncNow(showAlert = false) {
     if (!this.fileHandle) return;
     try {
-      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.9" }, DataRegistry.collect());
+      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.10" }, DataRegistry.collect());
       const writable = await this.fileHandle.createWritable();
       await writable.write(JSON.stringify(payload, null, 2));
       await writable.close();
@@ -1031,6 +1155,7 @@ var FileAutoSyncManager = {
 };
 
 window.DataRegistry = DataRegistry;
+window.ProjectContext = ProjectContext;
 window.Partition = Partition;
 window.Permission = Permission;
 window.LocalBackend = LocalBackend;

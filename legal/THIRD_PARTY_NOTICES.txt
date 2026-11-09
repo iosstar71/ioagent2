@@ -1,0 +1,24 @@
+AX Project Management by YS — Third-Party Notices (오픈소스 및 제3자 고지)
+==========================================================================
+
+1. 프로그램 본체 (index.html, js/, css/, wbs_db_server.py, tools/)
+   외부 라이브러리를 포함하지 않습니다. 화면, 간트차트, 엑셀(XLSX)·워드(DOCX) 파일 생성, 압축(ZIP),
+   SHA-256, HTTPS 인증서 생성 기능은 모두 자체 작성 코드입니다.
+   - 엑셀·워드 파일 형식은 공개 국제표준 Office Open XML(ECMA-376 / ISO/IEC 29500)을 따릅니다.
+     "Excel", "Word"는 Microsoft Corporation 의 상표이며, 본 소프트웨어는 Microsoft 와 관련이 없습니다.
+   - 로고(img/ax_pm_logo.svg)는 자체 제작한 도형입니다.
+   - 화면은 PC 에 설치된 글꼴(예: 맑은 고딕)을 이름으로만 지정하며 글꼴 파일을 포함하지 않습니다.
+
+2. Python (Windows 패키지의 python 폴더에만 포함)
+   Python is licensed under the Python Software Foundation License Version 2 (PSF-2.0).
+   Copyright (c) 2001 Python Software Foundation. All rights reserved.
+   전체 라이선스 원문과 Python 에 포함된 구성요소(OpenSSL - Apache License 2.0, SQLite - Public Domain,
+   zlib - zlib License, libffi - MIT License, bzip2, xz/liblzma, expat - MIT License, mpdecimal 등)의
+   고지는 python/LICENSE.txt 에 있습니다.
+
+3. 개발·검사 도구 (배포 파일에 포함되지 않음)
+   - Playwright (Apache License 2.0): tools/tests/e2e 자동 화면 검사에 사용하며, 사용자가 별도로 설치합니다.
+
+라이선스 원문
+   - PSF License: https://docs.python.org/3/license.html (python/LICENSE.txt 에 동봉)
+   - Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0

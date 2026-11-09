@@ -1,11 +1,12 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.9] Automated tests (API + browser E2E)
+rem [AX Project Management by YS - ver1.0.10] Automated tests (API + browser E2E)
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"
 set PY_CMD=python
 where python >nul 2>nul || set PY_CMD=py -3
+if exist "%~dp0python\python.exe" set PY_CMD="%~dp0python\python.exe"
 echo [1/2] DB server API tests
 %PY_CMD% tools\tests\test_server_api.py
 if errorlevel 1 set FAILED=1

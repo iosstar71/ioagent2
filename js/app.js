@@ -1,7 +1,7 @@
 // =============================================================================
 // AX Project Management by YS - 코어 앱 엔진
 // =============================================================================
-const APP_VERSION = { version: "1.0.9", title: "AX Project Management by YS ver1.0.9" };
+const APP_VERSION = { version: "1.0.10", title: "AX Project Management by YS ver1.0.10" };
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼
 let _confirmCallback = null;
@@ -112,7 +112,7 @@ function renderDomainChips() {
     chip.style.fontSize = "11px";
     chip.innerHTML = `
       <b>${escapeHtml(d)}</b>
-      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:12px;" onclick="deleteDomain(${idx})" title="분야 삭제">×</button>
+      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:12px;" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="분야 삭제">×</button>
     `;
     container.appendChild(chip);
   });
@@ -331,29 +331,29 @@ function renderSubsystemsMetaTable() {
 
     tr.innerHTML = `
       <td>
-        <select style="width:125px;font-weight:bold;color:var(--primary);" onchange="subsystemsMeta[${idx}].domain=this.value; rebuildAll();">
+        <select style="width:125px;font-weight:bold;color:var(--primary);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "domain", "$value", "rebuildAll")}">
           ${domainOptionsHtml}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(sub.code || sub.name)}" style="width:85px;font-weight:bold;color:var(--primary);" title="ID 채번 접두 코드" onchange="subsystemsMeta[${idx}].code=this.value.trim(); rebuildAll();"></td>
-      <td><input type="text" value="${escapeHtml(sub.name)}" style="width:120px;font-weight:bold;" onchange="updateSubsystemName(${idx}, this.value)"></td>
+      <td><input type="text" value="${escapeHtml(sub.code || sub.name)}" style="width:85px;font-weight:bold;color:var(--primary);" title="ID 채번 접두 코드" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "code", "$trim", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(sub.name)}" style="width:120px;font-weight:bold;" data-change="updateSubsystemName" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td>
-        <select style="width:115px;" onchange="subsystemsMeta[${idx}].type=this.value; rebuildAll();">
+        <select style="width:115px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "type", "$value", "rebuildAll")}">
           <option value="SDLC" ${sub.type === "SDLC" ? "selected" : ""}>SDLC 공정형</option>
           <option value="REQ" ${sub.type === "REQ" ? "selected" : ""}>개선타입(REQ)</option>
         </select>
       </td>
       <td>
-        <select style="width:160px; font-size:11px;" onchange="subsystemsMeta[${idx}].sdlcCode=this.value; rebuildAll();" ${sub.type === "REQ" ? "disabled title='개선타입은 SDLC 단계 매칭 대상이 아닙니다'" : ""}>
+        <select style="width:160px; font-size:11px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "sdlcCode", "$value", "rebuildAll")}" ${sub.type === "REQ" ? "disabled title='개선타입은 SDLC 단계 매칭 대상이 아닙니다'" : ""}>
           ${sdlcOptionsHtml}
         </select>
       </td>
-      <td><input type="number" value="${sub.weight}" style="width:65px;" onchange="subsystemsMeta[${idx}].weight=parseFloat(this.value)||0; syncSubsystemWeights(); rebuildAll();"></td>
-      <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" onchange="subsystemsMeta[${idx}].pm=this.value; persistChanges();"></td>
-      <td><input type="text" value="${escapeHtml(sub.desc || "")}" style="width:100%; font-size:11px;" onchange="subsystemsMeta[${idx}].desc=this.value; persistChanges();"></td>
+      <td><input type="number" value="${sub.weight}" style="width:65px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "weight", "$num", "syncSubsystemWeights", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "pm", "$value", "persistChanges")}"></td>
+      <td><input type="text" value="${escapeHtml(sub.desc || "")}" style="width:100%; font-size:11px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "desc", "$value", "persistChanges")}"></td>
       <td style="text-align:center;"><b>${taskCount}</b>개</td>
       <td style="text-align:right;"><b style="color:var(--success);">${aProg}%</b></td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteSubsystemMeta(${idx})">×</button></td>
+      <td><button class="btn btn-danger btn-sm" data-click="deleteSubsystemMeta" data-click-args="${UiEvents.args(idx)}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -474,7 +474,7 @@ function renderStandardDeliverablesMetaTable() {
       return `
         <td style="text-align:center;">
           <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:11px; color:${colorHex};" title="${rNum}회차 필수 제출 대상 여부">
-            <input type="checkbox" ${item[key] ? "checked" : ""} onchange="standardDeliverablesMeta[${idx}].${key}=this.checked; persistChanges();">
+            <input type="checkbox" ${item[key] ? "checked" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, key, "$checked", "persistChanges")}">
             ${rNum}회차
           </label>
         </td>
@@ -484,25 +484,25 @@ function renderStandardDeliverablesMetaTable() {
     tr.innerHTML = `
       <td style="text-align:center;"><b>${idx + 1}</b></td>
       <td>
-        <select style="width:130px;" onchange="standardDeliverablesMeta[${idx}].phase=this.value; persistChanges();">
+        <select style="width:130px;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "phase", "$value", "persistChanges")}">
           ${phaseSelectHtml}
         </select>
       </td>
       <td>
-        <input type="text" value="${escapeHtml(item.name)}" style="width:100%; font-weight:bold;" onchange="standardDeliverablesMeta[${idx}].name=this.value; persistChanges();">
+        <input type="text" value="${escapeHtml(item.name)}" style="width:100%; font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "name", "$value", "persistChanges")}">
       </td>
       ${buildRoundCell(1, "#3730a3")}
       ${buildRoundCell(2, "#92400e")}
       ${buildRoundCell(3, "#065f46")}
       ${buildRoundCell(4, "#6b21a8")}
       <td>
-        <input type="date" value="${item.defaultDate || projectConfig.reportDate}" onchange="standardDeliverablesMeta[${idx}].defaultDate=this.value; persistChanges();">
+        <input type="date" value="${item.defaultDate || projectConfig.reportDate}" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "defaultDate", "$value", "persistChanges")}">
       </td>
       <td>
-        <input type="text" value="${escapeHtml(item.remarks || "")}" style="width:100%;" onchange="standardDeliverablesMeta[${idx}].remarks=this.value; persistChanges();">
+        <input type="text" value="${escapeHtml(item.remarks || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "remarks", "$value", "persistChanges")}">
       </td>
       <td style="text-align:center;">
-        <button class="btn btn-danger btn-sm" onclick="standardDeliverablesMeta.splice(${idx},1); renderStandardDeliverablesMetaTable(); persistChanges();">×</button>
+        <button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("standardDeliverablesMeta", idx, "renderStandardDeliverablesMetaTable", "persistChanges")}">×</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -536,7 +536,7 @@ function resetStandardDeliverablesMeta() {
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
-  systemTitle: "AX Project Management by YS ver1.0.9",
+  systemTitle: "AX Project Management by YS ver1.0.10",
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
   channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
@@ -913,26 +913,35 @@ function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
   if (tbody) {
     tbody.innerHTML = "";
+    const notDefault = !ProjectContext.isDefault();
+    const info = document.getElementById("projectUsersScopeInfo");
+    if (info) {
+      const p = ProjectContext.info();
+      info.style.display = notDefault ? "block" : "none";
+      info.innerHTML = notDefault ? `🗂️ 현재 프로젝트 <b>${escapeHtml(p ? p.name : ProjectContext.current)}</b>: 권한·담당 서브시스템을 바꾸면 이 프로젝트에만 적용됩니다. 지정하지 않은 사용자는 기본 역할을 따릅니다. 사번·계정 추가/삭제는 기본 프로젝트에서 관리합니다.` : "";
+    }
     projectUsers.forEach((u, idx) => {
       const isAdminAccount = (u.empNo || "").toLowerCase() === "admin";
-      const role = AuthManager.normalizeRole(u.role);
+      const asg = ProjectManager.userAssignment(u);
+      const role = asg.role;
       const roleOpts = AuthManager.ROLES.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${isAdminAccount ? "readonly title='기본 관리자 사번(admin)은 고정되어 있습니다.'" : ""} onchange="projectUsers[${idx}].empNo=this.value.trim(); persistChanges();"></td>
-        <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" onchange="projectUsers[${idx}].name=this.value.trim(); persistChanges();"></td>
+        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${isAdminAccount || notDefault ? "readonly title='기본 관리자 사번(admin) 또는 기본 프로젝트가 아닌 곳에서는 사번을 바꿀 수 없습니다.'" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "empNo", "$trim", "persistChanges")}"></td>
+        <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "name", "$trim", "persistChanges")}"></td>
         <td>
-          <select style="width:250px; font-weight:bold;" onchange="projectUsers[${idx}].role=this.value; renderProjectUsersTable(); persistChanges();" ${isAdminAccount ? "disabled title='admin 계정은 항상 시스템 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
+          <select style="width:250px; font-weight:bold;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || asg.admin ? "disabled title='시스템 관리자 계정은 모든 프로젝트에서 시스템 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
+          ${notDefault && !asg.admin ? (asg.own ? `<div class="pm-role-tag own">이 프로젝트 지정 <a href="#" data-click="ProjectManager.clearUserAssignment" data-click-args="${UiEvents.args(idx)}">기본값으로</a></div>` : `<div class="pm-role-tag">기본 역할 적용 중</div>`) : ""}
         </td>
         <td>
-          <select style="width:125px;" onchange="projectUsers[${idx}].subsystem=this.value; persistChanges();">
-            <option value="ALL" ${u.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
-            ${getSubsystemOptionsHtml(u.subsystem)}
+          <select style="width:125px;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "subsystem", "$value")}">
+            <option value="ALL" ${asg.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
+            ${getSubsystemOptionsHtml(asg.subsystem)}
           </select>
         </td>
-        <td><input type="text" value="${escapeHtml(u.dept || "")}" style="width:100%;" onchange="projectUsers[${idx}].dept=this.value; persistChanges();"></td>
+        <td><input type="text" value="${escapeHtml(u.dept || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "dept", "$value", "persistChanges")}"></td>
         <td>
-          <select style="width:90px;" onchange="projectUsers[${idx}].lang=this.value; persistChanges();">
+          <select style="width:90px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "lang", "$value", "persistChanges")}">
             <option value="ko" ${(u.lang || "ko") === "ko" ? "selected" : ""}>한국어</option>
             <option value="en" ${u.lang === "en" ? "selected" : ""}>English</option>
           </select>
@@ -940,17 +949,17 @@ function renderProjectUsersTable() {
         <td>
           <div style="display:flex; gap:4px; align-items:center;">
             <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:11px;">
-            <button class="btn btn-sm" data-btn="save" onclick="updateProjectUserPassword(${idx})">변경</button>
-            <button class="btn btn-sm" data-btn="warn" onclick="resetProjectUserPassword(${idx})" title="비밀번호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
+            <button class="btn btn-sm" data-btn="save" data-click="updateProjectUserPassword" data-click-args="${UiEvents.args(idx)}">변경</button>
+            <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="비밀번호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteProjectUser(${idx})" ${isAdminAccount ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다.'" : ""}>×</button></td>
+        <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (notDefault && !ProjectManager.isAdmin()) ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다. 기본 프로젝트가 아닌 곳에서는 시스템관리자만 계정을 삭제할 수 있습니다.'" : ""}>×</button></td>
       `;
       tbody.appendChild(tr);
     });
   }
   // 권한 등급별 인원 통계
-  const count = r => projectUsers.filter(u => AuthManager.normalizeRole(u.role) === r).length;
+  const count = r => projectUsers.filter(u => ProjectManager.userAssignment(u).role === r).length;
   const setText = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = `${n} 명`; };
   setText("userStatTotal", projectUsers.length);
   setText("userStatAdmin", count("SYS_ADMIN"));
@@ -1022,12 +1031,12 @@ var MilestoneManager = {
           .concat(subs.map(s => `<option value="${escapeHtml(s)}" ${m.scope === s ? "selected" : ""}>🔧 ${escapeHtml(s)}</option>`)).join("");
         const passed = m.date && m.date <= rep;
         return `<tr>
-          <td><select style="width:150px;" onchange="MilestoneManager.update(${idx}, 'scope', this.value)">${opts}</select></td>
-          <td><input type="text" value="${escapeHtml(m.name || "")}" style="width:100%; font-weight:bold;" onchange="MilestoneManager.update(${idx}, 'name', this.value)"></td>
-          <td><input type="date" value="${escapeHtml(m.date || "")}" onchange="MilestoneManager.update(${idx}, 'date', this.value)"></td>
-          <td><input type="text" value="${escapeHtml(m.desc || "")}" style="width:100%;" onchange="MilestoneManager.update(${idx}, 'desc', this.value)"></td>
+          <td><select style="width:150px;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "scope", "$value")}">${opts}</select></td>
+          <td><input type="text" value="${escapeHtml(m.name || "")}" style="width:100%; font-weight:bold;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
+          <td><input type="date" value="${escapeHtml(m.date || "")}" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "date", "$value")}"></td>
+          <td><input type="text" value="${escapeHtml(m.desc || "")}" style="width:100%;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "desc", "$value")}"></td>
           <td style="text-align:center;">${passed ? '<span class="status-tag tag-completed">경과</span>' : '<span class="status-tag tag-ready">예정</span>'}</td>
-          <td style="text-align:center;"><button class="btn btn-sm" data-btn="danger" onclick="MilestoneManager.remove(${idx})">×</button></td>
+          <td style="text-align:center;"><button class="btn btn-sm" data-btn="danger" data-click="MilestoneManager.remove" data-click-args="${UiEvents.args(idx)}">×</button></td>
         </tr>`;
       }).join("");
   },
@@ -1110,13 +1119,15 @@ async function updateProjectUserPassword(idx) {
     showToast("변경할 새 비밀번호를 입력해주세요.");
     return;
   }
-  if (input.value.length < 4) {
-    showToast("비밀번호는 4자리 이상으로 입력해주세요.");
+  const rule = AuthManager.validateNewPassword(input.value);
+  if (rule) {
+    showToast(rule);
     return;
   }
   const u = projectUsers[idx];
   const hash = await AuthManager.hashPassword(input.value);
   u.pwdHash = hash;
+  u.pwdTemp = true; // 관리자가 지정한 임시 비밀번호 → 사용자가 첫 로그인 때 변경
   input.value = "";
   persistChanges();
   showToast(`[${u.name}(${u.empNo})] 인력의 비밀번호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
@@ -1128,6 +1139,7 @@ function resetProjectUserPassword(idx) {
   if (!u) return;
   openConfirmDialog(`[${u.name}(${u.empNo})] 사용자의 비밀번호를 초기값(1234)으로 초기화하시겠습니까?`, () => {
     u.pwdHash = "";
+    u.pwdTemp = false;
     u.pwdReset = true;
     if (String(u.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(AuthManager.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
     persistChanges();
@@ -1411,6 +1423,7 @@ var AppBoot = {
   uiReady: false,
 
   async start() {
+    ProjectContext.init();
     DbConnector.init();
     if (typeof ButtonStandard !== "undefined") ButtonStandard.init();
     if (typeof I18N !== "undefined") I18N.init();
@@ -1426,6 +1439,7 @@ var AppBoot = {
 
   // 로그인 성공 후 호출 (DB 서버 모드: 서버 데이터 로드)
   async afterLogin() {
+    if (!(await ProjectManager.afterLogin())) return;
     if (!SyncManager.isLocal()) {
       await SyncManager.initialLoad();
     }
@@ -1584,11 +1598,11 @@ function renderCustomSdlcCards() {
           <span style="font-size:11px; color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" onclick="toggleSdlcActiveState('${escapeHtml(sdlc.code)}')">
+          <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
             ${isActive ? '선택 해제' : '선택 활성화 (프로젝트 사용)'}
           </button>
-          <button class="btn btn-secondary btn-sm" onclick="openEditSdlcModal(${idx})">✏️ 단계 편집</button>
-          ${masterList.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomSdlcType(${idx})">삭제</button>` : ""}
+          <button class="btn btn-secondary btn-sm" data-click="openEditSdlcModal" data-click-args="${UiEvents.args(idx)}">✏️ 단계 편집</button>
+          ${masterList.length > 1 ? `<button class="btn btn-danger btn-sm" data-click="deleteCustomSdlcType" data-click-args="${UiEvents.args(idx)}">삭제</button>` : ""}
         </div>
       </div>
       <p style="font-size:11px; color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
@@ -1685,11 +1699,11 @@ function renderEditSdlcPhasesTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td style="text-align:center;"><b>${pIdx + 1}</b></td>
-      <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" onchange="_editingSdlcPhasesTemp[${pIdx}].name=this.value.trim()"></td>
-      <td><input type="number" value="${p.weight}" style="width:100%;" onchange="_editingSdlcPhasesTemp[${pIdx}].weight=parseFloat(this.value)||0"></td>
-      <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" onchange="_editingSdlcPhasesTemp[${pIdx}].output=this.value.trim()"></td>
-      <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:11px;" placeholder="Task명 매칭 키워드" onchange="_editingSdlcPhasesTemp[${pIdx}].keywords=this.value.split(',').map(s=>s.trim()).filter(Boolean)"></td>
-      <td><button class="btn btn-danger btn-sm" onclick="_editingSdlcPhasesTemp.splice(${pIdx},1); renderEditSdlcPhasesTable();">×</button></td>
+      <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
+      <td><input type="number" value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
+      <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
+      <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:11px;" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
+      <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "renderEditSdlcPhasesTable")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -1929,15 +1943,15 @@ function renderWbsTable() {
       <td><strong>${row.id}</strong></td>
       <td>
         <div class="wbs-lvl-ctrl">
-          <button class="btn-xs" title="상위 레벨로 올리기" onclick="changeTaskLevel(${idx}, -1)" ${row.level <= 2 ? "disabled" : ""}>◀</button>
-          <select style="padding:2px 3px; font-size:11px;" onchange="setTaskLevel(${idx}, this.value)" ${row.level === 1 ? 'disabled title="Level 1은 서브시스템 단위로 고정됩니다."' : ""}>
+          <button class="btn-xs" title="상위 레벨로 올리기" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, -1)}" ${row.level <= 2 ? "disabled" : ""}>◀</button>
+          <select style="padding:2px 3px; font-size:11px;" data-change="setTaskLevel" data-change-args="${UiEvents.args(idx, "$value")}" ${row.level === 1 ? 'disabled title="Level 1은 서브시스템 단위로 고정됩니다."' : ""}>
             ${[1, 2, 3, 4, 5].map(l => `<option value="${l}" ${row.level === l ? "selected" : ""}>L${l}</option>`).join("")}
           </select>
-          <button class="btn-xs" title="하위 레벨로 내리기" onclick="changeTaskLevel(${idx}, 1)" ${row.level === 1 || row.level >= 5 ? "disabled" : ""}>▶</button>
+          <button class="btn-xs" title="하위 레벨로 내리기" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 || row.level >= 5 ? "disabled" : ""}>▶</button>
         </div>
       </td>
       <td>
-        <select style="width:104px; padding:2px 4px; font-size:11px;" onchange="changeTaskSystem(${idx}, this.value)">
+        <select style="width:104px; padding:2px 4px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -1945,19 +1959,19 @@ function renderWbsTable() {
         <div style="padding-left: ${indent}px; display:flex; align-items:center;">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
-          <input type="text" value="${escapeHtml(row.name)}" style="flex:1; min-width:210px;" onchange="wbsData[${idx}].name=this.value; persistChanges();">
+          <input type="text" value="${escapeHtml(row.name)}" style="flex:1; min-width:210px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td><input type="number" value="${row.weight}" style="width:48px; padding:2px 4px;" onchange="wbsData[${idx}].weight=parseFloat(this.value)||0; rebuildAll();"></td>
-      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:78px; padding:2px 4px;" onchange="wbsData[${idx}].reqId=this.value; renderPhaseMatrix(); renderReqMasterTable(); persistChanges();"></td>
+      <td><input type="number" value="${row.weight}" style="width:48px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:78px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.pStart || ""}" ${isLeaf ? "" : "readonly"}
                  class="${pStartOutOfRange ? "date-out-of-range" : ""} ${isStartHoliday ? "holiday-date-highlight" : ""}"
                  title="${pStartOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isStartHoliday ? "휴일(주말/공휴일) 경고" : "")}"
-                 onchange="wbsData[${idx}].pStart=this.value; rebuildAll();">
+                 data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pStart", "$value", "rebuildAll")}">
           <span class="day-of-week-tag ${pStartDay === "토" ? "day-sat" : (pStartDay === "일" ? "day-sun" : "")}">${pStartDay || ""}</span>
         </div>
       </td>
@@ -1967,7 +1981,7 @@ function renderWbsTable() {
           <input type="date" value="${row.pEnd || ""}" ${isLeaf ? "" : "readonly"}
                  class="${pEndOutOfRange ? "date-out-of-range" : ""} ${isEndHoliday ? "holiday-date-highlight" : ""}"
                  title="${pEndOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isEndHoliday ? "휴일(주말/공휴일) 경고" : "")}"
-                 onchange="wbsData[${idx}].pEnd=this.value; rebuildAll();">
+                 data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pEnd", "$value", "rebuildAll")}">
           <span class="day-of-week-tag ${pEndDay === "토" ? "day-sat" : (pEndDay === "일" ? "day-sun" : "")}">${pEndDay || ""}</span>
         </div>
       </td>
@@ -1976,7 +1990,7 @@ function renderWbsTable() {
         <div class="date-input-wrap">
           <input type="date" value="${row.aStart || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aStartOutOfRange ? "date-out-of-range" : ""}"
-                 onchange="wbsData[${idx}].aStart=this.value; rebuildAll();">
+                 data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aStart", "$value", "rebuildAll")}">
           <span class="day-of-week-tag ${aStartDay === "토" ? "day-sat" : (aStartDay === "일" ? "day-sun" : "")}">${aStartDay || ""}</span>
         </div>
       </td>
@@ -1985,22 +1999,22 @@ function renderWbsTable() {
         <div class="date-input-wrap">
           <input type="date" value="${row.aEnd || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aEndOutOfRange ? "date-out-of-range" : ""}"
-                 onchange="wbsData[${idx}].aEnd=this.value; rebuildAll();">
+                 data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aEnd", "$value", "rebuildAll")}">
           <span class="day-of-week-tag ${aEndDay === "토" ? "day-sat" : (aEndDay === "일" ? "day-sun" : "")}">${aEndDay || ""}</span>
         </div>
       </td>
 
       <td><input type="number" value="${row.pProg}" readonly style="width:46px; padding:2px 3px; text-align:right;"></td>
-      <td><input type="number" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:46px; padding:2px 3px; text-align:right;" onchange="wbsData[${idx}].aProg=parseFloat(this.value)||0; rebuildAll();"></td>
-      <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:88px; padding:2px 4px;" onchange="wbsData[${idx}].output=this.value; persistChanges();"></td>
+      <td><input type="number" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:46px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:88px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
-          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" onclick="fillRowActualFromPlan(${idx})" ${!isLeaf ? "disabled" : ""}>⚡실적</button>
-          <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" onclick="addChildTask(${idx})" ${row.level >= 5 ? "disabled" : ""}>+하위</button>
-          <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" onclick="addSiblingTask(${idx})">+동위</button>
-          <button class="btn-xs" title="위로 이동" onclick="moveTaskOrder(${idx}, -1)" ${row.level === 1 ? "disabled" : ""}>▲</button>
-          <button class="btn-xs" title="아래로 이동" onclick="moveTaskOrder(${idx}, 1)" ${row.level === 1 ? "disabled" : ""}>▼</button>
-          <button class="btn btn-danger btn-sm" style="padding:2px 5px;" title="Task 삭제" onclick="deleteWbsRow(${idx})">×</button>
+          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡실적</button>
+          <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>+하위</button>
+          <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">+동위</button>
+          <button class="btn-xs" title="위로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, -1)}" ${row.level === 1 ? "disabled" : ""}>▲</button>
+          <button class="btn-xs" title="아래로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 ? "disabled" : ""}>▼</button>
+          <button class="btn btn-danger btn-sm" style="padding:2px 5px;" title="Task 삭제" data-click="deleteWbsRow" data-click-args="${UiEvents.args(idx)}">×</button>
         </div>
       </td>
     `;
@@ -2707,44 +2721,44 @@ function renderDeliverablesTable() {
 
     tr.innerHTML = `
       <td>
-        <select onchange="deliverablesData[${idx}].round=this.value; renderDeliverablesTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "round", "$value", "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           ${getActiveDeliverableRounds().map(r => `<option value="${r}" ${row.round === r ? "selected" : ""}>${r}</option>`).join("")}
         </select>
       </td>
       <td>
-        <select style="width:125px;" onchange="deliverablesData[${idx}].system=this.value; renderDeliverablesTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "system", "$value", "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
       <td>
-        <select onchange="deliverablesData[${idx}].phase=this.value; renderDashboard(); persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "phase", "$value", "renderDashboard", "persistChanges")}">
           ${["요구사항정의단계", "분석설계단계", "구현단계", "통합테스트단계", "시험검증단계", "이행단계", "안정화단계", "이행안정화단계", "구축단계"].map(p => `<option value="${p}" ${row.phase === p ? "selected" : ""}>${p}</option>`).join("")}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" onchange="deliverablesData[${idx}].name=this.value; renderDashboard(); persistChanges();"></td>
+      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "name", "$value", "renderDashboard", "persistChanges")}"></td>
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.pDate || ""}" onchange="deliverablesData[${idx}].pDate=this.value; renderDeliverablesTable(); persistChanges();">
+          <input type="date" value="${row.pDate || ""}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "pDate", "$value", "renderDeliverablesTable", "persistChanges")}">
           <span class="day-of-week-tag ${pDay === "토" ? "day-sat" : (pDay === "일" ? "day-sun" : "")}">${pDay ? `(${pDay})` : ""}</span>
         </div>
       </td>
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.aDate || ""}" onchange="deliverablesData[${idx}].aDate=this.value; renderDeliverablesTable(); persistChanges();">
+          <input type="date" value="${row.aDate || ""}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "aDate", "$value", "renderDeliverablesTable", "persistChanges")}">
           <span class="day-of-week-tag ${aDay === "토" ? "day-sat" : (aDay === "일" ? "day-sun" : "")}">${aDay ? `(${aDay})` : ""}</span>
         </div>
       </td>
       <td>
-        <select onchange="deliverablesData[${idx}].status=this.value; renderDeliverablesTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "status", "$value", "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           <option value="작성전" ${row.status === "작성전" ? "selected" : ""}>작성전</option>
           <option value="작성중" ${row.status === "작성중" ? "selected" : ""}>작성중</option>
           <option value="검토요청" ${row.status === "검토요청" ? "selected" : ""}>검토요청</option>
           <option value="보완완료" ${row.status === "보완완료" ? "selected" : ""}>보완완료</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.manager || "")}" style="width:80px;" onchange="deliverablesData[${idx}].manager=this.value; persistChanges();"></td>
-      <td><input type="text" value="${escapeHtml(row.remarks || "")}" style="width:100%;" onchange="deliverablesData[${idx}].remarks=this.value; persistChanges();"></td>
-      <td><button class="btn btn-danger btn-sm" onclick="deliverablesData.splice(${idx},1); renderDeliverablesTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">×</button></td>
+      <td><input type="text" value="${escapeHtml(row.manager || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "manager", "$value", "persistChanges")}"></td>
+      <td><input type="text" value="${escapeHtml(row.remarks || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "remarks", "$value", "persistChanges")}"></td>
+      <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("deliverablesData", idx, "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -2873,15 +2887,15 @@ function renderReqMasterTable() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input type="text" value="${escapeHtml(row.id)}" style="width:98px; font-weight:bold;" onchange="reqMasterData[${idx}].id=this.value; renderPhaseMatrix(); persistChanges();"></td>
+      <td><input type="text" value="${escapeHtml(row.id)}" style="width:98px; font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "id", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
       <td>
-        <select style="width:125px;" onchange="reqMasterData[${idx}].system=this.value; renderReqMasterTable(); renderPhaseMatrix(); renderDashboard(); persistChanges();">
+        <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "system", "$value", "renderReqMasterTable", "renderPhaseMatrix", "renderDashboard", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" onchange="reqMasterData[${idx}].name=this.value; renderPhaseMatrix(); persistChanges();"></td>
+      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "name", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
       <td>
-        <select onchange="reqMasterData[${idx}].type=this.value; persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "type", "$value", "persistChanges")}">
           <option value="기능" ${row.type === "기능" ? "selected" : ""}>기능</option>
           <option value="비기능" ${row.type === "비기능" ? "selected" : ""}>비기능</option>
           <option value="화면" ${row.type === "화면" ? "selected" : ""}>화면</option>
@@ -2892,7 +2906,7 @@ function renderReqMasterTable() {
         </select>
       </td>
       <td>
-        <select onchange="reqMasterData[${idx}].priority=this.value; persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "priority", "$value", "persistChanges")}">
           <option value="긴급" ${row.priority === "긴급" ? "selected" : ""}>긴급</option>
           <option value="상" ${row.priority === "상" ? "selected" : ""}>상</option>
           <option value="중" ${row.priority === "중" ? "selected" : ""}>중</option>
@@ -2900,7 +2914,7 @@ function renderReqMasterTable() {
         </select>
       </td>
       <td>
-        <select onchange="reqMasterData[${idx}].accept=this.value; persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "accept", "$value", "persistChanges")}">
           <option value="수용" ${row.accept === "수용" ? "selected" : ""}>수용</option>
           <option value="불가" ${row.accept === "불가" ? "selected" : ""}>불가</option>
           <option value="검토중" ${row.accept === "검토중" ? "selected" : ""}>검토중</option>
@@ -2909,7 +2923,7 @@ function renderReqMasterTable() {
       <td style="text-align:center;"><b>${taskCount}</b>개</td>
       <td style="text-align:right;"><b>${avgProg}%</b></td>
       <td>
-        <select class="status-tag ${tagClass}" onchange="reqMasterData[${idx}].status=this.value; renderReqMasterTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "status", "$value", "renderReqMasterTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
@@ -2917,7 +2931,7 @@ function renderReqMasterTable() {
           <option value="삭제" ${row.status === "삭제" ? "selected" : ""}>삭제</option>
         </select>
       </td>
-      <td><button class="btn btn-danger btn-sm" onclick="reqMasterData.splice(${idx},1); renderReqMasterTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">×</button></td>
+      <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("reqMasterData", idx, "renderReqMasterTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -2988,34 +3002,34 @@ function renderVocTable() {
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.id)}</strong></td>
       <td>
-        <select style="width:125px;" onchange="vocData[${idx}].system=this.value; renderVocTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "system", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
       <td>
-        <select onchange="vocData[${idx}].priority=this.value; renderDashboard(); persistChanges();">
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "priority", "$value", "renderDashboard", "persistChanges")}">
           <option value="긴급" ${row.priority === "긴급" ? "selected" : ""}>긴급</option>
           <option value="상" ${row.priority === "상" ? "selected" : ""}>상</option>
           <option value="중" ${row.priority === "중" ? "selected" : ""}>중</option>
           <option value="하" ${row.priority === "하" ? "selected" : ""}>하</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.title)}" style="width:100%;" onchange="vocData[${idx}].title=this.value; renderDashboard(); persistChanges();"></td>
-      <td><input type="text" value="${escapeHtml(row.requester || "")}" style="width:80px;" onchange="vocData[${idx}].requester=this.value; persistChanges();"></td>
+      <td><input type="text" value="${escapeHtml(row.title)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "title", "$value", "renderDashboard", "persistChanges")}"></td>
+      <td><input type="text" value="${escapeHtml(row.requester || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "requester", "$value", "persistChanges")}"></td>
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.reqDate || ""}" onchange="vocData[${idx}].reqDate=this.value; renderVocTable(); persistChanges();">
+          <input type="date" value="${row.reqDate || ""}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "reqDate", "$value", "renderVocTable", "persistChanges")}">
           <span class="day-of-week-tag ${reqDay === "토" ? "day-sat" : (reqDay === "일" ? "day-sun" : "")}">${reqDay ? `(${reqDay})` : ""}</span>
         </div>
       </td>
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.targetDate || ""}" onchange="vocData[${idx}].targetDate=this.value; renderVocTable(); persistChanges();">
+          <input type="date" value="${row.targetDate || ""}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "targetDate", "$value", "renderVocTable", "persistChanges")}">
           <span class="day-of-week-tag ${targetDay === "토" ? "day-sat" : (targetDay === "일" ? "day-sun" : "")}">${targetDay ? `(${targetDay})` : ""}</span>
         </div>
       </td>
       <td>
-        <select class="status-tag ${tagClass}" onchange="vocData[${idx}].status=this.value; renderVocTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">
+        <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "status", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
@@ -3024,8 +3038,8 @@ function renderVocTable() {
           <option value="삭제" ${row.status === "삭제" ? "selected" : ""}>삭제</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.action || "")}" style="width:100%;" onchange="vocData[${idx}].action=this.value; persistChanges();"></td>
-      <td><button class="btn btn-danger btn-sm" onclick="vocData.splice(${idx},1); renderVocTable(); renderDashboard(); renderPhaseMatrix(); persistChanges();">×</button></td>
+      <td><input type="text" value="${escapeHtml(row.action || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "action", "$value", "persistChanges")}"></td>
+      <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("vocData", idx, "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -3331,14 +3345,14 @@ function renderHolidays() {
     tbody.innerHTML += `
       <tr>
         <td>${typeBadge}</td>
-        <td><input type="text" value="${escapeHtml(h.name)}" onchange="projectConfig.holidays[${i}].name=this.value; persistChanges();"></td>
+        <td><input type="text" value="${escapeHtml(h.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("projectConfig.holidays", i, "name", "$value", "persistChanges")}"></td>
         <td>
           <div class="date-input-wrap">
-            <input type="date" value="${h.date}" onchange="projectConfig.holidays[${i}].date=this.value; renderHolidays(); rebuildAll();">
+            <input type="date" value="${h.date}" data-change="UiH.set" data-change-args="${UiEvents.args("projectConfig.holidays", i, "date", "$value", "renderHolidays", "rebuildAll")}">
             <span class="day-of-week-tag ${dayName === "토" ? "day-sat" : (dayName === "일" ? "day-sun" : "")}">(${dayName})</span>
           </div>
         </td>
-        <td><button class="btn btn-danger btn-sm" onclick="projectConfig.holidays.splice(${i},1); renderHolidays(); rebuildAll();">×</button></td>
+        <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("projectConfig.holidays", i, "renderHolidays", "rebuildAll")}">×</button></td>
       </tr>
     `;
   });
@@ -3434,7 +3448,7 @@ function activateTab(tabId) {
 
   document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".tab-btn").forEach(b => {
-    const oc = b.getAttribute("onclick") || "";
+    const oc = UiEvents.describe(b);
     b.classList.toggle("active", oc.includes(`'${tabId}'`) || oc.includes(`"${tabId}"`));
   });
   const pane = document.getElementById(tabId);
@@ -3858,7 +3872,7 @@ var NoticeCommManager = {
           : "background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;";
         const label = isActive ? `✓ #${escapeHtml(c)} (${count})` : `#${escapeHtml(c)} (${count})`;
         return `
-          <button class="${btnClass}" style="${activeStyle} font-size:11.5px; padding:4px 9px; border-radius:4px; transition:all 0.15s ease;" data-channel="${escapeHtml(c)}" onclick="NoticeCommManager.setChannel('${escapeHtml(c)}')">
+          <button class="${btnClass}" style="${activeStyle} font-size:11.5px; padding:4px 9px; border-radius:4px; transition:all 0.15s ease;" data-channel="${escapeHtml(c)}" data-click="NoticeCommManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
             ${label}
           </button>
         `;
@@ -3879,7 +3893,7 @@ var NoticeCommManager = {
     const chatContainer = document.getElementById("chatChannelListContainer");
     if (chatContainer && typeof RealtimeChatManager !== "undefined") {
       chatContainer.innerHTML = channels.map(c => `
-        <button class="chat-channel-btn ${RealtimeChatManager.activeChannel === c ? 'active' : ''}" data-channel="${escapeHtml(c)}" onclick="RealtimeChatManager.setChannel('${escapeHtml(c)}')">
+        <button class="chat-channel-btn ${RealtimeChatManager.activeChannel === c ? 'active' : ''}" data-channel="${escapeHtml(c)}" data-click="RealtimeChatManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
           <span># ${escapeHtml(c)}</span>
         </button>
       `).join("");
@@ -3901,7 +3915,7 @@ var NoticeCommManager = {
         <td><strong style="color:#0f172a;"># ${escapeHtml(c)}</strong></td>
         <td style="font-size:11.5px; color:#64748b;">${c === "전체" ? "전사 공통 기본 채널 (고정)" : "프로젝트 커스텀 소통 채널"}</td>
         <td style="text-align:center;">
-          ${c === "전체" ? '<span style="font-size:11px; color:#94a3b8; font-weight:bold;">고정</span>' : `<button class="btn btn-danger btn-sm" onclick="NoticeCommManager.deleteChannel('${escapeHtml(c)}')">삭제</button>`}
+          ${c === "전체" ? '<span style="font-size:11px; color:#94a3b8; font-weight:bold;">고정</span>' : `<button class="btn btn-danger btn-sm" data-click="NoticeCommManager.deleteChannel" data-click-args="${UiEvents.args(String(c))}">삭제</button>`}
         </td>
       `;
       tbody.appendChild(tr);
@@ -4021,11 +4035,11 @@ var NoticeCommManager = {
 
       const canManage = this.hasNoticePermission(item);
       const actionButtons = canManage ? `
-        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'}" style="padding:3px 8px; font-size:11px;" onclick="NoticeCommManager.togglePinNotice('${escapeHtml(item.id)}')">
+        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'}" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.togglePinNotice" data-click-args="${UiEvents.args(String(item.id))}">
           ${item.isPinned ? '📌 고정해제' : '📌 상단고정'}
         </button>
-        <button class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" onclick="NoticeCommManager.openEditNoticeModal('${escapeHtml(item.id)}')">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:11px;" onclick="NoticeCommManager.deleteNotice('${escapeHtml(item.id)}')">🗑️ 삭제</button>
+        <button class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.openEditNoticeModal" data-click-args="${UiEvents.args(String(item.id))}">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.deleteNotice" data-click-args="${UiEvents.args(String(item.id))}">🗑️ 삭제</button>
       ` : '<span style="font-size:10.5px; color:#94a3b8; padding:2px 6px; background:#f1f5f9; border-radius:4px;">🔒 조회전용</span>';
 
       card.innerHTML = `
@@ -4078,7 +4092,7 @@ var NoticeCommManager = {
           <div style="font-size:24px; margin-bottom:6px;">💬</div>
           <div style="font-size:14px; font-weight:bold; color:#1e3a8a; margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
           <div style="font-size:11.5px; color:#64748b; margin-bottom:12px;">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
-          <button class="btn btn-primary btn-sm" onclick="NoticeCommManager.setChannel('전체')">🌐 전체 채널 보기</button>
+          <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.setChannel" data-click-args='["전체"]'>🌐 전체 채널 보기</button>
         </div>
       `;
       return;
@@ -4119,8 +4133,8 @@ var NoticeCommManager = {
 
       const canManagePost = this.hasCommPermission(post);
       const postActionButtons = canManagePost ? `
-        <button class="btn btn-secondary btn-sm" style="padding:2px 7px; font-size:10.5px;" onclick="NoticeCommManager.openEditCommPost('${post.id}')">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" style="padding:2px 7px; font-size:10.5px;" onclick="NoticeCommManager.deleteCommPost('${post.id}')">🗑️ 삭제</button>
+        <button class="btn btn-secondary btn-sm" style="padding:2px 7px; font-size:10.5px;" data-click="NoticeCommManager.openEditCommPost" data-click-args="${UiEvents.args(String(post.id))}">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm" style="padding:2px 7px; font-size:10.5px;" data-click="NoticeCommManager.deleteCommPost" data-click-args="${UiEvents.args(String(post.id))}">🗑️ 삭제</button>
       ` : "";
 
       const displayTitle = post.title || (post.taskId ? `[과업 #${post.taskId}] ${post.content.slice(0, 30)}...` : (post.content.length > 30 ? post.content.slice(0, 30) + "..." : post.content));
@@ -4143,8 +4157,8 @@ var NoticeCommManager = {
         <div style="font-size:13px; line-height:1.6; color:#1e293b; margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(post.content)}</div>
         ${repliesHtml}
         <div style="margin-top:12px; display:flex; gap:8px;">
-          <input type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="flex:1; padding:6px 12px; font-size:12px; border:1px solid #cbd5e1; border-radius:4px;" onkeydown="if(event.key==='Enter')NoticeCommManager.addReply('${post.id}')">
-          <button class="btn btn-secondary btn-sm" onclick="NoticeCommManager.addReply('${post.id}')">💬 답글</button>
+          <input type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="flex:1; padding:6px 12px; font-size:12px; border:1px solid #cbd5e1; border-radius:4px;" data-keydown="NoticeCommManager.addReply" data-keydown-args="${UiEvents.args(String(post.id))}" data-keydown-key="Enter">
+          <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.addReply" data-click-args="${UiEvents.args(String(post.id))}">💬 답글</button>
         </div>
       `;
       feedWrap.appendChild(card);
@@ -4216,7 +4230,7 @@ var NoticeCommManager = {
           <div style="font-size:11.5px; color:#475569; margin-bottom:10px; line-height:1.55; max-height:60px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml(post.content)}</div>
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:6px;">
             <span style="font-weight:600;">👤 ${escapeHtml(post.author)}</span>
-            <select onchange="NoticeCommManager.updatePostStatus('${post.id}', this.value)" style="font-size:11px; padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1; font-weight:bold; background:#ffffff; color:#1e293b;">
+            <select data-change="NoticeCommManager.updatePostStatus" data-change-args="${UiEvents.args(String(post.id), "$value")}" style="font-size:11px; padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1; font-weight:bold; background:#ffffff; color:#1e293b;">
               <option value="OPEN" ${col.id==='OPEN'?'selected':''}>논의중</option>
               <option value="PROGRESS" ${col.id==='PROGRESS'?'selected':''}>조치중</option>
               <option value="RESOLVED" ${col.id==='RESOLVED'?'selected':''}>해결완료</option>
@@ -4473,7 +4487,7 @@ var RealtimeChatManager = {
       : ["전체", ...((typeof getAllSubsystemNames === "function") ? getAllSubsystemNames() : ["PMO", "W1", "W2", "P1", "A1", "A2", "S1"])];
     
     chatContainer.innerHTML = channels.map(c => `
-      <button class="chat-channel-btn ${this.activeChannel === c ? 'active' : ''}" data-channel="${escapeHtml(c)}" onclick="RealtimeChatManager.setChannel('${escapeHtml(c)}')">
+      <button class="chat-channel-btn ${this.activeChannel === c ? 'active' : ''}" data-channel="${escapeHtml(c)}" data-click="RealtimeChatManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
         <span># ${escapeHtml(c)}</span>
       </button>
     `).join("");
@@ -4819,11 +4833,11 @@ var ReqPhaseManager = {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="text-align:center;"><b>${idx + 1}</b></td>
-        <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;color:#0f766e;" onchange="ReqPhaseManager.updatePhase(${idx}, 'name', this.value)"></td>
-        <td><input type="number" value="${p.weight}" style="width:70px;text-align:right;" onchange="ReqPhaseManager.updatePhase(${idx}, 'weight', parseFloat(this.value)||0)"></td>
-        <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" onchange="ReqPhaseManager.updatePhase(${idx}, 'output', this.value)"></td>
-        <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:11px;" placeholder="쉼표로 구분" onchange="ReqPhaseManager.updatePhase(${idx}, 'keywords', this.value.split(',').map(s=>s.trim()).filter(Boolean))"></td>
-        <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="ReqPhaseManager.deletePhase(${idx})">×</button></td>
+        <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;color:#0f766e;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
+        <td><input type="number" value="${p.weight}" style="width:70px;text-align:right;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
+        <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "output", "$value")}"></td>
+        <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:11px;" placeholder="쉼표로 구분" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "keywords", "$split")}"></td>
+        <td style="text-align:center;"><button class="btn btn-danger btn-sm" data-click="ReqPhaseManager.deletePhase" data-click-args="${UiEvents.args(idx)}">×</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -5738,7 +5752,7 @@ const SmartMergeCenter = {
     const scope = this._collabScope();
     const repDate = projectConfig.reportDate || "";
     if (format === "JSON") {
-      const payload = { schemaVersion: "AX_PMYS_1.0.9_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
+      const payload = { schemaVersion: "AX_PMYS_1.0.10_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
       keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.json`;
@@ -6335,7 +6349,8 @@ var StorageManager = {
       const rm = [];
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && !keep.has(k)) rm.push(k);
+        // 프로젝트 데이터(모든 프로젝트)·프로젝트 목록은 보존
+        if (k && !keep.has(k) && k.indexOf(LocalBackend.STORAGE_KEY) !== 0 && k.indexOf(LocalBackend.REVS_KEY) !== 0 && k !== ProjectContext.REG_KEY && k !== ProjectContext.KEY) rm.push(k);
       }
       rm.forEach(k => localStorage.removeItem(k));
     } catch (e) {}
@@ -6356,7 +6371,7 @@ var StorageManager = {
     const now = new Date();
     const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
     const fullPayload = Object.assign({
-      schemaVersion: "AX_PMYS_1.0.9_FULL_BACKUP",
+      schemaVersion: "AX_PMYS_1.0.10_FULL_BACKUP",
       exportedAt: now.toISOString(),
       exportedBy: AuthManager.getCurrentUser().empNo,
       systemSettings: {
@@ -6738,7 +6753,7 @@ window.MasterSyncEngine = MasterSyncEngine;
 
 // [v1.0.6] 로컬 저장소 모드: 같은 PC의 다른 브라우저 탭에서 저장하면 미저장 변경이 없을 때 자동 반영
 window.addEventListener("storage", function (e) {
-  if (e.key !== LocalBackend.STORAGE_KEY || !SyncManager.isLocal()) return;
+  if (!SyncManager.isLocal() || (e.key !== LocalBackend._skey(ProjectContext.current) && e.key !== LocalBackend.STORAGE_KEY)) return;
   if (SyncManager.isDirty()) return;
   SyncManager.refresh(null, { silent: true, skipConfirm: true });
 });
@@ -7041,15 +7056,15 @@ var WeeklyReportManager = {
 
   _listRow(weekLabel, weekNum, sc, r, isCur, mine) {
     const status = r ? ((r.status || "DONE") === "DONE" ? '<span class="status-tag tag-completed">작성완료</span>' : '<span class="status-tag tag-progress">작성중</span>') : '<span class="status-tag tag-ready">미작성</span>';
-    const arg = `${weekNum}, '${sc.scope}', '${escapeHtml(String(sc.value).replace(/'/g, "\\'"))}'`;
-    return `<tr class="wr-list-row ${isCur ? "active" : ""}" onclick="WeeklyReportManager.openUnit(${arg})">
+    const arg = UiEvents.args(weekNum, sc.scope, String(sc.value || ""));
+    return `<tr class="wr-list-row ${isCur ? "active" : ""}" data-click="WeeklyReportManager.openUnit" data-click-args="${arg}">
       <td>${escapeHtml(weekLabel)}</td>
       <td>${sc.scope === "ALL" ? "📊 " : sc.scope === "DOMAIN" ? "🏢 " : "🔧 "}${escapeHtml(this.scopeLabel(sc.scope, sc.value))}${mine ? " ⭐" : ""}</td>
       <td>${escapeHtml(r ? (r.author || "-") : "-")}</td>
       <td style="text-align:center;">${status}</td>
       <td style="text-align:center;">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
       <td style="font-size:11px;">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
-      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" onclick="event.stopPropagation(); WeeklyReportManager.openUnit(${arg})" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
+      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" data-click="WeeklyReportManager.openUnit" data-click-args="${arg}" data-click-stop="1" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
     </tr>`;
   },
 
@@ -7339,29 +7354,29 @@ var WeeklyReportManager = {
     const id = escapeHtml(t.id);
     const k = `'${kind}', '${id}'`;
     const sysCell = t.manual
-      ? `<select style="font-size:11px; width:96px;" onchange="WeeklyReportManager.updateItem(${k}, 'system', this.value)">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
+      ? `<select style="font-size:11px; width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
       : `<span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span>`;
     const nameCell = t.manual
-      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" onchange="WeeklyReportManager.updateItem(${k}, 'name', this.value)">`
+      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
       : escapeHtml(t.name);
     const sched = t.manual
-      ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:10px; width:120px;" title="목표일 (선택)" onchange="WeeklyReportManager.updateItem(${k}, 'pEnd', this.value)">`
+      ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:10px; width:120px;" title="목표일 (선택)" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "pEnd", "$value")}">`
       : `<span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
-    const detail = `<input type="text" maxlength="1000" value="${escapeHtml(t.detail || "")}" onchange="WeeklyReportManager.updateItem(${k}, 'detail', this.value)" style="width:100%; font-size:11px; padding:3px 6px;">`;
-    const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" onclick="WeeklyReportManager.removeItem(${k})">✕</button>`;
+    const detail = `<input type="text" maxlength="1000" value="${escapeHtml(t.detail || "")}" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}" style="width:100%; font-size:11px; padding:3px 6px;">`;
+    const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" data-click="WeeklyReportManager.removeItem" data-click-args="${UiEvents.args(k)}">✕</button>`;
     const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
     const lvl = t.manual ? "-" : `L${t.level || 4}`;
     tr.innerHTML = kind === "cur" ? `
       <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
       <td><span style="font-size:10px; color:#1e40af; font-weight:bold;">${escapeHtml(t.manual ? "-" : (t.aEnd || (t.aProg >= 100 ? (t.pEnd || "-") : "-")))}</span></td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td><td><strong>${t.manual ? "-" : (t.aProg ?? 0) + "%"}</strong></td>
-      <td><select onchange="WeeklyReportManager.updateItem(${k}, 'status', this.value)" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>` : `
       <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td>
-      <td><select onchange="WeeklyReportManager.updateItem(${k}, 'status', this.value)" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>`;
     if (t.manual) tr.style.background = "rgba(254,243,199,0.35)";
     return tr;
@@ -7625,7 +7640,7 @@ var WeeklyReportManager = {
           ${escapeHtml(r.currentWeekSummary || "(요약 없음)")}
         </div>
         <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-          <button class="btn btn-outline btn-xs" style="color:#2563eb; border-color:#93c5fd; background:#fff; font-size:10.5px;" onclick="event.stopPropagation(); WeeklyReportManager.copyHistoryToCurrent(${idx});" title="이 보고서 내용을 즉시 이번주로 복사">
+          <button class="btn btn-outline btn-xs" style="color:#2563eb; border-color:#93c5fd; background:#fff; font-size:10.5px;" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
             📋 바로 복사
           </button>
         </div>
@@ -7695,7 +7710,7 @@ var WeeklyReportManager = {
       </div>
 
       <div style="margin-top:14px; text-align:center;">
-        <button class="btn btn-primary btn-sm" style="padding:6px 16px; font-weight:bold;" onclick="WeeklyReportManager.copyHistoryToCurrent(${this.selectedHistoryIdx})">
+        <button class="btn btn-primary btn-sm" style="padding:6px 16px; font-weight:bold;" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(this.selectedHistoryIdx)}">
           📋 위 [${escapeHtml(r.weekLabel)}] 보고서 내용을 이번 주로 복사 적용하기
         </button>
       </div>
@@ -7881,7 +7896,7 @@ var WeeklyReportManager = {
     const scopeSystems = this.scopeSystems(sc.scope, sc.value);
     const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
     const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.9";
+    const sysTitle = (projectConfig && projectConfig.systemTitle) || "AX Project Management by YS ver1.0.10";
     const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
     const repDay = WBSEngine.getDayOfWeekText(repDate);
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
@@ -8391,7 +8406,7 @@ var HomeScreenManager = {
         </td>
         <td>${stTag}</td>
         <td style="text-align:center;">
-          <button class="btn btn-success btn-xs" onclick="HomeScreenManager.markTaskComplete('${t.id}')" style="padding:2px 8px; font-weight:700; font-size:10px;" title="이 과업의 실적을 즉시 100% 완료 상태로 반영">
+          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:10px;" title="이 과업의 실적을 즉시 100% 완료 상태로 반영">
             ✓ 100% 완료
           </button>
         </td>

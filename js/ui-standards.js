@@ -21,7 +21,7 @@ var ButtonStandard = {
 
   classify(btn) {
     const text = (btn.getAttribute("data-label-ko") || btn.textContent || "").replace(/\s+/g, " ").trim();
-    const oc = btn.getAttribute("onclick") || "";
+    const oc = UiEvents.describe(btn);
     const t = text + " " + oc;
     const has = re => re.test(t);
     const up = /업로드|올리기|올려|로드|복원|Upload|Restore|Load|\.click\(\)/i.test(t);

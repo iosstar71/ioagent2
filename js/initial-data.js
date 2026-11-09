@@ -6,12 +6,12 @@
 window.AX_INITIAL_DATA = {
  "_meta": {
   "name": "AX Project Management by YS - 초기 프로젝트 데이터",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "최초 실행(LocalStorage 비어있음) 시 자동 적용되는 초기 데이터. 편집 후 tools/build_initial_data.py 실행 → js/initial-data.js 재생성",
   "generatedAt": "2026-11-09"
  },
  "projectConfig": {
-  "systemTitle": "AX Project Management by YS ver1.0.9",
+  "systemTitle": "AX Project Management by YS ver1.0.10",
   "projectName": "27년 가동률 시스템 개선",
   "domains": [
    "관리공통",

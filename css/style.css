@@ -1,5 +1,5 @@
 /* =============================================================================
- * AX Project Management by YS ver1.0.9 — 통합 스타일시트 (단일 CSS 파일)
+ * AX Project Management by YS ver1.0.10 — 통합 스타일시트 (단일 CSS 파일)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -1969,3 +1969,38 @@ header {
 .brand-logo-lg { display: block; filter: drop-shadow(0 4px 10px rgba(30,58,138,0.35)); }
 .login-brand-name { font-size: 13px; font-weight: 800; letter-spacing: 0.2px; color: var(--text-main); }
 .login-brand-name span { font-weight: 600; color: var(--text-muted); }
+
+/* ---------- [v1.0.10] 카드 마우스 올림 효과 (이전 인라인 onmouseenter/onmouseleave 대체) ---------- */
+[data-hover-lift] { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+[data-hover-lift]:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08) !important; }
+
+/* ---------- [v1.0.10] 여러 프로젝트: 머리글 프로젝트 선택 · 프로젝트 관리 창 ---------- */
+.header-project-select { max-width: 260px; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.12); color: #fff; }
+.header-project-select option { color: #111827; background: #fff; }
+.header-project-btn { white-space: nowrap; }
+.project-archived-bar { background: #fef3c7; color: #92400e; border-bottom: 1px solid #fde68a; padding: 6px 20px; font-size: 12px; font-weight: 700; }
+.pm-modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 10040; align-items: center; justify-content: center; }
+.pm-modal-box { width: min(980px, 94vw); max-height: 90vh; overflow: auto; background: var(--bg-card, #fff); border-radius: 10px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+.pm-modal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pm-modal-head h3 { font-size: 16px; }
+.pm-hint, .pm-scope-info { font-size: 12px; color: var(--text-sub, #475569); background: var(--bg-main, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 8px 10px; }
+.pm-scope-info { margin-bottom: 8px; border-left: 3px solid #0284c7; }
+.pm-table td { vertical-align: middle; }
+.pm-table tr.pm-current td { background: rgba(2,132,199,0.06); }
+.pm-panel { border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 12px; display: grid; gap: 8px; }
+.pm-panel-title { font-weight: 700; font-size: 13px; }
+.pm-form { display: flex; flex-wrap: wrap; gap: 10px; }
+.pm-form label { display: grid; gap: 3px; font-size: 12px; flex: 1 1 180px; }
+.pm-form input[type="text"], .pm-form input[type="date"] { padding: 5px 8px; }
+.pm-check { display: flex !important; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.pm-members { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 12px; max-height: 220px; overflow: auto; }
+.pm-role-tag { font-size: 10.5px; color: var(--text-muted, #64748b); margin-top: 2px; }
+.pm-role-tag.own { color: #0369a1; font-weight: 700; }
+
+/* ---------- [v1.0.10] 법적 고지 ---------- */
+.login-legal-links { text-align: center; margin-top: 10px; font-size: 11px; color: var(--text-muted, #64748b); }
+.login-legal-links a { color: var(--text-muted, #64748b); text-decoration: underline; }
+.legal-box { width: min(860px, 94vw); }
+.legal-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.legal-tabs .btn.active { outline: 2px solid var(--primary, #1e40af); font-weight: 700; }
+.legal-text { white-space: pre-wrap; font-family: "Malgun Gothic", -apple-system, sans-serif; font-size: 12.5px; line-height: 1.7; max-height: 58vh; overflow: auto; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 12px 14px; margin: 0; }

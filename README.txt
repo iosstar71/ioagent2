@@ -1,7 +1,7 @@
 ================================================================================
-⚡ AX Project Management by YS ver1.0.9
+⚡ AX Project Management by YS ver1.0.10
    - 프로그램 공식 명칭: AX_Project_Management_by YS (약칭: AX_PMYS)
-   - 최신 버전: ver1.0.9
+   - 최신 버전: ver1.0.10
 ================================================================================
 
 ■ [빠른 시작]
@@ -12,6 +12,43 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [ver1.0.10 개선 내역] — 보안 강화 · 여러 프로젝트 · Windows 패키지
+1. 비밀번호 보안
+   - 서버 저장: 브라우저 1차 해시(SHA-256)를 사용자별 솔트 + PBKDF2-SHA256(600,000회)으로 다시 해시하여 저장
+     (형식 pbkdf2_sha256$반복$솔트$해시, 비교는 상수 시간). v1.0.9 이하 비밀번호는 서버 첫 기동 때 자동 전환
+   - 초기 비밀번호(1234)·관리자 지정 임시 비밀번호로 로그인 시 비밀번호 변경 필수 (변경 전에는 서버 데이터 API 차단)
+   - 새 비밀번호 규칙: 8자 이상, 영문+숫자 포함, 초기 비밀번호·쉬운 비밀번호 금지
+   - 일반 사용자는 사용자 데이터 저장으로 비밀번호를 바꿀 수 없음 (비밀번호 변경 API 로만 변경)
+   - 시스템관리자 권한은 시스템관리자만 부여 가능
+2. 통신 암호화 (HTTPS)
+   - make_cert.bat (tools/make_cert.py): OpenSSL 없이 사내 CA + 서버 인증서(RSA 2048, SHA-256, 397일) 생성
+     → certs\ca.crt 를 접속 PC 의 [신뢰할 수 있는 루트 인증 기관]에 설치 (그룹 정책 배포 가능)
+   - run_server.bat: certs\server.crt + certs\server.key 가 있으면 자동으로 HTTPS(TLS 1.2 이상) 기동
+     (직접 실행: python wbs_db_server.py --cert certs/server.crt --key certs/server.key)
+   - HTTPS 사용 시 HSTS 헤더 전송, 인증서·개인키 파일은 웹으로 내려받을 수 없게 차단, 배포 zip 에서 제외
+3. 스크립트 실행 제한 (콘텐츠 보안 정책, CSP)
+   - 화면의 인라인 스크립트(onclick 등 478개)를 모두 data-click 등 선언형 속성 + js/ui-events.js 로 전환
+   - 서버는 index.html 에 Content-Security-Policy: script-src 'self' (인라인·외부 스크립트 실행 차단) 전송
+   - 다른 사이트(Origin)에서의 API 호출 차단 (CORS 는 같은 서버 주소만 허용, --allow-origin 으로 추가 가능)
+4. 여러 프로젝트 관리
+   - 머리글 [프로젝트 선택]으로 전환, [🗂️ 프로젝트 관리]: 만들기(현재 프로젝트 기준정보 복사 선택) · 이름 변경 ·
+     참여자 지정(참여자만 접근) · 보관(읽기 전용) · 삭제(시스템관리자)
+   - 프로젝트별 저장: WBS·요구사항·VOC·산출물·회의·주간보고·공지·소통·채팅·기준정보
+     공통: 사용자 계정, 화면 테마 / 기존 데이터는 "기본 프로젝트(DEFAULT)"로 그대로 사용 (이관 불필요)
+   - 프로젝트별 권한: [기준정보 > d. 사용자 정보]에서 현재 프로젝트의 권한·담당 서브시스템 지정
+     (지정하지 않은 사용자는 기본 역할 사용, 시스템관리자는 모든 프로젝트 관리자)
+   - DB 서버: TB_PROJECT 테이블, 조회용 테이블(TB_WBS_TASK 등)에 PROJECT_ID 컬럼 추가
+5. 법적 문서: legal/LICENSE_ko.txt (사용권 계약 초안), legal/PRIVACY_ko.txt (개인정보 처리 안내 초안),
+   legal/THIRD_PARTY_NOTICES.txt (오픈소스 고지) — 로그인 화면·머리글 [⚖️ 법적 고지]에서 보기
+   ※ 초안의 [ ] 항목(저작권자·관할·보관 기간 등)은 배포 전에 채우고 법률 검토를 받으십시오.
+6. Windows 패키지 (Python 내장): AX_Project_Management_by_YS_v1.0.10_win64.zip
+   - python 폴더에 Python 3.13 실행본(PSF 라이선스, 서버 실행에 필요 없는 개발용 파일 제외) 포함
+   - run_server.bat · make_cert.bat · run_tests.bat · build_standalone.bat 은 python\python.exe 를 먼저 사용
+   - 패키지 만들기: python tools/make_release_win.py --python <python.버전.nupkg 또는 embed zip>
+7. 기타: 표준 산출물 [기본 복원]·[+ 산출물 추가], ID [재채번] 버튼이 없는 함수를 호출하여 동작하지 않던 문제 수정
+   - 배포 zip 에서 data/*.db (운영 DB) · certs · python 폴더 제외 (서버 첫 기동 시 initial_data.json 으로 DB 생성)
+8. 자동 테스트: API 19건 (보안·HTTPS·여러 프로젝트 추가), 화면 E2E 39건 (CSP 아래 실제 클릭·입력, 여러 프로젝트 추가)
 
 ■ [ver1.0.9 개선 내역]
 1. 주간보고 통합 다운로드
@@ -227,7 +264,7 @@
 
 ================================================================================
 ■ [시스템 폴더 구성]
-- index.html                : AX_PMYS ver1.0.9 메인 웹 애플리케이션
+- index.html                : AX_PMYS ver1.0.10 메인 웹 애플리케이션
 - Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (build_standalone.bat 로 재생성)
 - build_standalone.bat      : Standalone.html 및 js/initial-data.js 재생성 배치
 - tools/                    : build_standalone.py, build_initial_data.py, build_manual_docx.py(워드 매뉴얼), make_release.py(배포 zip)
@@ -250,6 +287,8 @@
   ├── ui-standards.js       : 버튼·바로가기 스타일 표준 (v1.0.7)
   └── initial-data.js       : 최초 실행 초기 데이터 (data/initial_data.json 에서 자동 생성)
 - css/                      : 스타일시트 (style.css 단일 파일 — v1.0.8 에서 themes.css·인라인 스타일 통합)
+- legal/                    : 사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지 (v1.0.10)
+- certs/                    : HTTPS 인증서 (make_cert.bat 으로 생성, 배포·반출 금지)
 - img/ax_pm_logo.svg        : 프로젝트 로고 원본 (v1.0.9, 자체 제작 도형 — 외부 이미지·폰트 미사용)
 - data/                     : SQLite 프로젝트 DB (wbs_enterprise.db), 초기 데이터 initial_data.json
 - Sample/                   : 표준 WBS 4레벨 샘플 데이터 엑셀 파일

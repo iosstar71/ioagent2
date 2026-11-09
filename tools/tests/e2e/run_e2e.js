@@ -1,5 +1,5 @@
 // =============================================================================
-// [AX Project Management by YS v1.0.9] 브라우저 E2E 자동 테스트 (Playwright)
+// [AX Project Management by YS v1.0.10] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)
@@ -32,6 +32,8 @@ async function newPage(opts = {}) {
   page.errors = [];
   page.downloads = [];
   page.on("pageerror", e => page.errors.push(e.message));
+  page.csp = [];
+  page.on("console", m => { if (m.type() === "error" && /Content Security Policy|Refused to/i.test(m.text())) page.csp.push(m.text()); });
   page.on("download", d => page.downloads.push(d));
   return page;
 }
@@ -58,11 +60,24 @@ function readZipEntry(file, name) {
   return "";
 }
 
-async function login(page, emp, pwd = "1234") {
+// 시나리오별 현재 비밀번호 (초기 1234 → 첫 로그인 때 변경 필수)
+const LOCAL_PWD = {};
+const SERVER_PWD = {};
+async function login(page, emp, store = LOCAL_PWD) {
   await page.fill("#inputSecurityEmpNo", emp);
-  await page.fill("#inputSecurityPassword", pwd);
+  await page.fill("#inputSecurityPassword", store[emp] || "1234");
   await page.click("#btnLockSubmit");
   await page.waitForTimeout(1300);
+  const forced = await page.$eval("#pwdChangeFormPane", e => getComputedStyle(e).display !== "none").catch(() => false);
+  if (forced) {
+    const np = "Axpm" + emp.replace(/[^A-Za-z0-9]/g, "") + "2026";
+    await page.fill("#pcNewPwd", np);
+    await page.fill("#pcNewPwd2", np);
+    await page.click('#pwdChangeFormPane [data-click="AuthManager.changePasswordFromLogin"]');
+    await page.waitForTimeout(1500);
+    store[emp] = np;
+  }
+  return forced;
 }
 
 async function localScenarios() {
@@ -79,11 +94,12 @@ async function localScenarios() {
   page = await newPage();
   await page.goto(FILE_URL); await page.waitForTimeout(900);
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
-  await login(page, "admin");
+  const forcedAdmin = await login(page, "admin");
+  check("Initial password 1234 -> forced password change", forcedAdmin);
   check("Admin login", await page.evaluate(() => AuthManager.getCurrentRole()) === "SYS_ADMIN");
 
   // 2) 모든 탭 이동
-  const tabs = await page.$$eval(".tab-btn", bs => bs.map(b => ((b.getAttribute("onclick") || "").match(/tab-[a-z-]+/) || [])[0]).filter(Boolean));
+  const tabs = await page.$$eval(".tab-btn", bs => bs.map(b => ((b.getAttribute("data-click-args") || "").match(/tab-[a-z-]+/) || [])[0]).filter(Boolean));
   let tabOk = true;
   for (const t of tabs) { await page.evaluate(t => switchTab(t), t); await page.waitForTimeout(120); if (await page.evaluate(() => document.querySelector(".tab-pane.active").id) !== t) tabOk = false; }
   check(`Navigate all tabs (${tabs.length})`, tabOk);
@@ -193,9 +209,27 @@ async function localScenarios() {
   check("Collaboration data (JSON) export -> import", await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP");
   fs.unlinkSync(tmp);
 
+  // 7-2) 여러 프로젝트 (로컬): 만들기 → 전환 → 데이터 분리 → 프로젝트별 역할 → 기본 프로젝트 복귀
+  const defaultWbs = await page.evaluate(() => wbsData.length);
+  await page.click("#btnProjectManager"); await page.waitForTimeout(400);
+  await page.fill("#pmNewName", "E2E 신규 프로젝트"); await page.fill("#pmNewStart", "2028-01-01"); await page.fill("#pmNewEnd", "2028-12-31");
+  await page.click('#projectManagerModal [data-click="ProjectManager.create"]'); await page.waitForTimeout(600);
+  await page.click('#projectManagerModal [data-click="ProjectManager.close"]');
+  const pcount = await page.$$eval("#headerProjectSelect option", o => o.length);
+  await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(2800);
+  const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo }));
+  check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify(np));
+  await page.evaluate(() => { const i = projectUsers.findIndex(u => u.empNo === "lead_lee"); ProjectManager.setUserAssignment(i, "role", "PM"); });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(2800);
+  const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: AuthManager.normalizeRole(AuthManager.findUser("lead_lee").role) }));
+  check("Local: back to default project keeps data; per-project role (P001=PM, base=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
+
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);
   await login(page, "lead_lee"); await page.waitForTimeout(800);
+  const weak = await page.evaluate(() => [AuthManager.validateNewPassword("abcd1234") === "", AuthManager.validateNewPassword("abc12") !== "", AuthManager.validateNewPassword("abcdefgh") !== ""]);
+  check("Password rule: 8+ chars with letters and digits", weak.every(Boolean), JSON.stringify(weak));
   const perm = await page.evaluate(async () => {
     const w2 = wbsData.find(t => t.system === "W2" && t.isLeaf); const orig = w2.name; w2.name += "_X"; persistChanges();
     await new Promise(r => setTimeout(r, 1200));
@@ -231,7 +265,19 @@ async function serverScenarios() {
     let a = await newPage();
     await a.goto(url); await a.waitForTimeout(1200);
     check("First visit via server URL -> server DB mode by default", await a.evaluate(() => DbConnector.config.mode) === "SQLITE");
-    await login(a, "admin");
+    const resp = await a.request.get(url);
+    const csp = resp.headers()["content-security-policy"] || "";
+    check("index.html served with CSP (script-src 'self')", /script-src 'self'(;|$)/.test(csp), csp);
+    await login(a, "admin", SERVER_PWD);
+    // 실제 클릭으로 모든 탭 이동 + 표 입력 (CSP 위반 없이 동작)
+    const tabIds = await a.$$eval(".tab-btn", bs => bs.map(b => ((b.getAttribute("data-click-args") || "").match(/tab-[a-z-]+/) || [])[0]).filter(Boolean));
+    for (const t of tabIds) { await a.click(`.tab-btn[data-click-args*='"${t}"']`); await a.waitForTimeout(150); }
+    const tabOk = await a.evaluate(() => document.querySelector(".tab-pane.active") !== null);
+    await a.click(`.tab-btn[data-click-args*='"tab-wbs"']`); await a.waitForTimeout(400);
+    const nameInput = a.locator(`#tab-wbs [data-change="UiH.set"][data-change-args*='"name"']`).first();
+    await nameInput.fill("CSP-UI-EDIT"); await nameInput.press("Tab"); await a.waitForTimeout(300);
+    const edited = await a.evaluate(() => wbsData.some(t => t.name === "CSP-UI-EDIT"));
+    check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
     // 서버 주소 + 로컬 모드 저장값 → 전환 질문
     const b = await newPage({ init: () => { if (!localStorage.getItem("__seen")) { localStorage.setItem("__seen", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "LOCAL" })); } } });
     await b.goto(url); await b.waitForTimeout(1500);
@@ -239,7 +285,7 @@ async function serverScenarios() {
     check("Server URL + local mode -> asks to switch to server DB mode", q.includes("서버 DB 모드로 전환"), q);
     await dismissAsk(b);
     check("Switch chosen -> server DB mode", await b.evaluate(() => DbConnector.config.mode) === "SQLITE");
-    await login(b, "pmo_kim");
+    await login(b, "pmo_kim", SERVER_PWD);
 
     // 동시 저장 충돌
     await a.evaluate(() => { wbsData.find(t => t.system === "W1" && t.isLeaf).name += "_A"; return SyncManager.save(["wbsData"]); });
@@ -249,6 +295,19 @@ async function serverScenarios() {
     check("Another user saved first -> conflict warning", (await b.$eval("#syncAskTitle", e => e.textContent)).includes("저장 충돌"));
     await b.click("#syncAskBtns button:nth-child(2)"); await b.waitForTimeout(1000);
     check("Ignore -> latest version applied", await b.evaluate(() => wbsData.find(t => t.system === "W1" && t.isLeaf).name.endsWith("_A")));
+
+    // 여러 프로젝트 (서버): 만들기 → 전환 → 데이터 분리
+    const defW = await a.evaluate(() => wbsData.length);
+    await a.evaluate(() => ProjectManager.open()); await a.waitForTimeout(500);
+    await a.fill("#pmNewName", "서버 신규 프로젝트"); await a.fill("#pmNewStart", "2028-01-01"); await a.fill("#pmNewEnd", "2028-12-31");
+    await a.click('#projectManagerModal [data-click="ProjectManager.create"]'); await a.waitForTimeout(800);
+    await a.evaluate(() => ProjectManager.switchTo("P001")); await a.waitForTimeout(3500);
+    const sp = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, name: projectConfig.projectName, opts: document.querySelectorAll("#headerProjectSelect option").length }));
+    await a.evaluate(() => { wbsData.push({ id: "1", level: 1, system: subsystemsMeta[0].name, name: "SERVER-P001-TASK", isLeaf: true, pStart: "2028-01-03", pEnd: "2028-02-01", weight: 1, aProg: 0 }); return SyncManager.save(["wbsData"]); });
+    await a.waitForTimeout(800);
+    await a.evaluate(() => ProjectManager.switchTo("DEFAULT")); await a.waitForTimeout(3500);
+    const sb = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, leak: wbsData.some(t => t.name === "SERVER-P001-TASK") }));
+    check("Server: create project + switch + save stays in that project", sp.pid === "P001" && sp.wbs === 0 && sp.name === "서버 신규 프로젝트" && sp.opts === 2 && sb.pid === "DEFAULT" && sb.wbs === defW && !sb.leak, JSON.stringify([sp, sb]));
 
     // 서버 중지 → 연결 끊김 표시
     srv.kill();
