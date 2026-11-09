@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AX PM 절충 UI 및 G v1.0</title>
+<style>
+/* Layout: 문서형 제안서(최대 980px) + 테마 전환이 되는 축소 앱 화면(목업은 앱 자체 색을 쓰므로 페이지 테마와 분리) */
+:root {
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --ink: #142033;
+  --ink-2: #4A5A72;
+  --line: #DCE3EC;
+  --accent: #0E7490;
+  --chip: #EEF2F8;
+  --ok: #15803D; --ok-bg: #DCFCE7;
+  --warn: #B45309; --warn-bg: #FEF3C7;
+  --bad: #B91C1C; --bad-bg: #FEE2E2;
+  --font-display: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-body: "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, "D2Coding", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1522; --surface: #162033; --ink: #E6ECF5; --ink-2: #A3B1C6; --line: #2A3850; --accent: #5ED0E6; --chip: #1F2B41;
+    --ok: #5EDB8A; --ok-bg: #12301E; --warn: #FBBF24; --warn-bg: #3A2A0A; --bad: #FF8A8A; --bad-bg: #3A1414;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1522; --surface: #162033; --ink: #E6ECF5; --ink-2: #A3B1C6; --line: #2A3850; --accent: #5ED0E6; --chip: #1F2B41;
+  --ok: #5EDB8A; --ok-bg: #12301E; --warn: #FBBF24; --warn-bg: #3A2A0A; --bad: #FF8A8A; --bad-bg: #3A1414;
+  color-scheme: dark;
+}
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.7; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 48px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.3; }
+h1 { font-size: clamp(26px, 4vw, 34px); font-weight: 700; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 600; }
+p, li { max-width: 70ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { color: var(--ink-2); font-size: 16px; }
+.legend { color: var(--ink-2); font-size: 13.5px; }
+header.top, section { display: grid; gap: 16px; }
+section > ul, section > ol { padding-left: 20px; display: grid; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--chip); color: var(--ink-2); white-space: nowrap; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.warn { background: var(--warn-bg); color: var(--warn); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 680px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-display); font-weight: 600; font-size: 12.5px; color: var(--ink-2); background: var(--chip); }
+tr:last-child td { border-bottom: 0; }
+td.c { text-align: center; white-space: nowrap; }
+code { font-family: var(--font-mono); font-size: 0.9em; }
+.note { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--surface); color: var(--ink-2); border-radius: 0 8px 8px 0; }
+.pick { display: grid; gap: 6px; }
+.pick .k { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; }
+
+/* ---- 테마 전환 버튼 ---- */
+.switch { display: flex; flex-wrap: wrap; gap: 8px; }
+.switch button { font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.switch button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); font-weight: 700; }
+.sw { width: 34px; height: 14px; border-radius: 4px; display: inline-grid; grid-template-columns: 1fr 1fr 1fr; overflow: hidden; border: 1px solid rgba(0,0,0,0.15); }
+.sw i { display: block; }
+
+/* ---- 목업: 앱 테마 토큰 (페이지 테마와 무관하게 앱 색을 그대로 보여 줌) ---- */
+.mock {
+  --m-bg: #F4F6FA; --m-surface: #FFFFFF; --m-ink: #18243A; --m-ink-2: #5B6B83; --m-line: #DDE3EC;
+  --m-head: #14284F; --m-head-ink: #E7EEFA; --m-head-2: #1D3566; --m-accent: #1E40AF; --m-accent-ink: #FFFFFF; --m-accent-soft: #E3EAFB;
+  --m-ok: #15803D; --m-ok-bg: #DCFCE7; --m-warn: #B45309; --m-warn-bg: #FEF3C7; --m-bad: #B91C1C; --m-bad-bg: #FEE2E2; --m-mile: #F59E0B;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--m-bg); color: var(--m-ink); font-size: 11.5px; line-height: 1.4;
+}
+.mock[data-mt="teal"] {
+  --m-bg: #F3F7F7; --m-surface: #FFFFFF; --m-ink: #12302F; --m-ink-2: #55706E; --m-line: #D6E3E2;
+  --m-head: #0F3D3E; --m-head-ink: #E3F4F2; --m-head-2: #155152; --m-accent: #0F766E; --m-accent-ink: #FFFFFF; --m-accent-soft: #DDF3EF;
+}
+.mock[data-mt="graphite"] {
+  --m-bg: #111418; --m-surface: #1A1F26; --m-ink: #E4E8EE; --m-ink-2: #9AA4B2; --m-line: #2B323C;
+  --m-head: #0B0E12; --m-head-ink: #DDE3EA; --m-head-2: #161B22; --m-accent: #F59E0B; --m-accent-ink: #1A1206; --m-accent-soft: #33280F;
+  --m-ok: #4ADE80; --m-ok-bg: #12301E; --m-warn: #FB923C; --m-warn-bg: #3A1F0D; --m-bad: #F87171; --m-bad-bg: #3A1414; --m-mile: #38BDF8;
+}
+.m-bar { background: var(--m-head); color: var(--m-head-ink); display: flex; align-items: center; gap: 10px; padding: 7px 12px; flex-wrap: wrap; }
+.m-bar .grow { flex: 1 1 60px; }
+.m-pill { padding: 2px 8px; border-radius: 999px; background: var(--m-head-2); white-space: nowrap; }
+.m-pill.ok::before { content: "● "; color: #4ADE80; }
+.m-btn { padding: 3px 9px; border-radius: 6px; border: 1px solid var(--m-line); background: var(--m-surface); color: var(--m-ink); white-space: nowrap; }
+.m-btn.p { background: var(--m-accent); border-color: var(--m-accent); color: var(--m-accent-ink); font-weight: 700; }
+.m-bar .m-btn.p { border-color: transparent; }
+.m-search { border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 2px 8px; font-family: var(--font-mono); font-size: 10.5px; opacity: 0.85; }
+.m-tabs { background: var(--m-surface); border-bottom: 1px solid var(--m-line); display: flex; align-items: stretch; gap: 2px; padding: 0 8px; overflow-x: auto; }
+.m-grp { display: flex; align-items: stretch; gap: 2px; padding-right: 8px; margin-right: 6px; border-right: 1px solid var(--m-line); }
+.m-grp:last-child { border-right: 0; margin-left: auto; }
+.m-grp b { align-self: center; font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-ink-2); font-weight: 500; padding: 0 4px; }
+.m-tab { padding: 8px 7px; white-space: nowrap; border-bottom: 2px solid transparent; color: var(--m-ink-2); display: flex; align-items: center; gap: 4px; }
+.m-tab.on { color: var(--m-accent); border-bottom-color: var(--m-accent); font-weight: 700; }
+.ico { width: 12px; height: 12px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.m-cnt { font-family: var(--font-mono); font-size: 9.5px; padding: 0 5px; border-radius: 8px; background: var(--m-bad-bg); color: var(--m-bad); }
+.m-main { padding: 12px; display: grid; gap: 10px; }
+.m-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.m-crumb { color: var(--m-ink-2); font-size: 10.5px; }
+.m-ttl { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.m-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.m-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.m-chip { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--m-line); background: var(--m-surface); color: var(--m-ink-2); white-space: nowrap; }
+.m-chip.ok { background: var(--m-ok-bg); color: var(--m-ok); border-color: transparent; }
+.m-chip.warn { background: var(--m-warn-bg); color: var(--m-warn); border-color: transparent; }
+.m-chip.bad { background: var(--m-bad-bg); color: var(--m-bad); border-color: transparent; }
+.m-chip.sel { background: var(--m-accent-soft); color: var(--m-accent); border-color: var(--m-accent); font-weight: 700; }
+.m-grid { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 10px; }
+.m-card { background: var(--m-surface); border: 1px solid var(--m-line); border-radius: 8px; overflow: hidden; min-width: 0; }
+.m-row { display: grid; grid-template-columns: 54px minmax(0, 1fr) 40px 40px 52px 120px; gap: 6px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--m-line); font-variant-numeric: tabular-nums; }
+.m-row:last-child { border-bottom: 0; }
+.m-row.h { background: var(--m-accent-soft); color: var(--m-ink-2); font-weight: 700; font-size: 10.5px; }
+.m-row.sel { box-shadow: inset 3px 0 0 var(--m-accent); }
+.m-row .id { font-family: var(--font-mono); font-size: 10.5px; }
+.m-row .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar { position: relative; height: 8px; background: var(--m-line); border-radius: 4px; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--m-accent); }
+.bar s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--m-bad); text-decoration: none; }
+.m-side { padding: 10px; display: grid; gap: 6px; align-content: start; }
+.m-side .lbl { color: var(--m-ink-2); font-size: 10.5px; }
+.m-field { border: 1px solid var(--m-line); border-radius: 6px; padding: 4px 8px; background: var(--m-bg); }
+.m-save { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 12px; background: var(--m-warn-bg); color: var(--m-warn); border-top: 1px solid var(--m-line); flex-wrap: wrap; }
+.dia { display: inline-block; width: 8px; height: 8px; background: var(--m-mile); transform: rotate(45deg); margin: 0 3px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.sw-card { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.sw-strip { display: grid; grid-template-columns: repeat(5, 1fr); height: 40px; }
+.sw-body { padding: 12px 14px; display: grid; gap: 4px; }
+.sw-body code { color: var(--ink-2); font-size: 11.5px; }
+
+@media (max-width: 720px) {
+  .m-grid { grid-template-columns: 1fr; }
+  .m-row { grid-template-columns: 50px minmax(0, 1fr) 36px 48px; }
+  .m-row > :nth-child(4), .m-row > :nth-child(6) { display: none; }
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-gantt" viewBox="0 0 24 24"><path d="M3 5h9M7 12h10M11 19h8"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12h2M3 12h2M12 3v2M12 19v2M17 7l1.5-1.5M5.5 18.5L7 17M17 17l1.5 1.5M5.5 5.5L7 7"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">제안 B · 절충안 · G v1.0 기준</span>
+    <h1>원본 UI와 개편안 A의 절충안</h1>
+    <p class="lead">원본 화면에 익숙한 사용자 습관(위쪽 탭, 한 번 클릭으로 이동, 늘 보이는 기준일·저장 상태)은 살리고, 개편안 A에서 효과가 큰 부분(한 줄 머리글, 화면별 작업 버튼 정리, 미저장 알림 바, 디자인 토큰, 선 아이콘)만 가져온 안입니다. 아래 화면은 기본 테마 3종으로 바꿔 볼 수 있습니다.</p>
+    <div class="chips">
+      <span class="chip ok">모든 화면 한 번 클릭 이동 유지</span>
+      <span class="chip ok">WBS·간트 가로 폭 손실 없음</span>
+      <span class="chip ok">개발 기간 A안 대비 약 40% 단축</span>
+      <span class="chip warn">G v1.0 별도 패키지로 개발</span>
+    </div>
+  </header>
+
+  <section>
+    <span class="eyebrow">1 · 장점 비교</span>
+    <h2>원본과 개편안 A에서 가져올 것</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th style="width:170px;">항목</th><th>원본 (v1.0.9)</th><th>개편안 A</th><th>절충안 B 선택</th></tr></thead>
+        <tbody>
+          <tr><td>메뉴 위치</td><td>위쪽 탭 13개 — 한 번에 이동, 가로 폭 최대</td><td>왼쪽 메뉴 5묶음 — 정리는 좋으나 가로 폭 약 170px 감소</td><td><b>위쪽 탭 유지</b> + 업무 묶음 구분선·묶음 이름</td></tr>
+          <tr><td>머리글 높이</td><td>3줄 약 190px</td><td>1줄 48px</td><td><b>머리글 1줄 + 탭 1줄 = 약 88px</b></td></tr>
+          <tr><td>전체 저장</td><td>머리글 버튼, 항상 보임</td><td>저장 상태 메뉴 안 (클릭 1회 추가)</td><td><b>저장 상태 옆 버튼으로 항상 표시</b> + 하단 미저장 알림 바</td></tr>
+          <tr><td>화면별 작업 버튼</td><td>화면 안 여러 줄에 흩어짐</td><td>화면 머리글 오른쪽에 모음</td><td><b>A안 채택</b></td></tr>
+          <tr><td>레이아웃 · 테마</td><td>레이아웃 4종, 테마 다수 (CSS 덮어쓰기)</td><td>레이아웃 1종, 토큰 기반</td><td><b>레이아웃 2종 (위쪽 탭 / 왼쪽 메뉴)</b>, 기본 테마 3종 토큰</td></tr>
+          <tr><td>아이콘</td><td>이모지 (OS마다 모양 다름)</td><td>선 아이콘 SVG</td><td><b>A안 채택</b> (탭·버튼만, 상태 표시는 색상 칩)</td></tr>
+          <tr><td>WBS 편집</td><td>넓은 표에서 직접 입력</td><td>오른쪽 상세 패널에서 편집</td><td><b>표 직접 입력 유지</b> + 상세 패널은 열고 닫는 선택 기능</td></tr>
+          <tr><td>찾기</td><td>화면별 필터</td><td>Ctrl+K 통합 검색</td><td><b>A안 채택</b> (머리글 검색창, 단축키 동일)</td></tr>
+          <tr><td>익숙함 · 교육 부담</td><td>현재 사용자에게 가장 익숙</td><td>새로 익혀야 함</td><td><b>탭 순서·이름 유지</b>로 교육 부담 최소</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">2 · 화면 구성 미리보기</span>
+    <h2>절충안 B 화면 (WBS 공정)</h2>
+    <div class="switch" role="group" aria-label="테마 선택">
+      <button type="button" id="mt-navy" data-mt="navy" aria-pressed="true"><span class="sw" aria-hidden="true"><i style="background:#14284F"></i><i style="background:#1E40AF"></i><i style="background:#F4F6FA"></i></span>Navy (기본)</button>
+      <button type="button" id="mt-teal" data-mt="teal" aria-pressed="false"><span class="sw" aria-hidden="true"><i style="background:#0F3D3E"></i><i style="background:#0F766E"></i><i style="background:#F3F7F7"></i></span>Teal</button>
+      <button type="button" id="mt-graphite" data-mt="graphite" aria-pressed="false"><span class="sw" aria-hidden="true"><i style="background:#0B0E12"></i><i style="background:#F59E0B"></i><i style="background:#1A1F26"></i></span>Graphite (어두운 화면)</button>
+    </div>
+    <div class="mock" id="mock" data-mt="navy" role="img" aria-label="절충안 B의 WBS 공정 화면 예시">
+      <div class="m-bar">
+        <svg viewBox="0 0 64 64" width="20" height="20" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="15" fill="#1E3A8A" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="2"/><rect x="10" y="14" width="23" height="8" rx="4" fill="#FFFFFF"/><rect x="18" y="28" width="27" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.85"/><rect x="26" y="42" width="17" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.7"/><path d="M51.5 39.5l5.5 6.5-5.5 6.5-5.5-6.5z" fill="#FBBF24"/></svg>
+        <b>AX PM</b>
+        <span class="m-pill">Plant Uptime 2027 ▾</span>
+        <span class="m-pill">Report date 2027-06-01 (Tue)</span>
+        <span class="grow"></span>
+        <span class="m-search">Search · Ctrl+K</span>
+        <span class="m-pill ok">Saved 13:42</span>
+        <span class="m-btn p">Save all</span>
+        <span class="m-pill">Notice 1</span>
+        <span class="m-pill">J. Kim · PM ▾</span>
+      </div>
+      <div class="m-tabs">
+        <div class="m-grp"><b>OVERVIEW</b><span class="m-tab"><svg class="ico"><use href="#i-home"/></svg>Home</span><span class="m-tab"><svg class="ico"><use href="#i-chart"/></svg>Dashboard</span><span class="m-tab">Phases</span></div>
+        <div class="m-grp"><b>SCHEDULE</b><span class="m-tab on"><svg class="ico"><use href="#i-list"/></svg>WBS <span class="m-cnt">3</span></span><span class="m-tab"><svg class="ico"><use href="#i-gantt"/></svg>Gantt</span></div>
+        <div class="m-grp"><b>SCOPE</b><span class="m-tab">Requirements</span><span class="m-tab">VOC</span><span class="m-tab">Deliverables</span></div>
+        <div class="m-grp"><b>REPORT</b><span class="m-tab"><svg class="ico"><use href="#i-doc"/></svg>Weekly</span><span class="m-tab"><svg class="ico"><use href="#i-cal"/></svg>Meetings</span><span class="m-tab">Notices</span></div>
+        <div class="m-grp"><b>ADMIN</b><span class="m-tab">Master</span><span class="m-tab">Merge</span><span class="m-tab"><svg class="ico"><use href="#i-gear"/></svg>Settings</span></div>
+      </div>
+      <div class="m-main">
+        <div class="m-head">
+          <div><div class="m-crumb">Schedule / WBS</div><div class="m-ttl">WBS · 312 tasks</div></div>
+          <div class="m-btns"><span class="m-btn">Apply actuals</span><span class="m-btn">Download ▾</span><span class="m-btn">Upload ▾</span><span class="m-btn p">Save</span></div>
+        </div>
+        <div class="m-filters"><span class="m-chip sel">All</span><span class="m-chip bad">Delayed 3</span><span class="m-chip warn">In progress 41</span><span class="m-chip">Not started 120</span><span class="m-chip ok">Done 148</span></div>
+        <div class="m-grid">
+          <div class="m-card">
+            <div class="m-row h"><span>ID</span><span>Task</span><span>Plan</span><span>Actual</span><span>Status</span><span>Schedule <span class="dia"></span></span></div>
+            <div class="m-row"><span class="id">2.2.1.2</span><span class="t">Uptime engine interface design</span><span>100%</span><span>100%</span><span class="m-chip ok">Done</span><span class="bar"><i style="width:100%"></i></span></div>
+            <div class="m-row"><span class="id">2.2.2.2</span><span class="t">Equipment real-time link unit test</span><span>45%</span><span>50%</span><span class="m-chip warn">Active</span><span class="bar"><i style="width:50%"></i><s style="left:45%"></s></span></div>
+            <div class="m-row sel"><span class="id">2.3.2.2</span><span class="t">Field terminal test &amp; defect fix</span><span>38%</span><span>30%</span><span class="m-chip bad">Delayed</span><span class="bar"><i style="width:30%"></i><s style="left:38%"></s></span></div>
+            <div class="m-row"><span class="id">2.3.3.1</span><span class="t">Alarm integration scenario check</span><span>0%</span><span>0%</span><span class="m-chip">Ready</span><span class="bar"><i style="width:0%"></i></span></div>
+          </div>
+          <div class="m-card m-side">
+            <b>2.3.2.2 details</b>
+            <span class="lbl">Plan 2027-08-16 → 2027-09-24</span>
+            <span class="lbl">Actual 30% (−8%p vs plan)</span>
+            <span class="m-field">Deliverable: Defect report</span>
+            <span class="m-field">Requirement: REQ-W1-03</span>
+            <span class="m-btn" style="justify-self:start;">Close panel</span>
+          </div>
+        </div>
+      </div>
+      <div class="m-save"><span>3 unsaved changes (WBS 2 · Weekly 1)</span><span class="m-btns"><span class="m-btn">Discard</span><span class="m-btn p">Save all (Ctrl+S)</span></span></div>
+    </div>
+    <p class="legend">G v1.0은 영어를 기본 언어로 설계하므로 미리보기 화면도 영어로 표시했습니다. 한국어 화면은 같은 구조에 언어 파일만 바뀝니다.</p>
+    <ul>
+      <li><b>머리글 1줄</b>: 로고 · 프로젝트 선택 · 보고 기준일 · 검색 · 저장 상태와 [Save all] · 공지 · 사용자 메뉴(언어, 비밀번호, 잠금, 로그아웃, 도움말).</li>
+      <li><b>탭 1줄</b>: 원본의 탭 13개와 순서를 유지하고 업무 묶음(개요 · 일정 · 범위 · 보고 · 관리)마다 구분선과 작은 묶음 이름만 추가. 관리 묶음은 오른쪽 끝에 두고 권한이 없으면 숨김. 화면이 좁으면 탭 줄이 가로로 스크롤됩니다.</li>
+      <li><b>화면 머리글</b>: 화면 이름 + 그 화면의 작업 버튼(실적 반영, 내려받기 ▾, 올리기 ▾, 저장)을 한 곳에.</li>
+      <li><b>상세 패널</b>: WBS·요구사항·VOC에서 행을 고르면 오른쪽에 열리는 선택 기능. 표에서 바로 고치는 기존 방식은 그대로입니다.</li>
+      <li><b>레이아웃 2종</b>: 같은 메뉴 정의를 위쪽 탭 또는 왼쪽 메뉴로 그리는 설정. 기존 4종을 2종으로 줄여 확인할 조합이 절반으로 줄어듭니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <span class="eyebrow">3 · 기본 테마 3종</span>
+    <h2>테마 색상 검토</h2>
+    <p>테마는 색 변수(토큰) 값만 바꾸는 방식이라 화면 코드는 하나입니다. 상태 색(완료·진행·지연)은 테마와 관계없이 같은 의미를 유지하고, 모든 글자 색은 배경 대비 WCAG AA(4.5:1) 이상으로 맞춥니다.</p>
+    <div class="swatches">
+      <div class="sw-card">
+        <div class="sw-strip" aria-hidden="true"><i style="background:#14284F"></i><i style="background:#1E40AF"></i><i style="background:#E3EAFB"></i><i style="background:#F4F6FA"></i><i style="background:#F59E0B"></i></div>
+        <div class="sw-body"><b>Navy · 기본</b><span class="legend">현재 Enterprise Navy를 정리한 색. 보고서·관공서·제조 고객에게 무난하고 로고 색과 같은 계열.</span><code>head #14284F · accent #1E40AF · bg #F4F6FA</code></div>
+      </div>
+      <div class="sw-card">
+        <div class="sw-strip" aria-hidden="true"><i style="background:#0F3D3E"></i><i style="background:#0F766E"></i><i style="background:#DDF3EF"></i><i style="background:#F3F7F7"></i><i style="background:#F59E0B"></i></div>
+        <div class="sw-body"><b>Teal · 차분한 밝은 화면</b><span class="legend">장시간 입력 작업에 눈이 덜 피로한 청록 계열. 해외 SaaS 제품과 비슷한 인상이라 데모·영업용으로 적합.</span><code>head #0F3D3E · accent #0F766E · bg #F3F7F7</code></div>
+      </div>
+      <div class="sw-card">
+        <div class="sw-strip" aria-hidden="true"><i style="background:#0B0E12"></i><i style="background:#F59E0B"></i><i style="background:#33280F"></i><i style="background:#1A1F26"></i><i style="background:#38BDF8"></i></div>
+        <div class="sw-body"><b>Graphite · 어두운 화면</b><span class="legend">관제실·현장 모니터, 야간 작업용. 강조색은 호박색, 마일스톤은 하늘색으로 바꿔 어두운 배경에서도 구분.</span><code>head #0B0E12 · accent #F59E0B · bg #111418</code></div>
+      </div>
+    </div>
+    <p class="note">사용자별 테마는 로그인 사용자 설정에 저장하고, 관리자는 기본 테마를 정할 수 있게 합니다 (현재 사용자별 언어 설정과 같은 방식). 고객사 브랜드 색이 필요하면 강조색 1개만 바꾸는 "고객 강조색" 옵션을 G v1.0 이후 추가하는 것을 권장합니다.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">4 · 3안 비교</span>
+    <h2>원본 · A · B 평가</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>기준</th><th class="c">원본</th><th class="c">개편안 A</th><th class="c">절충안 B</th></tr></thead>
+        <tbody>
+          <tr><td>기존 사용자 익숙함</td><td class="c">높음</td><td class="c">낮음</td><td class="c">높음</td></tr>
+          <tr><td>첫 화면 정보 정리</td><td class="c">낮음</td><td class="c">높음</td><td class="c">높음</td></tr>
+          <tr><td>WBS·간트 가로 폭</td><td class="c">넓음</td><td class="c">좁음</td><td class="c">넓음</td></tr>
+          <tr><td>해외 판매용 인상</td><td class="c">낮음</td><td class="c">높음</td><td class="c">높음</td></tr>
+          <tr><td>유지보수 (레이아웃·테마 조합)</td><td class="c">4 × 다수</td><td class="c">1 × 3</td><td class="c">2 × 3</td></tr>
+          <tr><td>예상 개발 기간</td><td class="c">—</td><td class="c">약 10주</td><td class="c">약 6주</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><b>권장: 절충안 B로 G v1.0을 개발</b>합니다. 판매용 제품에 필요한 정돈된 인상은 A안과 같은 수준으로 얻으면서, 공정 관리 도구의 핵심인 넓은 표·간트 화면과 기존 조작 습관을 지킬 수 있습니다.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">5 · 제품 분리</span>
+    <h2>G v1.0 (Global version 1.0) 패키징 방안</h2>
+    <div class="grid3">
+      <div class="panel">
+        <span class="k eyebrow">국내 로컬판</span>
+        <h3>AX PM v1.0.x (현행)</h3>
+        <p class="legend">현재 저장소·배포 방식 그대로 국내에서 사용. 오류 수정과 소규모 개선만 v1.0.10, v1.0.11 … 로 이어 감. 새 UI는 넣지 않음.</p>
+      </div>
+      <div class="panel">
+        <span class="k eyebrow">글로벌판</span>
+        <h3>AX PM G v1.0</h3>
+        <p class="legend">별도 저장소·별도 배포 파일. 절충안 B UI, 영어 기본 다국어, 판매용 라이선스·보안·문서를 갖춘 제품. 국내 외부 판매도 이 판으로.</p>
+      </div>
+      <div class="panel">
+        <span class="k eyebrow">공통 코어</span>
+        <h3>엔진은 한 번만 고침</h3>
+        <p class="legend">일정 계산(wbs-engine), 저장·권한(data-store), DB 서버는 두 판이 같은 규칙을 씀. 코어 수정은 G에서 먼저 하고 로컬판에 골라 반영(cherry-pick).</p>
+      </div>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th style="width:160px;">구분</th><th>국내 로컬판 v1.0.x</th><th>G v1.0</th></tr></thead>
+        <tbody>
+          <tr><td>저장소 · 브랜치</td><td>현재 저장소 <code>main</code></td><td>새 저장소 (예: <code>axpm-global</code>), v1.0.9에서 분기</td></tr>
+          <tr><td>버전 표기</td><td>ver1.0.10 …</td><td>G v1.0.0 → G v1.0.1 (오류 수정) → G v1.1.0 (기능 추가)</td></tr>
+          <tr><td>배포 파일</td><td><code>AX_Project_Management_by_YS_v1.0.x.zip</code></td><td><code>AXPM-G-1.0.0-win64.zip</code>, <code>AXPM-G-1.0.0-linux.tar.gz</code>, 컨테이너 이미지(선택)</td></tr>
+          <tr><td>파이썬</td><td>설치된 Python 사용</td><td>Windows용은 Python 내장 실행본(python.org embeddable, PSF 라이선스) 포함 — 고객 PC에 설치 불필요</td></tr>
+          <tr><td>기본 언어</td><td>한국어 (영어 사전으로 번역)</td><td>영어 기본, 한국어 포함. 화면 문구를 키 기반 언어 파일로 전환 (en, ko 먼저, ja·vi 등 추가 가능)</td></tr>
+          <tr><td>날짜 · 휴일</td><td>한국 공휴일 목록</td><td>국가별 휴일 파일(CSV/ICS) 가져오기, 주 시작 요일·날짜 형식을 지역 설정으로</td></tr>
+          <tr><td>샘플 데이터</td><td>국내 과제 예시</td><td>가상의 영문 예시 프로젝트 (실제 회사·인명 없음)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">6 · 판매 준비</span>
+    <h2>G v1.0에 추가로 필요한 것</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th style="width:150px;">영역</th><th>필요 사항</th><th style="width:90px;">중요도</th></tr></thead>
+        <tbody>
+          <tr><td>비밀번호 보안</td><td>현재 브라우저 SHA-256 + 고정 솔트 방식을 서버 측 PBKDF2(파이썬 표준 <code>hashlib.pbkdf2_hmac</code>, 사용자별 솔트, 반복 수 60만 회 이상)로 변경. 기존 계정은 다음 로그인 때 자동 전환.</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>통신 암호화</td><td>HTTPS 설정 지원 (인증서 파일 지정 옵션 또는 리버스 프록시 설치 안내). 로그인 토큰을 HttpOnly 쿠키로.</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>스크립트 실행 제한</td><td>HTML 인라인 <code>onclick</code>을 이벤트 연결로 바꾸고 서버 모드에 CSP 헤더 적용. 감사 로그(로그인, 권한 변경, 데이터 내려받기).</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>라이선스 키</td><td>오프라인에서도 확인되는 서명된 라이선스 파일(고객명 · 사용자 수 · 만료일). 서명은 공개키 방식으로, 검증 코드에는 공개키만 포함.</td><td><span class="chip warn">권장</span></td></tr>
+          <tr><td>법적 문서</td><td>최종 사용자 사용권 계약(EULA), 개인정보 처리 안내(GDPR 대상 국가 판매 시 사용자 데이터 내보내기·삭제 기능 포함), 오픈소스 고지 파일(<code>THIRD_PARTY_NOTICES</code>).</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>상표 · 이름</td><td>판매 국가에서 제품명 "AX PM" 상표 검색 후 확정. 로고는 v1.0.9 자체 제작본 사용 (등록 권장).</td><td><span class="chip bad">필수</span></td></tr>
+          <tr><td>여러 프로젝트</td><td>현재 1개 프로젝트 구조를 여러 프로젝트로 확장 (머리글 프로젝트 선택). 판매 시 가장 많이 요구되는 기능.</td><td><span class="chip warn">권장</span></td></tr>
+          <tr><td>접근성</td><td>키보드만으로 조작, 화면 낭독기용 라벨, 명도 대비 AA. 해외 공공기관 납품 시 요구.</td><td><span class="chip warn">권장</span></td></tr>
+          <tr><td>문서 · 지원</td><td>영문 설치·관리자·사용자 매뉴얼, 릴리스 노트, 업그레이드 절차, 지원 연락 체계.</td><td><span class="chip bad">필수</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">7 · 일정</span>
+    <h2>G v1.0 개발 순서 (안)</h2>
+    <ol>
+      <li><b>분기 · 기반 (2주)</b>: 새 저장소 생성, 언어 파일 구조 전환(영어 기본), 디자인 토큰과 테마 3종.</li>
+      <li><b>절충안 B 화면 (4주)</b>: 머리글 1줄 · 묶음 탭 · 화면 머리글 · 미저장 알림 바 · 검색 · 선 아이콘 · 상세 패널.</li>
+      <li><b>보안 · 라이선스 (3주)</b>: PBKDF2 전환, HTTPS · 쿠키 토큰 · CSP · 감사 로그, 라이선스 파일 검증.</li>
+      <li><b>지역화 · 패키징 (2주)</b>: 국가별 휴일 · 날짜 형식, 영문 샘플 데이터, Windows 내장 Python 패키지, 리눅스 패키지.</li>
+      <li><b>문서 · 검증 (2주)</b>: 영문 매뉴얼 · EULA · 오픈소스 고지, 자동 테스트 확장(테마 3종 × 언어 2종 화면 점검), 시범 고객 배포.</li>
+    </ol>
+    <p class="note">총 약 13주 (1인 기준). 여러 프로젝트 지원은 화면·데이터 구조 변경 폭이 커서 G v1.1.0으로 분리하는 것을 권장합니다.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">8 · 결정 사항</span>
+    <h2>진행 전에 정할 것</h2>
+    <ol>
+      <li>G v1.0 화면을 절충안 B로 확정할지</li>
+      <li>기본 테마 3종(Navy · Teal · Graphite)과 기본값(Navy)</li>
+      <li>제품명과 판매 국가(상표 검색 · 개인정보 규정 범위가 정해짐)</li>
+      <li>새 저장소 이름과, 국내 로컬판에 반영할 공통 코어 수정 범위</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  var mock = document.getElementById("mock");
+  var buttons = Array.prototype.slice.call(document.querySelectorAll(".switch button"));
+  function apply(name) {
+    mock.setAttribute("data-mt", name);
+    buttons.forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-mt") === name)); });
+    try { localStorage.setItem("axpm-proposal-theme", name); } catch (e) {}
+  }
+  buttons.forEach(function (b) { b.addEventListener("click", function () { apply(b.getAttribute("data-mt")); }); });
+  var saved = null;
+  try { saved = localStorage.getItem("axpm-proposal-theme"); } catch (e) {}
+  if (saved && document.getElementById("mt-" + saved)) apply(saved);
+})();
+</script>
+</body>
+</html>

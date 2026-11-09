@@ -32,6 +32,8 @@
 3. 명령 창(콘솔) 출력 영어화: run_server.bat / run_tests.bat / build_standalone.bat 와 서버 시작·로그 문구,
    빌드 도구, 자동 테스트 결과 문구를 언어 설정과 관계없이 영어로 표시
 4. UI 개편 제안서: docs/UI_Redesign_Proposal_v1.0.9.html (구현 방안 · 보안 · 라이선스 · 기능 대체안)
+5. UI 절충안 · 글로벌판 계획: docs/UI_Compromise_Proposal_G_v1.0.html
+   (원본 + 개편안 A 절충 B안, 기본 테마 3종 Navy/Teal/Graphite 미리보기, G v1.0 별도 패키징·판매 준비 항목)
 
 ■ [ver1.0.8 개선 내역]
 1. 접속 방식과 저장소 모드 불일치 방지
