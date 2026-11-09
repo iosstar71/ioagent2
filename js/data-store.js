@@ -882,14 +882,15 @@ var SyncUI = {
           </div>`;
         document.body.appendChild(modal);
       }
-      modal.querySelector("#syncAskTitle").textContent = title;
-      modal.querySelector("#syncAskMsg").textContent = message;
+      const tr = v => (typeof I18N !== "undefined" ? I18N.t(v, true) : v);
+      modal.querySelector("#syncAskTitle").textContent = tr(title);
+      modal.querySelector("#syncAskMsg").textContent = message.split("\n").map(line => tr(line)).join("\n");
       const box = modal.querySelector("#syncAskBtns");
       box.innerHTML = "";
       buttons.forEach(b => {
         const el = document.createElement("button");
         el.className = "btn btn-sm " + (b.cls || "btn-secondary");
-        el.textContent = b.label;
+        el.textContent = tr(b.label);
         el.onclick = () => { modal.style.display = "none"; resolve(b.id); };
         box.appendChild(el);
       });

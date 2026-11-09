@@ -50,27 +50,36 @@ var I18N = {
   },
 
   // ---- 문자열 번역 ----
-  t(text) {
+  // usePhrases: 토스트·확인창 등 안내 메시지는 공통 용어 치환까지 적용
+  //             (화면 텍스트 노드는 작업 데이터 보호를 위해 전체 일치/규칙만 적용)
+  t(text, usePhrases) {
     if (this.lang !== "en" || text === null || text === undefined) return text;
     const raw = String(text);
     if (!/[가-힣]/.test(raw)) return raw;
     const trimmed = raw.replace(/\s+/g, " ").trim();
-    const d = this.dict();
-    let out = d[trimmed];
-    if (out === undefined) {
-      for (const [re, rep] of this.patterns()) {
-        if (re.test(trimmed)) { out = trimmed.replace(re, rep); break; }
-      }
-    }
-    if (out === undefined) out = this._phraseTranslate(trimmed);
-    if (out === trimmed) return raw;
-    // 원문의 앞뒤 공백 보존
+    let out = this._lookup(trimmed);
+    if (out === undefined && usePhrases) out = this._phraseTranslate(trimmed);
+    if (out === undefined || out === trimmed) return raw;
     const lead = raw.match(/^\s*/)[0];
     const tail = raw.match(/\s*$/)[0];
     return lead + out + tail;
   },
 
-  // 문장 안의 알려진 용어를 치환 (긴 용어 우선)
+  _lookup(s) {
+    const d = this.dict();
+    if (Object.prototype.hasOwnProperty.call(d, s)) return d[s];
+    for (const [re, rep] of this.patterns()) {
+      if (re.test(s)) return s.replace(re, rep);
+    }
+    // "오류 메시지: 상세" 형태 → 앞부분만 사전 번역
+    const idx = s.indexOf(": ");
+    if (idx > 0) {
+      const head = s.slice(0, idx + 1);
+      if (Object.prototype.hasOwnProperty.call(d, head)) return d[head] + " " + this.t(s.slice(idx + 2), true);
+    }
+    return undefined;
+  },
+
   _phraseTranslate(text) {
     let out = text;
     for (const [ko, en] of this.phrases()) {
@@ -115,7 +124,7 @@ var I18N = {
   },
 
   _translateAttrs(el) {
-    if (this._skip(el)) return;
+    if (el.closest && el.closest("[data-i18n-skip]")) return;
     this.ATTRS.forEach(a => {
       const v = el.getAttribute && el.getAttribute(a);
       if (!v || !/[가-힣]/.test(v)) return;
@@ -185,13 +194,13 @@ var I18N = {
     this._wrapped = true;
     if (typeof showToast === "function") {
       const orig = showToast;
-      showToast = function (msg, kind) { return orig(I18N.t(msg), kind); };
+      showToast = function (msg, kind) { return orig(I18N.t(msg, true), kind); };
       window.showToast = showToast;
       window.alert = showToast;
     }
     if (typeof openConfirmDialog === "function") {
       const origC = openConfirmDialog;
-      openConfirmDialog = function (msg, cb) { return origC(I18N.t(msg), cb); };
+      openConfirmDialog = function (msg, cb) { return origC(I18N.t(msg, true), cb); };
       window.openConfirmDialog = openConfirmDialog;
     }
   }

@@ -7250,7 +7250,7 @@ var HomeScreenManager = {
 
     const settings = projectConfig.roleHomeSettings || {};
     if (normRole === "SYS_ADMIN") return settings.SYS_ADMIN || "EXECUTIVE";
-    if (normRole === "PM") return settings.PM || "EXECUTIVE";
+    if (normRole === "PM" || normRole === "LEAD") return settings.PM || "EXECUTIVE";
     return settings.MEMBER || "PORTAL";
   },
 
@@ -7328,7 +7328,7 @@ var HomeScreenManager = {
 
     if (badge) {
       const modeName = mode === "EXECUTIVE" ? "📊 이그제큐티브 브리핑 룸" : "🚀 하이브리드 스마트 포털";
-      const roleText = normRole === "SYS_ADMIN" ? "시스템 관리자" : (normRole === "PM" ? "프로젝트 관리자" : "일반 사용자/PL");
+      const roleText = normRole === "SYS_ADMIN" ? "시스템 관리자" : AuthManager.roleLabel(normRole);
       badge.textContent = `현재 뷰: ${modeName} | 접속: ${curUser.name || "사용자"} (${roleText}) [권한 설정 자동 연동]`;
     }
     const roleBadge = document.getElementById("homeRoleModeBadge");
