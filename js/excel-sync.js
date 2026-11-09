@@ -101,6 +101,24 @@ const ExcelSync = {
   },
 
   TAB_SCHEMAS: {
+    // 프로젝트 기준정보 (설정 행 단위)
+    config: [
+      { key: "category", label: "설정구분", width: 18 },
+      { key: "key", label: "설정키/코드", width: 22 },
+      { key: "value", label: "설정값/명칭", width: 32 },
+      { key: "extra1", label: "세부속성1(가중치/요일)", width: 22 },
+      { key: "extra2", label: "세부속성2(산출물/비고)", width: 32 },
+      { key: "extra3", label: "세부속성3(매칭키워드)", width: 36 }
+    ],
+    // 사용자 목록
+    users: [
+      { key: "empNo", label: "사번(ID)", width: 16 },
+      { key: "name", label: "성명", width: 16 },
+      { key: "role", label: "권한등급(SYS_ADMIN/PM/LEAD/MEMBER)", width: 30 },
+      { key: "subsystem", label: "담당서브시스템", width: 18 },
+      { key: "dept", label: "소속부서/담당역할", width: 38 },
+      { key: "lang", label: "언어(ko/en)", width: 12 }
+    ],
     subsystems: [
       { key: "domain", label: "분야(상위그룹)", width: 18 },
       { key: "code", label: "서브시스템코드", width: 18 },
@@ -169,6 +187,22 @@ const ExcelSync = {
 
   // 헤더 별칭 매핑 (화면 테이블 복사본이나 변형된 헤더도 자동 인식)
   HEADER_ALIASES: {
+    users: {
+      empNo: ["사번(id)", "사번", "사번 (로그인 id)", "id", "empno"],
+      name: ["성명", "이름", "사용자명", "name"],
+      role: ["권한등급(sys_admin/pm/lead/member)", "권한등급(sys_admin/pm/member)", "권한등급", "권한", "시스템 권한 등급", "role"],
+      subsystem: ["담당서브시스템", "담당 서브시스템", "서브시스템", "subsystem"],
+      dept: ["소속부서/담당역할", "소속 부서 / 담당 역할", "부서", "역할", "dept"],
+      lang: ["언어(ko/en)", "언어", "language", "lang"]
+    },
+    config: {
+      category: ["설정구분", "구분", "카테고리", "category"],
+      key: ["설정키/코드", "설정키", "코드", "key"],
+      value: ["설정값/명칭", "설정값", "명칭", "value"],
+      extra1: ["세부속성1(가중치/요일)", "세부속성1", "extra1"],
+      extra2: ["세부속성2(산출물/비고)", "세부속성2", "extra2"],
+      extra3: ["세부속성3(매칭키워드)", "세부속성3", "extra3"]
+    },
     subsystems: {
       domain: ["분야", "분야(상위그룹)", "상위분야", "그룹", "도메인", "domain"],
       code: ["서브시스템코드", "코드", "서브시스템 코드/명", "code"],
@@ -1214,6 +1248,39 @@ const ExcelSync = {
   },
 
   _normalizeRowData(tabKey, raw, index) {
+    if (tabKey === "users") {
+      const empNo = String(raw.empNo || "").trim();
+      const name = String(raw.name || "").trim();
+      if (!empNo && !name) return null;
+      const rawRole = String(raw.role || "MEMBER").toUpperCase();
+      let role = "MEMBER";
+      if (rawRole.includes("SYS_ADMIN") || rawRole.includes("시스템") || empNo.toLowerCase() === "admin") role = "SYS_ADMIN";
+      else if (rawRole.includes("LEAD") || rawRole.includes("총괄리더")) role = "LEAD";
+      else if (rawRole.includes("PM") || rawRole.includes("프로젝트")) role = "PM";
+      const lang = String(raw.lang || "ko").trim().toLowerCase() === "en" ? "en" : "ko";
+      return {
+        empNo: empNo || `user${index + 1}`,
+        name: name || empNo,
+        role,
+        subsystem: String(raw.subsystem || "ALL").trim() || "ALL",
+        dept: String(raw.dept || "").trim(),
+        lang,
+        pwdHash: ""
+      };
+    }
+    if (tabKey === "config") {
+      const cat = String(raw.category || "").trim();
+      const key = String(raw.key || "").trim();
+      if (!cat || !key) return null;
+      return {
+        category: cat,
+        key,
+        value: String(raw.value || "").trim(),
+        extra1: String(raw.extra1 || "").trim(),
+        extra2: String(raw.extra2 || "").trim(),
+        extra3: String(raw.extra3 || "").trim()
+      };
+    }
     if (tabKey === "wbs") {
       const name = String(raw.name || "").trim();
       const sys = String(raw.system || "").trim();
@@ -1753,16 +1820,6 @@ const ExcelSync = {
 // 5대 목차: 1) 프로젝트 기본정보 2) 통합/서브시스템 진척률 3) 요구사항 진척율 4) VOC 진행 현황 5) 서브시스템별 금주/차주 상세
 // ===================================================================
 const DocxBuilder = {
-  _escapeXml(s) {
-    if (s === null || s === undefined) return "";
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
-  },
-
   buildDocxBlob(reportMeta, useTables = true) {
     const esc = this._escapeXml;
     const bodyParts = [];

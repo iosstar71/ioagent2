@@ -1,54 +1,39 @@
 // -------------------------------------------------------------
-// [2026 v1.5.0] 다중 데이터베이스(DB) 선택 연동 및 저장 모드(자동/수동) 매니저
-// 지원 모드: LOCAL (단독 내장저장소) | SQLITE | ORACLE | EXCEL_ACCESS (Excel .xlsx / Access .accdb)
-// 저장 방식: AUTO (실시간 자동저장) | MANUAL (상단 메뉴 [💾 저장] 버튼 클릭 시에만 저장)
+// [v1.0.6] 데이터베이스(DB) 연결 설정 관리자
+//  - LOCAL      : 브라우저 LocalStorage 단독 모드 (실시간 자동저장)
+//  - SQLITE / ORACLE / EXCEL_ACCESS : 다중 사용자 DB 서버(wbs_db_server.py) 모드
+//      · 서버 로그인(토큰) 인증 필수
+//      · 실시간 자동저장 없음 → 화면별 [💾 저장] / 상단 [💾 전체 저장] 버튼으로 저장
+//      · 저장 시 다른 사용자의 선저장 데이터 충돌 감지 (SyncManager)
+//  ※ 실제 저장/조회 로직은 js/data-store.js (SyncManager / ServerBackend) 가 담당합니다.
 // -------------------------------------------------------------
 const DbConnector = {
   CONFIG_STORAGE_KEY: "WBS_DB_CONNECTOR_CONFIG_2026_V1_1",
-  SIM_DB_PREFIX: "WBS_SIMULATED_DB_STORE_V17_",
-  hasPendingChanges: false,
 
   config: {
-    // [v1.0.5] 초기 기본 저장소를 브라우저 LocalStorage(단독 실행)로 변경
-    //  - 압축 해제 후 index.html 더블클릭(file://)만으로 서버 없이 모든 기능 동작
-    //  - 다중 사용자 DB 서버(run_server.bat)는 [⚙️ 시스템 설정 > DB 연동]에서 SQLite 선택 시 사용
     mode: "LOCAL", // LOCAL | SQLITE | ORACLE | EXCEL_ACCESS
-    saveMode: "AUTO", // AUTO (자동저장) | MANUAL (저장버튼 클릭 시 수동저장)
     apiBaseUrl: "http://127.0.0.1:8080",
-    connected: true,
-    connectionMode: "STANDBY",
+    connected: false,
     lastSyncTime: "-",
-
-    sqlite: {
-      filePath: "./data/wbs_enterprise.db",
-      journalMode: "WAL",
-      busyTimeout: 5000
-    },
-
-    oracle: {
-      connType: "SERVICE_NAME",
-      host: "10.10.20.15",
-      port: 1521,
-      serviceOrSid: "ORCL",
-      user: "WBS_ADMIN",
-      password: "",
-      tablePrefix: "TB_WBS_"
-    },
-
-    excelAccess: {
-      subType: "ACCESS_ODBC",
-      filePath: "./data/WBS_Database.accdb",
-      odbcDriver: "Microsoft Access Driver (*.mdb, *.accdb)",
-      lockTimeoutMs: 3000,
-      readOnly: false
-    }
+    sqlite: { filePath: "./data/wbs_enterprise.db", journalMode: "WAL", busyTimeout: 5000 },
+    oracle: { connType: "SERVICE_NAME", host: "10.10.20.15", port: 1521, serviceOrSid: "ORCL", user: "WBS_ADMIN", password: "", tablePrefix: "TB_WBS_" },
+    excelAccess: { subType: "ACCESS_ODBC", filePath: "./data/WBS_Database.accdb", odbcDriver: "Microsoft Access Driver (*.mdb, *.accdb)", lockTimeoutMs: 3000, readOnly: false }
   },
 
   DDL_SCRIPTS: {
-    SQLITE: `-- [SQLite 3] WBS Enterprise 2026 v1.5.0 표준 테이블 스키마 (WAL 동시성 모드 권장)
+    SQLITE: `-- [SQLite 3] AX_PMYS v1.0.6 표준 테이블 스키마 (WAL 동시성 모드 권장)
 PRAGMA journal_mode = WAL;
 PRAGMA synchronous = NORMAL;
 PRAGMA busy_timeout = 5000;
+
+-- [v1.0.6] 데이터셋 원본(JSON) + 파티션별 리비전 (충돌 감지·권한 저장 기준 테이블)
+CREATE TABLE IF NOT EXISTS TB_WBS_DATASET (
+  DATA_KEY TEXT PRIMARY KEY,
+  JSON_TEXT TEXT,
+  PART_REVS_JSON TEXT,
+  UPDATED_AT TEXT,
+  UPDATED_BY TEXT
+);
 
 CREATE TABLE IF NOT EXISTS TB_WBS_CONFIG (
   PROJECT_ID TEXT PRIMARY KEY DEFAULT 'DEFAULT_PROJ',
@@ -127,7 +112,7 @@ CREATE TABLE IF NOT EXISTS TB_WBS_VOC (
   SORT_ORDER INTEGER DEFAULT 0
 );`,
 
-    ORACLE: `-- [Oracle Database 11g / 12c / 19c] WBS Enterprise 2026 v1.5.0 표준 테이블 스키마
+    ORACLE: `-- [Oracle Database 11g / 12c / 19c] AX_PMYS v1.0.6 표준 테이블 스키마
 CREATE TABLE TB_WBS_CONFIG (
   PROJECT_ID VARCHAR2(50) DEFAULT 'DEFAULT_PROJ' PRIMARY KEY,
   PROJECT_START_DATE VARCHAR2(10) NOT NULL,
@@ -286,18 +271,20 @@ CREATE TABLE TB_WBS_VOC (
 
   init() {
     this.loadConfig();
-    if (
-      typeof window !== "undefined" &&
-      window.location &&
-      (window.location.protocol === "http:" || window.location.protocol === "https:") &&
-      window.location.host &&
-      this.config.apiBaseUrl === "http://127.0.0.1:8080"
-    ) {
-      this.config.apiBaseUrl = window.location.origin;
-    }
     this.renderConfigForm();
     this.updateHeaderBadge();
-    this.updateManualSaveButtonState();
+  },
+
+  isServerMode() {
+    return this.config.mode !== "LOCAL";
+  },
+
+  // 서버 주소: http(s)로 접속한 경우 현재 접속 주소(origin)를 최우선 사용
+  getApiBase() {
+    if (typeof window !== "undefined" && window.location && /^https?:$/.test(window.location.protocol) && window.location.host) {
+      return window.location.origin;
+    }
+    return String(this.config.apiBaseUrl || "http://127.0.0.1:8080").replace(/\/+$/, "");
   },
 
   loadConfig() {
@@ -305,10 +292,11 @@ CREATE TABLE TB_WBS_VOC (
       const raw = localStorage.getItem(this.CONFIG_STORAGE_KEY);
       if (raw) {
         const saved = JSON.parse(raw);
+        delete saved.saveMode;
         this.config = Object.assign({}, this.config, saved);
-        if (saved.sqlite) this.config.sqlite = Object.assign({}, this.config.sqlite, saved.sqlite);
-        if (saved.oracle) this.config.oracle = Object.assign({}, this.config.oracle, saved.oracle);
-        if (saved.excelAccess) this.config.excelAccess = Object.assign({}, this.config.excelAccess, saved.excelAccess);
+        ["sqlite", "oracle", "excelAccess"].forEach(k => {
+          if (saved[k]) this.config[k] = Object.assign({}, this.config[k], saved[k]);
+        });
       }
     } catch (e) {}
   },
@@ -316,98 +304,39 @@ CREATE TABLE TB_WBS_VOC (
   saveConfig() {
     try {
       const copy = JSON.parse(JSON.stringify(this.config));
-      // [HTTP 보안 강화] DB 접속 비밀번호는 브라우저 영구 저장소(localStorage)에 평문 보관하지 않음
+      // DB 접속 비밀번호는 브라우저 저장소에 평문 보관하지 않음
       if (copy.oracle) copy.oracle.password = "";
       localStorage.setItem(this.CONFIG_STORAGE_KEY, JSON.stringify(copy));
     } catch (e) {}
   },
 
-  // [요건 3] 자동저장(AUTO) vs 저장버튼 수동저장(MANUAL) 변경
-  setSaveMode(saveMode) {
-    this.config.saveMode = saveMode === "MANUAL" ? "MANUAL" : "AUTO";
-    this.saveConfig();
-    this.renderConfigForm();
-    this.updateManualSaveButtonState();
-    this.updateHeaderBadge();
-    if (this.config.saveMode === "AUTO" && this.hasPendingChanges) {
-      this.manualCommitAll(false);
-    }
-    showToast(
-      this.config.saveMode === "MANUAL"
-        ? "수동 저장 모드로 전환되었습니다. 상단 메뉴의 [💾 저장] 버튼을 눌렀을 때만 저장됩니다."
-        : "실시간 자동저장 모드로 전환되었습니다. 데이터 변경 시 즉시 저장됩니다."
-    );
-  },
-
-  markDirty() {
-    this.hasPendingChanges = true;
-    this.updateManualSaveButtonState();
-    const el = document.getElementById("storageStatusText");
-    if (el) el.innerText = "미저장 변경 있음";
-  },
-
-  updateManualSaveButtonState() {
-    const btn = document.getElementById("btnHeaderManualSave");
-    const statusText = document.getElementById("storageStatusText");
-    if (!btn) return;
-
-    if (this.config.saveMode === "MANUAL") {
-      btn.disabled = false;
-      btn.style.opacity = "1";
-      btn.style.cursor = "pointer";
-      if (this.hasPendingChanges) {
-        btn.className = "btn btn-warning btn-sm manual-save-dirty";
-        btn.innerText = "💾 저장 (미저장 변경)";
-      } else {
-        btn.className = "btn btn-primary btn-sm";
-        btn.innerText = "💾 저장";
-      }
-      if (statusText && !this.hasPendingChanges) {
-        statusText.innerText = "수동저장 대기";
-      }
-    } else {
-      btn.disabled = true;
-      btn.className = "btn btn-secondary btn-sm";
-      btn.style.opacity = "0.45";
-      btn.style.cursor = "not-allowed";
-      btn.innerText = "💾 저장 (자동저장중)";
-    }
-  },
-
-  async manualCommitAll(showAlert = true) {
-    this.hasPendingChanges = false;
-    StorageManager.saveAll(false);
-    await FileAutoSyncManager.syncNow(false);
-    if (this.config.mode !== "LOCAL") {
-      await this.saveToDb(false);
-    }
-    this.updateManualSaveButtonState();
-    this.updateHeaderBadge();
-    if (showAlert) {
-      showToast("현재 모든 변경사항이 저장소 및 연결된 DB에 성공적으로 저장되었습니다.");
-    }
-  },
-
+  // 저장 모드 변경: 로컬 저장소 ↔ DB 서버 (변경 후 재로그인/재조회를 위해 화면을 다시 불러옴)
   selectMode(mode) {
-    this.config.mode = mode;
-    this.config.connected = mode === "LOCAL";
-    this.config.connectionMode = mode === "LOCAL" ? "LOCAL_STORAGE" : "STANDBY";
-    this.saveConfig();
-    this.renderConfigForm();
-    this.updateHeaderBadge();
+    if (mode === this.config.mode) return;
+    const go = () => {
+      this.config.mode = mode;
+      this.config.connected = false;
+      this.saveConfig();
+      if (typeof ServerBackend !== "undefined") ServerBackend.setToken("");
+      showToast(mode === "LOCAL"
+        ? "💻 로컬 저장소(LocalStorage) 단독 모드로 전환합니다. 실시간 자동저장이 활성화됩니다."
+        : `🗄️ ${mode} DB 서버 모드로 전환합니다. 서버 로그인 후 저장 버튼으로 저장합니다.`);
+      setTimeout(() => window.location.reload(), 600);
+    };
+    if (typeof SyncManager !== "undefined" && SyncManager.isDirty()) {
+      openConfirmDialog("저장하지 않은 변경 내용이 있습니다. 저장소 모드를 전환하면 미저장 변경분은 사라집니다. 계속하시겠습니까?", go);
+    } else {
+      go();
+    }
   },
 
   selectExcelAccessSubType(subType) {
     this.config.excelAccess.subType = subType;
     if (subType === "ACCESS_ODBC") {
-      if (this.config.excelAccess.filePath.endsWith(".xlsx")) {
-        this.config.excelAccess.filePath = "./data/WBS_Database.accdb";
-      }
+      if (this.config.excelAccess.filePath.endsWith(".xlsx")) this.config.excelAccess.filePath = "./data/WBS_Database.accdb";
       this.config.excelAccess.odbcDriver = "Microsoft Access Driver (*.mdb, *.accdb)";
     } else {
-      if (this.config.excelAccess.filePath.endsWith(".accdb") || this.config.excelAccess.filePath.endsWith(".mdb")) {
-        this.config.excelAccess.filePath = "./data/WBS_Shared_DB.xlsx";
-      }
+      if (/\.(accdb|mdb)$/.test(this.config.excelAccess.filePath)) this.config.excelAccess.filePath = "./data/WBS_Shared_DB.xlsx";
       this.config.excelAccess.odbcDriver = "openpyxl / Microsoft Excel Driver (*.xls, *.xlsx)";
     }
     this.saveConfig();
@@ -415,17 +344,12 @@ CREATE TABLE TB_WBS_VOC (
   },
 
   readFormValues() {
-    const getVal = (id) => {
+    const getVal = id => {
       const el = document.getElementById(id);
       return el ? el.value.trim() : "";
     };
-
     const apiInput = getVal("dbApiBaseUrl");
     if (apiInput) this.config.apiBaseUrl = apiInput.replace(/\/+$/, "");
-
-    const saveModeSel = getVal("dbSaveModeSelect");
-    if (saveModeSel) this.config.saveMode = saveModeSel;
-
     if (this.config.mode === "SQLITE") {
       this.config.sqlite.filePath = getVal("dbSqlitePath") || "./data/wbs_enterprise.db";
       this.config.sqlite.journalMode = getVal("dbSqliteJournal") || "WAL";
@@ -444,37 +368,26 @@ CREATE TABLE TB_WBS_VOC (
       this.config.excelAccess.odbcDriver = getVal("dbExcelAccessDriver") || "Microsoft Access Driver (*.mdb, *.accdb)";
       this.config.excelAccess.lockTimeoutMs = parseInt(getVal("dbExcelAccessLockTimeout"), 10) || 3000;
     }
-
     this.saveConfig();
-    this.updateManualSaveButtonState();
   },
 
   renderConfigForm() {
     const mode = this.config.mode;
-
-    ["LOCAL", "SQLITE", "ORACLE", "EXCEL_ACCESS"].forEach((m) => {
+    ["LOCAL", "SQLITE", "ORACLE", "EXCEL_ACCESS"].forEach(m => {
       const btn = document.getElementById(`btnDbMode_${m}`);
-      if (btn) {
-        btn.className = m === mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
-      }
+      if (btn) btn.className = m === mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
       const panel = document.getElementById(`panelDbMode_${m}`);
-      if (panel) {
-        panel.style.display = m === mode ? "block" : "none";
-      }
+      if (panel) panel.style.display = m === mode ? "block" : "none";
     });
-
     const setVal = (id, val) => {
       const el = document.getElementById(id);
       if (el && val !== undefined) el.value = val;
     };
-
     setVal("dbApiBaseUrl", this.config.apiBaseUrl);
-    setVal("dbSaveModeSelect", this.config.saveMode || "AUTO");
-
+    setVal("dbSaveModeSelect", this.isServerMode() ? "MANUAL" : "AUTO");
     setVal("dbSqlitePath", this.config.sqlite.filePath);
     setVal("dbSqliteJournal", this.config.sqlite.journalMode);
     setVal("dbSqliteTimeout", this.config.sqlite.busyTimeout);
-
     setVal("dbOracleConnType", this.config.oracle.connType);
     setVal("dbOracleHost", this.config.oracle.host);
     setVal("dbOraclePort", this.config.oracle.port);
@@ -482,7 +395,6 @@ CREATE TABLE TB_WBS_VOC (
     setVal("dbOracleUser", this.config.oracle.user);
     setVal("dbOraclePassword", this.config.oracle.password);
     setVal("dbOraclePrefix", this.config.oracle.tablePrefix);
-
     setVal("dbExcelAccessSubType", this.config.excelAccess.subType);
     setVal("dbExcelAccessPath", this.config.excelAccess.filePath);
     setVal("dbExcelAccessDriver", this.config.excelAccess.odbcDriver);
@@ -490,279 +402,87 @@ CREATE TABLE TB_WBS_VOC (
 
     const ddlBox = document.getElementById("dbDdlPreviewBox");
     if (ddlBox) {
-      if (mode === "LOCAL") {
-        ddlBox.value = "-- [LOCAL 모드] 브라우저 내부 LocalStorage(JSON)를 사용하므로 별도 DB 테이블 생성이 필요하지 않습니다.";
-      } else {
-        ddlBox.value = this.DDL_SCRIPTS[mode] || "";
-      }
+      ddlBox.value = mode === "LOCAL"
+        ? "-- [LOCAL 모드] 브라우저 내부 LocalStorage(JSON)를 사용하므로 별도 DB 테이블 생성이 필요하지 않습니다."
+        : (this.DDL_SCRIPTS[mode] || "");
     }
-
-    const summaryEl = document.getElementById("dbConnectionSummaryText");
-    if (summaryEl) {
-      summaryEl.innerHTML = this.getConnectionSummaryHtml();
-    }
-  },
-
-  getConnectionSummaryHtml() {
-    const m = this.config.mode;
-    const saveModeBadge = this.config.saveMode === "MANUAL"
-      ? `<span class="status-tag tag-hold">🖐️ 수동저장 모드 ([💾 저장] 버튼 클릭 시 저장)</span>`
-      : `<span class="status-tag tag-progress">⚡ 실시간 자동저장 모드</span>`;
-
-    const statusBadge = this.config.connected
-      ? `<span class="status-tag tag-completed">${this.config.connectionMode === "REAL_SERVER" ? "🟢 실서버 DB 연결됨" : "🟢 로컬 브릿지 연결됨"}</span>`
-      : `<span class="status-tag tag-ready">⚪ 연결 대기</span>`;
-
-    if (m === "LOCAL") {
-      return `<b>현재 모드:</b> 브라우저 내장 LocalStorage 단독 모드 | ${saveModeBadge}`;
-    }
-    if (m === "SQLITE") {
-      return `<b>현재 모드:</b> SQLite 3 (<code>${escapeHtml(this.config.sqlite.filePath)}</code>) | ${statusBadge} | ${saveModeBadge} | 최근 동기화: <b>${this.config.lastSyncTime}</b>`;
-    }
-    if (m === "ORACLE") {
-      const dsn = `${escapeHtml(this.config.oracle.host)}:${this.config.oracle.port}/${escapeHtml(this.config.oracle.serviceOrSid)}`;
-      return `<b>현재 모드:</b> Oracle DB (<code>${dsn}</code>, 계정: <code>${escapeHtml(this.config.oracle.user)}</code>) | ${statusBadge} | ${saveModeBadge} | 최근 동기화: <b>${this.config.lastSyncTime}</b>`;
-    }
-    if (m === "EXCEL_ACCESS") {
-      const subLabel = this.config.excelAccess.subType === "ACCESS_ODBC" ? "MS Access (.accdb)" : "MS Excel (.xlsx)";
-      return `<b>현재 모드:</b> ${subLabel} (<code>${escapeHtml(this.config.excelAccess.filePath)}</code>) | ${statusBadge} | ${saveModeBadge} | 최근 동기화: <b>${this.config.lastSyncTime}</b>`;
-    }
-    return "";
-  },
-
-  updateHeaderBadge() {
-    const badge = document.getElementById("headerDbStatusBadge");
-    if (!badge) return;
-    const m = this.config.mode;
-    const modeNames = {
-      LOCAL: "LocalStorage",
-      SQLITE: "SQLite",
-      ORACLE: "Oracle",
-      EXCEL_ACCESS: this.config.excelAccess.subType === "ACCESS_ODBC" ? "Access" : "Excel DB"
-    };
-    const label = modeNames[m] || m;
-    if (m === "LOCAL") {
-      badge.className = "status-badge-chip chip-ready";
-      badge.innerText = `🗄️ DB: ${label}`;
-    } else if (this.config.connected) {
-      badge.className = "status-badge-chip chip-completed";
-      badge.innerText = `🟢 DB: ${label}`;
-    } else {
-      badge.className = "status-badge-chip chip-hold";
-      badge.innerText = `🟡 DB: ${label}(대기)`;
-    }
-
     const summaryEl = document.getElementById("dbConnectionSummaryText");
     if (summaryEl) summaryEl.innerHTML = this.getConnectionSummaryHtml();
   },
 
-  async _callBackendApi(endpoint, payload) {
-    const url = `${this.config.apiBaseUrl}${endpoint}`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2500);
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || `HTTP ${res.status}`);
+  getConnectionSummaryHtml() {
+    const m = this.config.mode;
+    const saveModeBadge = this.isServerMode()
+      ? `<span class="status-tag tag-hold">🖐️ 저장 버튼 저장 (화면별 [💾 저장] / 상단 [💾 전체 저장])</span>`
+      : `<span class="status-tag tag-progress">⚡ 실시간 자동저장 (로컬 저장소)</span>`;
+    const statusBadge = this.config.connected
+      ? `<span class="status-tag tag-completed">🟢 DB 서버 연결됨 (${escapeHtml(this.getApiBase())})</span>`
+      : `<span class="status-tag tag-ready">⚪ 연결 대기</span>`;
+    if (m === "LOCAL") return `<b>현재 모드:</b> 브라우저 내장 LocalStorage 단독 모드 | ${saveModeBadge}`;
+    let target = "";
+    if (m === "SQLITE") target = `SQLite 3 (<code>${escapeHtml(this.config.sqlite.filePath)}</code>)`;
+    if (m === "ORACLE") target = `Oracle DB (<code>${escapeHtml(this.config.oracle.host)}:${this.config.oracle.port}/${escapeHtml(this.config.oracle.serviceOrSid)}</code>)`;
+    if (m === "EXCEL_ACCESS") target = `${this.config.excelAccess.subType === "ACCESS_ODBC" ? "MS Access (.accdb)" : "MS Excel (.xlsx)"} (<code>${escapeHtml(this.config.excelAccess.filePath)}</code>)`;
+    return `<b>현재 모드:</b> ${target} | ${statusBadge} | ${saveModeBadge} | 최근 동기화: <b>${escapeHtml(this.config.lastSyncTime)}</b>`;
+  },
+
+  updateHeaderBadge() {
+    const badge = document.getElementById("headerDbStatusBadge");
+    if (badge) {
+      const m = this.config.mode;
+      const names = { LOCAL: "LocalStorage", SQLITE: "SQLite", ORACLE: "Oracle", EXCEL_ACCESS: this.config.excelAccess.subType === "ACCESS_ODBC" ? "Access" : "Excel DB" };
+      const label = names[m] || m;
+      if (m === "LOCAL") {
+        badge.className = "status-badge-chip chip-ready";
+        badge.innerText = `🗄️ DB: ${label}`;
+      } else if (this.config.connected) {
+        badge.className = "status-badge-chip chip-completed";
+        badge.innerText = `🟢 DB: ${label}`;
+      } else {
+        badge.className = "status-badge-chip chip-hold";
+        badge.innerText = `🟡 DB: ${label}(대기)`;
       }
-      return await res.json();
-    } catch (err) {
-      clearTimeout(timer);
-      throw err;
     }
+    const summaryEl = document.getElementById("dbConnectionSummaryText");
+    if (summaryEl) summaryEl.innerHTML = this.getConnectionSummaryHtml();
+  },
+
+  setConnected(ok) {
+    this.config.connected = !!ok;
+    if (ok) this.config.lastSyncTime = new Date().toLocaleTimeString();
+    this.saveConfig();
+    this.updateHeaderBadge();
   },
 
   async testConnection() {
     this.readFormValues();
-    if (this.config.mode === "LOCAL") {
-      this.config.connected = true;
-      this.config.connectionMode = "LOCAL_STORAGE";
-      this.updateHeaderBadge();
-      showToast("브라우저 내장 LocalStorage 단독 모드가 활성화되었습니다.");
+    if (!this.isServerMode()) {
+      showToast("브라우저 내장 LocalStorage 단독 모드입니다. (서버 연결 불필요)");
       return;
     }
-
-    try {
-      const res = await this._callBackendApi("/api/db/test", { config: this.config });
-      this.config.connected = true;
-      this.config.connectionMode = "REAL_SERVER";
-      this.saveConfig();
-      this.updateHeaderBadge();
-      showToast(`[실서버 DB 연결 성공] ${res.message || this.config.mode + " 데이터베이스에 정상 연결되었습니다."}`);
-    } catch (err) {
-      this.config.connected = true;
-      this.config.connectionMode = "LOCAL_BRIDGE";
-      this.saveConfig();
-      this.updateHeaderBadge();
-      showToast(
-        `[${this.config.mode} 로컬 브릿지 연결 완료]\n백엔드 서버 미구동 상태여서 브라우저 내장 [${this.config.mode} 전용 에뮬레이터 테이블]에 연결되었습니다.`
-      );
+    const res = await ServerBackend.request("/api/db/test", { config: this.config });
+    if (res.ok) {
+      this.setConnected(true);
+      showToast(`🟢 [DB 서버 연결 성공] ${res.message || ""} (${this.getApiBase()})`);
+    } else {
+      this.setConnected(false);
+      showToast(`❌ [DB 서버 연결 실패] ${res.message || ""} — run_server.bat 실행 여부와 서버 주소(${this.getApiBase()})를 확인하세요.`);
     }
   },
 
   async initSchema() {
     this.readFormValues();
-    if (this.config.mode === "LOCAL") {
+    if (!this.isServerMode()) {
       showToast("LOCAL 모드는 별도 DB 스키마 생성이 필요하지 않습니다.");
       return;
     }
-
-    try {
-      const res = await this._callBackendApi("/api/db/init", { config: this.config });
-      this.config.connected = true;
-      this.config.connectionMode = "REAL_SERVER";
-      this.updateHeaderBadge();
-      showToast(`[스키마 생성 완료] ${res.message || "6개 표준 WBS 테이블이 생성되었습니다."}`);
-    } catch (err) {
-      this.config.connected = true;
-      this.config.connectionMode = "LOCAL_BRIDGE";
-      await this.saveToDb(false);
-      this.updateHeaderBadge();
-      showToast(
-        `[${this.config.mode} 테이블 스키마 초기화 완료]\n6개 표준 테이블 구조가 생성되고 초기 데이터가 반영되었습니다.`
-      );
-    }
+    const res = await ServerBackend.request("/api/db/init", { config: this.config });
+    showToast(res.ok ? `[스키마 확인 완료] ${res.message || ""}` : `❌ 스키마 생성 실패: ${res.message || ""}`);
   },
 
-  async saveToDb(showAlert = true) {
-    this.readFormValues();
-    if (this.config.mode === "LOCAL") {
-      if (showAlert) StorageManager.saveAll(true);
-      return;
-    }
-
-    const payload = {
-      config: this.config,
-      data: {
-        savedAt: new Date().toISOString(),
-        projectConfig: projectConfig,
-        subsystemsMeta: subsystemsMeta,
-        standardDeliverablesMeta: typeof standardDeliverablesMeta !== "undefined" ? standardDeliverablesMeta : [],
-        // [v1.0.5] 사용자 계정/권한 목록도 DB에 저장 (누락 시 서버 USERS_JSON 이 빈 배열로 덮어써짐)
-        projectUsers: typeof projectUsers !== "undefined" ? projectUsers : [],
-        wbsData: wbsData,
-        deliverablesData: deliverablesData,
-        reqMasterData: reqMasterData,
-        vocData: vocData,
-        noticesData: typeof noticesData !== "undefined" ? noticesData : [],
-        communicationsData: typeof communicationsData !== "undefined" ? communicationsData : [],
-        theme: document.body.getAttribute("data-theme") || "navy"
-      }
-    };
-
-    try {
-      const res = await this._callBackendApi("/api/db/save", payload);
-      this.config.connected = true;
-      this.config.connectionMode = "REAL_SERVER";
-      this.config.lastSyncTime = new Date().toLocaleTimeString();
-      this.hasPendingChanges = false;
-      this.saveConfig();
-      this.updateHeaderBadge();
-      this.updateManualSaveButtonState();
-      if (showAlert) {
-        showToast(`[${this.config.mode} DB 저장 완료] ${res.message || "전체 테이블 트랜잭션 커밋이 완료되었습니다."}`);
-      }
-    } catch (err) {
-      try {
-        localStorage.setItem(this.SIM_DB_PREFIX + this.config.mode, JSON.stringify(payload.data));
-        this.config.connected = true;
-        this.config.connectionMode = "LOCAL_BRIDGE";
-        this.config.lastSyncTime = new Date().toLocaleTimeString();
-        this.hasPendingChanges = false;
-        this.saveConfig();
-        this.updateHeaderBadge();
-        this.updateManualSaveButtonState();
-        if (showAlert) {
-          showToast(
-            `[${this.config.mode} DB 커밋 완료]\n(WBS ${wbsData.length}건, 기준정보 ${subsystemsMeta.length}건, 산출물 ${deliverablesData.length}건, REQ ${reqMasterData.length}건, VOC ${vocData.length}건 반영)`
-          );
-        }
-      } catch (e2) {
-        if (showAlert) showToast("DB 저장 중 오류가 발생했습니다: " + e2.message);
-      }
-    }
-  },
-
-  async loadFromDb() {
-    this.readFormValues();
-    if (this.config.mode === "LOCAL") {
-      const ok = StorageManager.loadAll();
-      if (ok) {
-        rebuildAll(true);
-        showToast("내장 LocalStorage에서 데이터를 다시 불러왔습니다.");
-      }
-      return;
-    }
-
-    try {
-      const res = await this._callBackendApi("/api/db/load", { config: this.config });
-      if (res && res.data) {
-        this._applyLoadedData(res.data);
-        this.config.connected = true;
-        this.config.connectionMode = "REAL_SERVER";
-        this.config.lastSyncTime = new Date().toLocaleTimeString();
-        this.hasPendingChanges = false;
-        this.saveConfig();
-        this.updateHeaderBadge();
-        this.updateManualSaveButtonState();
-        showToast(`[${this.config.mode} DB 조회 완료] 서버 DB로부터 최신 데이터를 성공적으로 불러왔습니다.`);
-      }
-    } catch (err) {
-      try {
-        const raw = localStorage.getItem(this.SIM_DB_PREFIX + this.config.mode);
-        if (!raw) {
-          showToast(`[${this.config.mode}] 아직 DB에 저장된 데이터가 없습니다. 먼저 [📤 현재 데이터 DB에 즉시 저장]을 실행해주세요.`);
-          return;
-        }
-        const data = JSON.parse(raw);
-        this._applyLoadedData(data);
-        this.config.connected = true;
-        this.config.connectionMode = "LOCAL_BRIDGE";
-        this.config.lastSyncTime = new Date().toLocaleTimeString();
-        this.hasPendingChanges = false;
-        this.saveConfig();
-        this.updateHeaderBadge();
-        this.updateManualSaveButtonState();
-        showToast(
-          `[${this.config.mode} DB 로드 완료]\n(WBS ${wbsData.length}건, 기준정보 ${subsystemsMeta.length}건, 산출물 ${deliverablesData.length}건, REQ ${reqMasterData.length}건, VOC ${vocData.length}건)`
-        );
-      } catch (e2) {
-        showToast("DB 조회 중 오류가 발생했습니다: " + e2.message);
-      }
-    }
-  },
-
-  _applyLoadedData(data) {
-    if (data.projectConfig) projectConfig = data.projectConfig;
-    if (Array.isArray(data.subsystemsMeta)) subsystemsMeta = data.subsystemsMeta;
-    if (Array.isArray(data.standardDeliverablesMeta)) standardDeliverablesMeta = data.standardDeliverablesMeta;
-    if (Array.isArray(data.projectUsers) && data.projectUsers.length > 0) projectUsers = data.projectUsers;
-    if (Array.isArray(data.wbsData)) wbsData = data.wbsData;
-    if (Array.isArray(data.deliverablesData)) deliverablesData = data.deliverablesData;
-    if (Array.isArray(data.reqMasterData)) reqMasterData = data.reqMasterData;
-    if (Array.isArray(data.vocData)) vocData = data.vocData;
-    if (Array.isArray(data.noticesData)) noticesData = data.noticesData;
-    if (Array.isArray(data.communicationsData)) communicationsData = data.communicationsData;
-    if (typeof NoticeCommManager !== "undefined") NoticeCommManager.renderAll();
-
-    const sEl = document.getElementById("cfgProjectStartDate");
-    const eEl = document.getElementById("cfgProjectEndDate");
-    const rEl = document.getElementById("globalReportDate");
-    const wEl = document.getElementById("cfgWeekStartDay");
-    if (sEl) sEl.value = projectConfig.projectStartDate;
-    if (eEl) eEl.value = projectConfig.projectEndDate;
-    if (rEl) rEl.value = projectConfig.reportDate;
-    if (wEl) wEl.value = projectConfig.weekStartDay;
-
-    rebuildAll(true);
-  },
+  // 기존 버튼 호환: [📤 DB 저장] / [📥 DB 불러오기]
+  saveToDb(showAlert = true) { return SyncManager.save(null, { notify: showAlert, forceFile: true }); },
+  loadFromDb() { return SyncManager.refresh(null); },
 
   downloadDdlScript() {
     const m = this.config.mode === "LOCAL" ? "SQLITE" : this.config.mode;
@@ -771,11 +491,11 @@ CREATE TABLE TB_WBS_VOC (
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `WBS_2026_v1.1_Schema_${m}.sql`;
+    a.download = `AX_PMYS_Schema_${m}.sql`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`[WBS_2026_v1.1_Schema_${m}.sql] 스키마 스크립트 파일이 다운로드되었습니다.`);
+    showToast(`[AX_PMYS_Schema_${m}.sql] 스키마 스크립트 파일이 다운로드되었습니다.`);
   }
 };

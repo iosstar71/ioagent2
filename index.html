@@ -1299,37 +1299,63 @@ header {
 </style>
 </head>
 <body data-theme="navy" data-layout="top-nav" data-density="standard">
-  <!-- [HTTP 보안 강화] 로그인 및 설정 탭 비밀번호 인증 오버레이 모달 (정책 선택 연동) -->
+  <!-- [v1.0.6] 로그인 / 신규 사용자 등록 / 권한 메뉴 인증 오버레이 -->
   <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
-    <div class="security-lock-modal">
+    <div class="security-lock-modal" style="width:440px;">
       <div class="lock-icon-circle">🔒</div>
-      <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: 18px; color: var(--text-main);">설정 탭 관리자 인증</h2>
-      <p id="lockModalDesc" style="font-size: 12px; color: var(--text-sub); margin-bottom: 20px;">
-        <b>[⚙️ 설정]</b> 탭으로 이동하려면 관리자 비밀번호 인증이 필요합니다.<br>
-        <span style="font-size:11px; color:var(--text-muted);">* 초기 기본 비밀번호: <b>1234</b> (설정 탭에서 인증 정책 및 비밀번호 변경 가능)</span>
-      </p>
+      <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: 18px; color: var(--text-main);">시스템 로그인</h2>
+      <p id="lockModalDesc" style="font-size: 12px; color: var(--text-sub); margin-bottom: 14px;"></p>
+      <div id="lockServerInfo" style="display:none; font-size:11px; margin-bottom:10px; padding:5px 8px; border-radius:6px; background:rgba(59,130,246,0.08);"></div>
 
-      <div style="margin-bottom: 12px; text-align: left;">
-        <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 4px;">사번 (사용자 ID):</label>
-        <input type="text" id="inputSecurityEmpNo" value="admin" placeholder="사번 입력 (기본 관리자: admin)" autocomplete="off"
-               style="width: 100%; padding: 9px 10px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 10px;"
+      <!-- 로그인 폼 -->
+      <div id="loginFormPane" style="text-align: left;">
+        <label class="login-label">사번 (사용자 ID):</label>
+        <input type="text" id="inputSecurityEmpNo" value="" placeholder="사번 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
                onkeydown="if(event.key==='Enter') document.getElementById('inputSecurityPassword').focus();">
-        <label style="display:block; font-size: 12px; font-weight: bold; margin-bottom: 4px;">비밀번호 입력:</label>
-        <input type="password" id="inputSecurityPassword" placeholder="비밀번호를 입력하세요 (초기: 1234)" autocomplete="off"
-               style="width: 100%; padding: 9px 10px; font-size: 13px; border: 1px solid var(--border-color); border-radius: 6px;"
+        <label class="login-label">비밀번호:</label>
+        <input type="password" id="inputSecurityPassword" placeholder="비밀번호 입력 (초기: 1234)" autocomplete="off" class="login-input"
                onkeydown="if(event.key==='Enter') AuthManager.unlock(); if(event.key==='Escape') AuthManager.cancelUnlock();">
-        <div id="lockErrorMessage" style="color: #ef4444; font-size: 11px; margin-top: 6px; display: none;">
-          ⚠️ 사번 또는 비밀번호가 일치하지 않거나 접근 권한이 없습니다.
+        <label class="login-label">언어 / Language:</label>
+        <select id="inputLoginLang" class="login-input" onchange="I18N.preview(this.value)">
+          <option value="ko">한국어 (Korean)</option>
+          <option value="en">English</option>
+        </select>
+        <div id="lockErrorMessage" style="color: #ef4444; font-size: 11px; margin-top: 2px; display: none;"></div>
+        <div style="display: flex; gap: 8px; margin-top: 14px;">
+          <button id="btnLockCancel" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 13px; justify-content: center;" onclick="AuthManager.cancelUnlock()">취소</button>
+          <button id="btnLockSubmit" class="btn btn-primary" style="flex: 1.4; padding: 10px; font-size: 13px; justify-content: center;" onclick="AuthManager.unlock()">🔓 로그인</button>
+        </div>
+        <div id="registerLinkRow" style="text-align:center; margin-top:12px; font-size:12px;">
+          <span style="color:var(--text-muted);">계정이 없으신가요?</span>
+          <a href="javascript:void(0)" onclick="AuthManager.showRegister(true)" style="font-weight:bold; color:var(--primary);">👤 신규 사용자 등록</a>
         </div>
       </div>
 
-      <div style="display: flex; gap: 8px;">
-        <button id="btnLockCancel" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: 13px; justify-content: center;" onclick="AuthManager.cancelUnlock()">
-          취소 (이전 화면 유지)
-        </button>
-        <button id="btnLockSubmit" class="btn btn-primary" style="flex: 1.4; padding: 10px; font-size: 13px; justify-content: center;" onclick="AuthManager.unlock()">
-          🔓 인증 확인
-        </button>
+      <!-- 신규 사용자 등록 폼 (등록 시 기본 권한: 일반 사용자) -->
+      <div id="registerFormPane" style="display:none; text-align:left;">
+        <label class="login-label">사번 (로그인 ID) *:</label>
+        <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 사번">
+        <label class="login-label">성명 *:</label>
+        <input type="text" id="regName" class="login-input" autocomplete="off">
+        <label class="login-label">담당 서브시스템 *:</label>
+        <select id="regSubsystem" class="login-input"></select>
+        <label class="login-label">소속 부서 / 담당 역할:</label>
+        <input type="text" id="regDept" class="login-input" autocomplete="off">
+        <label class="login-label">비밀번호 * (4자리 이상):</label>
+        <input type="password" id="regPwd" class="login-input" autocomplete="new-password">
+        <label class="login-label">비밀번호 확인 *:</label>
+        <input type="password" id="regPwd2" class="login-input" autocomplete="new-password">
+        <label class="login-label">언어 / Language:</label>
+        <select id="regLang" class="login-input">
+          <option value="ko">한국어 (Korean)</option>
+          <option value="en">English</option>
+        </select>
+        <div style="font-size:11px; color:var(--text-muted); margin:4px 0;">* 신규 등록 계정은 <b>일반 사용자</b> 권한으로 생성되며, 권한 변경은 관리자/PM이 [기준정보 &gt; 사용자 정보]에서 설정합니다.</div>
+        <div id="regErrorMessage" style="color: #ef4444; font-size: 11px; display: none;"></div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn btn-secondary" style="flex: 1; padding: 10px; justify-content: center;" onclick="AuthManager.showRegister(false)">← 로그인으로</button>
+          <button class="btn btn-success" style="flex: 1.4; padding: 10px; justify-content: center;" onclick="AuthManager.register()">✅ 등록하기</button>
+        </div>
       </div>
     </div>
   </div>
