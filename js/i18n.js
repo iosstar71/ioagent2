@@ -22,11 +22,12 @@ var I18N = {
   patterns() { return (typeof I18N_EN !== "undefined" && I18N_EN.patterns) || []; },
   phrases() { return (typeof I18N_EN !== "undefined" && I18N_EN.phrases) || []; },
 
+  // [v1.2.0] 처음 화면(로그인)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작
+  //          로그인 후에는 사용자별 언어(projectUsers[].lang)를 적용
   init() {
-    let saved = "ko";
-    try { saved = localStorage.getItem(this.LAST_LANG_KEY) || "ko"; } catch (e) {}
+    const def = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.defaultLang === "en") ? "en" : "ko";
     this._wrapDialogs();
-    this.setLanguage(saved, true);
+    this.setLanguage(def, true);
   },
 
   // 로그인 화면에서 언어 선택 시 미리보기

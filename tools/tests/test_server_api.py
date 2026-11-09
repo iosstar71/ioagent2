@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.0.10] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
+[IOSTAR-PM v1.2.0] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
 
 프로그램 폴더를 임시 폴더로 복사한 뒤 빈 DB 로 wbs_db_server.py 를 기동하여 검증합니다.
 (실제 운영 DB data/wbs_enterprise.db 는 건드리지 않음)
@@ -41,7 +41,7 @@ class ServerApiTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = Path(tempfile.mkdtemp(prefix="axpmys_test_"))
-        for name in ("index.html", "wbs_db_server.py"):
+        for name in ("index.html", "wbs_db_server.py", "app.ini"):
             shutil.copy(ROOT / name, cls.tmp / name)
         (cls.tmp / "data").mkdir()
         shutil.copy(ROOT / "data" / "initial_data.json", cls.tmp / "data" / "initial_data.json")
@@ -232,6 +232,18 @@ class ServerApiTest(unittest.TestCase):
         with urllib.request.urlopen(req) as r:
             self.assertIsNone(r.headers.get("Access-Control-Allow-Origin"))
 
+    def test_27_app_ini_config(self):
+        """[v1.2.0] app.ini 의 제품 이름·버전·기본 언어가 서버와 화면 설정에 그대로 반영"""
+        import configparser
+        cp = configparser.ConfigParser(inline_comment_prefixes=(";", "#"))
+        cp.read(self.tmp / "app.ini", encoding="utf-8")
+        s, d = self.call("/api/db/ping", method="GET")
+        self.assertEqual(d["version"], "ver" + cp["app"]["version"])
+        with urllib.request.urlopen(self.base + "/js/app-config.js") as r:
+            js = r.read().decode("utf-8")
+        self.assertIn('"defaultLang": "ko"', js)
+        self.assertIn('"productName": "%s"' % cp["app"]["product_name"], js)
+
     # ---------------------------------------------------------------- 여러 프로젝트 (v1.0.10)
     def test_40_project_isolation(self):
         s, r = self.call("/api/projects/create", {"name": "2차 확산 과제", "startDate": "2028-01-01", "endDate": "2028-12-31", "copyFrom": "DEFAULT"}, self.admin)
@@ -311,6 +323,14 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/chat/messages?channel=%EC%A0%84%EC%B2%B4", token=self.admin, method="GET")
         self.assertEqual(s, 200)
         self.assertTrue(any(m["message"] == "hello" for m in d["messages"]))
+
+
+class SharedFilesTest(unittest.TestCase):
+    """[v1.2.0] 국내판·G 버전 공용 파일(배치 파일·배포 도구)이 지문 목록과 같은지 확인"""
+
+    def test_shared_files_match_manifest(self):
+        r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_shared_files.py")], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
 
 
 class TlsAndUpgradeTest(unittest.TestCase):

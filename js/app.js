@@ -1,7 +1,11 @@
 // =============================================================================
 // IOSTAR-PM - 코어 앱 엔진
 // =============================================================================
-const APP_VERSION = { version: "1.0.10", title: "IOSTAR-PM ver1.0.10" };
+// [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
+const APP_VERSION = (function () {
+  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "IOSTAR-PM", version: "1.2.0", edition: "KR" };
+  return { version: c.version, title: `${c.productName}${c.edition && c.edition !== "KR" ? " " + c.edition : ""} ver${c.version}`, edition: c.edition || "KR" };
+})();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼
 let _confirmCallback = null;
@@ -536,7 +540,7 @@ function resetStandardDeliverablesMeta() {
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
-  systemTitle: "IOSTAR-PM ver1.0.10",
+  systemTitle: APP_VERSION.title,
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
   channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
@@ -686,6 +690,8 @@ function renderProjectTitles() {
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
   if (hSys) hSys.textContent = sysTitle;
+  const hVer = document.getElementById("headerVersionBadge");
+  if (hVer) hVer.textContent = "ver" + APP_VERSION.version + (APP_VERSION.edition !== "KR" ? " · " + APP_VERSION.edition : "");
   if (hProj) hProj.textContent = projName;
   if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 
@@ -1336,8 +1342,9 @@ var ModeGuard = {
 
     if (access === "FILE") {
       if (mode !== "LOCAL") this._setMode("LOCAL");
-      this.loginNotice = "📁 <b>index.html 파일을 직접 열어 실행</b>했습니다. <b>로컬 저장소 모드</b>(이 PC 브라우저에만 저장)로 로그인합니다.<br>" +
-        "여러 사용자가 함께 쓰는 <b>서버 DB 모드</b>는 서버에서 run_server.bat 실행 후 브라우저 주소창에 <code>http://서버IP:8080</code> 으로 접속하세요.";
+      // [v1.2.0] 문장 단위로 작성 (영어 화면에서 문장 전체가 번역되도록 문장 안에 굵게 표시 등을 넣지 않음)
+      this.loginNotice = "<div>📁 index.html 파일을 직접 열어 실행했습니다. 로컬 저장소 모드(이 PC 브라우저에만 저장)로 로그인합니다.</div>" +
+        "<div>여러 사용자가 함께 쓰는 서버 DB 모드는 서버에서 run_server.bat 을 실행한 뒤 브라우저 주소창에 서버 주소(예: http://서버IP:8080)를 입력하여 접속하세요.</div>";
       if (mode !== "LOCAL") {
         await SyncUI.ask("📁 로컬 저장소 모드로 실행합니다",
           "index.html 파일을 직접 열어 접속했기 때문에 서버 DB 를 사용할 수 없습니다.\n" +
@@ -1352,12 +1359,12 @@ var ModeGuard = {
     if (mode !== "LOCAL") return;
     const alive = await this.pingServer();
     if (!alive) {
-      this.loginNotice = "⚠️ 서버 주소로 접속했지만 DB 서버 응답이 없어 <b>로컬 저장소 모드</b>로 실행합니다. (입력한 내용은 이 PC 브라우저에만 저장)";
+      this.loginNotice = "⚠️ 서버 주소로 접속했지만 DB 서버 응답이 없어 로컬 저장소 모드로 실행합니다. (입력한 내용은 이 PC 브라우저에만 저장)";
       return;
     }
     if (!this._hasSavedChoice()) {
       this._setMode("SQLITE");
-      this.loginNotice = "🗄️ 서버 주소로 접속하여 <b>서버 DB 모드</b>로 시작합니다. (여러 사용자가 같은 데이터를 함께 사용)";
+      this.loginNotice = "🗄️ 서버 주소로 접속하여 서버 DB 모드로 시작합니다. (여러 사용자가 같은 데이터를 함께 사용)";
       return;
     }
     const choice = await SyncUI.ask("🗄️ 서버 DB 모드로 전환하시겠습니까?",
@@ -1370,9 +1377,9 @@ var ModeGuard = {
       ]);
     if (choice === "server") {
       this._setMode("SQLITE");
-      this.loginNotice = "🗄️ <b>서버 DB 모드</b>로 전환했습니다. 로그인하면 서버 데이터를 불러옵니다.";
+      this.loginNotice = "🗄️ 서버 DB 모드로 전환했습니다. 로그인하면 서버 데이터를 불러옵니다.";
     } else {
-      this.loginNotice = "💻 <b>로컬 저장소 모드</b>로 계속합니다. 입력한 내용은 이 PC 브라우저에만 저장됩니다.";
+      this.loginNotice = "💻 로컬 저장소 모드로 계속합니다. 입력한 내용은 이 PC 브라우저에만 저장됩니다.";
     }
   }
 };
@@ -5754,7 +5761,7 @@ const SmartMergeCenter = {
     const scope = this._collabScope();
     const repDate = projectConfig.reportDate || "";
     if (format === "JSON") {
-      const payload = { schemaVersion: "AX_PMYS_1.0.10_COLLAB", exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
+      const payload = { schemaVersion: `AX_PMYS_${APP_VERSION.version}_COLLAB`, exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
       keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.json`;
@@ -6373,7 +6380,7 @@ var StorageManager = {
     const now = new Date();
     const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
     const fullPayload = Object.assign({
-      schemaVersion: "AX_PMYS_1.0.10_FULL_BACKUP",
+      schemaVersion: `AX_PMYS_${APP_VERSION.version}_FULL_BACKUP`,
       exportedAt: now.toISOString(),
       exportedBy: AuthManager.getCurrentUser().empNo,
       systemSettings: {
@@ -7898,7 +7905,7 @@ var WeeklyReportManager = {
     const scopeSystems = this.scopeSystems(sc.scope, sc.value);
     const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
     const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || "IOSTAR-PM ver1.0.10";
+    const sysTitle = (projectConfig && projectConfig.systemTitle) || APP_VERSION.title;
     const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
     const repDay = WBSEngine.getDayOfWeekText(repDate);
     const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;

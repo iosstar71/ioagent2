@@ -1,7 +1,7 @@
 ================================================================================
-⚡ IOSTAR-PM ver1.0.10
+⚡ IOSTAR-PM ver1.2.0
    - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
-   - 최신 버전: ver1.0.10
+   - 최신 버전: ver1.2.0 (국내판, G 버전 분기 기준)
    - 공식 크레딧: Developed & Designed by Iostar
 ================================================================================
 
@@ -21,6 +21,27 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [ver1.2.0 개선 내역] — 국내판 기준 버전 (G 버전 분기점)
+1. 설정 파일 app.ini 도입 (제품마다 다른 값은 이 파일에만)
+   - [app] product_name · edition(KR/G) · version · default_lang / [server] host · port · db_file · log_dir · cert_file · key_file
+   - DB 서버: 시작 옵션을 주지 않으면 app.ini 값을 사용, 인증서 파일이 있으면 자동으로 HTTPS (HTTP 로 강제: --no-tls)
+   - 화면: 제품 이름·버전·기본 언어를 js/app-config.js 에서 읽음
+     (DB 서버는 app.ini 로 바로 만들어 보내므로 app.ini 만 고치면 반영 / 파일 실행·Standalone 은 build_standalone.bat 으로 다시 생성)
+   - 배포 도구: 배포 파일 이름·버전을 app.ini 에서 읽음 (국내판 IOSTAR-PM_v1.2.0.zip, G 버전 IOSTAR-PM-G_v1.0.0.zip)
+2. 기본 언어 한국어 고정: 로그인 화면은 항상 app.ini 의 default_lang(ko)으로 시작, 로그인 후에는 사용자별 언어 적용
+   (이전에는 이 브라우저에서 마지막으로 쓴 언어로 시작)
+3. 배치 파일 공용화: run_server.bat · make_cert.bat · run_tests.bat · build_standalone.bat 에서 버전·포트 고정값 제거
+   (app.ini 를 읽음) → 국내판과 G 버전이 같은 파일을 그대로 사용
+   - 공용 파일 확인: tools/check_shared_files.py (run_tests.bat 첫 단계, 자동 테스트에도 포함)
+     공용 파일: 배치 파일 4개, tools/app_config.py · make_cert.py · make_release.py · make_release_win.py · check_shared_files.py
+     바꾸는 순서: 국내판에서 먼저 수정 → python tools/check_shared_files.py --update → 같은 파일을 G 버전에 복사
+4. 다듬기
+   - 영어 화면: 로그인 화면 접속 방식 안내 문장이 번역되지 않던 문제 수정 (문장을 나누던 굵게 표시 제거)
+   - 서버: HEAD 요청도 GET 과 같은 파일 차단·보안 헤더 적용
+   - 머리글 버전 표시를 app.ini 버전으로 자동 표시
+   - 자동 테스트 보강: app.ini 반영, 첫 화면 한국어, 공용 파일 확인, 자동저장 대기 시간 안정화
+5. G 버전 분기: 이 버전에서 G 버전 개발 브랜치를 만들었습니다. (B2 화면 개편안: docs/UI_Proposal_B2_G_v1.0.html)
 
 ■ [ver1.0.10 개선 내역] — 보안 강화 · 여러 프로젝트 · Windows 패키지
 1. 비밀번호 보안
@@ -86,7 +107,7 @@
    빌드 도구, 자동 테스트 결과 문구를 언어 설정과 관계없이 영어로 표시
 4. UI 개편 제안서: docs/UI_Redesign_Proposal_v1.0.9.html (구현 방안 · 보안 · 라이선스 · 기능 대체안)
 5. UI 절충안 · 글로벌판 계획: docs/UI_Compromise_Proposal_G_v1.0.html
-   + 개선안 B2: docs/UI_Proposal_B2_G_v1.0.html (위쪽 메뉴 스크롤 없는 2단 메뉴, 기본 언어 한국어, v1.1.0 공용 배치 파일 계획)
+   + 개선안 B2: docs/UI_Proposal_B2_G_v1.0.html (위쪽 메뉴 스크롤 없는 2단 메뉴, 왼쪽 메뉴는 선택 설정, 기본 언어 한국어, v1.2.0 공용 배치 파일 계획)
    (원본 + 개편안 A 절충 B안, 기본 테마 3종 Navy/Teal/Graphite 미리보기, G v1.0 별도 패키징·판매 준비 항목)
 
 ■ [ver1.0.8 개선 내역]
@@ -281,7 +302,7 @@
 
 ================================================================================
 ■ [시스템 폴더 구성]
-- index.html                : IOSTAR-PM ver1.0.10 메인 웹 애플리케이션
+- index.html                : IOSTAR-PM ver1.2.0 메인 웹 애플리케이션
 - Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (build_standalone.bat 로 재생성)
 - build_standalone.bat      : Standalone.html 및 js/initial-data.js 재생성 배치
 - tools/                    : build_standalone.py, build_initial_data.py, build_manual_docx.py(워드 매뉴얼), make_release.py(배포 zip)
@@ -304,6 +325,7 @@
   ├── ui-standards.js       : 버튼·바로가기 스타일 표준 (v1.0.7)
   └── initial-data.js       : 최초 실행 초기 데이터 (data/initial_data.json 에서 자동 생성)
 - css/                      : 스타일시트 (style.css 단일 파일 — v1.0.8 에서 themes.css·인라인 스타일 통합)
+- app.ini                   : 제품 설정 (이름·판·버전·기본 언어·포트·DB·인증서 경로) — v1.2.0
 - legal/                    : 사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지 (v1.0.10)
 - certs/                    : HTTPS 인증서 (make_cert.bat 으로 생성, 배포·반출 금지)
 - img/iostar_*             : IOSTAR-PM 로고·아이콘 (아이콘 32/64/128/256px PNG, 가로형 로고 JPG — 원본 이미지를 줄여 약 41KB)

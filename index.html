@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageBrowserTitle">IOSTAR-PM ver1.0.10</title>
+  <title id="pageBrowserTitle">IOSTAR-PM</title>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEUjKj0mLEMbJjEAAAAnNlEAAH8jKj0jHTAvSW+0VvwE/P4jKj0vxvtIM3IiKDwnLUHBU/4bZHhOpfhtRqytTPQbXG4G0tsP5PQjKjwmLUE3OGMvl8lYN4ZmOpiJd/cdSFsKydYhXXhzPKmKSc6EXNa0Zf8UnK8byfAQ1uskJDwoKEMlLUAkMDwoNUNDg8Z1Xs1hd9V1kf1qo/+UaPSHhP+mcv8bHigWc4IUgY4bn8INq7YTvtgiaYEt1f8h7P9RabJMnfBGv/9pbdN0ifmBRL+bSOGUWuMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsk0ebAAAAgHRSTlP9//8A/wLZ/////5b//y8v//////////+hmP///////////////////xUT0RUT/////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALf39SIAAAF0SURBVHjahVPXksIwDJRlh/QeSkIIcMDRO1zv7f8/6ZzAMEkgwZ7xg3fllSUtUCpQavpTyK2pbyYQ8GPmA4GzRcCfcRAEalYuwAmlYlIB6LwIjxlzLtEoxDmjQcGE0mWCSspwokLlwm0q5gSLKQIixmcmqG2ffg9MkgKOB2ltVlcexORClJrOZr3bEib/pN4gNeU+ERFt7dNZfUUuk2U9LcLaR6mhtmBxmn9ZHJ461eSFx9cm3AGS/kDXSZoxUmxgjDBNk/Bdwv4gJHKIqTRrSvW2PmpKmkPYd7QcuNizbs4IGid8MAyivYvo5gkHCceRAHWXq/9aYTqHjmLHSeJis+Il5LsleyRL6CZTxda7ZfzNlme1Mt98rncPbZCi/bbX82SeQaYXw7fuoV0Y9GXZ8rxsPED1hR2Ljsj0MFukfLsxbjfJTwQpHJirI2eUD61xfeyFSZlxJgK3nlFsPSO2nkDH6mXzquPYvInHDfXMHhXVSKB/ASkXCeYmbS8AAAAASUVORK5CYII=">
   <link rel="stylesheet" href="css/style.css">
   
@@ -105,7 +105,7 @@
       <span id="headerProjectNameBadge" class="brand-badge" style="background:#0284c7;">27년 가동률 시스템 개선</span>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
       <button id="btnProjectManager" class="btn btn-xs header-project-btn" data-btn="nav" data-click="ProjectManager.open" title="프로젝트 만들기·이름 변경·참여자·보관·삭제">🗂️ 프로젝트 관리</button>
-      <span class="brand-badge" style="background:#6366f1; color:white;">ver1.0.10</span>
+      <span id="headerVersionBadge" class="brand-badge" style="background:#6366f1; color:white;">ver1.2.0</span>
     </div>
 
     <div class="header-right-wrap">
@@ -2110,7 +2110,7 @@
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver1.0.10" style="width:100%;" data-change="updateProjectTitles">
+                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver1.2.0" style="width:100%;" data-change="updateProjectTitles">
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
@@ -3370,6 +3370,7 @@
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
 
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+  <script src="js/app-config.js"></script>
   <script src="js/ui-events.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/i18n-en.js"></script>

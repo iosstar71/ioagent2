@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.0.10] 배포용 zip 생성기
+[IOSTAR-PM 공용] 배포용 zip 생성기 (국내판·G 버전 공용 — 이름·버전은 app.ini)
 
 - Standalone.html / js/initial-data.js 를 최신으로 다시 빌드한 뒤
-  IOSTAR-PM_v<버전>.zip 을 생성합니다.
+  <제품>[-판]_v<버전>.zip 을 생성합니다. (예: IOSTAR-PM_v1.2.0.zip, IOSTAR-PM-G_v1.0.0.zip)
 - 한글 파일명(Sample/*.xlsx 등)이 Windows 탐색기·알집 등에서 깨지지 않도록
   zip 항목에 UTF-8 파일명 플래그(General purpose bit 11)를 명시합니다.
   (v1.0.5 배포본은 파일명이 '#Uc81c...' 형태로 깨져 있었음)
 
 사용법 (프로그램 폴더에서):
-    python tools/make_release.py            → ../IOSTAR-PM_v1.0.10.zip
+    python tools/make_release.py            → ../IOSTAR-PM_v<버전>.zip
     python tools/make_release.py <출력폴더>
 """
 import sys
@@ -19,10 +19,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import app_config  # noqa: E402
 import build_standalone  # noqa: E402
 
-VERSION = "1.0.10"
-PKG = f"IOSTAR-PM_v{VERSION}"
+# [v1.2.0] 제품 이름·판·버전은 app.ini 에서 읽음 (국내판·G 버전 공용 파일)
+CFG = app_config.load()
+VERSION = CFG["version"]
+PKG = app_config.package_name(CFG)
 EXCLUDE_DIRS = {".git", "logs", "__pycache__", ".claude", "node_modules", "certs", "python"}
 EXCLUDE_FILES = {".gitattributes", ".gitignore"}
 EXCLUDE_SUFFIX = {".pyc", ".db", ".db-wal", ".db-shm", ".zip", ".nupkg"}

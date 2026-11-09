@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.0.10] 초기 데이터 빌더
+[IOSTAR-PM v1.2.0] 초기 데이터 빌더
 
 data/initial_data.json  ->  js/initial-data.js  (window.AX_INITIAL_DATA = {...})
 

@@ -647,6 +647,7 @@ var SyncManager = {
 
   // ---- 저장 ----
   async save(keys, opts = {}) {
+    if (typeof ProjectManager !== "undefined" && ProjectManager._switching) return { ok: false, switching: true };
     if (this._busy) { this._pendingSave = { keys, opts }; return { ok: false, busy: true }; }
     // [v1.0.10] 보관된 프로젝트는 시스템관리자 외에는 읽기 전용
     const proj = ProjectContext.info();
@@ -1108,7 +1109,7 @@ var FileAutoSyncManager = {
   async syncNow(showAlert = false) {
     if (!this.fileHandle) return;
     try {
-      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: "AX_PMYS_1.0.10" }, DataRegistry.collect());
+      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: `AX_PMYS_${APP_VERSION.version}` }, DataRegistry.collect());
       const writable = await this.fileHandle.createWritable();
       await writable.write(JSON.stringify(payload, null, 2));
       await writable.close();

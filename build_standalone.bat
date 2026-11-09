@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [IOSTAR-PM - ver1.0.10] Standalone.html (single-file) builder
+rem [IOSTAR-PM shared] Standalone.html (single-file) builder
 rem  - Rebuilds js/initial-data.js from data/initial_data.json
 rem  - Inlines css/*.css and js/*.js into Standalone.html
 rem ============================================================================

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-IOSTAR-PM ver1.0.10 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
+IOSTAR-PM ver1.2.0 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
@@ -23,6 +23,7 @@ IOSTAR-PM ver1.0.10 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 """
 
 import argparse
+import configparser
 import datetime
 import hashlib
 import hmac
@@ -37,8 +38,30 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "ver1.0.10"
-APP_NAME = f"IOSTAR-PM {VERSION}"
+_THIS_DIR0 = pathlib.Path(__file__).resolve().parent
+_BASE0 = _THIS_DIR0 if (_THIS_DIR0 / "index.html").exists() else _THIS_DIR0.parent
+
+
+def load_app_config(base_dir):
+    """[v1.2.0] app.ini 읽기 (tools/app_config.py 와 같은 규칙, 서버 단독 실행을 위해 내장)"""
+    cfg = {"product_name": "IOSTAR-PM", "edition": "KR", "version": "1.2.0", "default_lang": "ko",
+           "host": "0.0.0.0", "port": "8080", "db_file": "wbs_enterprise.db", "log_dir": "logs",
+           "cert_file": "certs/server.crt", "key_file": "certs/server.key"}
+    path = pathlib.Path(base_dir) / "app.ini"
+    if path.exists():
+        cp = configparser.ConfigParser(inline_comment_prefixes=(";", "#"))
+        cp.read(path, encoding="utf-8-sig")
+        for section in cp.sections():
+            for k, v in cp.items(section):
+                cfg[k] = v.strip()
+    cfg["default_lang"] = "en" if cfg["default_lang"].lower() == "en" else "ko"
+    cfg["edition"] = cfg["edition"].upper()
+    return cfg
+
+
+APP_CONFIG = load_app_config(_BASE0)
+VERSION = "ver" + APP_CONFIG["version"]
+APP_NAME = f"{APP_CONFIG['product_name']}{'' if APP_CONFIG['edition'] == 'KR' else ' ' + APP_CONFIG['edition']} {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
 if hasattr(sys.stdout, "reconfigure"):
@@ -1250,8 +1273,23 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         if any(lower.startswith(p) for p in BLOCKED_URL_PREFIXES) or pathlib.Path(lower).suffix in BLOCKED_URL_EXTENSIONS:
             self.send_error(403, "Forbidden: Direct access to server or database files is restricted.")
             return
+        if path == "/js/app-config.js" and (BASE_DIR / "app.ini").exists():
+            self._send_app_config()
+            return
         self._csp = path in CSP_PAGES
         super().do_GET()
+
+    def _send_app_config(self):
+        """app.ini 를 바꾸면 화면 빌드 없이 바로 반영되도록 화면 설정을 즉시 만들어 보냄"""
+        c = load_app_config(BASE_DIR)
+        data = {"productName": c["product_name"], "edition": c["edition"], "version": c["version"], "defaultLang": c["default_lang"]}
+        body = ("var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n").encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/javascript; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_HEAD(self):
         # GET 과 같은 차단 규칙·보안 헤더 적용 (서버·DB·인증서 파일 정보 노출 방지)
@@ -1498,15 +1536,17 @@ def make_tls_context(cert_file, key_file):
 def main():
     global LOG_DATE_MODE, LOG_SILENT_MODE, LOG_DIR, DB_PATH, TLS_ACTIVE, PBKDF2_ITERATIONS
     parser = argparse.ArgumentParser(description=f"{APP_NAME} Secure Multi-User DB Server")
-    parser.add_argument("--port", type=int, default=8080, help="HTTP Server Port")
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind address")
-    parser.add_argument("--db", type=str, default="wbs_enterprise.db", help="SQLite DB file name (inside ./data)")
-    parser.add_argument("--log-dir", type=str, default="logs", help="Directory for daily log files")
+    cfg = APP_CONFIG
+    parser.add_argument("--port", type=int, default=int(cfg["port"]), help="HTTP Server Port (default: app.ini [server] port)")
+    parser.add_argument("--host", type=str, default=cfg["host"], help="Bind address (default: app.ini)")
+    parser.add_argument("--db", type=str, default=cfg["db_file"], help="SQLite DB file name inside ./data (default: app.ini)")
+    parser.add_argument("--log-dir", type=str, default=cfg["log_dir"], help="Directory for daily log files (default: app.ini)")
     parser.add_argument("--log-date", action="store_true", help="Enable date-based log file (logs/server_YYYYMMDD.log)")
     parser.add_argument("--silent", action="store_true", help="Suppress console log (file only)")
     parser.add_argument("--no-console", action="store_true", help="Alias for --silent")
-    parser.add_argument("--cert", type=str, default="", help="HTTPS certificate file (PEM), e.g. certs/server.crt")
-    parser.add_argument("--key", type=str, default="", help="HTTPS private key file (PEM), e.g. certs/server.key")
+    parser.add_argument("--cert", type=str, default="", help="HTTPS certificate file (PEM). Default: app.ini cert_file if it exists")
+    parser.add_argument("--key", type=str, default="", help="HTTPS private key file (PEM). Default: app.ini key_file if it exists")
+    parser.add_argument("--no-tls", action="store_true", help="Start with HTTP even if certificate files exist")
     parser.add_argument("--allow-origin", action="append", default=[], help="Extra origin allowed to call the API (repeatable)")
     parser.add_argument("--pbkdf2-iterations", type=int, default=PBKDF2_ITERATIONS, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -1524,9 +1564,12 @@ def main():
     Store.init_schema()
     server = WbsServer((args.host, args.port), WbsHttpHandler)
     scheme = "http"
-    if args.cert or args.key:
-        cert = pathlib.Path(args.cert) if pathlib.Path(args.cert).is_absolute() else BASE_DIR / args.cert
-        key = pathlib.Path(args.key) if pathlib.Path(args.key).is_absolute() else BASE_DIR / args.key
+    resolve = lambda v: pathlib.Path(v) if pathlib.Path(v).is_absolute() else BASE_DIR / v  # noqa: E731
+    if not (args.cert or args.key) and not args.no_tls and resolve(cfg["cert_file"]).exists() and resolve(cfg["key_file"]).exists():
+        args.cert, args.key = cfg["cert_file"], cfg["key_file"]  # [v1.2.0] 인증서가 있으면 자동 HTTPS
+    if (args.cert or args.key) and not args.no_tls:
+        cert = resolve(args.cert)
+        key = resolve(args.key)
         if not cert.exists() or not key.exists():
             raise SystemExit(f"[ERROR] Certificate or key file not found: {cert} / {key}")
         server.ssl_context = make_tls_context(cert, key)

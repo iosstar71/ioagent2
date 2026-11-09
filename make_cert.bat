@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [IOSTAR-PM - ver1.0.10] HTTPS certificate generator
+rem [IOSTAR-PM shared] HTTPS certificate generator
 rem  - Creates certs\ca.crt (install on client PCs) and certs\server.crt / server.key
 rem  - Extra host names / IPs: make_cert.bat --host 10.10.1.20 --host pms.company.local
 rem  - Renew only the server certificate (keep CA): make_cert.bat --renew
@@ -25,5 +25,5 @@ echo Next steps:
 echo  1. Restart run_server.bat - it starts in HTTPS mode automatically.
 echo  2. Install certs\ca.crt on each client PC: double-click - Install Certificate -
 echo     Local Machine - "Trusted Root Certification Authorities". (or deploy by Group Policy)
-echo  3. Open https://^<server-ip^>:8080 in Chrome or Edge.
+echo  3. Open https://^<server-ip^>:^<port^> in Chrome or Edge. (port: app.ini, default 8080)
 pause

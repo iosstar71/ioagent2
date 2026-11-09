@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.0.10] 단일 파일 실행본(Standalone.html) 빌더
+[IOSTAR-PM v1.2.0] 단일 파일 실행본(Standalone.html) 빌더
 
 index.html 이 참조하는 css/*.css, js/*.js 를 모두 인라인하여
 파일 1개(Standalone.html)만으로 오프라인 실행되는 포터블 배포본을 생성합니다.
@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_initial_data  # noqa: E402
 import build_manual_docx  # noqa: E402
 import build_legal  # noqa: E402
+import app_config  # noqa: E402
 
 SRC = ROOT / "index.html"
 DST = ROOT / "Standalone.html"
@@ -38,6 +39,7 @@ def build() -> Path:
     build_initial_data.build()
     build_manual_docx.build()
     build_legal.build()
+    app_config.build()
 
     html = SRC.read_text(encoding="utf-8")
     missing = []

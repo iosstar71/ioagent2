@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM v1.0.10] 브라우저 E2E 자동 테스트 (Playwright)
+// [IOSTAR-PM v1.2.0] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)
@@ -60,6 +60,18 @@ function readZipEntry(file, name) {
   return "";
 }
 
+// 화면 준비 완료(로그인 완료·잠금 화면 닫힘)까지 대기 — 계정 전환·프로젝트 전환은 화면을 다시 불러오므로 고정 대기 대신 사용
+async function waitApp(page, extra) {
+  await page.waitForFunction(extra => {
+    try {
+      const ok = window.AppBoot && AppBoot.uiReady && AuthManager.currentUser && AuthManager.currentUser.empNo &&
+        document.getElementById("securityLockOverlay").style.display === "none";
+      return ok && (!extra || ProjectContext.current === extra);
+    } catch (e) { return false; }
+  }, extra || null, { timeout: 20000 }).catch(() => {});
+  await page.waitForTimeout(300);
+}
+
 // 시나리오별 현재 비밀번호 (초기 1234 → 첫 로그인 때 변경 필수)
 const LOCAL_PWD = {};
 const SERVER_PWD = {};
@@ -74,9 +86,10 @@ async function login(page, emp, store = LOCAL_PWD) {
     await page.fill("#pcNewPwd", np);
     await page.fill("#pcNewPwd2", np);
     await page.click('#pwdChangeFormPane [data-click="AuthManager.changePasswordFromLogin"]');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(800);
     store[emp] = np;
   }
+  await waitApp(page);
   return forced;
 }
 
@@ -91,8 +104,10 @@ async function localScenarios() {
   check("file:// launch -> switched to LOCAL mode", await page.evaluate(() => DbConnector.config.mode) === "LOCAL");
   await page.context().close();
 
-  page = await newPage();
+  // 이전에 English 를 쓴 브라우저여도 로그인 화면은 app.ini 기본 언어(한국어)로 시작
+  page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(FILE_URL); await page.waitForTimeout(900);
+  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === "ver" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
@@ -216,12 +231,13 @@ async function localScenarios() {
   await page.click('#projectManagerModal [data-click="ProjectManager.create"]'); await page.waitForTimeout(600);
   await page.click('#projectManagerModal [data-click="ProjectManager.close"]');
   const pcount = await page.$$eval("#headerProjectSelect option", o => o.length);
-  await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(2800);
-  const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo }));
+  await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(800); await waitApp(page, "P001");
+  const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo,
+    dbg: { ask: (document.getElementById("syncAskModal") || {}).style ? document.getElementById("syncAskModal").style.display + ":" + (document.getElementById("syncAskTitle") || {}).textContent : "-", lock: document.getElementById("lockModalTitle").textContent, toasts: [...document.querySelectorAll(".toast, #toastContainer *")].map(t => t.textContent).slice(-4), sess: sessionStorage.getItem("AX_PMYS_SESSION_USER"), p1: !!localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164::P001"), cur: sessionStorage.getItem("AX_PMYS_CURRENT_PROJECT"), size: Object.keys(localStorage).map(k => k + "=" + localStorage.getItem(k).length).filter(x => +x.split("=")[1] > 20000) } }));
   check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify(np));
   await page.evaluate(() => { const i = projectUsers.findIndex(u => u.empNo === "lead_lee"); ProjectManager.setUserAssignment(i, "role", "PM"); });
   await page.waitForTimeout(800);
-  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(2800);
+  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(800); await waitApp(page, "DEFAULT");
   const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: AuthManager.normalizeRole(AuthManager.findUser("lead_lee").role) }));
   check("Local: back to default project keeps data; per-project role (P001=PM, base=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
 
@@ -232,8 +248,11 @@ async function localScenarios() {
   check("Password rule: 8+ chars with letters and digits", weak.every(Boolean), JSON.stringify(weak));
   const perm = await page.evaluate(async () => {
     const w2 = wbsData.find(t => t.system === "W2" && t.isLeaf); const orig = w2.name; w2.name += "_X"; persistChanges();
-    await new Promise(r => setTimeout(r, 1200));
-    return wbsData.find(t => t.id === w2.id).name === orig;
+    for (let i = 0; i < 25; i++) {  // 자동저장(0.4초 후) 처리 완료까지 최대 5초 대기
+      await new Promise(r => setTimeout(r, 200));
+      if (wbsData.find(t => t.id === w2.id).name === orig) return true;
+    }
+    return false;
   });
   check("Member: other subsystem changes reverted", perm);
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
@@ -245,7 +264,7 @@ function freePort() {
 }
 
 function copyApp(dst) {
-  for (const f of ["index.html", "wbs_db_server.py"]) fs.copyFileSync(path.join(ROOT, f), path.join(dst, f));
+  for (const f of ["index.html", "wbs_db_server.py", "app.ini"]) fs.copyFileSync(path.join(ROOT, f), path.join(dst, f));
   for (const dir of ["css", "js"]) fs.cpSync(path.join(ROOT, dir), path.join(dst, dir), { recursive: true });
   fs.mkdirSync(path.join(dst, "data"));
   fs.copyFileSync(path.join(ROOT, "data", "initial_data.json"), path.join(dst, "data", "initial_data.json"));
@@ -301,11 +320,11 @@ async function serverScenarios() {
     await a.evaluate(() => ProjectManager.open()); await a.waitForTimeout(500);
     await a.fill("#pmNewName", "서버 신규 프로젝트"); await a.fill("#pmNewStart", "2028-01-01"); await a.fill("#pmNewEnd", "2028-12-31");
     await a.click('#projectManagerModal [data-click="ProjectManager.create"]'); await a.waitForTimeout(800);
-    await a.evaluate(() => ProjectManager.switchTo("P001")); await a.waitForTimeout(3500);
+    await a.evaluate(() => ProjectManager.switchTo("P001")); await a.waitForTimeout(800); await waitApp(a, "P001");
     const sp = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, name: projectConfig.projectName, opts: document.querySelectorAll("#headerProjectSelect option").length }));
     await a.evaluate(() => { wbsData.push({ id: "1", level: 1, system: subsystemsMeta[0].name, name: "SERVER-P001-TASK", isLeaf: true, pStart: "2028-01-03", pEnd: "2028-02-01", weight: 1, aProg: 0 }); return SyncManager.save(["wbsData"]); });
     await a.waitForTimeout(800);
-    await a.evaluate(() => ProjectManager.switchTo("DEFAULT")); await a.waitForTimeout(3500);
+    await a.evaluate(() => ProjectManager.switchTo("DEFAULT")); await a.waitForTimeout(800); await waitApp(a, "DEFAULT");
     const sb = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, leak: wbsData.some(t => t.name === "SERVER-P001-TASK") }));
     check("Server: create project + switch + save stays in that project", sp.pid === "P001" && sp.wbs === 0 && sp.name === "서버 신규 프로젝트" && sp.opts === 2 && sb.pid === "DEFAULT" && sb.wbs === defW && !sb.leak, JSON.stringify([sp, sb]));
 

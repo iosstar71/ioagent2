@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.0.10] HTTPS 인증서 생성기 (파이썬 표준 라이브러리만 사용, OpenSSL 불필요)
+[IOSTAR-PM 공용] HTTPS 인증서 생성기 (파이썬 표준 라이브러리만 사용, OpenSSL 불필요)
 
 폐쇄망 PC 에 OpenSSL 이 없어도 HTTPS 를 켤 수 있도록 다음 파일을 만듭니다.
   certs/ca.crt      사내 전용 인증기관(CA) 인증서  → 접속하는 PC 의 [신뢰할 수 있는 루트 인증 기관]에 설치

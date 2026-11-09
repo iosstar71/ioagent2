@@ -1,58 +1,55 @@
 @echo off
 rem ============================================================================
-rem [IOSTAR-PM - ver1.0.10] Multi-User DB Server Launcher
+rem [IOSTAR-PM shared] Multi-User DB Server Launcher (KR / G editions share this file)
+rem  - Product name, port, DB file, HTTPS certificate paths: app.ini
+rem  - HTTPS starts automatically when the certificate files in app.ini exist (make_cert.bat)
 rem ============================================================================
 chcp 65001 > nul
+setlocal
 cd /d "%~dp0"
 
+rem --- read app.ini (key=value) ---
+set "CFG_product_name=IOSTAR-PM"
+set "CFG_edition=KR"
+set "CFG_version="
+set "CFG_port=8080"
+if exist "app.ini" (
+    for /f "usebackq eol=; tokens=1,* delims==" %%A in ("app.ini") do set "CFG_%%A=%%B"
+)
+
 echo ============================================================================
-echo [IOSTAR-PM - ver1.0.10] Multi-User DB Web Server (Port: 8080)
+echo [%CFG_product_name% %CFG_edition% ver%CFG_version%] Multi-User DB Web Server (Port: %CFG_port%)
 echo Current Directory: %~dp0
 echo ============================================================================
 
-set TARGET_PY=wbs_db_server.py
-if not exist "%TARGET_PY%" (
-    if exist "server\wbs_db_server.py" set TARGET_PY=server\wbs_db_server.py
-)
+set "TARGET_PY=wbs_db_server.py"
 if not exist "%TARGET_PY%" (
     echo [ERROR] wbs_db_server.py file cannot be found.
     pause
     exit /b 1
 )
 
-set PY_CMD=
-rem [v1.0.10] Prefer the bundled Python (python\python.exe) of the Windows package
-if exist "%~dp0python\python.exe" (
-    set PY_CMD="%~dp0python\python.exe"
-    goto PY_FOUND
+rem --- Python: bundled python\python.exe first, then installed Python ---
+set "PY_CMD="
+if exist "%~dp0python\python.exe" set PY_CMD="%~dp0python\python.exe"
+if not defined PY_CMD (
+    where python >nul 2>nul && set "PY_CMD=python"
 )
-where python >nul 2>nul
-if %ERRORLEVEL% equ 0 (
-    set PY_CMD=python
-) else (
-    where py >nul 2>nul
-    if %ERRORLEVEL% equ 0 (
-        set PY_CMD=py -3
-    )
+if not defined PY_CMD (
+    where py >nul 2>nul && set "PY_CMD=py -3"
 )
-
-if "%PY_CMD%"=="" (
+if not defined PY_CMD (
     echo [ERROR] Python 3 was not found.
     echo Use the Windows package that includes the 'python' folder, or install Python 3 and add it to PATH.
     pause
     exit /b 1
 )
-
-:PY_FOUND
-rem [v1.0.10] HTTPS: start with TLS when certs\server.crt and certs\server.key exist (create them with make_cert.bat)
-set TLS_ARGS=
-set SCHEME=http
-if exist "certs\server.crt" if exist "certs\server.key" (
-    set TLS_ARGS=--cert certs\server.crt --key certs\server.key
-    set SCHEME=https
-)
 echo [*] Python  : %PY_CMD%
-echo [*] Protocol: %SCHEME%  (HTTPS certificate: certs\server.crt - run make_cert.bat to create one)
+if exist "certs\server.crt" (
+    echo [*] Protocol: HTTPS ^(certificate found in certs folder^)
+) else (
+    echo [*] Protocol: HTTP  ^(run make_cert.bat to enable HTTPS^)
+)
 
 if "%~1"=="--silent" goto RUN_SILENT
 if "%~1"=="--log-date" goto RUN_LOGDATE
@@ -66,7 +63,7 @@ echo  [1] Standard Mode (Console real-time access ^& query logs)
 echo  [2] Daily Log Mode (Console + logs/server_YYYYMMDD.log automatic daily split)
 echo  [3] Silent Mode (Background file logging only, no console logs)
 echo.
-set CHOICE=1
+set "CHOICE=1"
 set /p CHOICE="Enter your choice (1/2/3) [Default: 1]: "
 
 if "%CHOICE%"=="3" goto RUN_SILENT
@@ -75,20 +72,21 @@ goto RUN_STANDARD
 
 :RUN_STANDARD
 echo [*] Starting server in standard console mode... (login required: default admin / 1234)
-%PY_CMD% "%TARGET_PY%" --port 8080 %TLS_ARGS%
+%PY_CMD% "%TARGET_PY%"
 goto END
 
 :RUN_LOGDATE
 echo [*] Starting server with date-based logging (creates 'logs/' folder)...
-%PY_CMD% "%TARGET_PY%" --port 8080 --log-date %TLS_ARGS%
+%PY_CMD% "%TARGET_PY%" --log-date
 goto END
 
 :RUN_SILENT
 echo [*] Starting server in silent mode...
 echo [*] Execution logs are saved to date-based files in the 'logs/' folder and will not appear in the console.
 echo [*] Press Ctrl+C in this window to stop the server.
-%PY_CMD% "%TARGET_PY%" --port 8080 --log-date --silent %TLS_ARGS%
+%PY_CMD% "%TARGET_PY%" --log-date --silent
 goto END
 
 :END
+endlocal
 pause

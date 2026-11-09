@@ -93,13 +93,17 @@ var ProjectManager = {
         if (!r.ok && !r.nothing) { if (onCancel) onCancel(); return; }
       }
     }
-    ProjectContext.set(pid);
+    // 전환 중에는 저장 금지 (대기 중인 자동저장이 새 프로젝트 저장 위치에 이전 프로젝트 데이터를 쓰지 않도록)
+    this._switching = true;
+    if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
+    SyncManager._suspendAuto = true;
     try {
       const active = document.querySelector(".tab-pane.active");
       sessionStorage.setItem("AX_PMYS_LANDING_TAB", active ? active.id : "tab-home");
     } catch (e) {}
+    ProjectContext.set(pid);
     showToast("🗂️ 프로젝트를 전환합니다...");
-    setTimeout(() => window.location.reload(), 250);
+    window.location.reload();
   },
 
   // ---- 관리 창 ----

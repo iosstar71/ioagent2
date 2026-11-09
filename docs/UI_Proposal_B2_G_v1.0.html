@@ -122,7 +122,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
       <span class="chip ok">1024px 화면까지 스크롤 없음</span>
       <span class="chip ok">모든 화면 최대 2번 클릭</span>
       <span class="chip ok">기본 언어 한국어</span>
-      <span class="chip ok">배치 파일 v1.1.0 과 공용</span>
+      <span class="chip ok">배치 파일 v1.2.0 과 공용</span>
     </div>
   </header>
 
@@ -155,7 +155,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
         </tbody>
       </table>
     </div>
-    <p class="legend">업무는 대부분 한 묶음 안에서 이어집니다(WBS ↔ 간트, 주간보고 ↔ 회의). 같은 묶음 안의 이동은 지금처럼 한 번 클릭이고, 묶음을 바꾸면 그 묶음에서 마지막으로 보던 화면이 열립니다.</p>
+    <p class="legend">업무는 대부분 한 묶음 안에서 이어집니다(WBS ↔ 간트, 주간보고 ↔ 회의). 같은 묶음 안의 이동은 지금처럼 한 번 클릭이고, 묶음을 바꾸면 그 묶음에서 마지막으로 보던 화면이 열립니다. 왼쪽 메뉴(개편안 A)는 없애지 않고 <b>선택 설정</b>으로 남겨, 세로 메뉴를 선호하는 사용자가 고를 수 있게 합니다.</p>
   </section>
 
   <section>
@@ -192,6 +192,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
           <tr><td>⚙ 관리 메뉴</td><td>기준정보 · 스마트 병합 · 시스템 설정 · 프로젝트 관리 · 법적 고지 (권한이 없으면 숨김)</td></tr>
           <tr><td>즐겨찾기 (선택)</td><td>메뉴 줄 오른쪽에 자주 쓰는 화면 최대 3개를 고정. 1280px 미만에서는 숨김</td></tr>
           <tr><td>아래 고정 줄</td><td>저장하지 않은 변경 n건 + [변경 취소] [모두 저장 (Ctrl+S)] — DB 서버 모드에서만 표시</td></tr>
+          <tr><td>메뉴 위치 (선택 설정)</td><td><b>기본: 위쪽 2단 메뉴.</b> [사용자 메뉴 &gt; 화면 설정 &gt; 메뉴 위치]에서 <b>왼쪽 메뉴</b>를 고를 수 있습니다. 같은 메뉴 정의(묶음 4개 + 하위 메뉴 + ⚙ 관리)를 세로로 그리며, 접으면 아이콘만 남아 64px 만 차지합니다. 사용자마다 저장되고, 관리자는 기본값을 정할 수 있습니다.</td></tr>
         </tbody>
       </table>
     </div>
@@ -223,8 +224,8 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 
   <section>
     <span class="eyebrow">7 · 배치 파일</span>
-    <h2>v1.1.0 과 같은 배치 파일 사용</h2>
-    <p>국내판(v1.1.x)과 G 버전이 같은 배치 파일을 그대로 쓰도록, 제품마다 다른 값은 배치 파일이 아닌 설정 파일 한 곳에 둡니다.</p>
+    <h2>v1.2.0 과 같은 배치 파일 사용</h2>
+    <p>국내판(v1.2.x)과 G 버전이 같은 배치 파일을 그대로 쓰도록, 제품마다 다른 값은 배치 파일이 아닌 설정 파일 한 곳에 둡니다.</p>
     <div class="tbl">
       <table>
         <thead><tr><th style="width:170px;">파일</th><th>공용 방식</th></tr></thead>
@@ -239,7 +240,7 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
     </div>
     <h3>변경이 필요할 때의 순서</h3>
     <ol>
-      <li>배치 파일 변경은 국내판 v1.1.x 저장소에서 먼저 하고 v1.1.x 패치(v1.1.1 …)로 배포합니다.</li>
+      <li>배치 파일 변경은 국내판 v1.2.x 저장소에서 먼저 하고 v1.2.x 패치(v1.2.1 …)로 배포합니다.</li>
       <li>같은 커밋을 G 저장소에 가져옵니다 (배치 파일·<code>tools/make_cert.py</code>·<code>tools/make_release*.py</code> 는 두 저장소에서 내용이 같아야 함).</li>
       <li>두 저장소의 자동 테스트에 "배치 파일 동일 여부" 검사를 넣어, 한쪽만 바뀌면 테스트가 실패하도록 합니다.</li>
       <li>G 에만 필요한 기능은 배치 파일이 아닌 <code>app.ini</code> 값이나 서버 실행 옵션으로 추가합니다.</li>
@@ -253,13 +254,13 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
       <table>
         <thead><tr><th style="width:170px;">단계</th><th>내용</th></tr></thead>
         <tbody>
-          <tr><td>국내판 v1.1.0</td><td>v1.0.10 기능(보안·HTTPS·CSP·여러 프로젝트·법적 고지·Windows 패키지·IOSTAR-PM 명칭) 안정화 + <code>app.ini</code> 도입. 현재 화면 구조 유지</td></tr>
-          <tr><td>G v1.0 착수</td><td>v1.1.0 을 기준으로 새 저장소 분기 → B2 메뉴(2단 메뉴·⚙ 관리·Ctrl+K·하단 저장 줄) → 테마 3종 → 영어 기본 리소스 + 기본 언어 ko</td></tr>
-          <tr><td>공통 수정</td><td>엔진(일정 계산·저장·권한·DB 서버)과 배치 파일 수정은 v1.1.x 에서 먼저 하고 G 로 가져옴</td></tr>
+          <tr><td>국내판 v1.2.0</td><td>v1.0.10 기능(보안·HTTPS·CSP·여러 프로젝트·법적 고지·Windows 패키지·IOSTAR-PM 명칭) 다듬기 + <code>app.ini</code> 도입 + 공용 파일 확인 도구. 현재 화면 구조 유지 (완료)</td></tr>
+          <tr><td>G v1.0 착수</td><td>국내판 v1.2.0 에서 G 브랜치 분기 → B2 메뉴(2단 메뉴·⚙ 관리·Ctrl+K·하단 저장 줄, 왼쪽 메뉴는 선택 설정) → 테마 3종 → 영어 기본 리소스 + 기본 언어 ko</td></tr>
+          <tr><td>공통 수정</td><td>엔진(일정 계산·저장·권한·DB 서버)과 배치 파일 수정은 v1.2.x 에서 먼저 하고 G 로 가져옴</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note">B2 의 2단 메뉴는 화면 구조만 바꾸는 작업이라, 원하시면 국내판 v1.1.x 에 먼저 넣어 사용자 반응을 본 뒤 G 에 옮기는 것도 가능합니다.</p>
+    <p class="note">B2 의 2단 메뉴는 화면 구조만 바꾸는 작업이라, 원하시면 국내판 v1.2.x 에 먼저 넣어 사용자 반응을 본 뒤 G 에 옮기는 것도 가능합니다.</p>
   </section>
 </div>
 
