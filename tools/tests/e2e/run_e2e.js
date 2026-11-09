@@ -112,7 +112,17 @@ async function localScenarios() {
   await page.context().close();
 
   // 이전에 English 를 쓴 브라우저여도 로그인 화면은 app.ini 기본 언어(한국어)로 시작
-  page = await newPage({ persistent: true, init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
+  page = await newPage({ persistent: true, init: () => {
+    try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {}
+    // [진단] 저장소 삭제 추적
+    try {
+      const log = m => { try { const a = JSON.parse(sessionStorage.getItem("__lslog") || "[]"); a.push(m); sessionStorage.setItem("__lslog", JSON.stringify(a.slice(-12))); } catch (e) {} };
+      log("LOAD keys=" + localStorage.length + " reg=" + !!localStorage.getItem("AX_PMYS_PROJECTS"));
+      const P = Storage.prototype, oc = P.clear, orm = P.removeItem;
+      P.clear = function () { if (this === localStorage) log("CLEAR " + new Error().stack.split("\n").slice(2, 5).join(" | ")); return oc.apply(this, arguments); };
+      P.removeItem = function (k) { if (this === localStorage && /AX_PMYS_PROJECTS|WBS_ENTERPRISE/.test(k)) log("RM " + k + " " + new Error().stack.split("\n").slice(2, 5).join(" | ")); return orm.apply(this, arguments); };
+    } catch (e) {}
+  } });
   await page.goto(FILE_URL); await page.waitForTimeout(900);
   check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === "ver" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
@@ -241,7 +251,7 @@ async function localScenarios() {
   const pre = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164") || "{}"); const a = (d.projectUsers || []).find(u => u.empNo === "admin") || {}; return { p1: !!localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164::P001"), adminPwd: !!a.pwdHash, reg: (localStorage.getItem("AX_PMYS_PROJECTS") || "").length, url: location.href.slice(-40) }; });
   await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(800); await waitApp(page, "P001");
   const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo,
-    dbg: { ask: (document.getElementById("syncAskModal") || {}).style ? document.getElementById("syncAskModal").style.display + ":" + (document.getElementById("syncAskTitle") || {}).textContent : "-", lock: document.getElementById("lockModalTitle").textContent, toasts: [...document.querySelectorAll(".toast, #toastContainer *")].map(t => t.textContent).slice(-4), sess: sessionStorage.getItem("AX_PMYS_SESSION_USER"), p1: !!localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164::P001"), cur: sessionStorage.getItem("AX_PMYS_CURRENT_PROJECT"), adminPwd: !!((JSON.parse(localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164") || "{}").projectUsers || []).find(u => u.empNo === "admin") || {}).pwdHash, reg: (localStorage.getItem("AX_PMYS_PROJECTS") || "").length, url: location.href.slice(-40), size: Object.keys(localStorage).map(k => k + "=" + localStorage.getItem(k).length).filter(x => +x.split("=")[1] > 20000) } }));
+    dbg: { ask: (document.getElementById("syncAskModal") || {}).style ? document.getElementById("syncAskModal").style.display + ":" + (document.getElementById("syncAskTitle") || {}).textContent : "-", lock: document.getElementById("lockModalTitle").textContent, toasts: [...document.querySelectorAll(".toast, #toastContainer *")].map(t => t.textContent).slice(-4), sess: sessionStorage.getItem("AX_PMYS_SESSION_USER"), p1: !!localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164::P001"), cur: sessionStorage.getItem("AX_PMYS_CURRENT_PROJECT"), lslog: sessionStorage.getItem("__lslog"), adminPwd: !!((JSON.parse(localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164") || "{}").projectUsers || []).find(u => u.empNo === "admin") || {}).pwdHash, reg: (localStorage.getItem("AX_PMYS_PROJECTS") || "").length, url: location.href.slice(-40), size: Object.keys(localStorage).map(k => k + "=" + localStorage.getItem(k).length).filter(x => +x.split("=")[1] > 20000) } }));
   check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify({ pcount, pre, np }));
   await page.evaluate(() => { const i = projectUsers.findIndex(u => u.empNo === "lead_lee"); ProjectManager.setUserAssignment(i, "role", "PM"); });
   await page.waitForTimeout(800);
