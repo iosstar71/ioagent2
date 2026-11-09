@@ -162,6 +162,61 @@ var ProjectManager = {
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
     if (typeof I18N !== "undefined") I18N.translateTree(m);
   },
+  // [Standard v1.0.1] 시스템 설정·기준정보에서 바로 새 프로젝트 등록 (관리 창을 열고 이름 칸으로 이동)
+  async openNew() {
+    await this.open();
+    const panel = document.getElementById("pmCreatePanel");
+    const name = document.getElementById("pmNewName");
+    if (panel && panel.style.display !== "none") {
+      panel.scrollIntoView({ block: "nearest" });
+      if (name) name.focus();
+    } else {
+      showToast("⚠️ 새 프로젝트는 시스템관리자 또는 PM만 만들 수 있습니다.");
+    }
+  },
+
+  // [Standard v1.0.1] 시스템 설정 > 🗂️ 프로젝트, 기준정보 > 기본정보의 프로젝트 요약 카드
+  async renderPanels() {
+    const boxes = Array.prototype.slice.call(document.querySelectorAll("[data-project-panel]"));
+    if (!boxes.length) return;
+    try { await this.refreshList(); } catch (e) {}
+    const list = ProjectContext.projects.length ? ProjectContext.projects : [{ id: ProjectContext.current, name: projectConfig.projectName || ProjectContext.current, status: "ACTIVE" }];
+    const cur = ProjectContext.info() || list.find(p => p.id === ProjectContext.current) || list[0];
+    const active = list.filter(p => p.status !== "ARCHIVED").length;
+    const canCreate = this.canCreate();
+    const canManage = canCreate || this.canManage(cur);
+    const mode = this.isServer() ? "DB 서버 (모든 사용자 공유)" : "이 PC 브라우저 저장소";
+    boxes.forEach(box => {
+      const compact = box.getAttribute("data-project-panel") === "compact";
+      const rows = compact ? "" : `
+        <div class="table-container" style="max-height:260px;">
+          <table class="matrix-table pm-table">
+            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">접근</th><th style="width:90px;"></th></tr></thead>
+            <tbody>${list.map(p => `<tr class="${p.id === ProjectContext.current ? "pm-current" : ""}">
+              <td><code>${escapeHtml(p.id)}</code></td>
+              <td><b>${escapeHtml(p.name || p.id)}</b>${p.id === ProjectContext.current ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
+              <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
+              <td>${p.restricted ? `🔒 참여자 ${(p.members || []).length}명` : "전체 사용자"}</td>
+              <td>${p.id === ProjectContext.current ? "" : `<button class="btn btn-xs" data-btn="nav" data-click="ProjectManager.switchTo" data-click-args="${UiEvents.args(p.id)}">열기</button>`}</td>
+            </tr>`).join("")}</tbody>
+          </table>
+        </div>`;
+      box.innerHTML = `
+        <div class="pm-summary">
+          <div class="pm-summary-item"><span>현재 프로젝트</span><b>${escapeHtml(cur ? (cur.name || cur.id) : "-")}</b><code>${escapeHtml(cur ? cur.id : "")}</code></div>
+          <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small>사용 중 ${active} · 보관 ${list.length - active}</small></div>
+          <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
+          <div class="pm-summary-actions">
+            ${canManage ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 열기</button>' : ""}
+            ${canCreate ? '<button class="btn btn-sm" data-btn="add" data-click="ProjectManager.openNew">➕ 새 프로젝트 등록</button>' : ""}
+            ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 시스템관리자 또는 PM만 할 수 있습니다.</span>' : ""}
+          </div>
+        </div>${rows}`;
+      if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
+      if (typeof I18N !== "undefined") I18N.translateTree(box);
+    });
+  },
+
   close() {
     const m = document.getElementById("projectManagerModal");
     if (m) m.style.display = "none";
@@ -247,6 +302,7 @@ var ProjectManager = {
     await this.refreshList();
     this.renderList();
     this.renderSelector();
+    this.renderPanels();
   },
 
   async _update(pid, patch) {
@@ -277,6 +333,7 @@ var ProjectManager = {
     await this.refreshList();
     this.renderList();
     this.renderSelector();
+    this.renderPanels();
     return true;
   },
 
@@ -326,6 +383,7 @@ var ProjectManager = {
       await this.refreshList();
       this.renderList();
       this.renderSelector();
+      this.renderPanels();
     });
   },
 

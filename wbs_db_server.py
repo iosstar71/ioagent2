@@ -56,12 +56,14 @@ def load_app_config(base_dir):
                 cfg[k] = v.strip()
     cfg["default_lang"] = "en" if cfg["default_lang"].lower() == "en" else "ko"
     cfg["edition"] = cfg["edition"].upper()
+    if not cfg.get("edition_name"):
+        cfg["edition_name"] = {"KR": "", "STANDARD": "Standard", "NEO": "Neo"}.get(cfg["edition"], cfg["edition"])
     return cfg
 
 
 APP_CONFIG = load_app_config(_BASE0)
 VERSION = "ver" + APP_CONFIG["version"]
-APP_NAME = f"{APP_CONFIG['product_name']}{'' if APP_CONFIG['edition'] == 'KR' else ' ' + APP_CONFIG['edition']} {VERSION}"
+APP_NAME = f"{APP_CONFIG['product_name']}{' ' + APP_CONFIG['edition_name'] if APP_CONFIG['edition_name'] else ''} {VERSION}"
 
 # Windows 콘솔 한글 출력 인코딩 안전 처리
 if hasattr(sys.stdout, "reconfigure"):
@@ -1282,7 +1284,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def _send_app_config(self):
         """app.ini 를 바꾸면 화면 빌드 없이 바로 반영되도록 화면 설정을 즉시 만들어 보냄"""
         c = load_app_config(BASE_DIR)
-        data = {"productName": c["product_name"], "edition": c["edition"], "version": c["version"], "defaultLang": c["default_lang"]}
+        data = {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
+                "version": c["version"], "defaultLang": c["default_lang"]}
         body = ("var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n").encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/javascript; charset=utf-8")

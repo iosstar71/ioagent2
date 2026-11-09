@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM v1.2.0] 브라우저 E2E 자동 테스트 (Playwright)
+// [IOSTAR-PM Standard v1.0.1] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)
@@ -131,7 +131,7 @@ async function localMain() {
   //   계정 전환·프로젝트 전환처럼 화면을 다시 불러오는 검사는 http:// 에서 수행)
   page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(STATIC_URL); await page.waitForTimeout(900);
-  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent.indexOf("ver" + APP_CONFIG.version) === 0));
+  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === APP_CONFIG.editionName + " v" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
@@ -250,11 +250,19 @@ async function localMain() {
 
   // 7-2) 여러 프로젝트 (로컬): 만들기 → 전환 → 데이터 분리 → 프로젝트별 역할 → 기본 프로젝트 복귀
   const defaultWbs = await page.evaluate(() => wbsData.length);
+  // [Standard v1.0.1] 시스템 설정 > 🗂️ 프로젝트 > [➕ 새 프로젝트 등록] 바로가기로 만들기
   await page.click("#gAdminBtn"); await page.waitForTimeout(200);
-  await page.click("#btnProjectManager"); await page.waitForTimeout(400);
+  await page.click('#gAdminItems [data-click-args*="tab-config"]'); await page.waitForTimeout(400);
+  await page.click('.master-subtab-btn[data-subtab="project"]'); await page.waitForTimeout(600);
+  const cfgPanel = await page.evaluate(() => ({ rows: document.querySelectorAll("#cfgProjectPanel tbody tr").length, btns: document.querySelectorAll('#cfgProjectPanel [data-click="ProjectManager.openNew"], #cfgProjectPanel [data-click="ProjectManager.open"]').length }));
+  await page.click('#cfgProjectPanel [data-click="ProjectManager.openNew"]'); await page.waitForTimeout(500);
+  const focusNew = await page.evaluate(() => document.activeElement && document.activeElement.id);
+  check("Settings > Project: list + [manage]/[new project] shortcuts (focus on name)", cfgPanel.rows === 1 && cfgPanel.btns === 2 && focusNew === "pmNewName", JSON.stringify({ cfgPanel, focusNew }));
   await page.fill("#pmNewName", "E2E 신규 프로젝트"); await page.fill("#pmNewStart", "2028-01-01"); await page.fill("#pmNewEnd", "2028-12-31");
   await page.click('#projectManagerModal [data-click="ProjectManager.create"]'); await page.waitForTimeout(600);
   await page.click('#projectManagerModal [data-click="ProjectManager.close"]');
+  const cfgRows = await page.evaluate(() => document.querySelectorAll("#cfgProjectPanel tbody tr").length);
+  check("Settings > Project list refreshes after create", cfgRows === 2, String(cfgRows));
   const pcount = await page.$$eval("#headerProjectSelect option", o => o.length);
   await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(800); await waitApp(page, "P001");
   const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo}));
@@ -287,6 +295,22 @@ async function localMain() {
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
   check("G: left menu option + 3 themes (navy, teal, graphite)", side && themes === "navy,teal,dark", themes);
+  // [Standard v1.0.1] 1단(묶음)·2단(하위) 메뉴 구분, 간트 머리글 테마, 설정 화면 선택지 정리, 판 이름 표시
+  await page.click('.g-group[data-group="sc"]'); await page.waitForTimeout(150);
+  await page.click('.g-nav-top .g-sub[data-tab="tab-gantt"]'); await page.waitForTimeout(500);
+  const look = await page.evaluate(() => {
+    const cs = s => getComputedStyle(document.querySelector(s));
+    const head = cs(".gantt-header").backgroundColor, tree = cs(".gantt-tree-head").backgroundColor;
+    const probe = document.createElement("div"); probe.style.background = "var(--header-bg)"; document.body.appendChild(probe);
+    const hb = getComputedStyle(probe).backgroundColor; probe.remove();
+    return { gAct: cs(".g-group.active").backgroundColor, sAct: cs(".g-sub.active").backgroundColor, sBorder: cs(".g-sub.active").borderBottomWidth, crumb: !!document.querySelector(".g-crumb"), head, tree, hb };
+  });
+  check("Standard: group menu (filled box) vs sub menu (underline tab) are visually distinct", look.crumb && look.gAct !== look.sAct && parseInt(look.sBorder, 10) >= 2, JSON.stringify(look));
+  check("Standard: gantt header row uses the theme header color", look.head === look.hb && look.tree === look.hb, JSON.stringify(look));
+  const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
+    return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent }; });
+  await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); });
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "navy,teal,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && /^Standard v\d/.test(cfgOpts.badge), JSON.stringify(cfgOpts));
 
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);

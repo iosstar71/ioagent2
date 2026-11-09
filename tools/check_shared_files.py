@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM 공용] 국내판(KR) · G 버전 공용 파일 확인
+[IOSTAR-PM 공용] 국내판(KR) · Standard · Neo 공용 파일 확인
 
-배치 파일과 배포·인증서 도구는 두 판이 똑같은 파일을 씁니다. 제품마다 다른 값은 app.ini 에만 둡니다.
+배치 파일과 배포·인증서 도구는 모든 판이 똑같은 파일을 씁니다. 제품마다 다른 값은 app.ini 에만 둡니다.
 이 도구는 공용 파일의 지문(SHA-256)을 tools/shared_files.sha256 과 비교하여,
 한쪽 판에서만 공용 파일을 바꾸는 실수를 막습니다.
 
@@ -11,9 +11,9 @@
     python tools/check_shared_files.py --update   공용 파일을 바꾼 뒤 지문 목록 갱신
 
 공용 파일을 바꾸는 순서:
-    1) 국내판(v1.2.x)에서 먼저 바꾸고 --update 로 목록 갱신 후 커밋
-    2) 같은 파일들과 tools/shared_files.sha256 을 G 버전에 그대로 복사하여 커밋
-       (git: git checkout <국내판 브랜치> -- <파일들> tools/shared_files.sha256)
+    1) 기준 판(Standard, 국내판 v1.2.0 은 개발 종료)에서 먼저 바꾸고 --update 로 목록 갱신 후 커밋
+    2) 같은 파일들과 tools/shared_files.sha256 을 다른 판(Neo)에 그대로 복사하여 커밋
+       (git: git checkout <Standard 브랜치> -- <파일들> tools/shared_files.sha256)
 """
 import hashlib
 import sys

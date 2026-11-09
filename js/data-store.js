@@ -72,6 +72,7 @@ var DataRegistry = {
       case "weeklyReportsData": if (Array.isArray(val)) weeklyReportsData = val; break;
       case "theme":
         if (typeof val === "string" && val) {
+          if (typeof normalizeTheme === "function") val = normalizeTheme(val);
           document.body.setAttribute("data-theme", val);
           const sel = document.getElementById("themeSelector");
           if (sel) sel.value = val;

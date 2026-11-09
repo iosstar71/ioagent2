@@ -3,8 +3,9 @@
 // =============================================================================
 // [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
 const APP_VERSION = (function () {
-  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "IOSTAR-PM", version: "1.2.0", edition: "KR" };
-  return { version: c.version, title: `${c.productName}${c.edition && c.edition !== "KR" ? " " + c.edition : ""} ver${c.version}`, edition: c.edition || "KR" };
+  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "IOSTAR-PM", version: "1.0.1", edition: "STANDARD", editionName: "Standard" };
+  const edName = c.editionName !== undefined ? c.editionName : (c.edition && c.edition !== "KR" ? c.edition : "");
+  return { version: c.version, title: `${c.productName}${edName ? " " + edName : ""} ver${c.version}`, edition: c.edition || "KR", editionName: edName };
 })();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼
@@ -689,10 +690,10 @@ function renderProjectTitles() {
   const hSys = document.getElementById("headerSystemTitleText");
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
-  // G 버전: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
+  // Standard·Neo: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
   if (hSys) hSys.textContent = APP_VERSION.edition !== "KR" ? sysTitle.replace(/\s*ver\d+(\.\d+)*.*$/, "") : sysTitle;
   const hVer = document.getElementById("headerVersionBadge");
-  if (hVer) hVer.textContent = "ver" + APP_VERSION.version + (APP_VERSION.edition !== "KR" ? " · " + APP_VERSION.edition : "");
+  if (hVer) hVer.textContent = (APP_VERSION.editionName ? APP_VERSION.editionName + " " : "") + "v" + APP_VERSION.version;
   if (hProj) hProj.textContent = projName;
   if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 
@@ -999,9 +1000,10 @@ var SubTabs = {
     if (group === "master") {
       if (name === "holiday") ProgressBasisManager.render();
       if (name === "users") renderProjectUsersTable();
-      if (name === "basic") MilestoneManager.render();
+      if (name === "basic") { MilestoneManager.render(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
+    if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
   },
   restore(group, def) {
     let name = def;
@@ -1284,6 +1286,7 @@ var InitialDataLoader = {
       if (Array.isArray(clone.meetingsData)) meetingsData = clone.meetingsData;
       if (Array.isArray(clone.weeklyReportsData)) weeklyReportsData = clone.weeklyReportsData;
       if (clone.theme) {
+        clone.theme = normalizeTheme(clone.theme);
         document.body.setAttribute("data-theme", clone.theme);
         const sel = document.getElementById("themeSelector");
         if (sel) sel.value = clone.theme;
@@ -1485,7 +1488,7 @@ var AppBoot = {
     LayoutManager.init();
     HomeScreenManager.init();
     rebuildAll();
-    if (typeof GShell !== "undefined") GShell.init(); // [G v1.0.0] 2단 메뉴·머리글
+    if (typeof GShell !== "undefined") GShell.init(); // [Standard] 2단 메뉴·머리글 (G v1.0.0 에서 시작)
     this.uiReady = true;
   }
 };
@@ -3528,7 +3531,17 @@ function switchTab(tabId) {
   activateTab(tabId);
 }
 
+// [Standard v1.0.1] 테마는 Navy · Teal · Graphite(어두운 화면) 3가지 — 이전 버전의 다른 테마 값은 가까운 테마로
+const STANDARD_THEMES = ["navy", "teal", "dark"];
+function normalizeTheme(theme) {
+  if (STANDARD_THEMES.indexOf(theme) !== -1) return theme;
+  if (theme === "graphite" || theme === "cyber-neon") return "dark";
+  if (theme === "emerald" || theme === "mint") return "teal";
+  return "navy";
+}
+
 function changeTheme(theme) {
+  theme = normalizeTheme(theme);
   DataRegistry.set("theme", theme);
   const sel2 = document.getElementById("cfgThemeSelect");
   if (sel2 && sel2.value !== theme) sel2.value = theme;
@@ -4661,13 +4674,12 @@ window.addEventListener("resize", () => {
 // [ver1.0.4] LayoutManager: 화면 레이아웃 타입 & 테이블 밀도(Density) 제어
 // =============================================================================
 var LayoutManager = {
+  // [Standard v1.0.1] 메뉴 위치 2가지 (이전 버전의 다른 레이아웃 값은 위쪽 메뉴로)
   LAYOUT_LABELS: {
-    "top-nav": "📐 표준 상단탭형 (Top Nav)",
-    "sidebar-left": "📑 좌측 사이드바형 (Sidebar)",
-    "compact-nav": "⚡ 고밀도 슬림형 (Compact)",
-    "split-header": "⚖️ 업무·관리 분리형 (Split)",
-    "focused-card": "🖥️ 브리핑 집중형 (Briefing)"
+    "top-nav": "⬆️ 위쪽 메뉴 (기본)",
+    "sidebar-left": "⬅️ 왼쪽 메뉴"
   },
+  DENSITIES: ["standard", "compact"],
 
   init() {
     const savedLayout = (projectConfig && projectConfig.layoutType) || localStorage.getItem("WBS_LAYOUT_TYPE") || "top-nav";
@@ -4713,7 +4725,7 @@ var LayoutManager = {
     });
 
     const badge = document.getElementById("currentLayoutStatusBadge");
-    if (badge) badge.textContent = `현재 레이아웃: ${this.LAYOUT_LABELS[valid]}`;
+    if (badge) badge.textContent = `현재 메뉴 위치: ${this.LAYOUT_LABELS[valid]}`;
 
     this.adjustSidebar();
 
@@ -4727,25 +4739,27 @@ var LayoutManager = {
     if (notify) {
       persistChanges();
       if (typeof showToast === "function") {
-        showToast(`화면 레이아웃이 [${this.LAYOUT_LABELS[valid]}] 모드로 전환되었습니다.`);
+        showToast(`메뉴 위치를 [${this.LAYOUT_LABELS[valid]}](으)로 바꿨습니다.`);
       }
     }
   },
 
   setDensity(densityMode, notify = false) {
-    const valid = ["standard", "compact", "spacious"].includes(densityMode) ? densityMode : "standard";
+    const valid = this.DENSITIES.includes(densityMode) ? densityMode : "standard";
     document.body.setAttribute("data-density", valid);
     if (projectConfig) projectConfig.uiDensity = valid;
     try { localStorage.setItem("WBS_UI_DENSITY", valid); } catch (e) {}
 
     const cfgDen = document.getElementById("cfgDensitySelect");
     if (cfgDen) cfgDen.value = valid;
+    const hdrDen = document.getElementById("gDensitySelect");
+    if (hdrDen) hdrDen.value = valid;
 
     if (notify) {
       persistChanges();
-      const labelMap = { standard: "표준 밀도", compact: "조밀하게(Compact)", spacious: "여유있게(Spacious)" };
+      const labelMap = { standard: "기본", compact: "촘촘" };
       if (typeof showToast === "function") {
-        showToast(`테이블 및 입력폼 표시 밀도가 [${labelMap[valid]}] 모드로 적용되었습니다.`);
+        showToast(`화면 밀도를 [${labelMap[valid]}](으)로 바꿨습니다.`);
       }
     }
   },

@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================================
-rem [IOSTAR-PM shared] Multi-User DB Server Launcher (KR / G editions share this file)
+rem [IOSTAR-PM shared] Multi-User DB Server Launcher (all editions share this file)
 rem  - Product name, port, DB file, HTTPS certificate paths: app.ini
 rem  - HTTPS starts automatically when the certificate files in app.ini exist (make_cert.bat)
 rem ============================================================================
@@ -11,14 +11,16 @@ cd /d "%~dp0"
 rem --- read app.ini (key=value) ---
 set "CFG_product_name=IOSTAR-PM"
 set "CFG_edition=KR"
+set "CFG_edition_name="
 set "CFG_version="
 set "CFG_port=8080"
 if exist "app.ini" (
     for /f "usebackq eol=; tokens=1,* delims==" %%A in ("app.ini") do set "CFG_%%A=%%B"
 )
+if not defined CFG_edition_name set "CFG_edition_name=%CFG_edition%"
 
 echo ============================================================================
-echo [%CFG_product_name% %CFG_edition% ver%CFG_version%] Multi-User DB Web Server (Port: %CFG_port%)
+echo [%CFG_product_name% %CFG_edition_name% ver%CFG_version%] Multi-User DB Web Server (Port: %CFG_port%)
 echo Current Directory: %~dp0
 echo ============================================================================
 

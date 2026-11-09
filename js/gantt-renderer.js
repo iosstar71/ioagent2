@@ -26,7 +26,7 @@ const GanttRenderer = {
         const mEnd = new Date(y, m, 0);
         cols.push({
           width: colW, days: mEnd.getDate(),
-          html: `<span style="font-weight:bold; font-size:11.5px; color:var(--primary); display:block;">${m}월</span><span style="font-size:9.5px; color:var(--text-sub); display:block;">${y}년</span>`,
+          html: `<span class="gh-main" style="font-size:11.5px;">${m}월</span><span class="gh-sub">${y}년</span>`,
           title: `${y}년 ${m}월 (${this._iso(cur)} ~ ${this._iso(mEnd)})`
         });
         cur.setMonth(cur.getMonth() + 1);
@@ -50,7 +50,7 @@ const GanttRenderer = {
         const iso = this._iso(cur);
         cols.push({
           width: colW, days: 7,
-          html: `<span style="font-weight:bold; font-size:11px; color:var(--primary); display:block;">${w}주차</span><span style="font-size:9.5px; color:var(--text-sub); display:block;">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
+          html: `<span class="gh-main" style="font-size:11px;">${w}주차</span><span class="gh-sub">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
           title: `${w}주차: ${iso} ~ ${this._iso(end)}`
         });
         cur.setDate(cur.getDate() + 7);

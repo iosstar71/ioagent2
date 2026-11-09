@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM G v1.0.0] 화면 틀 (B2 레이아웃)
+// [IOSTAR-PM Standard v1.0.1] 화면 틀 (B2 레이아웃, G v1.0.0 에서 이름 변경 — 내부 이름 GShell·g-edition 은 호환을 위해 유지)
 // -----------------------------------------------------------------------------
 //  - 2단 메뉴: 업무 묶음 4개 + 선택한 묶음의 하위 메뉴 (위쪽 메뉴가 가로로 넘치지 않음)
 //  - ⚙ 관리 메뉴: 기준정보 · 스마트 병합 · 시스템 설정 · 프로젝트 관리 · 법적 고지 (권한 없으면 숨김)
@@ -11,10 +11,10 @@
 // =============================================================================
 var GShell = {
   GROUPS: [
-    { key: "ov", label: "개요", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
-    { key: "sc", label: "일정", tabs: ["tab-wbs", "tab-gantt"] },
-    { key: "sq", label: "범위·품질", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
-    { key: "co", label: "보고·협업", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
+    { key: "ov", label: "개요", icon: "🧭", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
+    { key: "sc", label: "일정", icon: "🗓️", tabs: ["tab-wbs", "tab-gantt"] },
+    { key: "sq", label: "범위·품질", icon: "🎯", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
+    { key: "co", label: "보고·협업", icon: "🤝", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
   ],
   ADMIN_TABS: ["tab-master", "tab-merge", "tab-config"],
   LABELS: {
@@ -104,15 +104,22 @@ var GShell = {
     const favs = this.favorites().filter(t => this.allowed(t));
     const btn = (tabId, cls) => `<button type="button" class="${cls}${tabId === cur ? " active" : ""}" data-tab="${tabId}" data-click="GShell.go" data-click-args="${UiEvents.args(tabId)}"${tabId === cur ? ' aria-current="page"' : ""}><span class="g-ico">${this.ICONS[tabId] || ""}</span>${escapeHtml(this.label(tabId))}</button>`;
     // 위쪽 메뉴: 묶음 + 선택 묶음의 하위 메뉴 / 왼쪽 메뉴: 모든 묶음과 하위 메뉴를 세로로
+    // [Standard v1.0.1] 1단 메뉴(묶음)는 상자형 버튼, 2단 메뉴(하위 화면)는 › 뒤 옅은 띠 위의 밑줄 탭으로 구분
+    const subTabs = curGroup ? curGroup.tabs.filter(t => this.allowed(t)) : [];
     const top = `
-      <div class="g-groups">${groups.map(g => `<button type="button" class="g-group${curGroup && curGroup.key === g.key ? " active" : ""}" data-group="${g.key}" data-click="GShell.goGroup" data-click-args="${UiEvents.args(g.key)}">${escapeHtml(g.label)}</button>`).join("")}</div>
-      <div class="g-subs">${curGroup ? curGroup.tabs.filter(t => this.allowed(t)).map(t => btn(t, "g-sub")).join("") : `<span class="g-sub-title">${escapeHtml(this.label(cur))}</span>`}
+      <div class="g-groups" role="tablist" aria-label="업무 묶음">${groups.map(g => {
+        const on = curGroup && curGroup.key === g.key;
+        const n = g.tabs.filter(t => this.allowed(t)).length;
+        return `<button type="button" class="g-group${on ? " active" : ""}" role="tab" aria-selected="${on ? "true" : "false"}" data-group="${g.key}" data-click="GShell.goGroup" data-click-args="${UiEvents.args(g.key)}"><span class="g-gico">${g.icon || ""}</span>${escapeHtml(g.label)}<span class="g-group-count">${n}</span></button>`;
+      }).join("")}</div>
+      <span class="g-crumb" aria-hidden="true">›</span>
+      <div class="g-subs">${curGroup ? `<span class="g-sub-label">${escapeHtml(curGroup.label)}</span>` + subTabs.map(t => btn(t, "g-sub")).join("") : `<span class="g-sub-title">${this.ICONS[cur] || ""} ${escapeHtml(this.label(cur))}</span>`}
         <button type="button" class="g-pin${favs.indexOf(cur) !== -1 ? " on" : ""}" data-click="GShell.toggleFavorite" title="현재 화면 즐겨찾기 (최대 ${this.MAX_FAV}개)">${favs.indexOf(cur) !== -1 ? "★" : "☆"}</button>
       </div>
       <div class="g-favs">${favs.length ? `<span class="g-fav-label">★ 즐겨찾기</span>` + favs.map(t => btn(t, "g-fav")).join("") : ""}</div>`;
     const side = `
-      ${groups.map(g => `<div class="g-side-group"><div class="g-side-title">${escapeHtml(g.label)}</div>${g.tabs.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>`).join("")}
-      ${this.ADMIN_TABS.some(t => this.allowed(t)) ? `<div class="g-side-group"><div class="g-side-title">관리</div>${this.ADMIN_TABS.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>` : ""}`;
+      ${groups.map(g => `<div class="g-side-group${curGroup && curGroup.key === g.key ? " cur" : ""}"><div class="g-side-title"><span>${g.icon || ""}</span>${escapeHtml(g.label)}</div>${g.tabs.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>`).join("")}
+      ${this.ADMIN_TABS.some(t => this.allowed(t)) ? `<div class="g-side-group${this.ADMIN_TABS.indexOf(cur) !== -1 ? " cur" : ""}"><div class="g-side-title"><span>⚙️</span>관리</div>${this.ADMIN_TABS.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>` : ""}`;
     nav.innerHTML = `<div class="g-nav-top">${top}</div><div class="g-nav-side">${side}</div>`;
     if (typeof I18N !== "undefined") I18N.translateTree(nav);
   },
@@ -253,6 +260,7 @@ var GShell = {
     const screens = this.GROUPS.reduce((a, g) => a.concat(g.tabs), []).concat(this.ADMIN_TABS);
     screens.filter(t => this.allowed(t)).forEach(t => items.push({ kind: "화면", text: this.label(t), sub: "", act: () => this.go(t) }));
     items.push({ kind: "관리", text: "프로젝트 관리", sub: "", act: () => ProjectManager.open() });
+    if (typeof ProjectManager !== "undefined" && ProjectManager.canCreate()) items.push({ kind: "관리", text: "새 프로젝트 등록", sub: "", act: () => ProjectManager.openNew() });
     items.push({ kind: "관리", text: "법적 고지", sub: "", act: () => LegalNotice.open() });
     (typeof wbsData !== "undefined" ? wbsData : []).forEach(t => items.push({ kind: "WBS", text: `${t.id} ${t.name || ""}`, sub: t.system || "", act: () => this.reveal("tab-wbs", t.name || t.id) }));
     (typeof reqMasterData !== "undefined" ? reqMasterData : []).forEach(r => items.push({ kind: "요구사항", text: `${r.id} ${r.name || ""}`, sub: r.system || "", act: () => this.reveal("tab-req", r.id) }));

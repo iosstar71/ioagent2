@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM v1.2.0] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
+[IOSTAR-PM Standard v1.0.1] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
 
 프로그램 폴더를 임시 폴더로 복사한 뒤 빈 DB 로 wbs_db_server.py 를 기동하여 검증합니다.
 (실제 운영 DB data/wbs_enterprise.db 는 건드리지 않음)
@@ -243,6 +243,9 @@ class ServerApiTest(unittest.TestCase):
             js = r.read().decode("utf-8")
         self.assertIn('"defaultLang": "ko"', js)
         self.assertIn('"productName": "%s"' % cp["app"]["product_name"], js)
+        # [Standard v1.0.1] 판 표시 이름 (STANDARD → Standard)
+        if cp["app"].get("edition", "").upper() == "STANDARD":
+            self.assertIn('"editionName": "Standard"', js)
 
     # ---------------------------------------------------------------- 여러 프로젝트 (v1.0.10)
     def test_40_project_isolation(self):
@@ -326,7 +329,7 @@ class ServerApiTest(unittest.TestCase):
 
 
 class SharedFilesTest(unittest.TestCase):
-    """[v1.2.0] 국내판·G 버전 공용 파일(배치 파일·배포 도구)이 지문 목록과 같은지 확인"""
+    """[v1.2.0] 국내판·Standard·Neo 공용 파일(배치 파일·배포 도구)이 지문 목록과 같은지 확인"""
 
     def test_shared_files_match_manifest(self):
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_shared_files.py")], capture_output=True, text=True)
