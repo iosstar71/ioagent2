@@ -1,12 +1,12 @@
 @echo off
 rem ============================================================================
-rem [AX Project Management by YS - ver1.0.5] Multi-User DB Server Launcher
+rem [AX Project Management by YS - ver1.0.6] Multi-User DB Server Launcher
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"
 
 echo ============================================================================
-echo [AX Project Management by YS - ver1.0.5] Multi-User DB Web Server (Port: 8080)
+echo [AX Project Management by YS - ver1.0.6] Multi-User DB Web Server (Port: 8080)
 echo Current Directory: %~dp0
 echo ============================================================================
 
@@ -58,7 +58,7 @@ if "%CHOICE%"=="2" goto RUN_LOGDATE
 goto RUN_STANDARD
 
 :RUN_STANDARD
-echo [*] Starting server in standard console mode...
+echo [*] Starting server in standard console mode... (login required: default admin / 1234)
 %PY_CMD% "%TARGET_PY%" --port 8080
 goto END
 

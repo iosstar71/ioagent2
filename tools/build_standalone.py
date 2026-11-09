@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[AX Project Management by YS v1.0.5] 단일 파일 실행본(Standalone.html) 빌더
+[AX Project Management by YS v1.0.6] 단일 파일 실행본(Standalone.html) 빌더
 
 index.html 이 참조하는 css/*.css, js/*.js 를 모두 인라인하여
 파일 1개(Standalone.html)만으로 오프라인 실행되는 포터블 배포본을 생성합니다.

@@ -1,15 +1,50 @@
 ================================================================================
-⚡ AX Project Management by YS ver1.0.5 (Bug-fix Release)
+⚡ AX Project Management by YS ver1.0.6 (Multi-User · RBAC · i18n Release)
    - 프로그램 공식 명칭: AX_Project_Management_by YS (약칭: AX_PMYS)
-   - 최신 버전: ver1.0.5 (ver1.0.4 운영 버그 수정 릴리즈)
+   - 최신 버전: ver1.0.6
 ================================================================================
 
 ■ [빠른 시작]
-  1) 압축 해제 후 index.html (또는 Standalone.html) 더블클릭 → 서버 없이 바로 실행
-     - 최초 실행 시 data/initial_data.json 의 초기 프로젝트 데이터가 브라우저 로컬 저장소(LocalStorage)에 자동 설정됨
-     - 초기 로그인/권한 인증 기본 비밀번호: 1234 (관리자 사번: admin)
-  2) 다중 사용자 공유가 필요하면 run_server.bat 실행 → http://<서버IP>:8080 접속
-     → [⚙️ 시스템 설정 > DB 연동]에서 SQLite 선택
+  1) 압축 해제 후 index.html (또는 Standalone.html) 더블클릭 → 로컬 저장소(LocalStorage) 모드로 실행
+     - 최초 실행 시 data/initial_data.json 초기 데이터가 브라우저 로컬 저장소에 설정됨
+     - 로그인: 기본 관리자 admin / 1234 (로그인 화면에서 [👤 신규 사용자 등록] 가능, 기본 권한: 일반 사용자)
+     - 로그인 화면에서 언어(한국어 / English) 선택
+  2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
+     → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
+     - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [ver1.0.6 개선 내역]
+1. 다중 사용자 저장/동기화
+   - DB 서버 모드: 실시간 자동저장 해제 → 모든 화면에 [💾 저장] [🔄 새로고침] 툴바, 상단 [💾 전체 저장] [🔄 전체 새로고침]
+   - 저장 시 다른 사용자가 먼저 저장한 데이터가 있으면 경고 → [⚠️ 덮어쓰기] / [↩️ 무시하기(충돌 항목은 최신본 적용, 나머지 내 변경만 저장)] / [취소]
+     (충돌 판정 단위: WBS·REQ·VOC·산출물 = 서브시스템 단위, 공지·소통·회의·주간보고 = 건 단위)
+   - 로컬 저장소 모드에서만 실시간 자동저장
+   - 탭을 이동해도 저장하지 않은 변경 데이터는 유지 (DB 서버 모드에서 미저장 상태로 창을 닫으면 경고)
+2. 회의관리 / 주간보고 / 로그인
+   - 회의록·주간보고는 [✅ 작성 완료 (저장)] 클릭 시 저장
+   - 저장하지 않고 다른 회의록·주간보고(주차/단위)를 선택하면 [저장 / 무시 / 계속 작성] 확인
+   - 주간보고 [🗂️ 저장된 주간보고 목록] 제공 (클릭 시 열기)
+   - 작성 단위: 일반 사용자 = 담당 서브시스템, PM·관리자·총괄리더 = 통합(전체) / 생성 단위: 통합 · 분야별 · 서브시스템별
+     (통합·분야별 보고서는 같은 주차의 서브시스템 보고서 상세 내용을 자동 취합)
+   - 로그인 화면 신규 사용자 등록 (기본 권한 MEMBER)
+3. 계획 진척률 산정 기준: [기준정보 > c. 휴일정보]에서 달력 일수 / 영업일(주말·공휴일 제외) 선택 → [✅ 적용] 시 재계산
+4. 권한
+   - 일반 사용자: 다른 서브시스템 데이터를 화면에서 고쳐도 저장 시 본인 담당 서브시스템 데이터만 저장 (나머지는 원복 + 안내)
+   - 총괄리더(LEAD) 권한 신설: 전체 서브시스템 업무 데이터 수정·저장 가능 (기준정보·시스템설정 제외)
+   - 서버에서도 동일 규칙으로 재검증 (권한 없는 저장 요청은 거부)
+5. 연결된 JSON 파일 자동 저장 시 공지·소통·회의·주간보고 등 채팅 이외 모든 데이터 저장 (회의·주간보고가 로컬 저장소에 저장되지 않던 문제도 수정)
+6. DB 서버 인증: /api/auth/login 토큰 발급, 모든 데이터/채팅 API 인증 필수, 비밀번호 해시 비노출
+7. 로컬 저장소 모드에서는 채팅 '오프라인' 표시 및 비활성화
+8. 기준정보 서브탭: a. 프로젝트 기본정보 / b. 공정단계정보 / c. 휴일정보 / d. 사용자 정보 (사용자 탭 이동)
+9. 다국어: 영어 UI 제공 (메뉴·타이틀은 표준 약어: Dash, Phase Prog., REQ, Deliv., Wkly Rpt, Mtg, Sys Cfg 등)
+   - 사용자별 언어: 로그인 시 선택, [기준정보 > d. 사용자 정보]에서 사용자별/일괄 설정
+   - 사용자가 입력한 작업 데이터는 번역하지 않음
+10. 코드 정리
+   - app.js·access-control.js 의 함수 재정의(monkey-patch) 20여 건을 원래 정의로 통합 (권한 버그 원인이던 switchTab/activateTab/canAccessTab 중복 제거)
+   - 인증/권한(AuthManager)은 js/access-control.js 한 곳, 저장/동기화는 js/data-store.js 한 곳으로 일원화
+   - 중복 함수(addNewSubsystemMeta, _escapeXml 등), 서버 중복 로그 함수·채팅 테이블 생성 코드, 미사용 대시보드 엑셀(구버전)·PPT 코드 삭제
+   - app.js 에 하드코딩된 샘플 데이터 중복(약 4,000줄) 제거 → data/initial_data.json 단일 원본 사용
+11. Sample 폴더 엑셀 파일명 한글 깨짐 수정 (UTF-8 파일명으로 복구, tools/make_release.py 로 UTF-8 플래그 zip 생성)
 
 ■ [ver1.0.5 버그 수정 내역]
 1. 주간보고 DOCX 다운로드 불가 수정
@@ -86,10 +121,10 @@
 
 ================================================================================
 ■ [시스템 폴더 구성]
-- index.html                : AX_PMYS ver1.0.5 메인 웹 애플리케이션
+- index.html                : AX_PMYS ver1.0.6 메인 웹 애플리케이션
 - Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (build_standalone.bat 로 재생성)
 - build_standalone.bat      : Standalone.html 및 js/initial-data.js 재생성 배치
-- tools/                    : build_standalone.py, build_initial_data.py 빌드 스크립트
+- tools/                    : build_standalone.py, build_initial_data.py, make_release.py(배포 zip) 빌드 스크립트
 - manual.html               : 관리자 및 사용자 상세 운영 매뉴얼
 - architecture.html         : 4계층 소프트웨어 아키텍처 정의서
 - run_server.bat            : 로컬 다중 사용자 DB 웹서버 원클릭 실행 배치 프로그램
@@ -102,7 +137,9 @@
   ├── dashboard-chart.js    : SVG 종합 대시보드 차트 엔진
   ├── gantt-renderer.js     : 인터랙티브 WBS 간트차트 렌더러
   ├── wbs-engine.js         : 공정률/가중치/일정 계산 엔진
-  ├── access-control.js     : 권한(RBAC) 탭 접근 제어 및 계정 전환 관리 (v1.0.5)
+  ├── data-store.js         : 저장/동기화 계층 (충돌 감지·권한 저장·화면별 저장/새로고침) (v1.0.6)
+  ├── access-control.js     : 로그인·신규등록·서버 인증·4단계 권한(RBAC)·탭 접근 제어 (v1.0.6)
+  ├── i18n.js / i18n-en.js  : 다국어(한국어/영어) 엔진 및 영어 사전 (v1.0.6)
   └── initial-data.js       : 최초 실행 초기 데이터 (data/initial_data.json 에서 자동 생성)
 - css/                      : 스타일시트 (style.css, themes.css)
 - data/                     : SQLite 프로젝트 DB (wbs_enterprise.db), 초기 데이터 initial_data.json

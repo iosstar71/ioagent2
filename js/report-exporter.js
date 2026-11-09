@@ -49,7 +49,7 @@ const BackupHistoryManager = {
       backupCreatedAt: displayTime,
       backupReason: actionType,
       targetSubsystem: targetSubsystem,
-      exportedBy: (typeof AuthManager !== "undefined" && AuthManager.currentUser) ? AuthManager.currentUser.empNo : "admin",
+      exportedBy: AuthManager.getCurrentUser().empNo,
       projectConfig: JSON.parse(JSON.stringify(projectConfig || {})),
       subsystemsMeta: JSON.parse(JSON.stringify(subsystemsMeta || [])),
       standardDeliverablesMeta: JSON.parse(JSON.stringify(standardDeliverablesMeta || [])),
@@ -325,7 +325,7 @@ const JsonCollabManager = {
     const payload = {
       schemaVersion: "2026_v1.2.4",
       exportedAt: new Date().toISOString(),
-      exportedBy: (typeof AuthManager !== "undefined" && AuthManager.currentUser) ? AuthManager.currentUser.empNo : "admin",
+      exportedBy: AuthManager.getCurrentUser().empNo,
       targetSubsystem: targetSys,
       projectConfig: isAll ? projectConfig : undefined,
       subsystemsMeta: isAll ? subsystemsMeta : subsystemsMeta.filter(s => s.name === targetSys),

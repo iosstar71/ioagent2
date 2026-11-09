@@ -4716,15 +4716,14 @@ window.LayoutManager = LayoutManager;
 // =========================================================================
 const SmartMergeCenter = {
   isAdminOrPm() {
-    const role = (AuthManager && AuthManager.currentUser) ? AuthManager.currentUser.role : "MEMBER";
-    const norm = AuthManager.normalizeRole(role);
+    const norm = AuthManager.getCurrentRole();
     return norm === "SYS_ADMIN" || norm === "PM";
   },
 
   refreshMergeUiPermissions() {
     const isPrivileged = this.isAdminOrPm();
     const list = getAllSubsystemNames();
-    const curUser = (AuthManager && AuthManager.currentUser) ? AuthManager.currentUser : { empNo: "admin", role: "SYS_ADMIN", subsystem: "ALL" };
+    const curUser = AuthManager.getCurrentUser();
     const normRole = AuthManager.normalizeRole(curUser.role);
 
     // 상단 권한 안내 배지 갱신
