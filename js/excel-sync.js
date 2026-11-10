@@ -142,6 +142,7 @@ const ExcelSync = {
       { key: "aEnd", label: "실적종료일", width: 16 },
       { key: "pProg", label: "계획(%)", width: 11 },
       { key: "aProg", label: "실적(%)", width: 11 },
+      { key: "owner", label: "담당자", width: 14 },
       { key: "output", label: "산출물 / 조치계획", width: 24 }
     ],
     deliverables: [
@@ -226,6 +227,7 @@ const ExcelSync = {
       aEnd: ["실적종료일", "실적종료", "실적 종료일", "aend"],
       pProg: ["계획(%)", "계획진척율", "계획진척률", "계획", "pprog"],
       aProg: ["실적(%)", "실적진척율", "실적진척률", "실적", "aprog"],
+      owner: ["담당자", "담당", "owner", "assignee"],
       output: ["산출물 / 조치계획", "산출물/조치계획", "산출물", "조치계획", " 비고", "output"]
     },
     deliverables: {
@@ -1305,6 +1307,7 @@ const ExcelSync = {
         // [v3.0.0] 진척률은 0~100 으로 보정 (엑셀에 범위를 벗어난 값이 있어도 그대로 들어가지 않음)
         pProg: isNaN(pProgNum) ? 0 : Math.min(100, Math.max(0, pProgNum)),
         aProg: isNaN(aProgNum) ? 0 : Math.min(100, Math.max(0, aProgNum)),
+        owner: String(raw.owner || "").split(/[,;/|]/)[0].trim().slice(0, 40),
         output: String(raw.output || "").trim()
       };
     }

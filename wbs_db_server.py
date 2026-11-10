@@ -1176,6 +1176,27 @@ class Store:
             finally:
                 conn.close()
 
+    @classmethod
+    def self_reset_password(cls, emp):
+        """[v3.0.2] 로그인 화면 비밀번호 초기화 → 기본값(1234), 다음 로그인 때 변경 필수"""
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                users, revs = cls._read_dataset(cur, "projectUsers")
+                target = next((u for u in (users or []) if str(u.get("empNo", "")).lower() == emp.lower()), None)
+                if not target:
+                    raise AuthError(f"등록되지 않은 사번({emp})입니다.", 404)
+                target["pwdHash"] = ""
+                target["pwdTemp"] = False
+                target["pwdChangedAt"] = now_str()
+                key = target["empNo"]
+                revs[key] = {"rev": int((revs.get(key) or {}).get("rev", 0)) + 1, "by": f"password-reset({emp})", "at": now_str()}
+                cls._write_dataset(cur, "projectUsers", users, revs, emp)
+                conn.commit()
+            finally:
+                conn.close()
+
     # ---- 채팅 ----
     @classmethod
     def chat_list(cls, channel, pid=DEFAULT_PROJECT):
@@ -1447,7 +1468,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         c = load_app_config(BASE_DIR)
         data = {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
                 "version": c["version"], "defaultLang": c["default_lang"],
-                "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"]}
+                "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"],
+                "selfReset": str(c.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no")}
         body = ("var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n").encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/javascript; charset=utf-8")
@@ -1597,6 +1619,18 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         write_server_log(f"[AUTH] Password changed (login screen): {emp}")
         self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
 
+    def api_reset_password(self, req):
+        """[v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 별도 인증 없음) — app.ini [security] self_password_reset=0 이면 거부"""
+        if str(APP_CONFIG.get("self_password_reset", "1")).strip().lower() in ("0", "false", "no"):
+            raise AuthError("비밀번호 초기화가 꺼져 있습니다. 시스템관리자에게 요청하세요.", 403, "RESET_DISABLED")
+        emp = str(req.get("empNo", "")).strip()
+        if not emp:
+            raise AuthError("사번을 입력하세요.", 400)
+        LoginThrottle.check(emp)
+        Store.self_reset_password(emp)
+        write_server_log(f"[AUTH] Password reset to default (login screen, no auth): {emp}")
+        self._send_json(200, {"ok": True, "message": "비밀번호를 1234로 초기화했습니다."})
+
     def api_password(self, req):
         info = self._require_user(allow_must_change=True)
         Store.change_password(info["empNo"], str(req.get("oldHash", "")), str(req.get("newHash", "")))
@@ -1705,6 +1739,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         "/api/auth/register": api_register,
         "/api/auth/password": api_password,
         "/api/auth/change-password": api_change_password,
+        "/api/auth/reset-password": api_reset_password,
         "/api/db/test": api_db_test,
         "/api/db/init": api_db_init,
         "/api/db/load": api_db_load,

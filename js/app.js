@@ -1951,6 +1951,7 @@ function renderWbsTable() {
   const tbody = document.getElementById("wbsTableBody");
   if (!tbody) return;
   tbody.innerHTML = "";
+  if (typeof WbsOwner !== "undefined") WbsOwner.fillList();
   let outOfRangeCount = 0;
 
   const sysFilterEl = document.getElementById("wbsSubsystemFilter");
@@ -2010,15 +2011,12 @@ function renderWbsTable() {
       <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
       <td>
         <div class="wbs-lvl-ctrl">
-          <button class="btn-xs" title="상위 레벨로 올리기" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, -1)}" ${row.level <= 2 ? "disabled" : ""}>◀</button>
-          <select style="padding:2px 3px; font-size:11px;" data-change="setTaskLevel" data-change-args="${UiEvents.args(idx, "$value")}" ${row.level === 1 ? 'disabled title="Level 1은 서브시스템 단위로 고정됩니다."' : ""}>
-            ${[1, 2, 3, 4, 5].map(l => `<option value="${l}" ${row.level === l ? "selected" : ""}>L${l}</option>`).join("")}
-          </select>
-          <button class="btn-xs" title="하위 레벨로 내리기" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 || row.level >= 5 ? "disabled" : ""}>▶</button>
+          <button class="btn-xs" title="상위 레벨로 올리기 (L${row.level} → L${Math.max(2, row.level - 1)})" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, -1)}" ${row.level <= 2 ? "disabled" : ""}>◀</button>
+          <button class="btn-xs" title="하위 레벨로 내리기 (L${row.level} → L${Math.min(5, row.level + 1)})" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 || row.level >= 5 ? "disabled" : ""}>▶</button>
         </div>
       </td>
       <td>
-        <select style="width:104px; padding:2px 4px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
+        <select style="width:74px; padding:2px 2px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -2026,59 +2024,56 @@ function renderWbsTable() {
         <div style="padding-left: ${indent}px; display:flex; align-items:center;">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
-          <input type="text" value="${escapeHtml(row.name)}" style="flex:1; min-width:210px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
+          <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:150px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td><input type="number" min="0" value="${row.weight}" style="width:48px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
-      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:78px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
+      <td><input type="number" min="0" value="${row.weight}" style="width:42px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:66px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.pStart || ""}" ${isLeaf ? "" : "readonly"}
+          <input type="date" value="${row.pStart || ""}" data-dow="${pStartDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${pStartOutOfRange ? "date-out-of-range" : ""} ${isStartHoliday ? "holiday-date-highlight" : ""}"
                  title="${pStartOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isStartHoliday ? "휴일(주말/공휴일) 경고" : "")}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pStart", "$value", "rebuildAll")}">
-          <span class="day-of-week-tag ${pStartDay === "토" ? "day-sat" : (pStartDay === "일" ? "day-sun" : "")}">${pStartDay || ""}</span>
         </div>
       </td>
 
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.pEnd || ""}" ${isLeaf ? "" : "readonly"}
+          <input type="date" value="${row.pEnd || ""}" data-dow="${pEndDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${pEndOutOfRange ? "date-out-of-range" : ""} ${isEndHoliday ? "holiday-date-highlight" : ""}"
                  title="${pEndOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isEndHoliday ? "휴일(주말/공휴일) 경고" : "")}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pEnd", "$value", "rebuildAll")}">
-          <span class="day-of-week-tag ${pEndDay === "토" ? "day-sat" : (pEndDay === "일" ? "day-sun" : "")}">${pEndDay || ""}</span>
         </div>
       </td>
 
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.aStart || ""}" ${isLeaf ? "" : "readonly"}
+          <input type="date" value="${row.aStart || ""}" data-dow="${aStartDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aStartOutOfRange ? "date-out-of-range" : ""}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aStart", "$value", "rebuildAll")}">
-          <span class="day-of-week-tag ${aStartDay === "토" ? "day-sat" : (aStartDay === "일" ? "day-sun" : "")}">${aStartDay || ""}</span>
         </div>
       </td>
 
       <td>
         <div class="date-input-wrap">
-          <input type="date" value="${row.aEnd || ""}" ${isLeaf ? "" : "readonly"}
+          <input type="date" value="${row.aEnd || ""}" data-dow="${aEndDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aEndOutOfRange ? "date-out-of-range" : ""}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aEnd", "$value", "rebuildAll")}">
-          <span class="day-of-week-tag ${aEndDay === "토" ? "day-sat" : (aEndDay === "일" ? "day-sun" : "")}">${aEndDay || ""}</span>
         </div>
       </td>
 
-      <td><input type="number" value="${row.pProg}" readonly style="width:46px; padding:2px 3px; text-align:right;"></td>
-      <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:46px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
-      <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:88px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
+      <td><input type="number" value="${row.pProg}" readonly style="width:44px; padding:2px 3px; text-align:right;"></td>
+      <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:44px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
+      <td><input type="text" class="wbs-owner" list="wbsOwnerList" maxlength="40" value="${escapeHtml(row.owner || "")}" title="${isLeaf ? "담당자 (목록에서 고르거나 직접 입력, 1명)" : "담당자 — 상위 Task 에 지정하면 하위 Task 에도 자동 지정"}" data-change="WbsOwner.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
+      <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:76px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
-          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡실적</button>
-          <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>+하위</button>
-          <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">+동위</button>
+          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
+          <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>↳</button>
+          <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">＋</button>
           <button class="btn-xs" title="위로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, -1)}" ${row.level === 1 ? "disabled" : ""}>▲</button>
           <button class="btn-xs" title="아래로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 ? "disabled" : ""}>▼</button>
           <button class="btn btn-danger btn-sm" style="padding:2px 5px;" title="Task 삭제" data-click="deleteWbsRow" data-click-args="${UiEvents.args(idx)}">×</button>
@@ -2121,6 +2116,73 @@ function getSubtreeEndIndex(startIdx) {
   return i;
 }
 
+// =============================================================================
+// [v3.0.2] WBS 담당자 (1명) — 사용자 목록에서 고르거나 직접 입력
+//  상위 Task 에 지정하면 하위 Task 에도 자동 지정: 비어 있거나 이전 상위 담당자와 같은 하위만 바꾸고,
+//  다른 담당자가 따로 지정된 하위는 그대로 둠
+// =============================================================================
+var WbsOwner = {
+  MAX: 40,
+  clean(v) {
+    let t = String(v || "").trim();
+    const multi = /[,;/|]/.test(t);
+    if (multi) t = t.split(/[,;/|]/)[0].trim();
+    return { value: t.slice(0, this.MAX), multi };
+  },
+  // idx 다음부터 같은 하위 묶음(레벨이 더 깊은 행)의 끝
+  subtreeEnd(idx) {
+    const lv = wbsData[idx].level;
+    let i = idx + 1;
+    while (i < wbsData.length && wbsData[i].level > lv) i++;
+    return i;
+  },
+  // 새 동위 Task 의 상위 담당자 (idx 행 위쪽에서 레벨이 더 낮은 가장 가까운 행)
+  parentOwner(idx, level) {
+    for (let i = idx; i >= 0; i--) { if (wbsData[i] && wbsData[i].level < level) return wbsData[i].owner || ""; }
+    return "";
+  },
+  set(idx, value) {
+    const row = wbsData[idx];
+    if (!row) return;
+    const c = this.clean(value);
+    if (c.multi) showToast("ℹ️ 담당자는 1명만 지정할 수 있습니다. 첫 번째 이름만 저장했습니다.");
+    const prev = row.owner || "";
+    row.owner = c.value;
+    let changed = 0, kept = 0;
+    const end = this.subtreeEnd(idx);
+    for (let i = idx + 1; i < end; i++) {
+      const t = wbsData[i];
+      const cur = t.owner || "";
+      if (cur === "" || cur === prev) { if (cur !== c.value) { t.owner = c.value; changed++; } }
+      else if (cur !== c.value) kept++;
+    }
+    renderWbsTable();
+    if (typeof persistChanges === "function") persistChanges();
+    if (end > idx + 1) {
+      showToast(c.value
+        ? `👤 하위 Task ${changed}건에 담당자 [${c.value}]를 자동 지정했습니다.${kept ? ` (다른 담당자가 지정된 ${kept}건은 그대로)` : ""}`
+        : `👤 담당자를 지웠습니다. 같은 담당자였던 하위 Task ${changed}건도 지웠습니다.`);
+    }
+    if (typeof NeoDetail !== "undefined" && NeoDetail.isOpen && NeoDetail.isOpen()) NeoDetail.render();
+  },
+  // 담당자 목록: 이 프로젝트 사용자 이름 + WBS 에 이미 입력된 이름
+  options() {
+    const names = new Map();
+    (projectUsers || []).forEach(u => {
+      if (!u || !u.name) return;
+      if (typeof ProjectContext !== "undefined" && ProjectContext.member && !ProjectContext.isAdminUser(u) && !ProjectContext.member(u)) return;
+      names.set(u.name, `${u.empNo}${u.dept ? " · " + u.dept : ""}`);
+    });
+    (wbsData || []).forEach(t => { if (t.owner && !names.has(t.owner)) names.set(t.owner, "직접 입력"); });
+    return [...names.entries()].sort((a, b) => a[0].localeCompare(b[0], "ko"));
+  },
+  fillList() {
+    let dl = document.getElementById("wbsOwnerList");
+    if (!dl) { dl = document.createElement("datalist"); dl.id = "wbsOwnerList"; document.body.appendChild(dl); }
+    dl.innerHTML = this.options().map(([n, lbl]) => `<option value="${escapeAttr(n)}" label="${escapeAttr(lbl)}"></option>`).join("");
+  }
+};
+
 function addChildTask(idx) {
   const parent = wbsData[idx];
   if (!parent) return;
@@ -2137,6 +2199,7 @@ function addChildTask(idx) {
     name: `${parent.name} - 하위과업`,
     weight: Math.max(1, Math.round((parent.weight || 10) / 2)),
     reqId: parent.reqId || "",
+    owner: parent.owner || "",
     pStart: WBSEngine.getNextWorkingDay(parent.pStart || projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate),
     pEnd: WBSEngine.getNextWorkingDay(parent.pEnd || projectConfig.projectEndDate, projectConfig.holidays, projectConfig.projectEndDate),
     aStart: "",
@@ -2162,6 +2225,7 @@ function addSiblingTask(idx) {
     name: `신규 L${sibLevel} 단위과업`,
     weight: target.level === 1 ? 10 : (target.weight || 5),
     reqId: target.reqId || "",
+    owner: WbsOwner.parentOwner(idx, sibLevel),
     pStart: WBSEngine.getNextWorkingDay(target.pStart || projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate),
     pEnd: WBSEngine.getNextWorkingDay(target.pEnd || projectConfig.projectEndDate, projectConfig.holidays, projectConfig.projectEndDate),
     aStart: "",
@@ -2569,7 +2633,7 @@ function renderPhaseMatrix() {
         return curSpec && curSpec.code === spec.code;
       });
 
-      const topThs = spec.phases.map(p => `<th colspan="3" class="col-phase" style="background:${sIdx === 0 ? "#1e3a8a" : "#4c1d95"}; color:#ffffff !important; font-weight:bold; vertical-align:middle;">${escapeHtml(p.name)} (${p.weight}%)</th>`).join("");
+      const topThs = spec.phases.map(p => `<th colspan="3" class="col-phase sdlc-ph ${sIdx === 0 ? "" : "sdlc-ph-alt"}">${escapeHtml(p.name)} (${p.weight}%)</th>`).join("");
       const subThs = spec.phases.map(() => `<th>계획</th><th>실적</th><th>달성률</th>`).join("");
 
       let groupRowsHtml = "";
@@ -2639,16 +2703,16 @@ function renderPhaseMatrix() {
         <tr class="matrix-total-row">
           <td colspan="2"><strong>[${escapeHtml(spec.name)} 그룹 소계]</strong></td>
           ${sumPhTds}
-          <td class="col-total" style="background:#e2e8f0;">${allP}%</td>
-          <td class="col-total" style="background:#e2e8f0;"><strong>${allA}%</strong></td>
-          <td class="col-total" style="background:#e2e8f0;color:#1e3a8a;font-weight:bold;">${allRate}%</td>
+          <td class="col-total sdlc-sum">${allP}%</td>
+          <td class="col-total sdlc-sum"><strong>${allA}%</strong></td>
+          <td class="col-total sdlc-sum" style="color:var(--primary);font-weight:bold;">${allRate}%</td>
         </tr>
       `;
 
       sdlcTablesHtml += `
         <div style="margin-bottom:16px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:${sIdx === 0 ? "rgba(2,132,199,0.06)" : "rgba(124,58,237,0.06)"}; border-radius:6px; border:1px solid ${sIdx === 0 ? "#bae6fd" : "#ddd6fe"};">
-            <span style="font-weight:bold; font-size:12px; color:${sIdx === 0 ? "#0369a1" : "#6d28d9"};">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "#bae6fd" : "#ddd6fe"};">
+            <span style="font-weight:bold; font-size:12px; color:var(--primary);">
               📂 SDLC 유형: ${escapeHtml(spec.name)} (${escapeHtml(spec.desc || "")}) — 소속 서브시스템 ${groupSystems.length}개
             </span>
           </div>
@@ -2659,7 +2723,7 @@ function renderPhaseMatrix() {
                   <th rowspan="2" style="width: 105px;">분야</th>
                   <th rowspan="2" style="width: 130px;">서브시스템</th>
                   ${topThs}
-                  <th colspan="3" class="col-total" style="background:#0f172a; color:#ffffff !important; vertical-align:middle;">그룹 합계</th>
+                  <th colspan="3" class="col-total sdlc-ph-total">그룹 합계</th>
                 </tr>
                 <tr>
                   ${subThs}
@@ -2778,12 +2842,15 @@ function renderDeliverablesTable() {
   const nameQuery = (document.getElementById("delivNameSearchInput") ? document.getElementById("delivNameSearchInput").value : "").trim().toLowerCase();
 
   const activeRounds = getActiveDeliverableRounds();
+  const chipScope = [];
   deliverablesData.forEach((row, idx) => {
     if (!activeRounds.includes(row.round)) return;
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
     if (roundFilter !== "ALL" && row.round !== roundFilter) return;
     if (nameQuery && !(row.name || "").toLowerCase().includes(nameQuery)) return;
+    chipScope.push(row);
+    if (typeof StatusChips !== "undefined" && !StatusChips.match("deliv", row)) return;
 
     const tr = document.createElement("tr");
     const pDay = WBSEngine.getDayOfWeekText(row.pDate);
@@ -2832,6 +2899,7 @@ function renderDeliverablesTable() {
     `;
     tbody.appendChild(tr);
   });
+  if (typeof StatusChips !== "undefined") StatusChips.render("deliv", chipScope);
 }
 
 function addNewDeliverable() {
@@ -2934,9 +3002,12 @@ function renderReqMasterTable() {
   const sysFilter = document.getElementById("reqSubsystemFilter") ? document.getElementById("reqSubsystemFilter").value : "ALL";
   let statTotal = 0, statReady = 0, statProg = 0, statComp = 0, statHold = 0, statDel = 0;
 
+  const chipScope = [];
   reqMasterData.forEach((row, idx) => {
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
+    chipScope.push(row);
+    if (typeof StatusChips !== "undefined" && !StatusChips.match("req", row)) return;
 
     statTotal++;
     if (row.status === "착수전") statReady++;
@@ -3006,6 +3077,7 @@ function renderReqMasterTable() {
     tbody.appendChild(tr);
   });
 
+  if (typeof StatusChips !== "undefined") StatusChips.render("req", chipScope);
   document.getElementById("tab-req-stat-total").innerText = statTotal;
   document.getElementById("tab-req-stat-ready").innerText = statReady;
   document.getElementById("tab-req-stat-progress").innerText = statProg;
@@ -3046,9 +3118,12 @@ function renderVocTable() {
   const sysFilter = document.getElementById("vocSubsystemFilter") ? document.getElementById("vocSubsystemFilter").value : "ALL";
   let statTotal = 0, statReady = 0, statProg = 0, statComp = 0, statExcl = 0, statHold = 0, statDel = 0;
 
+  const chipScope = [];
   vocData.forEach((row, idx) => {
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
+    chipScope.push(row);
+    if (typeof StatusChips !== "undefined" && !StatusChips.match("voc", row)) return;
 
     statTotal++;
     if (row.status === "착수전") statReady++;
@@ -3117,6 +3192,7 @@ function renderVocTable() {
   const validTotal = statTotal - statDel;
   const achieveRate = validTotal > 0 ? (((statComp + statExcl) / validTotal) * 100).toFixed(1) : "0.0";
 
+  if (typeof StatusChips !== "undefined") StatusChips.render("voc", chipScope);
   document.getElementById("tab-voc-stat-total").innerText = statTotal;
   document.getElementById("tab-voc-stat-ready").innerText = statReady;
   document.getElementById("tab-voc-stat-progress").innerText = statProg;
@@ -4052,7 +4128,7 @@ var NoticeCommManager = {
         const isActive = (this.activeChannel === c);
         const btnClass = isActive ? "btn btn-sm btn-primary feed-channel-chip active" : "btn btn-sm btn-secondary feed-channel-chip";
         const activeStyle = isActive
-          ? "background:#1e3a8a !important; color:#fff !important; border-color:#1e3a8a !important; font-weight:bold; box-shadow:0 2px 5px rgba(30,58,138,0.35); transform:scale(1.02);"
+          ? "background:var(--primary) !important; color:#fff !important; border-color:var(--primary) !important; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.2); transform:scale(1.02);"
           : "background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;";
         const label = isActive ? `✓ #${escapeHtml(c)} (${count})` : `#${escapeHtml(c)} (${count})`;
         return `
@@ -4070,7 +4146,7 @@ var NoticeCommManager = {
         ? (Array.isArray(communicationsData) ? communicationsData.length : 0)
         : (Array.isArray(communicationsData) ? communicationsData.filter(p => p.channel === this.activeChannel).length : 0);
       ind.textContent = `📢 선택된 채널: #${this.activeChannel} (총 ${count}건)`;
-      ind.style.background = this.activeChannel === "전체" ? "#1e3a8a" : "#2563eb";
+      ind.style.background = "var(--primary)";
     }
 
     // 3. Chat Room Channels
@@ -4274,7 +4350,7 @@ var NoticeCommManager = {
       container.innerHTML = `
         <div style="text-align:center; padding:45px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; margin:10px 0;">
           <div style="font-size:24px; margin-bottom:6px;">💬</div>
-          <div style="font-size:14px; font-weight:bold; color:#1e3a8a; margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
+          <div style="font-size:14px; font-weight:bold; color:var(--primary); margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
           <div style="font-size:11.5px; color:#64748b; margin-bottom:12px;">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
           <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.setChannel" data-click-args='["전체"]'>🌐 전체 채널 보기</button>
         </div>
@@ -4471,7 +4547,7 @@ var NoticeCommManager = {
         <div style="flex:1; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
             <div>
-              <strong style="color:#1e3a8a; font-size:13px;">${escapeHtml(post.author)}</strong>
+              <strong style="color:var(--primary); font-size:13px;">${escapeHtml(post.author)}</strong>
               <span style="font-size:11px; color:#64748b; margin-left:4px;">(${escapeHtml(post.role || "")})</span>
               ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:9.5px; margin-left:6px;">#WBS-${escapeHtml(post.taskId)}</span>` : ""}
             </div>
@@ -7863,7 +7939,7 @@ var WeeklyReportManager = {
     prevEl.innerHTML = `
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h4 style="margin:0; font-size:14px; color:#1e3a8a;">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
+          <h4 style="margin:0; font-size:14px; color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
           <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:11px;">과업: 금주 ${cCount}건 / 차주 ${nCount}건</span>
         </div>
         <div style="font-size:11px; color:#475569; display:flex; gap:16px;">
@@ -8322,7 +8398,16 @@ var HomeScreenManager = {
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     });
     const badge = document.getElementById("homeModeStatusBadge");
-    if (badge) badge.textContent = mode === roleDef ? "역할 기본 홈" : `내가 고른 홈 (역할 기본: ${this.STYLE_LABELS[roleDef]})`;
+    if (badge) {
+      badge.textContent = mode === roleDef ? "역할 기본 홈" : "내가 고른 홈";
+      badge.title = `역할 기본: ${this.STYLE_LABELS[roleDef]}`;
+    }
+    // [v3.0.2] 홈 스타일 단추는 머리줄 맨 오른쪽에 고정 (안내 문구 길이가 바뀌어도 단추 위치가 움직이지 않게)
+    const sw = document.querySelector("#tab-home .home-style-switch");
+    if (sw && sw.parentElement) {
+      if (badge && badge.parentElement === sw.parentElement && badge.nextElementSibling !== sw) sw.parentElement.insertBefore(badge, sw);
+      if (sw.parentElement.lastElementChild !== sw) sw.parentElement.appendChild(sw);
+    }
 
     const boxes = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
     Object.keys(boxes).forEach(k => {
@@ -8704,7 +8789,7 @@ var HomeScreenManager = {
       };
       item.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px;">
-          <strong style="color:#1e3a8a;">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
+          <strong style="color:var(--primary);">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
           <span style="font-size:10px; color:#64748b;">${escapeHtml(n.date || "")}</span>
         </div>
         <div style="font-size:11px; color:#475569; margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>

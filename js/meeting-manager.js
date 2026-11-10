@@ -1447,6 +1447,11 @@ var MeetingManager = {
     const selAss = (document.getElementById("aiFilterAssignee") && document.getElementById("aiFilterAssignee").value) || "ALL";
     const searchWord = ((document.getElementById("aiSearchInput") && document.getElementById("aiSearchInput").value) || "").trim().toLowerCase();
 
+    // [v3.0.2] 상태 칩: 서브시스템·담당자·검색 조건 범위의 상태별 건수
+    if (typeof StatusChips !== "undefined") {
+      StatusChips.render("ai", allActions.filter(a => a.status !== "삭제" && (selSys === "ALL" || (a.system || a.meetingSystem) === selSys) && (selAss === "ALL" || a.assignee === selAss) &&
+        (!searchWord || `${a.id} ${a.title} ${a.content || ""} ${a.requester || ""} ${a.assignee || ""} ${a.meetingTitle || ""}`.toLowerCase().includes(searchWord))));
+    }
     const filtered = allActions.filter(a => {
       if (a.status === "삭제") return false;
       if (selSys !== "ALL" && (a.system || a.meetingSystem) !== selSys) return false;

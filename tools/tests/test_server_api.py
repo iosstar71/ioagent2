@@ -409,6 +409,17 @@ class ServerApiTest(unittest.TestCase):
         a1 = [r for r in data["wbsData"] if r["system"] == "A1"]
         self.assertEqual((a1[-1]["aProg"], a1[-2]["aProg"], a1[-3]["weight"]), (100, 0, 0))
 
+    def test_45_self_password_reset(self):
+        """[v3.0.2] 로그인 화면 비밀번호 초기화 → 1234 로 로그인되고 변경 필수"""
+        s, d = self.call("/api/auth/reset-password", {"empNo": "pmo_kim"})
+        self.assertEqual(s, 200, d)
+        s, d = self.login("pmo_kim", "1234")
+        self.assertEqual(s, 200, d)
+        self.assertTrue(d["user"].get("mustChangePassword"))
+        self.pwd.pop("pmo_kim", None)
+        s, _ = self.call("/api/auth/reset-password", {"empNo": "nobody_x"})
+        self.assertEqual(s, 404)
+
     def test_43_chat_per_project(self):
         self.call("/api/chat/send", {"channel": "전체", "message": "only-in-project"}, self.admin, project=self.pid)
         _, d = self.call("/api/chat/messages?channel=%EC%A0%84%EC%B2%B4", token=self.admin, method="GET")

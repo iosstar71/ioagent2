@@ -327,6 +327,8 @@ var AuthManager = {
     if (cancel) cancel.style.display = "none";
     const reg = document.getElementById("registerLinkRow");
     if (reg) reg.style.display = "block";
+    const rst = document.getElementById("lnkSelfReset");
+    if (rst) { rst.style.display = this.selfResetAllowed() ? "" : "none"; if (rst.previousElementSibling) rst.previousElementSibling.style.display = rst.style.display; }
     this._setText("btnLockSubmit", "🔓 로그인");
     const langSel = document.getElementById("inputLoginLang");
     if (langSel) langSel.value = (typeof I18N !== "undefined" ? I18N.lang : "ko");
@@ -697,6 +699,39 @@ var AuthManager = {
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;
     this.openLogin();
+  },
+
+  // [v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 별도 인증 없이 1234 로 초기화, 다음 로그인 때 변경 필수)
+  //  DB 서버는 app.ini [security] self_password_reset=0 이면 거부 — 운영 전환 시 끄거나 이 기능을 빼야 함
+  selfResetAllowed() {
+    return !(typeof APP_CONFIG !== "undefined" && APP_CONFIG.selfReset === false);
+  },
+  selfResetPassword() {
+    if (!this.selfResetAllowed()) return this._err("lockErrorMessage", "비밀번호 초기화가 꺼져 있습니다. 시스템관리자에게 요청하세요.");
+    const empInput = document.getElementById("inputSecurityEmpNo");
+    const empNo = empInput ? empInput.value.trim() : "";
+    if (!empNo) { this._err("lockErrorMessage", "초기화할 사번을 먼저 입력하세요."); if (empInput) empInput.focus(); return; }
+    openConfirmDialog(`[${empNo}] 비밀번호를 초기값(1234)으로 초기화할까요? 다음 로그인 때 새 비밀번호로 바꿔야 합니다.`, () => this._doSelfReset(empNo));
+  },
+  async _doSelfReset(empNo) {
+    if (SyncManager.isLocal()) {
+      const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
+      if (!u) return this._err("lockErrorMessage", `등록되지 않은 사번(${empNo})입니다.`);
+      const row = Object.assign({}, u, { pwdHash: "", pwdTemp: false });
+      delete row.pwdReset;
+      const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password-reset(${row.empNo})`);
+      if (!res.ok) return this._err("lockErrorMessage", res.error || "초기화 실패");
+      DataRegistry.set("projectUsers", res.data.projectUsers);
+      SyncManager.setBaseline(["projectUsers"], res.revs);
+      if (String(row.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(this.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
+    } else {
+      const res = await ServerBackend.request("/api/auth/reset-password", { empNo });
+      if (!res.ok) return this._err("lockErrorMessage", res.network ? "DB 서버에 연결할 수 없습니다." : (res.message || "초기화 실패"));
+    }
+    this._err("lockErrorMessage", "");
+    const pwd = document.getElementById("inputSecurityPassword");
+    if (pwd) { pwd.value = ""; pwd.focus(); }
+    showToast(`🔄 [${empNo}] 비밀번호를 1234로 초기화했습니다. 1234로 로그인한 뒤 새 비밀번호로 바꾸세요.`);
   },
 
   async showRegister(show) {

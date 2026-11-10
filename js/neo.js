@@ -231,6 +231,7 @@ var NeoDetail = {
   set(field, value) {
     const idx = this.idx();
     if (idx === -1) return this.close();
+    if (field === "owner") return WbsOwner.set(idx, value);
     const after = {
       name: ["persistChanges"], output: ["persistChanges"],
       reqId: ["renderPhaseMatrix", "renderReqMasterTable", "persistChanges"],
@@ -301,6 +302,7 @@ var NeoDetail = {
           ${field("실적 진척율(%)", "aProg", "number", `min="0" max="100" ${ro}`)}
           ${field("가중치", "weight", "number", `min="0" step="0.5"`)}
           ${field("REQ ID", "reqId", "text")}
+          ${field("담당자", "owner", "text", `list="wbsOwnerList" maxlength="40" title="목록에서 고르거나 직접 입력 (1명)${leaf ? "" : " — 하위 Task 에도 자동 지정"}"`)}
           ${field("산출물", "output", "text")}
         </div>
         ${leaf ? "" : '<div class="neo-note">상위 Task 의 일정·진척율은 하위 Task 에서 자동으로 합산됩니다.</div>'}
@@ -427,6 +429,53 @@ var NeoChips = {
     leaves.forEach(t => { const l = NeoUtil.status(t).label; cnt[l] = (cnt[l] || 0) + 1; });
     box.innerHTML = this.LIST.map(([v, label, cls]) =>
       `<button type="button" class="neo-chip ${cls}${cur === v ? " active" : ""}" data-click="NeoChips.set" data-click-args="${UiEvents.args(v)}" aria-pressed="${cur === v ? "true" : "false"}">${label} <b>${cnt[v] || 0}</b></button>`).join("");
+    if (typeof I18N !== "undefined") I18N.translateTree(box);
+  }
+};
+
+// [v3.0.2] 요구사항 · VOC · 산출물 · Action Item 상태 칩 필터 (WBS 상태 칩과 같은 방식)
+//  - 칩에는 지금 조회 범위(분야·서브시스템 등)의 상태별 건수, 누르면 그 상태만 표시
+//  - "지연": VOC = 목표일 지남 + 미완료, 산출물 = 계획 제출일 지남 + 보완완료 전, Action Item = 완료 목표일 지남 + 진행중
+var StatusChips = {
+  _v: {},
+  _late(date, done) { const rep = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || ""; return !!(date && rep && date < rep && !done); },
+  DEFS: {
+    req: { box: "reqStatusChips", run: "renderReqMasterTable",
+      list: [["ALL", "전체", ""], ["착수전", "착수전", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["삭제", "삭제", "chip-del"]],
+      of: r => [r.status || "착수전"] },
+    voc: { box: "vocStatusChips", run: "renderVocTable",
+      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["착수전", "착수전", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["제외", "제외", "chip-del"], ["삭제", "삭제", "chip-del"]],
+      of: r => [r.status || "착수전", StatusChips._late(r.targetDate, ["완료", "제외", "삭제", "보류"].indexOf(r.status) !== -1) ? "지연" : ""] },
+    deliv: { box: "delivStatusChips", run: "renderDeliverablesTable",
+      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["작성전", "작성전", "chip-ready"], ["작성중", "작성중", "chip-progress"], ["검토요청", "검토요청", "chip-hold"], ["보완완료", "보완완료", "chip-completed"]],
+      of: r => [r.status || "작성전", StatusChips._late(r.pDate, r.status === "보완완료" || !!r.aDate) ? "지연" : ""] },
+    ai: { box: "aiStatusChips", run: "MeetingManager.renderActionItemsTracker", select: "aiFilterStatus",
+      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["완료", "완료", "chip-completed"]],
+      of: r => [r.status, r.status === "진행중" && StatusChips._late(r.targetDate, false) ? "지연" : ""] }
+  },
+  get(k) {
+    const d = this.DEFS[k];
+    if (d && d.select) { const el = document.getElementById(d.select); return el ? el.value || "ALL" : "ALL"; }
+    return this._v[k] || "ALL";
+  },
+  tags(k, row) { return this.DEFS[k].of(row).filter(Boolean); },
+  match(k, row) { const v = this.get(k); return v === "ALL" || this.tags(k, row).indexOf(v) !== -1; },
+  set(k, v) {
+    const d = this.DEFS[k];
+    if (!d) return;
+    if (d.select) { const el = document.getElementById(d.select); if (el) el.value = v; }
+    else this._v[k] = v;
+    const t = UiEvents.resolve(d.run);
+    if (t) t.fn.call(t.owner);
+  },
+  // rows: 상태 칩을 뺀 나머지 조건으로 걸러진 행
+  render(k, rows) {
+    const d = this.DEFS[k], box = d && document.getElementById(d.box);
+    if (!box) return;
+    const cur = this.get(k), cnt = { ALL: rows.length };
+    rows.forEach(r => this.tags(k, r).forEach(t => { cnt[t] = (cnt[t] || 0) + 1; }));
+    box.innerHTML = d.list.filter(([v]) => v === "ALL" || v === cur || cnt[v] || ["삭제", "제외", "보류"].indexOf(v) === -1)
+      .map(([v, label, cls]) => `<button type="button" class="neo-chip ${cls}${cur === v ? " active" : ""}" data-click="StatusChips.set" data-click-args="${UiEvents.args(k, v)}" aria-pressed="${cur === v ? "true" : "false"}">${label} <b>${cnt[v] || 0}</b></button>`).join("");
     if (typeof I18N !== "undefined") I18N.translateTree(box);
   }
 };

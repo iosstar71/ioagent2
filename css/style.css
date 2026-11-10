@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM v3.0.1 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
+ * IOSTAR-PM v3.0.2 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -2268,7 +2268,7 @@ header.g-header > .g-brand { flex: 0 0 auto; }
 .neo-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 14px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-sub); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .neo-chip b { font-weight: 800; }
 .neo-chip.active { outline: 2px solid var(--primary, #1e3a8a); outline-offset: 1px; }
-.neo-chip:not(.chip-delayed):not(.chip-progress):not(.chip-ready):not(.chip-completed).active { background: var(--primary, #1e3a8a); color: #fff; border-color: var(--primary, #1e3a8a); }
+.neo-chip:not(.chip-delayed):not(.chip-progress):not(.chip-ready):not(.chip-completed):not(.chip-hold):not(.chip-del).active { background: var(--primary, #1e3a8a); color: #fff; border-color: var(--primary, #1e3a8a); }
 
 /* WBS ID 버튼 · 선택 행 */
 .wbs-id-link { border: 0; background: transparent; padding: 2px 4px; border-radius: 4px; font: inherit; font-weight: 800; color: var(--primary, #1e3a8a); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -2729,3 +2729,38 @@ body:not(.ui-neo) .neo-ph-desc { font-size: 11px; }
 .login-hint { font-size: 11px; color: var(--text-muted); margin: -2px 0 8px; }
 #regProjectInfo { font-size: 12px; font-weight: 700; color: var(--text-main); margin: 0 0 8px; }
 .channel-scope-note { margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-main); font-size: 12px; color: var(--text-sub); }
+
+/* [v3.0.2] 단계별 진척 — SDLC 단계 머리글은 테마 색 (고정 남색 제거) */
+.matrix-table th.sdlc-ph { background: var(--header-bg); color: #fff !important; font-weight: bold; vertical-align: middle; }
+.matrix-table th.sdlc-ph.sdlc-ph-alt { background: var(--primary); }
+.matrix-table th.sdlc-ph-total { background: var(--text-main); color: var(--bg-card) !important; vertical-align: middle; }
+.matrix-table td.sdlc-sum { background: var(--bg-main); }
+[data-theme="matte"] .matrix-table th.sdlc-ph { background: #4F6475; }
+[data-theme="matte"] .matrix-table th.sdlc-ph.sdlc-ph-alt { background: #6F8597; }
+[data-theme="dark"] .matrix-table th.sdlc-ph { background: #1e293b; color: #e2e8f0 !important; }
+[data-theme="dark"] .matrix-table th.sdlc-ph.sdlc-ph-alt { background: #312e81; }
+[data-theme="dark"] .matrix-table th.sdlc-ph-total { background: #0f172a; color: #e2e8f0 !important; }
+/* [v3.0.2] 머리글 기준일 옆 요일: 어두운 머리글(Electric · Navy · Graphite)에서도 보이게 */
+.g-header .global-report-date-box .day-of-week-tag { color: #F1F5F9 !important; background: rgba(255,255,255,0.16) !important; font-weight: 700; }
+.g-header .global-report-date-box .day-of-week-tag.day-sat { color: #93C5FD !important; }
+.g-header .global-report-date-box .day-of-week-tag.day-sun { color: #FCA5A5 !important; }
+[data-theme="matte"] .g-header .global-report-date-box .day-of-week-tag { color: #2B2F33 !important; background: #E4E2DC !important; }
+[data-theme="matte"] .g-header .global-report-date-box .day-of-week-tag.day-sat { color: #1D4ED8 !important; }
+[data-theme="matte"] .g-header .global-report-date-box .day-of-week-tag.day-sun { color: #B91C1C !important; }
+#tab-home .home-style-note { display: inline-block; min-width: 86px; text-align: right; white-space: nowrap; }
+/* [v3.0.2] 건수 배지는 단추 위에 겹쳐 표시 — 건수가 생겨도 단추 폭·위치가 그대로 */
+.home-style-btn { position: relative; }
+.home-style-btn .home-style-count { position: absolute; top: -6px; right: -4px; }
+
+/* [v3.0.2] WBS 표 폭 줄이기: 날짜 칸 요일 글자는 빼고(주말은 글자색으로), 달력 아이콘 작게, 작업 단추 아이콘화 */
+#wbsTable .date-input-wrap input[type="date"] { width: 98px; font-size: 11px; padding: 2px 2px 2px 4px; }
+#wbsTable .date-input-wrap input[type="date"]::-webkit-calendar-picker-indicator { width: 10px; height: 10px; margin-left: 1px; padding: 0; opacity: 0.55; }
+#wbsTable input[type="date"][data-dow="토"] { color: #2563eb; }
+#wbsTable input[type="date"][data-dow="일"] { color: #dc2626; }
+#wbsTable .wbs-lvl-ctrl { gap: 2px; }
+#wbsTable .wbs-action-group { gap: 2px; }
+#wbsTable .wbs-action-group .btn-xs { min-width: 20px; padding: 2px 3px; }
+#wbsTable input.wbs-owner { width: 80px; padding: 2px 3px; }
+#wbsTable input.wbs-owner::placeholder { color: var(--text-muted); font-size: 10.5px; }
+#wbsTable th, #wbsTable td { padding: 4px 3px; }
+#wbsTable .date-input-wrap input[type="date"] { width: 94px; }

@@ -200,6 +200,22 @@ async function localMain() {
   const pOk = await page.evaluate(() => UiH.set("wbsData", wbsData.findIndex(t => t.isLeaf), "pProg", -1) === false && UiH.set("wbsData", wbsData.findIndex(t => t.isLeaf), "pProg", 101) === false && UiH.validPct(0) && UiH.validPct(100));
   check("v3: progress below 0 or above 100 is rejected (value kept, warning shown)", pRes.every(v => Number(v) === Number(pBefore)) && pToast && pOk, JSON.stringify({ pBefore, pRes, pToast, pOk }));
 
+  // [v3.0.2] WBS 담당자: 상위에 지정 → 하위 자동 지정(다른 담당자는 유지), 새 하위 Task 는 상위 담당자, 표 폭은 화면 안
+  const own = await page.evaluate(() => {
+    activateTab("tab-wbs");
+    const i = wbsData.findIndex(t => t.id === "1.2"), end = WbsOwner.subtreeEnd(i);
+    wbsData[i + 2].owner = "다른 담당";
+    WbsOwner.set(i, "김총괄, 이순신");
+    const kids = wbsData.slice(i + 1, end);
+    addChildTask(i);
+    const child = wbsData.find((t, k) => k > i && t.name === wbsData[i].name + " - 하위과업");
+    const tbl = document.getElementById("wbsTable");
+    const col = [...tbl.querySelectorAll("thead th")].map(th => th.textContent.trim());
+    return { p: wbsData[i].owner, auto: kids.filter(t => t.owner === "김총괄").length, kept: kids.filter(t => t.owner === "다른 담당").length, n: kids.length, child: child && child.owner,
+      fit: tbl.scrollWidth <= tbl.parentElement.clientWidth + 2, before: col.indexOf("담당자") === col.indexOf("산출물/조치") - 1, list: document.querySelectorAll("#wbsOwnerList option").length };
+  });
+  check("v3.0.2: WBS owner (one person) set on a parent fills the children (other owners kept), new child inherits; column before deliverables; table fits the screen", own.p === "김총괄" && own.auto === own.n - 1 && own.kept === 1 && own.child === "김총괄" && own.fit && own.before && own.list > 0, JSON.stringify(own));
+
   // 5) 간트 목록·차트 스크롤 정렬
   await page.evaluate(() => activateTab("tab-gantt")); await page.waitForTimeout(400);
   const g = await page.evaluate(() => {
@@ -492,6 +508,42 @@ async function localMain() {
     return JSON.stringify({ user: u.empNo, role: u.role, sub: u.subsystem, pid: ProjectContext.current, busy: SyncManager._busy, susp: SyncManager._suspendAuto, timer: !!SyncManager._autoTimer, sw: ProjectManager._switching, auto: SyncManager.isAutoSave(), name: wbsData.find(t => t.id === w2.id).name });
   });
   check("Member: other subsystem changes reverted", perm === true, String(perm));
+  // [v3.0.2] 요구사항 · VOC · 산출물 · Action Item 상태 칩 필터
+  const chips = await page.evaluate(() => {
+    const out = {};
+    GShell.go("tab-req"); StatusChips.set("req", "완료");
+    out.req = [document.querySelectorAll("#reqMasterTableBody tr").length, reqMasterData.filter(r => r.status === "완료").length, !!document.querySelector("#reqStatusChips .neo-chip.active")];
+    StatusChips.set("req", "ALL");
+    GShell.go("tab-voc"); StatusChips.set("voc", "진행");
+    out.voc = [document.querySelectorAll("#vocTableBody tr").length, vocData.filter(r => r.status === "진행").length];
+    StatusChips.set("voc", "ALL");
+    GShell.go("tab-deliverables"); StatusChips.set("deliv", "보완완료");
+    out.deliv = [document.querySelectorAll("#deliverablesTableBody tr").length, Number(document.querySelector("#delivStatusChips .neo-chip.active b").textContent)];
+    StatusChips.set("deliv", "ALL");
+    GShell.go("tab-meeting"); MeetingManager.renderActionItemsTracker(); StatusChips.set("ai", "완료");
+    out.ai = [document.getElementById("aiFilterStatus").value, Number(document.querySelector("#aiStatusChips .neo-chip.active b").textContent)];
+    StatusChips.set("ai", "ALL");
+    return out;
+  });
+  check("v3.0.2: status chip filters on requirements, VOC, deliverables and Action Items", chips.req[0] === chips.req[1] && chips.req[2] && chips.voc[0] === chips.voc[1] && chips.deliv[0] === chips.deliv[1] && chips.deliv[0] > 0 && chips.ai[0] === "완료", JSON.stringify(chips));
+  // [v3.0.2] 단계별 진척 SDLC 머리글은 테마 색 · 공지 게시판에 옛 버전 표시 없음 · 머리글 요일 보임 · 홈 스타일 단추 위치 고정
+  const look302 = await page.evaluate(async () => {
+    const bg = sel => { const e = document.querySelector(sel); return e ? getComputedStyle(e).backgroundColor : ""; };
+    changeTheme("matte"); GShell.go("tab-matrix"); await new Promise(r => setTimeout(r, 300));
+    const matte = bg("#phaseMatrixContainer th.sdlc-ph");
+    changeTheme("electric"); await new Promise(r => setTimeout(r, 100));
+    const elec = bg("#phaseMatrixContainer th.sdlc-ph");
+    const dow = getComputedStyle(document.getElementById("globalReportDayOfWeek")).color;
+    GShell.go("tab-notices");
+    const oldVer = /ver1\.0\.4/.test(document.getElementById("tab-notices").textContent);
+    GShell.go("tab-home");
+    const pos = [];
+    for (const st of ["EXECUTIVE", "PORTAL", "TODO", "EXECUTIVE"]) { HomeScreenManager.setStyle(st); await new Promise(r => setTimeout(r, 120)); pos.push([...document.querySelectorAll(".home-style-btn")].map(b => Math.round(b.getBoundingClientRect().left)).join(",")); }
+    changeTheme("navy");
+    return { matte, elec, dow, oldVer, pos };
+  });
+  check("v3.0.2: SDLC phase headers follow the theme; no old version badge on notices; header weekday readable; home style buttons stay in place", look302.matte !== look302.elec && look302.matte !== "rgb(30, 58, 138)" && look302.dow === "rgb(241, 245, 249)" && !look302.oldVer && new Set(look302.pos).size === 1, JSON.stringify(look302));
+
   // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
   const loginOpts = await page.$$eval("#inputLoginProject option", o => o.map(x => x.value));
@@ -500,7 +552,13 @@ async function localMain() {
   await page.click("#btnLockSubmit"); await page.waitForTimeout(700);
   const needProj = await page.evaluate(() => ({ msg: document.getElementById("lockErrorMessage").textContent, locked: document.getElementById("securityLockOverlay").style.display === "flex" }));
   check("v3: login screen lists projects; non-admin must choose a project", loginOpts.join(",") === ",DEFAULT,P001" && needProj.locked && /프로젝트/.test(needProj.msg), JSON.stringify({ loginOpts, needProj }));
-  await login(page, "lead_lee", LOCAL_PWD, "P001"); await waitApp(page, "P001");
+  // [v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 사번만으로 1234) → 1234 로 로그인하면 변경 필수
+  await page.click("#lnkSelfReset"); await page.waitForTimeout(300);
+  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(700);
+  const rst = await page.evaluate(() => { const u = ProjectContext.findAny("lead_lee"); return { hash: u && u.pwdHash, toast: Array.prototype.some.call(document.querySelectorAll("#toastContainer *"), e => /1234로 초기화/.test(e.textContent)) }; });
+  delete LOCAL_PWD["lead_lee"];
+  const forcedAfterReset = await login(page, "lead_lee", LOCAL_PWD, "P001"); await waitApp(page, "P001");
+  check("v3.0.2: login-screen password reset to 1234 (no extra auth, test version) → next sign-in must change the password", rst.hash === "" && rst.toast && forcedAfterReset, JSON.stringify({ rst, forcedAfterReset }));
   const locked = await page.evaluate(() => ({ pid: ProjectContext.current, role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display, badge: document.getElementById("headerProjectNameBadge").textContent, users: projectUsers.map(u => u.empNo).sort().join(",") }));
   await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200);
   const stay = await page.evaluate(() => ProjectContext.current);

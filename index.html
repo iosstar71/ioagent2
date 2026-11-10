@@ -46,6 +46,8 @@
           <a href="#" data-click="AuthManager.showRegister" data-click-args='[true]' style="font-weight:bold; color:var(--primary);">👤 신규 사용자 등록</a>
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
           <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:#b45309;">🔑 비밀번호 변경</a>
+          <span style="color:var(--text-muted); margin:0 6px;">|</span>
+          <a href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="font-weight:bold; color:#b91c1c;" title="입력한 사번의 비밀번호를 1234로 초기화 (테스트 버전 기능)">🔄 비밀번호 초기화</a>
         </div>
         <div class="login-legal-links">
           <a href="#" data-click="LegalNotice.open" data-click-args='["license"]'>사용권 계약</a> ·
@@ -109,7 +111,7 @@
     <div class="brand-title g-brand">
       <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
       <span id="headerSystemTitleText">IOSTAR-PM</span>
-      <span id="headerVersionBadge" class="brand-badge g-ver">v3.0.1</span>
+      <span id="headerVersionBadge" class="brand-badge g-ver">v3.0.2</span>
       <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">27년 가동률 시스템 개선</span>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
     </div>
@@ -761,7 +763,8 @@
           <table id="enhancementMatrixTable">
             <thead>
               <tr>
-                <th style="width: 130px;">서브시스템명</th>
+                <th style="width: 100px;">분야</th>
+                <th style="width: 110px;">서브시스템</th>
                 <th style="width: 110px;">요구사항 ID</th>
                 <th>개선 요건 명칭 및 과업</th>
                 <th style="width: 90px;">연계 태스크 수</th>
@@ -834,7 +837,7 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">📝 WBS 공정 관리</span>
-          <span class="neo-ph-desc">ID 를 누르면 오른쪽 상세 패널 · 행별 [⚡] 실적반영 · [+하위]/[+동위] 계층추가 · [◀/▶] 레벨조정 · [▲/▼] 순서이동</span>
+          <span class="neo-ph-desc">ID 를 누르면 상세 패널 · [⚡] 실적반영 · [↳] 하위 추가 · [＋] 동위 추가 · [◀/▶] 레벨 · [▲/▼] 순서 · 담당자는 상위에 지정하면 하위에도 자동 지정</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
@@ -903,20 +906,21 @@
           <thead>
             <tr>
               <th style="width: 56px;">ID</th>
-              <th style="width: 92px;">레벨</th>
-              <th style="width: 110px;">서브시스템</th>
-              <th style="min-width: 295px; width: 320px;">Task명 (Task Name)</th>
+              <th style="width: 50px;" title="◀ 상위 레벨로 / ▶ 하위 레벨로">레벨</th>
+              <th style="width: 78px;">서브시스템</th>
+              <th style="min-width: 220px;">Task명 (Task Name)</th>
               <th style="width: 54px;" title="완료 / 지연(계획 대비 실적 1%p 이상 부족) / 진행중 / 착수전">상태</th>
-              <th style="width: 52px;">가중치</th>
-              <th style="width: 85px;">REQ ID</th>
-              <th style="width: 124px;">계획시작</th>
-              <th style="width: 124px;">계획종료</th>
-              <th style="width: 124px;">실적시작</th>
-              <th style="width: 124px;">실적종료</th>
-              <th style="width: 52px;">계획%</th>
-              <th style="width: 52px;">실적%</th>
-              <th style="width: 95px;">산출물/조치</th>
-              <th style="width: 175px;">실적반영 / 계층·순서 / 삭제</th>
+              <th style="width: 46px;">가중치</th>
+              <th style="width: 70px;">REQ ID</th>
+              <th style="width: 98px;">계획시작</th>
+              <th style="width: 98px;">계획종료</th>
+              <th style="width: 98px;">실적시작</th>
+              <th style="width: 98px;">실적종료</th>
+              <th style="width: 48px;">계획%</th>
+              <th style="width: 48px;">실적%</th>
+              <th style="width: 92px;" title="목록에서 고르거나 직접 입력 (1명). 상위 Task 에 지정하면 하위 Task 에도 자동 지정">담당자</th>
+              <th style="width: 80px;">산출물/조치</th>
+              <th style="width: 136px;" title="⚡ 계획을 실적에 반영 · ↳ 하위 추가 · ＋ 동위 추가 · ▲▼ 순서 · × 삭제">실적·추가·순서·삭제</th>
             </tr>
           </thead>
           <tbody id="wbsTableBody"></tbody>
@@ -952,6 +956,7 @@
             <option value="ALL">전체 서브시스템 보기</option>
           </select>
         </div>
+        <div class="filter-item"><span class="neo-chips" id="reqStatusChips" role="group" aria-label="상태 필터"></span></div>
         <div class="status-summary-bar" style="margin-bottom:0; margin-left:auto;">
           <span class="status-badge-chip chip-total">전체: <b id="tab-req-stat-total">0</b></span>
           <span class="status-badge-chip chip-ready">착수전: <b id="tab-req-stat-ready">0</b></span>
@@ -1011,6 +1016,7 @@
             <option value="ALL">전체 서브시스템 보기</option>
           </select>
         </div>
+        <div class="filter-item"><span class="neo-chips" id="vocStatusChips" role="group" aria-label="상태 필터"></span></div>
         <div class="status-summary-bar" style="margin-bottom:0; margin-left:auto; align-items:center;">
           <span class="status-badge-chip chip-total">전체: <b id="tab-voc-stat-total">0</b></span>
           <span class="status-badge-chip chip-ready">착수전: <b id="tab-voc-stat-ready">0</b></span>
@@ -1088,6 +1094,7 @@
           <input type="text" id="delivNameSearchInput" placeholder="산출물명 검색어 입력..." style="width:170px;" data-input="renderDeliverablesTable">
           <button class="btn btn-secondary btn-sm" data-click="UiH.resetDelivFilters">초기화</button>
         </div>
+        <div class="filter-item"><span class="neo-chips" id="delivStatusChips" role="group" aria-label="상태 필터"></span></div>
         <span style="margin-left: auto; font-size: 11px; color: var(--text-sub);">
           <b>진행상태:</b> 작성전 ➔ 작성중 ➔ 검토요청 ➔ 보완완료
         </span>
@@ -1513,8 +1520,9 @@
                 </select>
               </div>
               <div class="filter-item">
-                <label style="font-weight:bold; font-size:11px;">상태 필터:</label>
-                <select id="aiFilterStatus" data-change="MeetingManager.renderActionItemsTracker" style="font-size:11px;">
+                <label style="font-weight:bold; font-size:11px;">상태:</label>
+                <span class="neo-chips" id="aiStatusChips" role="group" aria-label="상태 필터"></span>
+                <select id="aiFilterStatus" data-change="MeetingManager.renderActionItemsTracker" style="font-size:11px; display:none;">
                   <option value="ALL">전체 상태</option>
                   <option value="진행중">진행중</option>
                   <option value="완료">완료</option>
@@ -1845,7 +1853,6 @@
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 18px;">📢</span>
               <strong style="font-size: 15px; color: var(--primary);">프로젝트 중요 공지사항 게시판</strong>
-              <span class="badge" style="background:#10b981; color:#fff;">ver1.0.4</span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <input type="text" placeholder="🔍 공지 제목/내용 검색..." data-input="NoticeCommManager.filterNoticesByKeyword" data-input-args='["$value"]' style="padding: 5px 10px; font-size: 12px; border: 1px solid var(--border-color); border-radius: 4px; min-width: 200px;">
@@ -2146,7 +2153,7 @@
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver3.0.1" style="width:100%;" data-change="updateProjectTitles">
+                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver3.0.2" style="width:100%;" data-change="updateProjectTitles">
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
@@ -2322,7 +2329,6 @@
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:16px;">🔄</span>
               <strong style="font-size:13.5px; color:#0f766e;">개선과제형(REQ) 공정 단계 기준정보 (개선 파이프라인 관리)</strong>
-              <span class="badge" style="background:#0f766e; color:#fff;">ver1.0.4</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <span id="reqPhasesWeightSum" style="font-size:12px; font-weight:bold; margin-right:8px; color:#10b981;">가중치 합계: 100%</span>
