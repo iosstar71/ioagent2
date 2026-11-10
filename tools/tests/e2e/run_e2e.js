@@ -319,6 +319,14 @@ async function localMain() {
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
   check("Unified: default UI mode is Standard (Neo parts hidden), Pretendard font loaded", stdMode.mode === stdMode.def && !stdMode.cls && stdMode.todo === "none" && !stdMode.ph && stdMode.sel !== "none" && fontOk, JSON.stringify({ stdMode, fontOk }));
+  // Standard 방식에서도 WBS 템플릿: 등록된 서브시스템만 · 기존 WBS 가 있으면 추가/교체 선택
+  await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(300);
+  await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
+  await page.selectOption("#tplSystemSelect", "W2"); await page.waitForTimeout(200);
+  const stdTpl = await page.evaluate(() => ({ same: JSON.stringify([...document.querySelectorAll("#tplSystemSelect option")].map(o => o.value)) === JSON.stringify(subsystemsMeta.map(m => m.name || m.code)),
+    free: !!document.getElementById("newSubSystemName"), modes: [...document.querySelectorAll('#tplExisting input[name="tplMode"]')].map(r => r.value).join(","), shown: !document.getElementById("tplExisting").hidden }));
+  await page.evaluate(() => WbsTemplate.close());
+  check("Standard mode: WBS template offers registered subsystems only and append/replace when WBS exists", stdTpl.same && !stdTpl.free && stdTpl.shown && stdTpl.modes === "append,replace", JSON.stringify(stdTpl));
   await page.selectOption("#gUiModeSelect", "neo").catch(async () => { await page.evaluate(() => UiMode.set("neo")); });
   await page.waitForTimeout(1500); await waitApp(page);
   const neoMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), saved: AuthManager.findUser("admin").uiMode, ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-col").length }));
