@@ -250,7 +250,7 @@ async function localMain() {
     return { ok, stored: stored.some(r => r.scope === "SYS" && r.scopeValue === "W1" && r.currentWeekTasks.some(t => t.manual)) };
   });
   check("Weekly report: complete & save", saved.ok && saved.stored, JSON.stringify(saved));
-  const sizeBlocked = await page.evaluate(() => { const r = WeeklyReportManager.currentWeekReport; const big = "가".repeat(33000); r.issuesNotes = big; const ok = WeeklyReportManager._checkSize(0, false); r.issuesNotes = ""; return !ok; });
+  const sizeBlocked = await page.evaluate(() => { const r = WeeklyReportManager.currentWeekReport; const keep = r.issuesNotes; const big = "가".repeat(33000); r.issuesNotes = big; const ok = WeeklyReportManager._checkSize(0, false); r.issuesNotes = keep; return !ok; });
   check("Weekly report: >32,000 chars blocked", sizeBlocked);
   const before = page.downloads.length;
   const integ = await page.evaluate(() => {
