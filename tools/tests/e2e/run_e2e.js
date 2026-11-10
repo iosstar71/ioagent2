@@ -366,7 +366,7 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("Themes: Electric (default) · Navy · Matte · Graphite (Teal removed); left menu option", side && themes === "electric,navy,matte,dark", themes);
+  check("Themes: Electric (default) · Navy · Matte · Graphite (Teal removed); left menu option", side && themes === "electric,navy,green,brown,matte,dark", themes);
   // [v3.1.0] 보고서 테마 5가지 · 머리글 [🎨 화면] 메뉴(테마 견본 · 글자 크기) · WBS 담당자·산출물 접기
   const ui310 = await page.evaluate(async () => {
     const out = {};
@@ -394,7 +394,7 @@ async function localMain() {
     return out;
   });
   check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 4 && ui310.theme === "matte" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 6 && ui310.theme === "matte" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
     ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
@@ -426,7 +426,7 @@ async function localMain() {
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
     return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
   await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,green,brown,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
   // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
@@ -664,7 +664,7 @@ async function localMain() {
     GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 300));
     out.dashBullet = document.querySelectorAll("#dashBulletChart .bl-row").length;
     GShell.go("tab-home"); HomeScreenManager.setStyle("EXECUTIVE"); await new Promise(r => setTimeout(r, 300));
-    out.homeBullet = document.querySelectorAll("#execBulletChart .bl-row").length;
+    out.homeBullet = document.querySelectorAll("#tab-home .bl-row").length; // [v3.5.0] 홈에서는 뺌
     HomeScreenManager.setStyle(HomeScreenManager.roleDefault());
     const deck = ExecDeck.build(ExecDeck.week());
     out.names = deck.slides.map(x => x.name).join(",");
@@ -673,8 +673,8 @@ async function localMain() {
     out.hasPoly = deck.slides.some(sl => sl.els.some(e => e.t === "poly"));
     return out;
   });
-  check("v3.4.0: gantt bars show actual fill, plan marker, delay hatching and summary bars; bullet charts on dashboard and briefing home; executive deck order (progress → S-curve → bullet → REQ·VOC → SDLC matrix → delays → subsystems)",
-    v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet >= 1 &&
+  check("v3.4.0: gantt bars show actual fill, plan marker, delay hatching and summary bars; bullet chart on the dashboard (not on home); executive deck order (progress → S-curve → bullet → REQ·VOC → SDLC matrix → delays → subsystems)",
+    v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet === 0 &&
     /^표지,목차,종합 진척 현황,S-커브,불릿 차트,요구사항·VOC,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
 
   // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만

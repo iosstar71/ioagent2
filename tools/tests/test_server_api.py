@@ -255,9 +255,9 @@ class ServerApiTest(unittest.TestCase):
             self.assertIn('"uiSwitch": %s' % ("false" if cp["ui"].get("allow_ui_switch", "1") == "0" else "true"), js)
             self.assertIn('"defaultTheme": "%s"' % cp["ui"].get("default_theme", "electric"), js)
         # Pretendard 글꼴 파일은 화면에서 받을 수 있어야 함 (CSP font-src 'self')
-        with urllib.request.urlopen(self.base + "/fonts/PretendardVariable.woff2") as r:
+        with urllib.request.urlopen(self.base + "/fonts/Pretendard-Regular.subset.woff2") as r:
             self.assertEqual(r.status, 200)
-            self.assertGreater(len(r.read()), 1000000)
+            self.assertGreater(len(r.read()), 200000)
 
     def test_28_personal_todos_private(self):
         """[v2.4.0] 내 할 일(todosData)은 본인 항목만 내려받고, 다른 사람 항목은 읽기·고치기·지우기 모두 불가"""

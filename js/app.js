@@ -3770,7 +3770,7 @@ function switchTab(tabId) {
 
 // [v2.3.1] 테마는 Electric(기본) · Navy · Matte · Graphite(어두운 화면) 4가지 (Standard·Neo 공통)
 //  — 이전 버전의 다른 테마 값(Teal 등)은 가까운 테마로
-const STANDARD_THEMES = ["electric", "navy", "matte", "dark"];
+const STANDARD_THEMES = ["electric", "navy", "green", "brown", "matte", "dark"];
 function defaultTheme() {
   const t = typeof APP_CONFIG !== "undefined" ? APP_CONFIG.defaultTheme : "";
   return STANDARD_THEMES.indexOf(t) !== -1 ? t : "electric";
@@ -3779,7 +3779,8 @@ function normalizeTheme(theme) {
   if (STANDARD_THEMES.indexOf(theme) !== -1) return theme;
   if (theme === "graphite" || theme === "cyber-neon" || theme === "charcoal") return "dark";
   if (theme === "ocean" || theme === "purple") return "navy";
-  if (theme === "brown" || theme === "sepia" || theme === "emerald") return "matte";
+  if (theme === "emerald" || theme === "forest") return "green";
+  if (theme === "sepia" || theme === "mocha") return "brown";
   return defaultTheme();
 }
 
@@ -8295,7 +8296,6 @@ var HomeScreenManager = {
   },
 
   renderExecutive() {
-    if (typeof BulletChart !== "undefined") { try { BulletChart.render("execBulletChart", BulletChart.liveRows()); } catch (e) { console.warn(e); } }
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "27년 가동률 시스템 개선";
     const repDay = (typeof WBSEngine !== "undefined" && WBSEngine.getDayOfWeekText) ? WBSEngine.getDayOfWeekText(repDate) : "화";

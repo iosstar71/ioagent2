@@ -198,6 +198,7 @@ var ExecDeck = {
         return [domainOf(sys), sys, `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       // 그룹 머리글
+      els.push(R(0.45, 1.15, 2.8, 0.36, H)); els.push(T(0.45, 1.15, 2.8, 0.36, [p("구분", 11, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" }));
       els.push(R(3.25, 1.15, 4.6, 0.36, C)); els.push(T(3.25, 1.15, 4.6, 0.36, [p("🎯 요구사항 (REQ) 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
       els.push(R(7.85, 1.15, 5.0, 0.36, "B45309")); els.push(T(7.85, 1.15, 5.0, 0.36, [p("💬 추가 VOC · 이슈 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
       const rh = Math.min(0.42, 5.0 / Math.max(1, tr.length + 1));
