@@ -521,7 +521,7 @@ async function localMain() {
     const dl0 = page.downloads.length;
     await page.click('#tab-weekly-report .neo-dd-menu .neo-dd-item[data-click-args*="EXCEL"]'); await page.waitForTimeout(1500);
     const ddClosed = await page.evaluate(() => document.querySelector('#tab-weekly-report .neo-dd-menu').hidden);
-    check("Neo: header download buttons grouped in the [⬇ Download] menu; item downloads and closes the menu", dd.open && dd.items === 3 && dd.loose === 0 && page.downloads.length > dl0 && ddClosed, JSON.stringify({ dd, ddClosed, dl: page.downloads.length - dl0 }));
+    check("Neo: header download buttons grouped in the [⬇ Download] menu; item downloads and closes the menu", dd.open && dd.items === 4 && dd.loose === 0 && page.downloads.length > dl0 && ddClosed, JSON.stringify({ dd, ddClosed, dl: page.downloads.length - dl0 }));
 
     const split = await page.evaluate(() => { const l = document.getElementById("wrListCard").getBoundingClientRect(), d = document.getElementById("wrDetailPanel").getBoundingClientRect(); return { side: l.right <= d.left + 1 && Math.abs(l.top - d.top) < 40, sw: document.documentElement.scrollWidth <= window.innerWidth }; });
     await page.click('#wrSavedListBody tr.wr-list-row:nth-child(3)'); await page.waitForTimeout(900);
