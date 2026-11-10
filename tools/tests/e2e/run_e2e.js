@@ -294,7 +294,7 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("Themes: Electric (default) · Navy · Graphite (Teal removed); left menu option", side && themes === "electric,navy,dark", themes);
+  check("Themes: Electric (default) · Navy · Matte · Graphite (Teal removed); left menu option", side && themes === "electric,navy,matte,dark", themes);
   // [Standard v1.0.1] 1단(묶음)·2단(하위) 메뉴 구분, 간트 머리글 테마, 설정 화면 선택지 정리, 판 이름 표시
   await page.click('.g-group[data-group="sc"]'); await page.waitForTimeout(150);
   await page.click('.g-nav-top .g-sub[data-tab="tab-gantt"]'); await page.waitForTimeout(500);
@@ -310,7 +310,7 @@ async function localMain() {
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
     return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
   await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
   // [v2.3.0] 화면 방식: 기본은 Standard (Neo 요소 숨김), 사용자 메뉴에서 Neo 로 바꾸면 다시 불러온 뒤 Neo 기능 동작

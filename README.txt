@@ -1,5 +1,5 @@
 ================================================================================
-⚡ IOSTAR-PM v2.3.0 (통합판 — 화면 방식 Standard / Neo 선택)
+⚡ IOSTAR-PM v2.3.1 (통합판 — 화면 방식 Standard / Neo 선택)
    - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
    - 이 브랜치: iostar-pm-unified (Standard v1.0.1 과 Neo v2.2.0 을 하나의 소스로 통합)
    - 이전 분리판 브랜치(iostar-pm-standard, iostar-pm-neo)는 이력으로 보존, 국내판 v1.2.0 은 개발 종료
@@ -22,6 +22,16 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [v2.3.1] — 테마 4종 (Standard·Neo 공통): Electric(기본) · Navy · Matte · Graphite
+1. 테마 목록은 화면 방식과 관계없이 하나로 통일 — 사용자 메뉴 [테마] 또는 [시스템 설정 > 화면·테마]
+2. Navy 강화: 머리글(진한 네이비) · 메뉴 줄 전체(네이비 바탕, 선택 묶음 흰 칩) · 표 머리(네이비) · 카드 제목(네이비 글자 + 밑줄)
+   · 화면 머리줄 위 네이비 선 · 대시보드 실적 진척률 카드(네이비) · 주 버튼(네이비) · 바탕(옅은 네이비 회색)
+   → Electric(흰 메뉴 줄 + 검정 캡슐 + 일렉트릭 블루)과 한눈에 구분됨
+3. Matte 추가 (제안 A안): 따뜻한 무광 회색 바탕, 먼지 낀 블루그레이 1색, 밝은 머리글, 1단 메뉴 밑줄 탭 + 2단 메뉴 진한 칩,
+   그림자 없는 가는 선, 채도를 낮춘 버튼·상태 표시
+4. 이전 테마 값: Teal 등 → Electric, Brown·Sepia·Emerald → Matte, Ocean·Purple → Navy, 어두운 테마 → Graphite
+5. app.ini [ui] default_theme 에 matte 추가 (electric / navy / matte / dark)
 
 ■ [v2.3.0] — Standard · Neo 통합 (한 소스, 화면 방식 선택) · Electric 테마 · Pretendard 글꼴
 1. 화면 방식 선택: 사용자 메뉴(오른쪽 위 이름) 또는 [시스템 설정 > 화면·테마]의 [화면 방식]

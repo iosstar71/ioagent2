@@ -196,6 +196,7 @@ var I18N_EN = (function () {
     "MEMORY (고속 인메모리)": "MEMORY (in-memory)",
     "MS Access 데이터베이스 (.accdb / .mdb - ODBC 연동)": "MS Access database (.accdb / .mdb - ODBC)",
     "MS Excel 공유 워크북 DB (.xlsx - 트랜잭션 시트 연동)": "MS Excel shared workbook DB (.xlsx - sheet transactions)",
+    "Matte (무광)": "Matte",
     "Navy": "Navy",
     "Navy (기본)": "Navy (default)",
     "Neo (확인할 일 · 상세 패널)": "Neo (to-do · detail panel)",
