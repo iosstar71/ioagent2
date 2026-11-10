@@ -4,7 +4,9 @@
 - 브랜치: `iostar-pm-unified` (Standard v1.0.1 + Neo v2.2.0 통합)
 - app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=2.3.x`, `[ui] default_ui / allow_ui_switch / default_theme`
 - 배포 파일: `IOSTAR-PM_v2.3.x[_win64].zip`
-- 화면 방식은 사용자별(`projectUsers[].uiMode`), 처음 값은 `default_ui`, `allow_ui_switch=0` 이면 고정
+- 화면 방식은 사용자별(`projectUsers[].uiMode`), 처음 값은 `default_ui`(v2.4.0 부터 neo), `allow_ui_switch=0` 이면 고정
+- Standard(클래식) 화면은 v2.4.x 까지 제공 — 다음 버전에서 Neo 하나로 통합하고 화면 방식 선택을 없앨 예정
+  (통합 시 정리 대상: `UiMode`, CSS `body:not(.ui-neo)` 규칙, `.neo-std-only` 요소, 자동 테스트의 Standard 단계)
 - Neo 전용 코드: `js/neo.js`(UiMode · Neo 기능), CSS `[Neo 2.1]`·`[Neo 2.2]`·`[v2.3.0]` 영역 — Neo 요소는 `body.ui-neo` 일 때만 표시
 - Standard 방식에서도 판매용으로 Neo 기능 자체를 빼야 한다면, 배포 전에 `default_ui=standard`, `allow_ui_switch=0` 으로 고정
   (화면 설정 방식이므로 기술적 보호 수단은 아님 — 기능을 실제로 빼는 별도 빌드가 필요하면 make_release 에 제외 목록 추가)

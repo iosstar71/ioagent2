@@ -49,7 +49,7 @@ var NeoUtil = {
 var UiMode = {
   KEY: "IOSTAR_UI_MODE",
   MODES: ["standard", "neo"],
-  LABELS: { standard: "Standard (기본 화면)", neo: "Neo (확인할 일 · 상세 패널)" },
+  LABELS: { standard: "Standard (클래식 — 이번 버전까지)", neo: "Neo (기본)" },
   current: "standard",
   cfg() {
     const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : {};
@@ -156,14 +156,19 @@ var NeoTodo = {
   // 화면의 조회 범위(대시보드 필터 + 내 담당만)에 들어가는지
   _inScope(systems, sys, person) {
     if (systems && systems.indexOf(sys) === -1) return false;
-    if (this.mine()) {
+    if (this._mineNow !== undefined ? this._mineNow : this.mine()) {
       const own = this.ownSystem(), name = this.userName();
       return (own && sys === own) || (!!name && !!person && String(person).indexOf(name) !== -1);
     }
     return true;
   },
 
-  collect(systems) {
+  // mine: true/false = 내 담당만 여부 지정 (생략하면 대시보드 설정)
+  collect(systems, mine) {
+    this._mineNow = mine;
+    try { return this._collect(systems); } finally { this._mineNow = undefined; }
+  },
+  _collect(systems) {
     const rep = NeoUtil.rep();
     const soon = NeoUtil.addDays(rep, this.DUE_DAYS);
     const leaves = (wbsData || []).filter(t => t.isLeaf && this._inScope(systems, t.system));
@@ -192,55 +197,30 @@ var NeoTodo = {
       "tab-wbs": c.delayed.length,
       "tab-voc": c.vocs.length,
       "tab-deliverables": c.delivs.length,
-      "tab-meeting": c.actions.length
+      "tab-meeting": c.actions.length,
+      // [v2.4.0] 홈: 내가 등록한 할 일 중 기한 지남 + 오늘 마감
+      "tab-home": typeof TodoCenter !== "undefined" ? TodoCenter.urgent() : 0
     };
   },
 
+  // [v2.4.0] 대시보드에는 한 줄 요약만 — 자세한 목록과 개인 할 일은 홈의 [✅ 내 할 일]
   render(systems) {
     if (!UiMode.isNeo()) return;
     this._systems = systems || null;
     const box = document.getElementById("neoTodoCard");
     if (!box) return;
     const c = this.collect(this._systems);
-    const due = iso => {
-      const n = NeoUtil.daysLeft(iso);
-      return iso ? `<span class="neo-due${n < 0 ? " late" : n <= 2 ? " near" : ""}">${NeoUtil.dueText(iso)}</span>` : "";
-    };
-    const li = (click, args, main, sub, right) =>
-      `<li><button type="button" class="neo-todo-item" data-click="${click}" data-click-args="${UiEvents.args(...args)}"><span class="neo-todo-main">${main}</span><span class="neo-todo-sub">${sub}</span>${right || ""}</button></li>`;
-    const more = (n, click, args) => n > this.SHOW
-      ? `<button type="button" class="neo-todo-more" data-click="${click}" data-click-args="${UiEvents.args(...args)}">전체 ${n}건 보기 →</button>` : "";
-    const col = (key, icon, title, items, n, empty, moreBtn) => `
-      <div class="neo-todo-col neo-todo-${key}${n ? "" : " empty"}">
-        <div class="neo-todo-head"><span>${icon} <span>${title}</span></span><b class="neo-todo-count">${n}</b></div>
-        ${n ? `<ul>${items}</ul>${moreBtn}` : `<div class="neo-todo-empty">✓ <span>${empty}</span></div>`}
-      </div>`;
-    const cols = [
-      col("delay", "🔴", "지연 과업", c.delayed.slice(0, this.SHOW).map(x =>
-        li("NeoTodo.openTask", [x.t.id], `<code>${escapeHtml(x.t.id)}</code> ${escapeHtml(x.t.name || "")}`, `${escapeHtml(x.t.system || "")} · 계획 ${x.t.pProg}% / 실적 ${x.t.aProg}%`, `<span class="neo-gap">-${Math.round(x.gap)}%p</span>`)).join(""),
-        c.delayed.length, "지연 과업 없음", more(c.delayed.length, "NeoTodo.openWbsStatus", ["지연"])),
-      col("soon", "⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.slice(0, this.SHOW).map(t =>
-        li("NeoTodo.openTask", [t.id], `<code>${escapeHtml(t.id)}</code> ${escapeHtml(t.name || "")}`, `${escapeHtml(t.system || "")} · 실적 ${t.aProg}%`, due(t.pEnd))).join(""),
-        c.dueSoon.length, "마감 임박 과업 없음", more(c.dueSoon.length, "NeoTodo.openWbsStatus", ["진행중"])),
-      col("voc", "📣", "미조치 VOC", c.vocs.slice(0, this.SHOW).map(v =>
-        li("NeoTodo.reveal", ["tab-voc", v.id], `<code>${escapeHtml(v.id)}</code> ${escapeHtml(v.title || "")}`, `${escapeHtml(v.system || "")} · ${escapeHtml(v.priority || "")} · ${escapeHtml(v.status || "")}`, due(v.targetDate))).join(""),
-        c.vocs.length, "미조치 VOC 없음", more(c.vocs.length, "GShell.go", ["tab-voc"])),
-      col("deliv", "📑", "확인할 산출물", c.delivs.slice(0, this.SHOW).map(d =>
-        li("NeoTodo.reveal", ["tab-deliverables", d.name], escapeHtml(d.name || ""), `${escapeHtml(d.system || "")} · ${escapeHtml(d.round || "")} · ${escapeHtml(d.status || "")}`, due(d.pDate))).join(""),
-        c.delivs.length, "기한 안 산출물 모두 완료", more(c.delivs.length, "GShell.go", ["tab-deliverables"])),
-      col("act", "⚡", "미완료 Action Item", c.actions.slice(0, this.SHOW).map(a =>
-        li("GShell.go", ["tab-meeting"], escapeHtml(a.title || ""), `${escapeHtml(a.assignee || "")} · ${escapeHtml(a.system || "")}`, due(a.targetDate))).join(""),
-        c.actions.length, "미완료 Action Item 없음", more(c.actions.length, "GShell.go", ["tab-meeting"]))
-    ];
-    const total = c.delayed.length + c.dueSoon.length + c.vocs.length + c.delivs.length + c.actions.length;
-    const own = this.ownSystem();
+    const parts = [["🔴", "지연 과업", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
+    const total = parts.reduce((a, p) => a + p[2], 0);
+    const mineOpen = typeof TodoCenter !== "undefined" ? TodoCenter.stats().open : 0;
     box.innerHTML = `
-      <div class="neo-todo-title">
-        <span><span>✅ 확인할 일</span> <b class="neo-todo-total">${total}</b></span>
-        <span class="neo-todo-hint">기준일 ${escapeHtml(NeoUtil.rep())} · 마감 ${this.DUE_DAYS}일 이내 · 항목을 누르면 해당 화면으로 이동</span>
-        ${own || this.userName() ? `<label class="neo-todo-mine"><input type="checkbox" data-change="NeoTodo.toggleMine" ${this.mine() ? "checked" : ""}> 내 담당만${own ? ` (${escapeHtml(own)})` : ""}</label>` : ""}
-      </div>
-      <div class="neo-todo-grid">${cols.join("")}</div>`;
+      <div class="neo-todo-line">
+        <span class="neo-todo-line-title"><span>✅ 확인할 일</span> <b class="neo-todo-total">${total}</b></span>
+        ${parts.map(p => `<span class="neo-todo-chip${p[2] ? "" : " zero"}">${p[0]} <span>${p[1]}</span> <b>${p[2]}</b></span>`).join("")}
+        <span class="neo-todo-chip mine"><span>📝 내 할 일</span> <b>${mineOpen}</b></span>
+        <button type="button" class="btn btn-sm neo-todo-go" data-btn="nav" data-click="TodoCenter.openHome">홈의 내 할 일에서 보기 →</button>
+      </div>`;
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
     if (typeof I18N !== "undefined") I18N.translateTree(box);
     NeoBadges.refresh();
   },
@@ -441,7 +421,7 @@ var NeoDetail = {
 // 3. 메뉴 건수 배지
 // -----------------------------------------------------------------------------
 var NeoBadges = {
-  TIPS: { "tab-wbs": "지연 과업", "tab-voc": "미조치 VOC", "tab-deliverables": "확인할 산출물 (7일 이내)", "tab-meeting": "미완료 Action Item" },
+  TIPS: { "tab-wbs": "지연 과업", "tab-voc": "미조치 VOC", "tab-deliverables": "확인할 산출물 (7일 이내)", "tab-meeting": "미완료 Action Item", "tab-home": "내 할 일 (기한 지남·오늘 마감)" },
   _counts: {},
   _sig: "",
 

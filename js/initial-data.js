@@ -11,7 +11,7 @@ window.AX_INITIAL_DATA = {
   "generatedAt": "2026-11-09"
  },
  "projectConfig": {
-  "systemTitle": "IOSTAR-PM ver2.3.1",
+  "systemTitle": "IOSTAR-PM ver2.4.0",
   "projectName": "27년 가동률 시스템 개선",
   "domains": [
    "관리공통",
@@ -641,7 +641,7 @@ window.AX_INITIAL_DATA = {
   "roleHomeSettings": {
    "SYS_ADMIN": "EXECUTIVE",
    "PM": "EXECUTIVE",
-   "MEMBER": "PORTAL"
+   "MEMBER": "TODO"
   },
   "exportSettings": {
    "xlsxTheme": "Navy Classic",

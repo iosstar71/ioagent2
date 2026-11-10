@@ -249,7 +249,13 @@ function updateAllSubsystemFilterDropdowns() {
   filterConfigs.forEach(cfg => {
     const sel = document.getElementById(cfg.id);
     if (!sel) return;
-    const curVal = sel.value || "ALL";
+    // [v2.4.0] 처음에는 내 담당 서브시스템으로 (담당이 전체이면 전체)
+    let curVal = sel.value || "ALL";
+    if (!sel.dataset.init) {
+      sel.dataset.init = "1";
+      const own = typeof Permission !== "undefined" ? Permission.ownSubsystem() : "ALL";
+      if (own && own !== "ALL") curVal = own;
+    }
     sel.innerHTML = `<option value="ALL">${cfg.allLabel}</option>`;
     list.forEach(sys => {
       const opt = document.createElement("option");
@@ -1257,6 +1263,8 @@ let vocData = [];
 let noticesData = [];
 
 let communicationsData = [];
+// [v2.4.0] 사용자별 할 일 (TodoCenter) — 행: { id, owner, kind: "todo"|"hide", title, due, priority, link, done, ... }
+var todosData = [];
 
 // -------------------------------------------------------------
 // [v1.0.5 신규] 최초 실행 초기 데이터(JSON) 로더
@@ -1285,6 +1293,7 @@ var InitialDataLoader = {
       if (Array.isArray(clone.communicationsData)) communicationsData = clone.communicationsData;
       if (Array.isArray(clone.meetingsData)) meetingsData = clone.meetingsData;
       if (Array.isArray(clone.weeklyReportsData)) weeklyReportsData = clone.weeklyReportsData;
+      if (Array.isArray(clone.todosData)) todosData = clone.todosData;
       if (clone.theme) {
         clone.theme = normalizeTheme(clone.theme);
         document.body.setAttribute("data-theme", clone.theme);
@@ -8091,7 +8100,11 @@ window.WeeklyReportManager = WeeklyReportManager;
 // 🏛️ 2. 이그제큐티브 브리핑 룸 / 🚀 3. 하이브리드 스마트 포털 및 권한별 설정
 // =========================================================================
 var HomeScreenManager = {
-  _sessionMode: null, // 'EXECUTIVE' | 'PORTAL' | null (null: use role effective mode)
+  _sessionMode: null, // (이전 버전 호환)
+  // [v2.4.0] 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 사용자가 홈 위쪽 단추로 고른 스타일(사용자별 기억)
+  STYLES: ["EXECUTIVE", "PORTAL", "TODO"],
+  STYLE_LABELS: { EXECUTIVE: "📊 브리핑", PORTAL: "🧰 워크벤치", TODO: "✅ 내 할 일" },
+  STYLE_KEY: "IOSTAR_HOME_STYLE_",
 
   init() {
     this.ensureConfig();
@@ -8104,7 +8117,7 @@ var HomeScreenManager = {
       projectConfig.roleHomeSettings = {
         SYS_ADMIN: "EXECUTIVE",
         PM: "EXECUTIVE",
-        MEMBER: "PORTAL"
+        MEMBER: "TODO"
       };
     }
     if (!projectConfig.exportSettings) {
@@ -8142,7 +8155,7 @@ var HomeScreenManager = {
 
     if (selAdmin) selAdmin.value = cfg.SYS_ADMIN || "EXECUTIVE";
     if (selPM) selPM.value = cfg.PM || "EXECUTIVE";
-    if (selMember) selMember.value = cfg.MEMBER || "PORTAL";
+    if (selMember) selMember.value = cfg.MEMBER || "TODO";
 
     const selUnifiedTheme = document.getElementById("cfgExportUnifiedTheme");
     const selUnifiedFont = document.getElementById("cfgExportUnifiedFont");
@@ -8157,7 +8170,8 @@ var HomeScreenManager = {
     if (selUnifiedSize) selUnifiedSize.value = curSize;
   },
 
-  getEffectiveMode() {
+  // 역할별 기본 홈 스타일
+  roleDefault() {
     this.ensureConfig();
     const curUser = (typeof AuthManager !== "undefined" && typeof AuthManager.getCurrentUser === "function")
       ? AuthManager.getCurrentUser()
@@ -8167,18 +8181,51 @@ var HomeScreenManager = {
       : (curUser.role ? curUser.role.toUpperCase() : "MEMBER");
 
     const settings = projectConfig.roleHomeSettings || {};
-    if (normRole === "SYS_ADMIN") return settings.SYS_ADMIN || "EXECUTIVE";
-    if (normRole === "PM" || normRole === "LEAD") return settings.PM || "EXECUTIVE";
-    return settings.MEMBER || "PORTAL";
+    const ok = m => (this.STYLES.indexOf(m) !== -1 ? m : null);
+    if (normRole === "SYS_ADMIN") return ok(settings.SYS_ADMIN) || "EXECUTIVE";
+    if (normRole === "PM" || normRole === "LEAD") return ok(settings.PM) || "EXECUTIVE";
+    return ok(settings.MEMBER) || "TODO";
+  },
+
+  _styleKey() {
+    const u = typeof AuthManager !== "undefined" ? AuthManager.getCurrentUser() : null;
+    return this.STYLE_KEY + String((u && u.empNo) || "guest").toLowerCase();
+  },
+  userStyle() {
+    try { const v = localStorage.getItem(this._styleKey()); return this.STYLES.indexOf(v) !== -1 ? v : null; } catch (e) { return null; }
+  },
+  getEffectiveMode() {
+    return this.userStyle() || this.roleDefault();
   },
 
   getCurrentMode() {
     return this.getEffectiveMode();
   },
 
-  setSessionMode(mode) {
-    // View mode is strictly governed by system role settings
+  // 사용자가 홈 위쪽 단추로 홈 스타일을 고름 (사용자별 기억, 역할 기본값과 같으면 기억 지움)
+  setStyle(mode) {
+    if (this.STYLES.indexOf(mode) === -1) return;
+    try {
+      if (mode === this.roleDefault()) localStorage.removeItem(this._styleKey());
+      else localStorage.setItem(this._styleKey(), mode);
+    } catch (e) {}
     this.render();
+  },
+
+  setSessionMode(mode) { this.setStyle(mode); },
+
+  openSettings() {
+    if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-config"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-config")) {
+      showToast("ℹ️ 홈 스타일은 위쪽 [브리핑 · 워크벤치 · 내 할 일] 단추로 바꿀 수 있습니다. 역할별 기본 홈은 시스템 관리자가 정합니다.");
+      return;
+    }
+    switchTab("tab-config");
+    setTimeout(() => {
+      try { SubTabs.show("config", "screen"); } catch (e) {}
+      const el = document.getElementById("cfgRoleHomeSysAdmin");
+      const card = el && el.closest(".card");
+      if (card) { card.scrollIntoView({ behavior: "smooth", block: "start" }); card.classList.add("g-flash-card"); setTimeout(() => card.classList.remove("g-flash-card"), 1800); }
+    }, 200);
   },
 
   applyRoleMode() {
@@ -8187,8 +8234,8 @@ var HomeScreenManager = {
   },
 
   previewMode(mode) {
-    this.setSessionMode(mode);
     switchTab("tab-home");
+    this.setStyle(mode);
   },
 
   onRoleHomeSettingChange(role, mode) {
@@ -8196,7 +8243,7 @@ var HomeScreenManager = {
     projectConfig.roleHomeSettings[role] = mode;
     if (typeof persistChanges === "function") persistChanges();
     this.render();
-    showToast(`🖥️ [${role}] 권한의 초기 홈 화면이 '${mode === "EXECUTIVE" ? "2. 이그제큐티브 브리핑 룸" : "3. 하이브리드 스마트 포털"}'(으)로 설정되었습니다.`);
+    showToast(`🏠 [${role}] 역할의 기본 홈을 [${this.STYLE_LABELS[mode] || mode}](으)로 정했습니다.`);
   },
 
   onExportSettingChange(key, value) {
@@ -8224,50 +8271,25 @@ var HomeScreenManager = {
   render() {
     this.ensureConfig();
     const mode = this.getCurrentMode();
-    const btnExec = document.getElementById("btnHomeExecutive");
-    const btnPortal = document.getElementById("btnHomePortal");
+    const roleDef = this.roleDefault();
+    document.querySelectorAll(".home-style-btn").forEach(btn => {
+      const on = btn.getAttribute("data-home-style") === mode;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    });
     const badge = document.getElementById("homeModeStatusBadge");
+    if (badge) badge.textContent = mode === roleDef ? "역할 기본 홈" : `내가 고른 홈 (역할 기본: ${this.STYLE_LABELS[roleDef]})`;
 
-    if (btnExec) {
-      if (mode === "EXECUTIVE") btnExec.classList.add("active");
-      else btnExec.classList.remove("active");
-    }
-    if (btnPortal) {
-      if (mode === "PORTAL") btnPortal.classList.add("active");
-      else btnPortal.classList.remove("active");
-    }
-
-    const curUser = (typeof AuthManager !== "undefined" && typeof AuthManager.getCurrentUser === "function")
-      ? AuthManager.getCurrentUser()
-      : { name: "관리자", role: "SYS_ADMIN", subsystem: "PMO" };
-    const normRole = (typeof AuthManager !== "undefined" && typeof AuthManager.normalizeRole === "function")
-      ? AuthManager.normalizeRole(curUser.role)
-      : curUser.role;
-
-    if (badge) {
-      const modeName = mode === "EXECUTIVE" ? "📊 이그제큐티브 브리핑 룸" : "🚀 하이브리드 스마트 포털";
-      const roleText = normRole === "SYS_ADMIN" ? "시스템 관리자" : AuthManager.roleLabel(normRole);
-      badge.textContent = `현재 뷰: ${modeName} | 접속: ${curUser.name || "사용자"} (${roleText}) [권한 설정 자동 연동]`;
-    }
-    const roleBadge = document.getElementById("homeRoleModeBadge");
-    if (roleBadge) {
-      const modeName = mode === "EXECUTIVE" ? "📊 이그제큐티브 브리핑 룸" : "🚀 하이브리드 스마트 포털";
-      const roleText = normRole === "SYS_ADMIN" ? "시스템 관리자(SYS_ADMIN)" : (normRole === "PM" ? "프로젝트 관리자(PM)" : "일반 사용자/PL(MEMBER)");
-      roleBadge.textContent = `${roleText} → ${modeName}`;
-    }
-
-    const execContainer = document.getElementById("homeExecutiveContainer");
-    const portalContainer = document.getElementById("homePortalContainer");
-
-    if (mode === "EXECUTIVE") {
-      if (execContainer) execContainer.style.display = "block";
-      if (portalContainer) portalContainer.style.display = "none";
-      this.renderExecutive();
-    } else {
-      if (execContainer) execContainer.style.display = "none";
-      if (portalContainer) portalContainer.style.display = "block";
-      this.renderPortal();
-    }
+    const boxes = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
+    Object.keys(boxes).forEach(k => {
+      const el = document.getElementById(boxes[k]);
+      if (el) el.style.display = k === mode ? "block" : "none";
+    });
+    if (mode === "EXECUTIVE") this.renderExecutive();
+    else if (mode === "PORTAL") this.renderPortal();
+    else if (typeof TodoCenter !== "undefined") TodoCenter.render();
+    if (typeof TodoCenter !== "undefined") TodoCenter.updateCounts();
+    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("tab-home"));
   },
 
   renderExecutive() {
@@ -8300,7 +8322,7 @@ var HomeScreenManager = {
         const wObj = WeeklyReportManager.findWeekForDate(repDate);
         if (wObj) wLabel = wObj.fullLabel;
       }
-      heroMeta.innerHTML = `공정 기준일: <b>${repDate} (${repDay})</b> | 대상: <b>${wLabel}</b> | 총괄 PM: <b>${(projectUsers && projectUsers[1]) ? projectUsers[1].name : "김총괄 수석PM"}</b>`;
+      heroMeta.innerHTML = `공정 기준일: <b>${repDate} (${repDay})</b> | 대상: <b>${wLabel}</b> | 총괄 PM: <b>${escapeHtml(((projectUsers || []).find(u => AuthManager.normalizeRole(u.role) === "PM") || {}).name || "-")}</b>`;
     }
     if (heroAchieve) heroAchieve.textContent = `${achieveRate}%`;
     if (heroGap) {
@@ -8323,7 +8345,8 @@ var HomeScreenManager = {
     }
 
     // 2. 5-KPI Strip
-    const delayedTasks = (wbsData || []).filter(t => t.isLeaf && t.pProg > t.aProg && t.pEnd && t.pEnd < repDate);
+    // [v2.4.0] 지연 판정은 WBS·대시보드와 같은 기준 (최하위 Task, 계획 대비 실적 1%p 이상 부족)
+    const delayedTasks = (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, repDate).code === "delayed");
     const delayedCount = delayedTasks.length;
 
     const elKpiActual = document.getElementById("execKpiWbsActual");
@@ -8521,8 +8544,8 @@ var HomeScreenManager = {
     }
 
     uncompleted.slice(0, 15).forEach(t => {
-      const isDelayed = t.pEnd && t.pEnd < repDate;
-      const stTag = isDelayed ? '<span class="status-tag tag-delayed">지연</span>' : (t.aProg > 0 ? '<span class="status-tag tag-progress">진행중</span>' : '<span class="status-tag tag-ready">계획</span>');
+      const st = WBSEngine.getTaskStatus(t, repDate);
+      const stTag = `<span class="status-tag ${st.cssClass}">${st.label}</span>`;
 
       const tr = document.createElement("tr");
       tr.innerHTML = `

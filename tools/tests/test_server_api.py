@@ -257,6 +257,35 @@ class ServerApiTest(unittest.TestCase):
             self.assertEqual(r.status, 200)
             self.assertGreater(len(r.read()), 1000000)
 
+    def test_28_personal_todos_private(self):
+        """[v2.4.0] 내 할 일(todosData)은 본인 항목만 내려받고, 다른 사람 항목은 읽기·고치기·지우기 모두 불가"""
+        member = self.ready("lead_lee")
+        mine = {"id": "TD-admin-1", "owner": "admin", "kind": "todo", "title": "ADMIN-PRIVATE", "done": False}
+        s, r = self.call("/api/db/save", {"changes": {"todosData": {"parts": {"TD-admin-1": mine}, "base": {}}}}, self.admin)
+        self.assertEqual(s, 200, r)
+        self.assertEqual([t["id"] for t in r["data"]["todosData"]], ["TD-admin-1"])
+        theirs = {"id": "TD-lee-1", "owner": "lead_lee", "kind": "todo", "title": "LEE-PRIVATE", "done": False}
+        s, r = self.call("/api/db/save", {"changes": {"todosData": {"parts": {"TD-lee-1": theirs}, "base": {}}}}, member)
+        self.assertEqual(s, 200, r)
+        # 저장 응답·불러오기 모두 본인 항목만 (버전 정보 포함)
+        self.assertEqual([t["id"] for t in r["data"]["todosData"]], ["TD-lee-1"])
+        self.assertEqual(set(r["revs"]["todosData"].keys()), {"TD-lee-1"})
+        data, revs = self.load(["todosData"], member)
+        self.assertEqual([t["title"] for t in data["todosData"]], ["LEE-PRIVATE"])
+        self.assertNotIn("TD-admin-1", revs["todosData"])
+        data, _ = self.load(["todosData"], self.admin)
+        self.assertEqual([t["title"] for t in data["todosData"]], ["ADMIN-PRIVATE"])
+        # 다른 사람 항목을 내 것으로 바꿔 쓰기 / 지우기 / 남의 이름으로 만들기 → 거부
+        hijack = dict(mine, owner="lead_lee", title="HIJACK")
+        s, r = self.call("/api/db/save", {"changes": {"todosData": {"parts": {"TD-admin-1": hijack, "TD-x": dict(theirs, id="TD-x", owner="admin")}, "base": {"TD-admin-1": 1}}}}, member)
+        self.assertEqual(s, 200, r)
+        self.assertIn("todosData[TD-admin-1]", r["blocked"])
+        self.assertIn("todosData[TD-x]", r["blocked"])
+        s, r = self.call("/api/db/save", {"changes": {"todosData": {"parts": {"TD-admin-1": None}, "base": {"TD-admin-1": 1}}}}, member)
+        self.assertIn("todosData[TD-admin-1]", r["blocked"])
+        data, _ = self.load(["todosData"], self.admin)
+        self.assertEqual([t["title"] for t in data["todosData"]], ["ADMIN-PRIVATE"])
+
     # ---------------------------------------------------------------- 여러 프로젝트 (v1.0.10)
     def test_40_project_isolation(self):
         s, r = self.call("/api/projects/create", {"name": "2차 확산 과제", "startDate": "2028-01-01", "endDate": "2028-12-31", "copyFrom": "DEFAULT"}, self.admin)

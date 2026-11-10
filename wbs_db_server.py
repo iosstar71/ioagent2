@@ -118,6 +118,7 @@ DATASETS = {
     "communicationsData":       {"part": "id",     "scope": "shared"},
     "meetingsData":             {"part": "id",     "scope": "shared"},
     "weeklyReportsData":        {"part": "id",     "scope": "weekly"},
+    "todosData":                {"part": "id",     "scope": "personal"},  # [v2.4.0] 사용자별 할 일 (본인만)
     "theme":                    {"part": None,     "scope": "pref"},
 }
 # [v1.0.10] 여러 프로젝트: 사용자 계정·화면 테마는 모든 프로젝트 공통, 그 밖의 데이터는 프로젝트별 저장
@@ -312,7 +313,20 @@ def can_write(user, key, part, row):
         return r.get("scope") == "SYS" and (own == "ALL" or own == str(r.get("scopeValue", "")))
     if scope == "shared":
         return True
+    if scope == "personal":
+        r = row or {}
+        return str(r.get("owner", "")).lower() == str(user["empNo"]).lower()
     return False
+
+
+def own_rows(key, value, revs, user):
+    """[v2.4.0] 개인 데이터(todosData)는 본인 항목과 그 버전 정보만 돌려줌"""
+    if DATASETS.get(key, {}).get("scope") != "personal" or not user:
+        return value, revs
+    me = str(user.get("empNo", "")).lower()
+    rows = [r for r in (value or []) if isinstance(r, dict) and str(r.get("owner", "")).lower() == me]
+    ids = {str(r.get("id", "")) for r in rows}
+    return rows, {p: v for p, v in (revs or {}).items() if p in ids}
 
 
 # ---------------------------------------------------------------------------
@@ -591,7 +605,7 @@ class Store:
         return value
 
     @classmethod
-    def load(cls, keys=None, pid=DEFAULT_PROJECT):
+    def load(cls, keys=None, pid=DEFAULT_PROJECT, user=None):
         keys = [k for k in (keys or DATASETS.keys()) if k in DATASETS]
         data, revs = {}, {}
         with DB_LOCK:
@@ -600,6 +614,7 @@ class Store:
                 cur = conn.cursor()
                 for k in keys:
                     value, r = cls._read_dataset(cur, dkey(pid, k))
+                    value, r = own_rows(k, value, r, user)
                     if value is not None:
                         data[k] = cls.public_value(k, value)
                     revs[k] = r
@@ -655,8 +670,8 @@ class Store:
                         if not can_write(user, key, p, row_for_perm if isinstance(row_for_perm, dict) else None):
                             blocked.append(f"{key}[{p}]")
                             continue
-                        # 주간보고: 다른 서브시스템 보고서로 바꿔 쓰기 방지
-                        if DATASETS[key]["scope"] == "weekly" and isinstance(server_parts.get(p), dict) and not can_write(user, key, p, server_parts.get(p)):
+                        # 주간보고: 다른 서브시스템 보고서로 바꿔 쓰기 방지 / 할 일: 다른 사람 항목을 내 것으로 덮어쓰기 방지
+                        if DATASETS[key]["scope"] in ("weekly", "personal") and isinstance(server_parts.get(p), dict) and not can_write(user, key, p, server_parts.get(p)):
                             blocked.append(f"{key}[{p}]")
                             continue
                         if key == "projectUsers":
@@ -681,8 +696,7 @@ class Store:
                     for p in ok_parts:
                         revs[p] = {"rev": int((revs.get(p) or {}).get("rev", 0)) + 1, "by": who, "at": now_str()}
                     cls._write_dataset(cur, dkey(pid, key), merged, revs, who)
-                    out_data[key] = cls.public_value(key, merged)
-                    out_revs[key] = revs
+                    out_data[key], out_revs[key] = own_rows(key, cls.public_value(key, merged), revs, user)
                     if key == "projectConfig" and isinstance(merged, dict) and merged.get("projectName"):
                         cur.execute("UPDATE TB_PROJECT SET PROJECT_NAME = ? WHERE PROJECT_ID = ?", (str(merged["projectName"])[:100], pid))
                 cls._write_mirror(cur, accepted.keys(), pid)
@@ -880,7 +894,7 @@ class Store:
                     "projectConfig": cfg,
                     "subsystemsMeta": src_subs if req.get("copySubsystems", True) else [],
                     "wbsData": [], "deliverablesData": [], "reqMasterData": [], "vocData": [],
-                    "noticesData": [], "communicationsData": [], "meetingsData": [], "weeklyReportsData": [],
+                    "noticesData": [], "communicationsData": [], "meetingsData": [], "weeklyReportsData": [], "todosData": [],
                 }
                 if src_std is not None:
                     data["standardDeliverablesMeta"] = src_std
@@ -1419,7 +1433,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def api_db_load(self, req):
         info = self._require_user(req=req)
         keys = req.get("keys")
-        data, revs = Store.load(keys if isinstance(keys, list) else None, info["projectId"])
+        data, revs = Store.load(keys if isinstance(keys, list) else None, info["projectId"], info)
         self._send_json(200, {"ok": True, "data": data, "revs": revs})
 
     def api_db_save(self, req):

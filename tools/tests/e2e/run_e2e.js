@@ -313,12 +313,16 @@ async function localMain() {
   check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
-  // [v2.3.0] 화면 방식: 기본은 Standard (Neo 요소 숨김), 사용자 메뉴에서 Neo 로 바꾸면 다시 불러온 뒤 Neo 기능 동작
-  const stdMode = await page.evaluate(() => ({ def: APP_CONFIG.defaultUi, mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), todo: getComputedStyle(document.getElementById("neoTodoCard")).display, ph: !!document.querySelector(".neo-ph"),
-    sel: getComputedStyle(document.getElementById("wbsStatusFilter")).display, theme: document.body.dataset.theme, font: document.fonts.check("13px Pretendard") }));
+  // [v2.4.0] 화면 방식: 기본은 Neo — Standard(클래식, v2.4 까지)로 바꾸면 Neo 요소가 숨고, 다시 Neo 로 바꿀 수 있음
+  const defMode = await page.evaluate(() => ({ def: APP_CONFIG.defaultUi, mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), ph: document.querySelectorAll(".neo-ph").length }));
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
-  check("Unified: default UI mode is Standard (Neo parts hidden), Pretendard font loaded", stdMode.mode === stdMode.def && !stdMode.cls && stdMode.todo === "none" && !stdMode.ph && stdMode.sel !== "none" && fontOk, JSON.stringify({ stdMode, fontOk }));
+  check("Unified: default UI mode is Neo (app.ini default_ui=neo), Pretendard font loaded", defMode.def === "neo" && defMode.mode === "neo" && defMode.cls && defMode.ph >= 10 && fontOk, JSON.stringify({ defMode, fontOk }));
+  await page.selectOption("#gUiModeSelect", "standard").catch(async () => { await page.evaluate(() => UiMode.set("standard")); });
+  await page.waitForTimeout(1500); await waitApp(page);
+  const stdMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), todo: getComputedStyle(document.getElementById("neoTodoCard")).display, ph: !!document.querySelector(".neo-ph"),
+    sel: getComputedStyle(document.getElementById("wbsStatusFilter")).display, saved: AuthManager.findUser("admin").uiMode }));
+  check("Unified: Standard (classic) mode hides Neo parts and is saved on the user", stdMode.mode === "standard" && !stdMode.cls && stdMode.todo === "none" && !stdMode.ph && stdMode.sel !== "none" && stdMode.saved === "standard", JSON.stringify(stdMode));
   // Standard 방식에서도 WBS 템플릿: 등록된 서브시스템만 · 기존 WBS 가 있으면 추가/교체 선택
   await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(300);
   await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
@@ -329,22 +333,26 @@ async function localMain() {
   check("Standard mode: WBS template offers registered subsystems only and append/replace when WBS exists", stdTpl.same && !stdTpl.free && stdTpl.shown && stdTpl.modes === "append,replace", JSON.stringify(stdTpl));
   await page.selectOption("#gUiModeSelect", "neo").catch(async () => { await page.evaluate(() => UiMode.set("neo")); });
   await page.waitForTimeout(1500); await waitApp(page);
-  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), saved: AuthManager.findUser("admin").uiMode, ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-col").length }));
-  check("Unified: switching to Neo reloads with Neo screens and saves the choice on the user", neoMode.mode === "neo" && neoMode.cls && neoMode.saved === "neo" && neoMode.ph >= 10 && neoMode.todo === 5, JSON.stringify(neoMode));
+  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), saved: AuthManager.findUser("admin").uiMode, ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
+  check("Unified: switching back to Neo reloads with Neo screens (dashboard to-do summary line) and saves the choice", neoMode.mode === "neo" && neoMode.cls && neoMode.saved === "neo" && neoMode.ph >= 10 && neoMode.todo === 6, JSON.stringify(neoMode));
   if (await page.evaluate(() => typeof NeoTodo !== "undefined" && UiMode.isNeo())) {
     await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
-    const before = await page.evaluate(() => ({ cols: document.querySelectorAll("#neoTodoCard .neo-todo-col").length, delayed: NeoTodo.collect(null).delayed.length }));
+    const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: NeoTodo.collect(null).delayed.length }));
     // 진행 중 최하위 과업 하나를 지연으로 만들기 (실적 = 계획 - 20)
     const target = await page.evaluate(() => { const t = wbsData.find(x => x.isLeaf && x.pProg >= 30 && x.aProg < 100 && NeoUtil.status(x).code !== "delayed"); const o = t.aProg; t.aProg = t.pProg - 20; rebuildAll(); return { id: t.id, orig: o }; });
     await page.waitForTimeout(700);
     await page.evaluate(() => GShell.go("tab-dashboard")); await page.waitForTimeout(500);
-    const after = await page.evaluate(id => ({ delayed: NeoTodo.collect(null).delayed.length, listed: !!Array.prototype.find.call(document.querySelectorAll("#neoTodoCard .neo-todo-delay .neo-todo-item"), b => b.textContent.indexOf(id) !== -1),
+    const dashLine = await page.evaluate(() => (document.querySelector("#neoTodoCard .neo-todo-chip") || {}).textContent || "");
+    // 대시보드 → [홈의 내 할 일에서 보기] → 내 할 일 홈의 확인할 일(자동) 지연 과업
+    await page.click('#neoTodoCard [data-click="TodoCenter.openHome"]'); await page.waitForTimeout(600);
+    const after = await page.evaluate(id => ({ delayed: NeoTodo.collect(null).delayed.length, style: HomeScreenManager.getCurrentMode(), tab: document.querySelector(".tab-pane.active").id,
+      listed: !!Array.prototype.find.call(document.querySelectorAll("#homeTodoContainer .todo-auto-group:first-of-type .todo-auto-main, #homeTodoContainer .todo-auto-main"), b => b.textContent.indexOf(id) !== -1),
       badge: (document.querySelector('.g-nav-top [data-tab="tab-wbs"] .neo-badge') || document.querySelector('.g-group[data-group="sc"] .g-group-count:not([hidden])') || {}).textContent || "" }), target.id);
-    check("Neo: dashboard to-do lists the new delayed task + menu badge", before.cols === 5 && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, after }));
-    const item = await page.$(`#neoTodoCard .neo-todo-delay .neo-todo-item`);
+    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 6 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-home" && after.style === "TODO" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
+    const item = await page.$(`#homeTodoContainer .todo-auto-main[data-click-args*='"${target.id}"']`);
     await item.click(); await page.waitForTimeout(900);
     const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: NeoDetail.isOpen(), id: NeoDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
-    check("Neo: to-do item opens WBS with the right-side detail panel (row highlighted)", det.tab === "tab-wbs" && det.open && det.sel && !!det.id, JSON.stringify(det));
+    check("Neo: auto to-do item opens WBS with the right-side detail panel (row highlighted)", det.tab === "tab-wbs" && det.open && det.sel && !!det.id, JSON.stringify(det));
     await page.fill('#neoDetail input[data-change-args*="aProg"]', String(target.orig)); await page.keyboard.press("Tab"); await page.waitForTimeout(900);
     const edited = await page.evaluate(id => { const t = wbsData.find(x => x.id === id); const tr = document.querySelector(`#wbsTableBody tr[data-wbs-id="${id}"]`); return { a: t.aProg, still: NeoDetail.isOpen(), cell: tr ? Array.prototype.some.call(tr.querySelectorAll("input"), i => i.value === String(t.aProg)) : null }; }, det.id);
     check("Neo: editing in the detail panel updates WBS data and table", Number(edited.a) === Number(target.orig) && edited.still && edited.cell !== false, JSON.stringify(edited));
@@ -422,14 +430,39 @@ async function localMain() {
     check("Neo: weekly report is two panes (list left, report right); picking a unit opens it on the right", split.side && split.sw && /W1/.test(pick.banner) && /W1/.test(pick.active), JSON.stringify({ split, pick }));
     await page.evaluate(() => GShell.go("tab-home"));
   }
-  // 다른 사용자는 각자 화면 방식 (admin = Neo, lead_lee = 기본 Standard) → 마지막에 admin 을 Standard 로 되돌림
-  await page.evaluate(() => UiMode.set("standard")); await page.waitForTimeout(1500); await waitApp(page);
-  const backStd = await page.evaluate(() => ({ mode: UiMode.current, saved: AuthManager.findUser("admin").uiMode, ph: !!document.querySelector(".neo-ph") }));
-  check("Unified: switching back to Standard restores the standard screens", backStd.mode === "standard" && backStd.saved === "standard" && !backStd.ph, JSON.stringify(backStd));
+  // [v2.4.0] 홈 스타일 3가지 · 내 할 일 (사용자별, 본인만)
+  await page.evaluate(() => GShell.go("tab-home")); await page.waitForTimeout(400);
+  const styles = [];
+  for (const st of ["EXECUTIVE", "PORTAL", "TODO"]) {
+    await page.click(`.home-style-btn[data-home-style="${st}"]`); await page.waitForTimeout(300);
+    styles.push(await page.evaluate(st => { const ids = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
+      return Object.keys(ids).every(k => (document.getElementById(ids[k]).style.display !== "none") === (k === st)) && document.querySelector(".home-style-btn.active").dataset.homeStyle === st; }, st));
+  }
+  const roleOpts = await page.evaluate(() => [...document.querySelectorAll("#cfgRoleHomeMember option")].map(o => o.value).join(","));
+  check("Home: three styles (Briefing / Workbench / My To-do) switch from the home header; role settings offer the same three", styles.every(Boolean) && roleOpts === "EXECUTIVE,PORTAL,TODO", JSON.stringify({ styles, roleOpts }));
+  await page.fill("#todoNewTitle", "E2E-TODO 산출물 검토"); await page.fill("#todoNewDue", await page.evaluate(() => projectConfig.reportDate)); await page.selectOption("#todoNewPri", "H");
+  await page.selectOption("#todoNewLinkType", "VOC"); await page.fill("#todoNewLinkId", "VOC-06"); await page.click('#homeTodoContainer [data-click="TodoCenter.add"]'); await page.waitForTimeout(500);
+  await page.fill("#todoNewTitle", "E2E-TODO 두번째"); await page.press("#todoNewTitle", "Enter"); await page.waitForTimeout(500);
+  await page.click('#homeTodoContainer .todo-auto-list [data-click="TodoCenter.fromAuto"]'); await page.waitForTimeout(500);
+  const td1 = await page.evaluate(() => ({ n: TodoCenter.todos().length, first: TodoCenter.todos()[0], today: TodoCenter.stats().today, homeCount: document.getElementById("homeTodoCount").textContent, auto: TodoCenter.todos().filter(t => t.autoKey).length }));
+  check("To-do: add own items (title, due, priority, link) and copy an automatic item; today's count shown on the home button", td1.n === 3 && td1.first.owner === "admin" && td1.first.priority === "H" && td1.first.link && td1.first.link.id === "VOC-06" && td1.auto === 1 && td1.today >= 1 && Number(td1.homeCount) >= 1, JSON.stringify(td1));
+  const firstId = await page.evaluate(() => TodoCenter.todos().find(t => t.title === "E2E-TODO 두번째").id);
+  await page.click(`#homeTodoContainer [data-change="TodoCenter.toggle"][data-change-args*="${firstId}"]`); await page.waitForTimeout(400);
+  await page.click(`#homeTodoContainer [data-click="TodoCenter.edit"]`); await page.waitForTimeout(300);
+  await page.fill('[data-todo-edit="title"]', "E2E-TODO 수정됨"); await page.click('[data-click="TodoCenter.saveEdit"]'); await page.waitForTimeout(400);
+  const hideKey = await page.evaluate(() => TodoCenter.autoGroups().groups.find(g => g.items.length).items[0].k);
+  await page.click(`#homeTodoContainer [data-click="TodoCenter.hide"][data-click-args*='${JSON.stringify(hideKey).slice(1, -1)}']`); await page.waitForTimeout(400);
+  const td2 = await page.evaluate(k => ({ done: TodoCenter.todos().find(t => t.title === "E2E-TODO 두번째").done, edited: TodoCenter.todos().some(t => t.title === "E2E-TODO 수정됨"), hidden: TodoCenter.isHidden(k) }), hideKey);
+  await page.reload(); await waitApp(page);
+  const td3 = await page.evaluate(k => ({ n: TodoCenter.todos().length, hidden: TodoCenter.isHidden(k), style: HomeScreenManager.getCurrentMode() }), hideKey);
+  check("To-do: complete, edit, hide an automatic item for 7 days; all kept after reload; chosen home style remembered", td2.done && td2.edited && td2.hidden && td3.n === 3 && td3.hidden && td3.style === "TODO", JSON.stringify({ td2, td3 }));
+  await page.evaluate(() => HomeScreenManager.setStyle(HomeScreenManager.roleDefault()));
 
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);
   await login(page, "lead_lee"); await page.waitForTimeout(800);
+  const memberTodo = await page.evaluate(() => ({ mine: TodoCenter.todos().length, all: todosData.length, style: HomeScreenManager.getCurrentMode() }));
+  check("To-do: another user does not see admin's to-dos; member's default home is My To-do", memberTodo.mine === 0 && memberTodo.style === "TODO", JSON.stringify(memberTodo));
   const memberAdmin = await page.evaluate(() => [GShell.allowed("tab-master"), GShell.allowed("tab-config"), document.querySelectorAll('#gAdminItems [data-click-args*="tab-master"], #gAdminItems [data-click-args*="tab-config"]').length]);
   check("G: member does not see Master data / Settings in the ⚙ menu", !memberAdmin[0] && !memberAdmin[1] && memberAdmin[2] === 0, JSON.stringify(memberAdmin));
   const weak = await page.evaluate(() => [AuthManager.validateNewPassword("abcd1234") === "", AuthManager.validateNewPassword("abc12") !== "", AuthManager.validateNewPassword("abcdefgh") !== ""]);

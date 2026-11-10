@@ -31,6 +31,8 @@ var DataRegistry = {
     communicationsData:       { part: "id",     scope: "shared",    label: "소통 피드" },
     meetingsData:             { part: "id",     scope: "shared",    label: "회의" },
     weeklyReportsData:        { part: "id",     scope: "weekly",    label: "주간보고" },
+    // [v2.4.0] 사용자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
+    todosData:                { part: "id",     scope: "personal",  label: "내 할 일" },
     theme:                    { part: null,     scope: "pref",      label: "화면 테마" }
   },
 
@@ -50,6 +52,7 @@ var DataRegistry = {
       case "communicationsData": return typeof communicationsData !== "undefined" ? communicationsData : [];
       case "meetingsData": return typeof meetingsData !== "undefined" ? meetingsData : [];
       case "weeklyReportsData": return typeof weeklyReportsData !== "undefined" ? weeklyReportsData : [];
+      case "todosData": return typeof todosData !== "undefined" && Array.isArray(todosData) ? todosData : [];
       case "theme": return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "electric");
     }
     return undefined;
@@ -70,6 +73,7 @@ var DataRegistry = {
       case "communicationsData": if (Array.isArray(val)) communicationsData = val; break;
       case "meetingsData": if (Array.isArray(val)) meetingsData = val; break;
       case "weeklyReportsData": if (Array.isArray(val)) weeklyReportsData = val; break;
+      case "todosData": if (Array.isArray(val)) todosData = val; break;
       case "theme":
         if (typeof val === "string" && val) {
           if (typeof normalizeTheme === "function") val = normalizeTheme(val);
@@ -231,6 +235,10 @@ var Permission = {
         return r.scope === "SYS" && this.canWriteSubsystem(r.scopeValue);
       }
       case "shared": return true;
+      case "personal": {
+        const r = row || (DataRegistry.get(key) || []).find(x => String(x.id) === String(part)) || {};
+        return String(r.owner || "").toLowerCase() === String(this.user().empNo || "").toLowerCase();
+      }
     }
     return false;
   }

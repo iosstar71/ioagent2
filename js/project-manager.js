@@ -259,7 +259,7 @@ var ProjectManager = {
       projectConfig: cfg,
       subsystemsMeta: copy ? JSON.parse(JSON.stringify(subsystemsMeta)) : [],
       standardDeliverablesMeta: copy ? JSON.parse(JSON.stringify(standardDeliverablesMeta)) : JSON.parse(JSON.stringify(DEFAULT_STANDARD_DELIVERABLES)),
-      wbsData: [], deliverablesData: [], reqMasterData: [], vocData: [],
+      wbsData: [], deliverablesData: [], reqMasterData: [], vocData: [], todosData: [],
       noticesData: [], communicationsData: [], meetingsData: [], weeklyReportsData: []
     };
     return data;
