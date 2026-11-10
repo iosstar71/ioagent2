@@ -2764,3 +2764,5 @@ body:not(.ui-neo) .neo-ph-desc { font-size: 11px; }
 #wbsTable input.wbs-owner::placeholder { color: var(--text-muted); font-size: 10.5px; }
 #wbsTable th, #wbsTable td { padding: 4px 3px; }
 #wbsTable .date-input-wrap input[type="date"] { width: 94px; }
+/* [v3.0.2] 확인 대화 상자는 로그인 화면 위에도 보이게 (로그인 화면의 비밀번호 초기화 확인) */
+#confirmDialogModal { z-index: 100001 !important; }
