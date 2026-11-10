@@ -1264,8 +1264,8 @@ var MeetingManager = {
         <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" data-click="MeetingManager.completeMinutes" data-click-args='[true]'>✅ 작성 완료 (저장)</button>
           <button class="btn btn-secondary btn-sm" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
-          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 다운로드 (회의록)</button>
+          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 내려받기 (회의록)</button>
+          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 내려받기 (회의록)</button>
         </div>
       </div>
     `;
@@ -1694,11 +1694,11 @@ var MeetingManager = {
 
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "27년 가동률 시스템 개선";
     const blob = DocxBuilder.buildMeetingMinutesDocx(m, projName);
-    const filename = `[회의록]_${m.date}_[${m.system}]_${m.title.replace(/\s+/g, "_")}.docx`;
+    const filename = ExcelSync.stdName("회의록", [m.system, m.title], "docx", String(m.date || "").replace(/-/g, ""));
     if (typeof ExcelSync !== "undefined" && typeof ExcelSync._triggerDownload === "function") {
       ExcelSync._triggerDownload(blob, filename);
     }
-    showToast(`📄 [회의록 워드 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📄 [회의록 워드 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
   // 회의록 엑셀(XLSX) 다운로드
@@ -1769,12 +1769,12 @@ var MeetingManager = {
         merges: merges
       }
     ]);
-    const filename = `[회의록]_${m.date}_[${m.system}]_${m.title.replace(/\s+/g, "_")}.xlsx`;
+    const filename = ExcelSync.stdName("회의록", [m.system, m.title], "xlsx", String(m.date || "").replace(/-/g, ""));
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [회의록 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [회의록 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
-  // Action Item 통합 목록 엑셀 다운로드
+  // Action Item 통합 목록 엑셀 내려받기
   exportActionItemsExcel() {
     const allActions = this.getAllActionItems().filter(a => a.status !== "삭제");
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "27년 가동률 시스템 개선";
@@ -1801,12 +1801,12 @@ var MeetingManager = {
         merges: ["A1:J1"]
       }
     ]);
-    const filename = `[ActionItems]_${projName}_통합관리대장.xlsx`;
+    const filename = ExcelSync.stdName("ActionItem", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [Action Items 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [Action Items 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
-  // [ver1.0.4 신규] 회의 일정 목록 전체/필터 엑셀 다운로드 (XLSX)
+  // [ver1.0.4 신규] 회의 일정 목록 전체/필터 엑셀 내려받기 (XLSX)
   exportScheduleListExcel() {
     const sysFilter = (document.getElementById("meetingFilterSubsystem") && document.getElementById("meetingFilterSubsystem").value) || "ALL";
     const statusFilter = (document.getElementById("meetingFilterStatus") && document.getElementById("meetingFilterStatus").value) || "ALL";
@@ -1846,9 +1846,9 @@ var MeetingManager = {
         merges: ["A1:I1"]
       }
     ]);
-    const filename = `[회의일정]_${projName}_${scopeLabel.replace(/\s+/g, "_")}.xlsx`;
+    const filename = ExcelSync.stdName("회의일정", [scopeLabel], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [회의일정 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [회의일정 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
   },
 };
 

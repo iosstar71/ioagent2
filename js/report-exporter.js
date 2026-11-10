@@ -42,7 +42,7 @@ const BackupHistoryManager = {
       ? "ALL"
       : ((typeof WBSEngine !== "undefined" && WBSEngine.getSubsystemCode) ? WBSEngine.getSubsystemCode(targetSubsystem) : targetSubsystem);
     const safeCode = String(subCode || "SUB").replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
-    const filename = `WBS_Backup_${safeCode}_${fileStamp}.json`;
+    const filename = ExcelSync.stdName("백업", [safeCode], "json", String(fileStamp).replace(/[^0-9]/g, ""));
 
     const payload = {
       schemaVersion: "2026_v1.2.4",
@@ -103,7 +103,7 @@ const BackupHistoryManager = {
     const blob = new Blob([JSON.stringify(item.payload, null, 2)], { type: "application/json;charset=utf-8" });
     ExcelSync._triggerDownload(blob, item.filename);
     if (typeof showToast === "function") {
-      showToast(`[백업 JSON 다운로드] ${item.filename} (${item.createdAt}) 파일이 다운로드되었습니다.`);
+      showToast(`[백업 JSON 내려받기] ${item.filename} (${item.createdAt}) 파일이 다운로드되었습니다.`);
     }
   },
 
@@ -129,7 +129,7 @@ const BackupHistoryManager = {
     if (!tbody) return;
     tbody.innerHTML = "";
     if (!this.snapshots || this.snapshots.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 생성된 업데이트 백업 JSON 이력이 없습니다. (JSON 병합 또는 엑셀 업로드 시 업데이트 날짜·시간으로 자동 생성됩니다)</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 생성된 업데이트 백업 JSON 이력이 없습니다. (JSON 병합 또는 엑셀 올리기 시 업데이트 날짜·시간으로 자동 생성됩니다)</td></tr>`;
       return;
     }
     this.snapshots.forEach((s, idx) => {
@@ -338,7 +338,7 @@ const JsonCollabManager = {
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
     const fileLabel = isAll ? "ALL_Master" : `Part_${targetSys}`;
-    ExcelSync._triggerDownload(blob, `WBS_Collab_${fileLabel}_${repDate}.json`);
+    ExcelSync._triggerDownload(blob, ExcelSync.stdName("협업데이터", [fileLabel], "json"));
     showToast(
       isAll
         ? `[전체 마스터 JSON 내보내기 완료] WBS_Collab_${fileLabel}_${repDate}.json 파일이 다운로드되었습니다.`

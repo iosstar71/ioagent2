@@ -56,6 +56,8 @@ var ButtonStandard = {
         btn.setAttribute("data-btn", type);
       }
       if (btn.getAttribute("data-btn-styled") === "1") return;
+      // [v3.3.0] 내려받기 · 올리기 단추는 모양을 data-btn 표준 하나로 (개별 색 클래스 제거)
+      if (/-(down|up)$/.test(type) && /📥|📤|내려받기|올리기|다운로드|업로드/.test(btn.textContent)) ["btn-success", "btn-warning", "btn-outline", "btn-primary", "btn-secondary", "btn-info"].forEach(c => btn.classList.remove(c));
       // 기능 색상이 적용되도록 개별 인라인 색상 지정 제거 (크기·여백은 유지)
       this.STYLE_PROPS.forEach(p => btn.style.removeProperty(p));
       btn.setAttribute("data-btn-styled", "1");

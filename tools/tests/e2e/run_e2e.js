@@ -612,6 +612,48 @@ async function localMain() {
   });
   check("v3.0.2: SDLC phase headers follow the theme; no old version badge on notices; header weekday readable; home style buttons stay in place", look302.matte !== look302.elec && look302.matte !== "rgb(30, 58, 138)" && look302.dow === "rgb(241, 245, 249)" && !look302.oldVer && new Set(look302.pos).size === 1, JSON.stringify(look302));
 
+  // [v3.3.0] 통합 주간보고는 작성 완료 서브시스템만 · 간트 마일스톤 고정 · 경영 보고 장표(PPT/PDF) · 엑셀 내려받기/올리기 표준
+  const v330 = await page.evaluate(async () => {
+    const out = {};
+    const W = WeeklyReportManager;
+    const integ = W.buildWeekIntegrated(W.listWeek);
+    const done = integ.integratedFrom.done;
+    const mdl = WeeklyExport.model(integ);
+    out.onlyDone = mdl.sections[1].tables[0].rows.every(r => done.indexOf(r[0]) !== -1 || !getAllSubsystemNames().includes(r[0])) && mdl.sections[0].tables[0].rows.every(r => done.indexOf(r[1]) !== -1);
+    out.done = done.join(",");
+    // 간트: 아래로 스크롤해도 통합 마일스톤 행은 머리글 아래
+    GShell.go("tab-gantt"); await new Promise(r => setTimeout(r, 400));
+    const gw = document.querySelector(".gantt-wrapper"); gw.scrollTop = 500; await new Promise(r => setTimeout(r, 100));
+    const ms = document.querySelector("#ganttRowsContainer .gantt-ms-row");
+    out.msPinned = !!ms && Math.abs(ms.getBoundingClientRect().top - gw.getBoundingClientRect().top - 36) <= 3;
+    gw.scrollTop = 0;
+    // 경영 보고 장표
+    const names = [], orig = ExcelSync._triggerDownload;
+    ExcelSync._triggerDownload = (blob, name) => names.push([name, blob.size]);
+    const deck = ExecDeck.build(ExecDeck.week());
+    ExecDeck.downloadPptx();
+    out.deck = { slides: deck.slides.length, sys: deck.slides.filter(x => done.indexOf(x.name) !== -1).length, html: /class="slide"/.test(ExecDeck.toHtml(deck)), file: names[0] && names[0][0], size: names[0] && names[0][1] };
+    // 엑셀 표준: 화면 머리줄 메뉴 · 파일 이름 · 서브시스템 범위 올리기
+    out.menus = ["tab-wbs", "tab-req", "tab-voc", "tab-deliverables"].map(t => document.querySelectorAll(`#${t} .neo-dd [data-click="DataIO.download"], #${t} .neo-dd [data-click="DataIO.pick"]`).length).join(",");
+    GShell.go("tab-req"); document.getElementById("reqSubsystemFilter").value = "W1"; renderReqMasterTable();
+    let blob = null;
+    ExcelSync._triggerDownload = (b, name) => { blob = b; names.push([name, b.size]); };
+    DataIO.download("req");
+    ExcelSync._triggerDownload = orig;
+    out.reqFile = names[names.length - 1][0];
+    const before = reqMasterData.filter(r => r.system === "W1").length, others = reqMasterData.filter(r => r.system !== "W1").length;
+    await DataIO.upload("req", new File([blob], "req.xlsx"));
+    await new Promise(r => setTimeout(r, 200));
+    document.getElementById("confirmDialogOkBtn").click(); await new Promise(r => setTimeout(r, 400));
+    out.up = { before, after: reqMasterData.filter(r => r.system === "W1").length, others, othersAfter: reqMasterData.filter(r => r.system !== "W1").length };
+    document.getElementById("reqSubsystemFilter").value = "ALL"; renderReqMasterTable();
+    out.oldWords = /엑셀 다운로드|엑셀 업로드/.test(document.body.innerText);
+    return out;
+  });
+  check("v3.3.0: integrated weekly report has only completed subsystems; gantt milestone row pinned; executive deck (cover, agenda, progress, per-subsystem) as PPT and print page; standard Excel menus, file names and scoped upload",
+    v330.onlyDone && v330.msPinned && v330.deck.slides >= 6 && v330.deck.sys === v330.done.split(",").filter(Boolean).length && v330.deck.html && /_경영보고_\d{4}W\d{2}_PPT\.pptx$/.test(v330.deck.file) && v330.deck.size > 5000 &&
+    v330.menus === "2,2,2,2" && /^[A-Za-z0-9-]+_요구사항_W1_\d{8}\.xlsx$/.test(v330.reqFile) && v330.up.after === v330.up.before && v330.up.othersAfter === v330.up.others && !v330.oldWords, JSON.stringify(v330));
+
   // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
   const loginOpts = await page.$$eval("#inputLoginProject option", o => o.map(x => x.value));

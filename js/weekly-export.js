@@ -91,7 +91,12 @@ var WeeklyExport = {
       vocs: (vocData || []).filter(v => v.status !== "삭제").map(v => ({ id: v.id, system: v.system, priority: v.priority || "", title: v.title || "", requester: v.requester || "", reqDate: v.reqDate || "", targetDate: v.targetDate || "", status: v.status || "", action: v.action || "" })),
       meetingsCur: this._meetings(rep.startDate, rep.endDate),
       meetingsNext: this._meetings(rep.nextStartDate, rep.nextEndDate),
-      actions: this._actionsOfWeek(rep.startDate, rep.endDate)
+      actions: this._actionsOfWeek(rep.startDate, rep.endDate),
+      // [v3.3.0] 경영 보고 장표용: 지연 과업 · 마일스톤
+      delayed: (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, projectConfig.reportDate).code === "delayed")
+        .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "" })),
+      milestones: (projectConfig.milestones || []).filter(x => x && x.date && x.name && x.date >= WBSEngine.addDays(rep.startDate, -7))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 12).map(x => ({ date: x.date, name: x.name, scope: x.scope || "ALL" }))
     };
   },
   // 보고서에 쓸 자료: 작성 완료본은 저장된 snapshot, 아니면 지금 자료(live)
@@ -106,8 +111,12 @@ var WeeklyExport = {
   model(rep) {
     const W = WeeklyReportManager;
     const sc = W.reportScope(rep);
-    const systems = W.scopeSystems(sc.scope, sc.value);
-    const inScope = sys => sc.scope === "ALL" || systems.includes(sys);
+    const allSys = W.scopeSystems(sc.scope, sc.value);
+    // [v3.3.0] 통합 보고서는 작성 완료된 서브시스템 내용만 (서브시스템이 아닌 공통 항목은 포함)
+    const done = rep.integrated && rep.integratedFrom ? rep.integratedFrom.done || [] : null;
+    const systems = done ? allSys.filter(x => done.indexOf(x) !== -1) : allSys;
+    const subsystemNames = getAllSubsystemNames();
+    const inScope = sys => done ? (systems.includes(sys) || !subsystemNames.includes(sys)) : (sc.scope === "ALL" || systems.includes(sys));
     const d = this.data(rep);
     const m = d.metrics || {};
     const projName = d.projectName || projectConfig.projectName || "";
@@ -258,7 +267,8 @@ var WeeklyExport = {
     const font = pal.fontName, sz = pal.fontSize * 2;
     const C = pal.primary, H = pal.headerBg, HT = pal.headerTextColor, SUB = pal.subHeaderBg, B = pal.border;
     const run = (text, o = {}) => `<w:r><w:rPr>${o.b ? "<w:b/>" : ""}${o.color ? `<w:color w:val="${o.color}"/>` : ""}${o.sz ? `<w:sz w:val="${o.sz}"/>` : ""}</w:rPr>${String(text).split(/\r?\n/).map((l, i) => `${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${esc(l)}</w:t>`).join("")}</w:r>`;
-    const para = (inner, o = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.jc ? `<w:jc w:val="${o.jc}"/>` : ""}${o.shd ? `<w:shd w:val="clear" w:color="auto" w:fill="${o.shd}"/>` : ""}${o.ind ? `<w:ind w:left="${o.ind}"/>` : ""}<w:spacing w:before="${o.before || 40}" w:after="${o.after || 60}"/></w:pPr>${inner}</w:p>`;
+    // 단락 속성은 OOXML 순서(pStyle → keepNext → shd → spacing → ind → jc)를 지켜야 Word 가 내용을 버리지 않음
+    const para = (inner, o = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.keep ? "<w:keepNext/>" : ""}${o.shd ? `<w:shd w:val="clear" w:color="auto" w:fill="${o.shd}"/>` : ""}<w:spacing w:before="${o.before === undefined ? 40 : o.before}" w:after="${o.after === undefined ? 60 : o.after}"/>${o.ind ? `<w:ind w:left="${o.ind}"/>` : ""}${o.jc ? `<w:jc w:val="${o.jc}"/>` : ""}</w:pPr>${inner}</w:p>`;
     const TW = 14200; // A4 가로 (본문 폭)
     const table = t => {
       // 칸 폭: 짧은 칸(숫자·상태·ID)은 글자가 세로로 쪼개지지 않을 만큼 최소 폭을 주고, 나머지는 긴 글 칸이 나눠 가짐
@@ -299,8 +309,20 @@ var WeeklyExport = {
           sec.info.forEach(([k, v]) => body.push(para(run(`■ ${k}: `, { b: true, color: C }) + run(v), { ind: 200, before: 20, after: 20 })));
         }
       }
+      // 요약 · 현안: 표 포함 양식은 [제목 | 내용] 상자(엑셀과 같은 모양), 서술형은 제목 줄 + 내용 단락
       (sec.texts || []).forEach(([label, text]) => {
-        body.push(para(run(`【${label}】 `, { b: true, color: C }) + run(text), { shd: "F8FAFC", ind: 120, before: 100, after: 60 }));
+        const lines = String(text || "-").split(/\r?\n/).filter(l => l.trim() !== "");
+        if (useTables) {
+          const ws = [2600, TW - 2600];
+          const border = `<w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(k => `<w:${k} w:val="single" w:sz="4" w:space="0" w:color="${B}"/>`).join("")}</w:tblBorders>`;
+          body.push(`<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/>${border}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="${ws[0]}"/><w:gridCol w:w="${ws[1]}"/></w:tblGrid><w:tr>` +
+            `<w:tc><w:tcPr><w:tcW w:w="${ws[0]}" w:type="dxa"/><w:shd w:val="clear" w:color="auto" w:fill="${SUB}"/></w:tcPr>${para(run(label, { b: true, color: C }), { before: 40, after: 40 })}</w:tc>` +
+            `<w:tc><w:tcPr><w:tcW w:w="${ws[1]}" w:type="dxa"/></w:tcPr>${(lines.length ? lines : ["-"]).map(l => para(run(l), { before: 20, after: 20 })).join("")}</w:tc></w:tr></w:tbl>`);
+          body.push(para("", { before: 0, after: 60 }));
+        } else {
+          body.push(para(run(`■ ${label}`, { b: true, color: C }), { before: 100, after: 30, keep: true }));
+          (lines.length ? lines : ["-"]).forEach(l => body.push(para(run(l), { ind: 240, before: 10, after: 20 })));
+        }
       });
       (sec.tables || []).forEach(t => {
         body.push(para(run(`□ ${t.title}`, { b: true, sz: (pal.fontSize + 1) * 2, color: C }), { before: 140, after: 60 }));

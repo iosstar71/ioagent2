@@ -11,7 +11,7 @@ window.AX_INITIAL_DATA = {
   "generatedAt": "2026-11-09"
  },
  "projectConfig": {
-  "systemTitle": "IOSTAR-PM ver3.2.0",
+  "systemTitle": "IOSTAR-PM ver3.3.0",
   "projectName": "27년 가동률 시스템 개선",
   "domains": [
    "관리공통",

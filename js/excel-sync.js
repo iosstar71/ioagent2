@@ -3,6 +3,16 @@ const ExcelSync = {
   // [ver1.0 요건] Excel & Word DOCX 통합 시각 테마 및 폰트 팔레트
   // =========================================================================
   EXPORT_THEMES: ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"],
+  // [v3.3.0] 내려받는 파일 이름 표준: {파일약칭}_{대상}[_범위…]_{기준일 yyyyMMdd}.{확장자}
+  //  (주간보고는 WeeklyExport 의 주차 규칙) — 공백·괄호·특수문자 없이
+  stdName(kind, parts, ext, stamp) {
+    const safe = v => String(v === undefined || v === null ? "" : v).replace(/[\\/:*?"<>|\[\]()~{}#%&+=,;'`!@$^]+/g, "_").replace(/\s+/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+    const pid = typeof ProjectContext !== "undefined" ? ProjectContext.current : "";
+    const code = safe((typeof projectConfig !== "undefined" && projectConfig.fileCode) || (pid && pid !== "DEFAULT" ? pid : "") || "PRJ").slice(0, 20) || "PRJ";
+    const day = safe(stamp || String((typeof projectConfig !== "undefined" && projectConfig.reportDate) || new Date().toISOString().slice(0, 10)).replace(/-/g, ""));
+    const mid = (parts || []).map(safe).filter(x => x && x !== "ALL" ? true : x === "ALL").filter(Boolean);
+    return [code, safe(kind)].concat(mid).concat(day ? [day] : []).join("_") + "." + (ext || "xlsx");
+  },
   normalizeExportTheme(v) {
     const r = String(v || "");
     if (this.EXPORT_THEMES.indexOf(r) !== -1) return r;
@@ -660,7 +670,7 @@ const ExcelSync = {
   },
 
   // ---------------------------------------------------------------------------
-  // 2. 엑셀 다운로드 (단일 탭 & 마스터 통합본 - 표준 .xlsx 워크북 출력)
+  // 2. 엑셀 내려받기 (단일 탭 & 마스터 통합본 - 표준 .xlsx 워크북 출력)
   // ---------------------------------------------------------------------------
   exportMasterWorkbook() {
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2026-11-04";
@@ -727,7 +737,7 @@ const ExcelSync = {
     });
 
     const blob = this._buildXlsxBlob(sheets);
-    this._triggerDownload(blob, `WBS_Master_All_Data_${repDate}.xlsx`);
+    this._triggerDownload(blob, this.stdName("전체데이터", [], "xlsx"));
   },
 
   exportTab(tabKey) {
@@ -764,7 +774,7 @@ const ExcelSync = {
         rows: rows
       }
     ]);
-    this._triggerDownload(blob, `Project_${tabKey.toUpperCase()}_${repDate}.xlsx`);
+    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "사용자", subsystems: "서브시스템", config: "기준정보" }[tabKey] || tabKey, [], "xlsx"));
   },
 
   // ---------------------------------------------------------------------------
@@ -1374,7 +1384,7 @@ const ExcelSync = {
   },
 
   // ---------------------------------------------------------------------------
-  // 5. 엑셀 업로드 핸들러 (통합 마스터 워크북 & 개별 탭 업로드)
+  // 5. 엑셀 올리기 핸들러 (통합 마스터 워크북 & 개별 탭 업로드)
   // ---------------------------------------------------------------------------
   // [2026 v1.2.4] 서브시스템별 전용 엑셀(.xlsx) 다운로드
   exportSubsystemWorkbook(targetSysArg) {
@@ -1416,10 +1426,10 @@ const ExcelSync = {
     });
 
     const blob = this._buildXlsxBlob(sheets);
-    const filename = `WBS_Subsystem_${subCode}_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName("서브시스템", [subCode], "xlsx");
     this._triggerDownload(blob, filename);
     if (typeof showToast === "function") {
-      showToast(`[${targetSys} 엑셀 다운로드 완료] ${filename} 파일이 생성되었습니다. 엑셀에서 수정 후 업로드하면 해당 서브시스템에 바로 반영됩니다.`);
+      showToast(`[${targetSys} 엑셀 내려받기 완료] ${filename} 파일이 생성되었습니다. 엑셀에서 수정 후 업로드하면 해당 서브시스템에 바로 반영됩니다.`);
     }
   },
 
@@ -1557,14 +1567,14 @@ const ExcelSync = {
 
       if (typeof showToast === "function") {
         showToast(
-          `[${targetSys} 엑셀 업로드 병합 완료]
+          `[${targetSys} 엑셀 올리기 병합 완료]
 • 반영 건수: WBS ${subWbs.length}건, 산출물 ${subDeliv.length}건, REQ ${subReq.length}건, VOC ${subVoc.length}건
 • 백업 JSON 생성: ${backupFilename}`
         );
       }
     } catch (err) {
-      console.error("서브시스템 엑셀 업로드 오류:", err);
-      if (typeof showToast === "function") showToast("서브시스템 엑셀 업로드 중 오류 발생: " + err.message);
+      console.error("서브시스템 엑셀 올리기 오류:", err);
+      if (typeof showToast === "function") showToast("서브시스템 엑셀 올리기 중 오류 발생: " + err.message);
     }
   },
 
@@ -1745,8 +1755,8 @@ const ExcelSync = {
       if (typeof rebuildAll === "function") rebuildAll();
       showToast(`[${tabKey.toUpperCase()}] 성공적으로 ${imported.length}건의 데이터를 가져왔습니다.`);
     } catch (err) {
-      console.error(`[${tabKey}] 엑셀 업로드 오류:`, err);
-      showToast(`엑셀 업로드 중 오류가 발생했습니다: ${err.message}`);
+      console.error(`[${tabKey}] 엑셀 올리기 오류:`, err);
+      showToast(`엑셀 올리기 중 오류가 발생했습니다: ${err.message}`);
     }
   }
 };

@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM v3.2.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
+ * IOSTAR-PM v3.3.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -2861,3 +2861,13 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 :root[style*="--fs-scale"] #wbsTable input.wbs-owner { width: calc(80px * var(--fs-scale)) !important; }
 :root[style*="--fs-scale"] #wbsTable td:nth-child(3) select { width: calc(86px * var(--fs-scale)) !important; }
 :root[style*="--fs-scale"] #wbsTable td:nth-child(7) input { width: calc(74px * var(--fs-scale)) !important; }
+
+/* [v3.3.0] 간트: 통합 마일스톤 행을 머리글 바로 아래에 고정 (아래로 스크롤해도 보임) */
+.gantt-ms-row { position: sticky !important; top: 36px; z-index: 9; background: #F5F3FF !important; box-shadow: 0 1px 0 rgba(124,58,237,0.25); }
+#ganttTreeList .gantt-ms-row { z-index: 12; }
+[data-theme="dark"] .gantt-ms-row { background: #1E1B3A !important; }
+
+/* [v3.3.0] 경영 보고 장표 단추 */
+.exec-deck-btns { margin-bottom: 8px; }
+.exec-deck-btns .btn { padding: 11px 8px; font-size: var(--fs-md, 14px); font-weight: 800; }
+.exec-report-sub { font-size: var(--fs-xs, 11px); color: var(--text-muted); margin: 2px 0 6px; font-weight: 700; }

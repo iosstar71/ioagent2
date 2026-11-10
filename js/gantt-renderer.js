@@ -177,9 +177,10 @@ const GanttRenderer = {
     if (integrated.length && sysFilter === "ALL") {
       tree.appendChild(this._treeRow(
         `<span class="lvl-badge" style="background:#7c3aed; color:#fff;">MS</span>
-         <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 통합 마일스톤 (${integrated.length})</span>`, 1, "background:rgba(124,58,237,0.06);"));
+         <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 통합 마일스톤 (${integrated.length})</span>`, 1, ""));
+      tree.lastChild.classList.add("gantt-ms-row"); // [v3.3.0] 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
       const row = this._chartRow(tl);
-      row.style.background = "rgba(124,58,237,0.06)";
+      row.classList.add("gantt-ms-row");
       integrated.forEach(m => row.appendChild(this._milestoneMarker(tl, m, true)));
       rows.appendChild(row);
     }

@@ -1423,7 +1423,7 @@ var ModeGuard = {
     const choice = await SyncUI.ask("🗄️ 서버 DB 모드로 전환하시겠습니까?",
       `서버 주소(${window.location.host})로 접속했지만 현재 저장소 모드가 [로컬 저장소] 입니다.\n` +
       "로컬 저장소 모드에서는 입력한 내용이 이 PC 브라우저에만 저장되어 다른 사용자와 공유되지 않고, 서버를 꺼도 화면이 계속 동작합니다.\n\n" +
-      "※ 이 브라우저에 로컬로만 저장한 데이터가 있다면 전환 전에 [데이터 가져오기·내보내기 > ④ 전체 일괄 > JSON 다운로드]로 받아 두었다가 서버 모드에서 올리세요.",
+      "※ 이 브라우저에 로컬로만 저장한 데이터가 있다면 전환 전에 [데이터 가져오기·내보내기 > ④ 전체 일괄 > JSON 내려받기]로 받아 두었다가 서버 모드에서 올리세요.",
       [
         { id: "server", label: "🗄️ 서버 DB 모드로 전환 (권장)", cls: "btn-primary" },
         { id: "local", label: "로컬 저장소 모드로 계속", cls: "btn-secondary" }
@@ -5295,6 +5295,7 @@ const SmartMergeCenter = {
   },
 
   // [v1.0.7] 업무·협업 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더
+  ITEM_LABEL: { wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", config: "기준정보", subsystems: "서브시스템" },
   canBulkWork() {
     return Permission.canEditAllSubsystems();
   },
@@ -5530,12 +5531,13 @@ const SmartMergeCenter = {
   },
 
   // 1) 항목별 다운로드 (모든 사용자 허용)
-  downloadItem(itemType, format) {
+  // [v3.3.0] scopeOverride: 화면 머리줄 [⬇ 내려받기]에서 그 화면의 서브시스템 조회 범위로 내려받을 때
+  downloadItem(itemType, format, scopeOverride) {
     const repDate = projectConfig.reportDate || "2027-06-01";
     const scopeSel = document.getElementById("workDataSubsysSelect");
     const scope = (itemType === "config" || itemType === "subsystems")
       ? "ALL"
-      : (scopeSel ? scopeSel.value : "ALL");
+      : (scopeOverride || (scopeSel ? scopeSel.value : "ALL"));
     const isAll = scope === "ALL";
 
     if (format === "JSON") {
@@ -5561,9 +5563,9 @@ const SmartMergeCenter = {
       }
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = `WBS_${itemType.toUpperCase()}_${scope}_${repDate}.json`;
+      const filename = ExcelSync.stdName(SmartMergeCenter.ITEM_LABEL[itemType] || itemType, [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[${itemType.toUpperCase()} JSON 다운로드 완료] ${filename}`);
+      showToast(`[${itemType.toUpperCase()} JSON 내려받기 완료] ${filename}`);
       return;
     }
 
@@ -5603,9 +5605,9 @@ const SmartMergeCenter = {
     const blob = ExcelSync._buildXlsxBlob([
       { name: sheetNameMap[itemType] || itemType.toUpperCase(), colWidths: schema.map(c => c.width || 18), rows }
     ]);
-    const filename = `WBS_${itemType.toUpperCase()}_${scope}_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName(SmartMergeCenter.ITEM_LABEL[itemType] || itemType, [scope], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[${itemType.toUpperCase()} 엑셀 다운로드 완료] ${filename}`);
+    showToast(`[${itemType.toUpperCase()} 엑셀 내려받기 완료] ${filename}`);
   },
 
   // 2) 항목별 업로드 (권한 검증 + 서브시스템 필터링)
@@ -5814,9 +5816,9 @@ const SmartMergeCenter = {
         payload[def.dataKey] = this._collabRecords(k, scope);
       });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = `WBS_Master_Package_${scope}_${repDate}.json`;
+      const filename = ExcelSync.stdName("기준정보묶음", [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[통합 JSON 다운로드 완료] ${filename}`);
+      showToast(`[통합 JSON 내려받기 완료] ${filename}`);
       return;
     }
 
@@ -5856,9 +5858,9 @@ const SmartMergeCenter = {
 
     Object.keys(this.COLLAB_DEFS).forEach(k => sheets.push(this._collabSheet(k, "ALL")));
     const blob = ExcelSync._buildXlsxBlob(sheets);
-    const filename = `WBS_Master_All_Data_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName("전체데이터", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[전체 통합 엑셀 다운로드 완료] ${filename}`);
+    showToast(`[전체 통합 엑셀 내려받기 완료] ${filename}`);
   },
 
   // 4) 상단 마스터 통합 패키지 업로드 (JSON / EXCEL)
@@ -6021,15 +6023,15 @@ const SmartMergeCenter = {
       const payload = { schemaVersion: `AX_PMYS_${APP_VERSION.version}_COLLAB`, exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
       keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.json`;
+      const filename = ExcelSync.stdName("협업데이터", [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`📥 [협업 데이터 JSON 다운로드] ${filename}`);
+      showToast(`📥 [협업 데이터 JSON 내려받기] ${filename}`);
       return;
     }
     const blob = ExcelSync._buildXlsxBlob(keys.map(k => this._collabSheet(k, scope)));
-    const filename = `AX_PMYS_협업데이터_${scope}_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName("협업데이터", [scope], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📥 [협업 데이터 엑셀 다운로드] ${filename}`);
+    showToast(`📥 [협업 데이터 엑셀 내려받기] ${filename}`);
   },
 
   // 같은 ID 는 갱신, 새 ID 는 추가 (범위 밖 항목은 제외)
@@ -6215,9 +6217,9 @@ const SmartMergeCenter = {
         payload.projectUsers = projectUsers;
       }
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = `WBS_기준정보_${labelStr}_${repDate}.json`;
+      const filename = ExcelSync.stdName("기준정보", [labelStr], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[기준정보(${selected.length}종) JSON 다운로드 완료]\n${filename}`);
+      showToast(`[기준정보(${selected.length}종) JSON 내려받기 완료]\n${filename}`);
       return;
     }
 
@@ -6250,9 +6252,9 @@ const SmartMergeCenter = {
     });
 
     const blob = ExcelSync._buildXlsxBlob(sheets);
-    const filename = `WBS_기준정보_${labelStr}_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName("기준정보", [labelStr], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[기준정보(${selected.length}종) 엑셀 다운로드 완료]\n${filename}`);
+    showToast(`[기준정보(${selected.length}종) 엑셀 내려받기 완료]\n${filename}`);
   },
 
   // 기준정보 다중선택 업로드 (관리자/PM 전용)
@@ -6436,9 +6438,9 @@ const SmartMergeCenter = {
       if (selected.includes("voc")) payload.vocData = isAll ? vocData : vocData.filter(v => v.system === scope);
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = `WBS_Task데이터_${scope}_${labelStr}_${repDate}.json`;
+      const filename = ExcelSync.stdName("업무데이터", [scope, labelStr], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[Task데이터(${selected.length}종 · ${scope}) JSON 다운로드 완료]\n${filename}`);
+      showToast(`[Task데이터(${selected.length}종 · ${scope}) JSON 내려받기 완료]\n${filename}`);
       return;
     }
 
@@ -6472,9 +6474,9 @@ const SmartMergeCenter = {
     });
 
     const blob = ExcelSync._buildXlsxBlob(sheets);
-    const filename = `WBS_Task데이터_${scope}_${labelStr}_${repDate}.xlsx`;
+    const filename = ExcelSync.stdName("업무데이터", [scope, labelStr], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[Task데이터(${selected.length}종 · ${scope}) 엑셀 다운로드 완료]\n${filename}`);
+    showToast(`[Task데이터(${selected.length}종 · ${scope}) 엑셀 내려받기 완료]\n${filename}`);
   },
 
   // [8] Task 데이터(WBS, 요구사항, 산출물, VOC) 다중선택 업로드 병합
@@ -6652,7 +6654,7 @@ var StorageManager = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `AX_PMYS_FullBackup_${stamp}.json`;
+    a.download = ExcelSync.stdName("전체백업", [], "json", String(stamp).replace(/[^0-9]/g, "").slice(0, 14));
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -7390,15 +7392,25 @@ var WeeklyReportManager = {
     rep.status = "DONE";
     rep.integrated = true;
 
+    // [v3.3.0] 작성 완료하지 않은 서브시스템의 내용(과업 · 요약)은 통합 보고서에 넣지 않음
     if (!sysReps.length && !allRep) {
-      rep.coverageNote = `작성 완료된 주간보고가 없어 WBS 공정표 기준으로 자동 생성하였습니다. (미작성 서브시스템 ${order.length}개)`;
+      rep.currentWeekTasks = [];
+      rep.nextWeekTasks = [];
+      rep.currentWeekSummary = "";
+      rep.nextWeekSummary = "";
+      rep.issuesNotes = "";
+      rep.coverageNote = `작성 완료된 주간보고가 없습니다. (미작성 서브시스템 ${order.length}개: ${order.join(", ")}) — 각 서브시스템 주간보고를 작성 완료하면 그 내용이 들어갑니다.`;
       rep.integratedFrom = { done: [], missing: order, auto: true };
       return rep;
     }
 
     const join = field => {
       const parts = [];
-      const head = allRep && allRep[field] ? String(allRep[field]).trim() : "";
+      // 통합 보고서 문장 중 미작성 서브시스템 줄([W2] …)은 뺌
+      const head = allRep && allRep[field] ? String(allRep[field]).split(/\r?\n/).filter(l => {
+        const m = l.match(/^\s*\[([^\]]+)\]/);
+        return !m || doneSys.includes(m[1]) || !order.includes(m[1]);
+      }).join("\n").trim() : "";
       if (head) parts.push(head);
       sysReps.forEach(r => {
         const txt = String(r[field] || "").trim();
@@ -7410,13 +7422,14 @@ var WeeklyReportManager = {
     const collect = key => {
       const list = [];
       sysReps.forEach(r => (r[key] || []).forEach(t => list.push(Object.assign({}, t))));
-      if (allRep) (allRep[key] || []).forEach(t => { if (t.manual || !doneSys.includes(t.system)) list.push(Object.assign({}, t)); });
+      // 통합 보고서(PM 작성)는 직접 입력 항목 중 작성 완료된 서브시스템 또는 서브시스템 밖(공통) 항목만
+      if (allRep) (allRep[key] || []).forEach(t => { if (t.manual && (doneSys.includes(t.system) || !order.includes(t.system))) list.push(Object.assign({}, t)); });
       return list.map((t, i) => ({ t, i })).sort((x, y) => (sortKey(x.t) - sortKey(y.t)) || (x.i - y.i)).map(x => x.t);
     };
 
-    rep.currentWeekSummary = join("currentWeekSummary") || rep.currentWeekSummary;
-    rep.nextWeekSummary = join("nextWeekSummary") || rep.nextWeekSummary;
-    rep.issuesNotes = join("issuesNotes") || rep.issuesNotes;
+    rep.currentWeekSummary = join("currentWeekSummary");
+    rep.nextWeekSummary = join("nextWeekSummary");
+    rep.issuesNotes = join("issuesNotes");
     rep.currentWeekTasks = collect("currentWeekTasks");
     rep.nextWeekTasks = collect("nextWeekTasks");
     rep.author = (allRep && allRep.author) || (AuthManager.getCurrentUser().name || "");
@@ -8027,7 +8040,7 @@ var WeeklyReportManager = {
     showToast(`📋 [내용 복사 완료] [${src.weekLabel}] 보고서 내용이 현재 주차로 복사되었습니다.`);
   },
 
-  // [ver1.0.4] 주간보고 엑셀 다운로드 (XLSX 형태)
+  // [ver1.0.4] 주간보고 엑셀 내려받기 (XLSX 형태)
   // forceIntegrated=true: 현재 작성 단위와 관계없이 통합(전체) 보고서로 생성 (대시보드 엑셀 보고서)
   // [v3.1.0] 엑셀·워드 내려받기는 WeeklyExport (같은 보고서 모델 · 파일 이름 규칙 · 작성 시점 자료)
   exportExcel(forceIntegrated = false, repOverride = null) {
