@@ -25,5 +25,5 @@ echo Next steps:
 echo  1. Restart run_server.bat - it starts in HTTPS mode automatically.
 echo  2. Install certs\ca.crt on each client PC: double-click - Install Certificate -
 echo     Local Machine - "Trusted Root Certification Authorities". (or deploy by Group Policy)
-echo  3. Open https://^<server-ip^>:^<port^> in Chrome or Edge. (port: app.ini, default 8080)
+echo  3. Open https://^<server-ip^>:^<port^> in Chrome or Edge. (port: conf\app.ini, default 8080)
 pause

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageBrowserTitle">IOSTAR-PM</title>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEUjKj0mLEMbJjEAAAAnNlEAAH8jKj0jHTAvSW+0VvwE/P4jKj0vxvtIM3IiKDwnLUHBU/4bZHhOpfhtRqytTPQbXG4G0tsP5PQjKjwmLUE3OGMvl8lYN4ZmOpiJd/cdSFsKydYhXXhzPKmKSc6EXNa0Zf8UnK8byfAQ1uskJDwoKEMlLUAkMDwoNUNDg8Z1Xs1hd9V1kf1qo/+UaPSHhP+mcv8bHigWc4IUgY4bn8INq7YTvtgiaYEt1f8h7P9RabJMnfBGv/9pbdN0ifmBRL+bSOGUWuMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsk0ebAAAAgHRSTlP9//8A/wLZ/////5b//y8v//////////+hmP///////////////////xUT0RUT/////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALf39SIAAAF0SURBVHjahVPXksIwDJRlh/QeSkIIcMDRO1zv7f8/6ZzAMEkgwZ7xg3fllSUtUCpQavpTyK2pbyYQ8GPmA4GzRcCfcRAEalYuwAmlYlIB6LwIjxlzLtEoxDmjQcGE0mWCSspwokLlwm0q5gSLKQIixmcmqG2ffg9MkgKOB2ltVlcexORClJrOZr3bEib/pN4gNeU+ERFt7dNZfUUuk2U9LcLaR6mhtmBxmn9ZHJ461eSFx9cm3AGS/kDXSZoxUmxgjDBNk/Bdwv4gJHKIqTRrSvW2PmpKmkPYd7QcuNizbs4IGid8MAyivYvo5gkHCceRAHWXq/9aYTqHjmLHSeJis+Il5LsleyRL6CZTxda7ZfzNlme1Mt98rncPbZCi/bbX82SeQaYXw7fuoV0Y9GXZ8rxsPED1hR2Ljsj0MFukfLsxbjfJTwQpHJirI2eUD61xfeyFSZlxJgK3nlFsPSO2nkDH6mXzquPYvInHDfXMHhXVSKB/ASkXCeYmbS8AAAAASUVORK5CYII=">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="static/css/style.css">
   
   
 </head>
@@ -1146,6 +1146,7 @@
               <th style="width: 145px;">실제제출일</th>
               <th style="width: 105px;">진행 상태</th>
               <th style="width: 90px;">담당자</th>
+              <th style="width: 58px;" title="산출물 파일 첨부 (DB 서버 방식)">첨부</th>
               <th style="min-width: 180px;">검토 의견 및 보완 조치내역</th>
               <th style="width: 45px;">삭제</th>
             </tr>
@@ -3317,6 +3318,34 @@
     </div>
   </div>
 
+  <!-- [v3.6.0] 첨부파일 창 (산출물 관리의 📎) -->
+  <div class="modal-overlay" id="attachModal">
+    <div class="modal attach-modal">
+      <div class="card-title">
+        <span id="attachTitle">📎 첨부파일</span>
+        <span style="display:flex; gap:6px;">
+          <button class="btn btn-secondary btn-sm" id="attachTrashBtn" data-click="AttachManager.openTrash" title="삭제한 첨부파일 보기 · 되살리기 (PM · 시스템관리자)">🗑 휴지통</button>
+          <button class="btn btn-secondary btn-sm" data-click="AttachManager.close">닫기</button>
+        </span>
+      </div>
+      <div class="attach-target" id="attachTarget"></div>
+      <div class="attach-drop" id="attachDrop">
+        <div><b>여기에 파일을 끌어다 놓거나</b> <button class="btn btn-primary btn-sm" data-click="AttachManager.pick">📤 파일 선택</button></div>
+        <div class="attach-policy" id="attachPolicy"></div>
+        <div class="attach-status" id="attachStatus"></div>
+        <input type="file" id="attachFileInput" multiple style="display:none;" data-change="AttachManager.onPicked" data-change-args='["$this"]'>
+      </div>
+      <div class="attach-readonly" id="attachReadonly" style="display:none;">담당 서브시스템이 아니어서 내려받기만 할 수 있습니다.</div>
+      <div class="attach-list-wrap">
+        <table class="attach-list">
+          <thead><tr><th>파일 이름</th><th style="width:52px;">버전</th><th style="width:70px;">크기</th><th style="width:150px;">올린 사람 · 일시</th><th style="width:150px;"></th></tr></thead>
+          <tbody id="attachListBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px; text-align:right;"><button class="btn btn-secondary btn-sm" id="attachOldBtn" data-click="AttachManager.toggleOld" style="display:none;"></button></div>
+    </div>
+  </div>
+
   <!-- [요건 7] 설정 탭의 표준산출물관리 정보 기반 서브시스템별·회차별 자동생성 모달 -->
   <div class="modal-overlay" id="bulkDeliverableModal">
     <div class="modal" style="width: 580px;">
@@ -3424,33 +3453,57 @@
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
 
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
-  <script src="js/app-config.js"></script>
-  <script src="js/ui-events.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/i18n-en.js"></script>
-  <script src="js/initial-data.js"></script>
-  <script src="js/wbs-engine.js"></script>
-  <script src="js/dashboard-chart.js"></script>
-  <script src="js/gantt-renderer.js"></script>
-  <script src="js/excel-sync.js"></script>
-  <script src="js/db-connector.js"></script>
-  <script src="js/report-exporter.js"></script>
-  <script src="js/manual-viewer.js"></script>
-  <script src="js/meeting-manager.js"></script>
-  <script src="js/charts.js"></script>
-  <script src="js/weekly-export.js"></script>
-  <script src="js/exec-deck.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/data-store.js"></script>
-  <script src="js/data-io.js"></script>
-  <script src="js/project-manager.js"></script>
-  <script src="js/legal-text.js"></script>
-  <script src="js/legal-notice.js"></script>
-  <script src="js/g-shell.js"></script>
-  <script src="js/neo.js"></script>
-  <script src="js/todo-center.js"></script>
-  <script src="js/access-control.js"></script>
-  <script src="js/ui-standards.js"></script>
+  <script src="static/js/config/app-config.js"></script>
+  <script src="static/js/common/ui-events.js"></script>
+  <script src="static/js/common/i18n.js"></script>
+  <script src="static/js/common/i18n-en.js"></script>
+  <script src="static/js/core/initial-data.js"></script>
+  <script src="static/js/modules/wbs/wbs-engine.js"></script>
+  <script src="static/js/modules/progress/dashboard-chart.js"></script>
+  <script src="static/js/modules/wbs/gantt-renderer.js"></script>
+  <script src="static/js/modules/dataio/excel-sync.js"></script>
+  <script src="static/js/core/db-connector.js"></script>
+  <script src="static/js/modules/report/report-exporter.js"></script>
+  <script src="static/js/common/manual-viewer.js"></script>
+  <script src="static/js/modules/meeting/meeting-manager.js"></script>
+  <script src="static/js/common/charts.js"></script>
+  <script src="static/js/modules/weekly/weekly-export.js"></script>
+  <script src="static/js/modules/report/exec-deck.js"></script>
+  <script src="static/js/common/app-base.js"></script>
+  <script src="static/js/modules/master/master-subsystem.js"></script>
+  <script src="static/js/modules/master/project-config.js"></script>
+  <script src="static/js/modules/master/users.js"></script>
+  <script src="static/js/modules/master/holidays.js"></script>
+  <script src="static/js/core/app-boot.js"></script>
+  <script src="static/js/modules/master/sdlc.js"></script>
+  <script src="static/js/core/app-refresh.js"></script>
+  <script src="static/js/modules/wbs/wbs-table.js"></script>
+  <script src="static/js/modules/progress/phase-matrix.js"></script>
+  <script src="static/js/modules/deliverable/deliverables.js"></script>
+  <script src="static/js/modules/deliverable/attach.js"></script>
+  <script src="static/js/modules/requirement/req-voc.js"></script>
+  <script src="static/js/modules/progress/dashboard.js"></script>
+  <script src="static/js/modules/wbs/wbs-template.js"></script>
+  <script src="static/js/common/tabs-theme.js"></script>
+  <script src="static/js/modules/board/notice-comm.js"></script>
+  <script src="static/js/modules/board/chat.js"></script>
+  <script src="static/js/common/layout.js"></script>
+  <script src="static/js/modules/requirement/req-phase.js"></script>
+  <script src="static/js/modules/dataio/smart-merge.js"></script>
+  <script src="static/js/core/sample-snapshot.js"></script>
+  <script src="static/js/core/storage.js"></script>
+  <script src="static/js/modules/weekly/weekly-report.js"></script>
+  <script src="static/js/modules/home/home.js"></script>
+  <script src="static/js/core/data-store.js"></script>
+  <script src="static/js/modules/dataio/data-io.js"></script>
+  <script src="static/js/core/project-manager.js"></script>
+  <script src="static/js/common/legal-text.js"></script>
+  <script src="static/js/common/legal-notice.js"></script>
+  <script src="static/js/common/g-shell.js"></script>
+  <script src="static/js/common/neo.js"></script>
+  <script src="static/js/modules/todo/todo-center.js"></script>
+  <script src="static/js/core/access-control.js"></script>
+  <script src="static/js/common/ui-standards.js"></script>
 
 <!-- [ver1.0.4 신규] 주간보고서 이전 이력 조회 및 복사 모달 -->
   <div id="wrHistoryModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center; background:rgba(15,23,42,0.65); z-index:9999;">

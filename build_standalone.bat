@@ -1,8 +1,8 @@
 @echo off
 rem ============================================================================
 rem [IOSTAR-PM shared] Standalone.html (single-file) builder
-rem  - Rebuilds js/initial-data.js from data/initial_data.json
-rem  - Inlines css/*.css and js/*.js into Standalone.html
+rem  - Rebuilds webapp/static/js/core/initial-data.js from data/initial_data.json
+rem  - Inlines webapp/static (css, js) into Standalone.html
 rem ============================================================================
 chcp 65001 > nul
 cd /d "%~dp0"

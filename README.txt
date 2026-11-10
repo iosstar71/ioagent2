@@ -1,5 +1,5 @@
 ================================================================================
-⚡ IOSTAR-PM v3.5.0 (Neo 단일 화면 · 프로젝트별 사용자 관리)
+⚡ IOSTAR-PM v3.6.0 (Neo 단일 화면 · 프로젝트별 사용자 관리)
    - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
    - 이 브랜치: iostar-pm-unified (v3.0.0 부터 화면은 Neo 하나 — Standard 클래식 화면 종료)
    - 이전 분리판 브랜치(iostar-pm-standard, iostar-pm-neo)는 이력으로 보존, 국내판 v1.2.0 은 개발 종료
@@ -15,7 +15,7 @@
             · 순수 바이트스트림 산출물 생성(DOCX 보고서, 다중 시트 XLSX)
 
 ■ [빠른 시작]
-  1) 압축 해제 후 index.html (또는 Standalone.html) 더블클릭 → 로컬 저장소(LocalStorage) 모드로 실행
+  1) 압축 해제 후 Standalone.html (또는 webapp/index.html) 더블클릭 → 로컬 저장소(LocalStorage) 모드로 실행
      - 최초 실행 시 data/initial_data.json 초기 데이터가 브라우저 로컬 저장소에 설정됨
      - 로그인: 기본 관리자 admin / 1234 (시스템관리자는 프로젝트를 고르지 않아도 됨)
      - 그 밖의 사용자는 로그인 화면에서 프로젝트를 골라 들어감 ([👤 신규 사용자 등록]도 고른 프로젝트에 일반 사용자로 가입)
@@ -23,6 +23,31 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [v3.6.0] — 산출물 첨부파일 · 폴더 구조 정리(웹 서버 도입 준비)
+1. 첨부파일 (산출물 관리의 📎 칸) — DB 서버 방식에서 사용
+   - 산출물마다 파일을 올리고 · 내려받고 · 지움 (끌어다 놓기 또는 [📤 파일 선택], 여러 개 한 번에)
+   - 크기: 파일 1개 최대 20MB, 프로젝트별 합계 5GB
+   - 유형: pdf hwp hwpx doc docx xls xlsx ppt pptx txt csv md / png jpg jpeg gif bmp webp / zip 7z
+           (실행 파일 · 스크립트는 확장자를 바꿔도 내용으로 거부)
+   - 버전: 같은 이름으로 다시 올리면 새 버전 — 최신 버전만 먼저 보이고 이전 버전은 최근 10개까지 보관
+   - 보존: 삭제하면 휴지통으로 → 30일 뒤 자동으로 완전 삭제 (그 전에는 PM · 시스템관리자가 [🗑 휴지통]에서 되살리기 · 완전 삭제)
+           프로젝트를 삭제하면 그 프로젝트의 첨부파일도 함께 삭제
+   - 권한: 올리기 · 삭제 = 그 서브시스템 담당자 · PM · 총괄리더 / 내려받기 = 프로젝트 참여자 전체
+   - 저장: upload/<프로젝트>/<연월>/<임의 이름> (웹 주소로 직접 열 수 없는 위치, 원래 파일 이름은 DB 에만 기록)
+           → 백업할 때 data 폴더와 upload 폴더를 함께 복사
+   - 설정: conf/app.ini [files] (max_file_mb · project_quota_mb · allowed_extensions · trash_days · keep_versions · upload_dir)
+   - 로컬 저장소 방식 · Standalone.html 에서는 쓸 수 없음 (안내 표시)
+   - 엑셀 올리기로 산출물 목록을 바꿔도 서브시스템 + 회차 + 산출물명이 같으면 첨부 연결 유지
+2. 폴더 구조 정리 — 웹 서버(nginx 등)를 앞에 두는 구성에 맞춤 (아래 [시스템 폴더 구성] 참고)
+   - conf/    설정 (app.ini ← 프로그램 폴더에서 이동, nginx 설정 예시 nginx.conf.sample)
+   - server/  서버 프로그램 — wbs_db_server.py 한 파일(1,800줄)을 기능별 11개 파일로 나눔
+              (wbs_db_server.py 는 실행 파일로 그대로 남아 run_server.bat · 기존 실행 방법 그대로)
+   - webapp/  화면 파일 = 웹 루트 (index.html · manual.html · static/css · static/js · static/fonts · static/img)
+              → 서버는 webapp 폴더만 내보냄 (설정 · DB · 서버 프로그램 · 첨부파일은 웹 주소로 열 수 없음)
+   - webapp/static/js: app.js(8,770줄)를 업무별 24개 파일로 나누고 common · core · modules/<업무> 폴더로 정리
+   - data/ (DB) · logs/ · certs/ · tools/ · docs/ · legal/ 은 그대로, Standalone.html 은 프로그램 폴더에 그대로
+3. 이전 버전에서 올리기: 새 폴더에 풀고 이전 data 폴더를 그대로 복사 (app.ini 를 고쳐 썼다면 conf/app.ini 에 같은 값 반영)
 
 ■ [v3.5.0] — 테마 Green · Brown 추가 · 간트 요약 막대 · 배포 용량 절감
 1. 테마 6가지: Electric(기본) · Navy · Green · Brown · Matte · Graphite
@@ -567,35 +592,38 @@
    - [조치 완료] 해당 누락 기호를 정상 HTML 주석 규격으로 완벽 교체하여 모든 화면 하단에서 불필요한 텍스트 노출을 100% 원천 차단
 
 ================================================================================
-■ [시스템 폴더 구성]
-- index.html                : IOSTAR-PM ver1.2.0 메인 웹 애플리케이션
-- Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (build_standalone.bat 로 재생성)
-- build_standalone.bat      : Standalone.html 및 js/initial-data.js 재생성 배치
-- tools/                    : build_standalone.py, build_initial_data.py, build_manual_docx.py(워드 매뉴얼), make_release.py(배포 zip)
-- tools/tests/              : 자동 테스트 (test_server_api.py · e2e/run_e2e.js) — run_tests.bat 로 실행
-- manual.html               : 관리자 및 사용자 상세 운영 매뉴얼
-- architecture.html         : 4계층 소프트웨어 아키텍처 정의서
-- run_server.bat            : 로컬 다중 사용자 DB 웹서버 원클릭 실행 배치 프로그램
-- wbs_db_server.py          : 파이썬 기반 로컬 SQLite/Access DB 웹서버 (포트: 8080)
-- js/                       : WBS 모듈러 스크립트 라이브러리
-  ├── app.js                : 전사 코어 앱 엔진 및 홈 화면(HomeScreenManager)
-  ├── excel-sync.js         : OpenXML 표준 .xlsx 및 .docx 생성·동기화 엔진
-  ├── meeting-manager.js    : 주간 회의록 및 Action Item 통합 트래커
-  ├── db-connector.js       : 로컬 REST API DB 커넥터
-  ├── dashboard-chart.js    : SVG 종합 대시보드 차트 엔진
-  ├── gantt-renderer.js     : 인터랙티브 WBS 간트차트 렌더러
-  ├── wbs-engine.js         : 공정률/가중치/일정 계산 엔진
-  ├── data-store.js         : 저장/동기화 계층 (충돌 감지·권한 저장·화면별 저장/새로고침) (v1.0.6)
-  ├── access-control.js     : 로그인·신규등록·서버 인증·4단계 권한(RBAC)·탭 접근 제어 (v1.0.6)
-  ├── i18n.js / i18n-en.js  : 다국어(한국어/영어) 엔진 및 영어 사전 (v1.0.6)
-  ├── ui-standards.js       : 버튼·바로가기 스타일 표준 (v1.0.7)
-  └── initial-data.js       : 최초 실행 초기 데이터 (data/initial_data.json 에서 자동 생성)
-- css/                      : 스타일시트 (style.css 단일 파일 — v1.0.8 에서 themes.css·인라인 스타일 통합)
-- app.ini                   : 제품 설정 (이름·판·버전·기본 언어·포트·DB·인증서 경로) — v1.2.0
-- legal/                    : 사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지 (v1.0.10)
-- certs/                    : HTTPS 인증서 (make_cert.bat 으로 생성, 배포·반출 금지)
-- img/iostar_*             : IOSTAR-PM 로고·아이콘 (아이콘 32/64/128/256px PNG, 가로형 로고 JPG — 원본 이미지를 줄여 약 41KB)
-- data/                     : SQLite 프로젝트 DB (wbs_enterprise.db), 초기 데이터 initial_data.json
+■ [시스템 폴더 구성] (v3.6.0)
+- run_server.bat            : DB 서버 실행 (make_cert.bat: HTTPS 인증서 / run_tests.bat: 자동 테스트 / build_standalone.bat: 단일 파일 다시 만들기)
+- wbs_db_server.py          : 서버 실행 파일 (server/ 를 불러 기동, 포트 등은 conf/app.ini)
+- Standalone.html           : CSS/JS 전체 내장 단일 파일 실행본 (서버 없이 더블클릭)
+- conf/                     : 설정
+  ├── app.ini               : 제품 이름 · 버전 · 기본 언어 · 포트 · DB · 인증서 · 첨부파일 정책
+  └── nginx.conf.sample     : 웹 서버(nginx)를 앞에 둘 때의 설정 예시 (HTTPS · 정적 파일 · 업로드 20MB)
+- server/                   : 서버 프로그램 (Python 표준 라이브러리만 사용)
+  ├── settings.py           : 설정 · 경로 · 상수
+  ├── common.py / security.py / permission.py : 오류 형식 · 비밀번호 해시(PBKDF2) · 권한 규칙
+  ├── store.py              : 데이터 저장소 (SQLite, 프로젝트 · 충돌 감지)
+  ├── session.py / logger.py: 로그인 세션 · 서버 로그
+  ├── files.py / file_api.py: 첨부파일 저장소 · API (v3.6.0)
+  ├── handler.py            : HTTP 요청 처리 · API 경로
+  └── main.py               : 서버 기동 (HTTP/HTTPS)
+- webapp/                   : 화면 파일 (웹 루트 — 서버는 이 폴더만 내보냄)
+  ├── index.html            : 메인 화면 / manual.html: 매뉴얼 / architecture.html: 아키텍처 정의서
+  └── static/
+      ├── css/style.css     : 스타일
+      ├── fonts/ · img/     : Pretendard 글꼴(OFL) · 로고
+      └── js/
+          ├── config/       : app-config.js (conf/app.ini 에서 자동 생성)
+          ├── common/       : 화면 공통 (이벤트 연결 · 다국어 · 알림 · 탭/테마 · 배치 · 버튼 표준 · 차트 · 매뉴얼 · 법적 고지)
+          ├── core/         : 데이터 계층 (초기 데이터 · 시작 · 저장/동기화 · DB 연결 · 로그인/권한 · 프로젝트)
+          └── modules/      : 업무 화면 — master(기준정보) · wbs · progress(대시보드 · 단계별 진척) · deliverable(산출물 · 첨부)
+                              · requirement(요구사항 · VOC) · board(공지 · 소통 · 채팅) · meeting · weekly · report(보고서 · 경영 보고)
+                              · dataio(엑셀 · 내려받기/올리기) · home · todo
+- data/                     : SQLite 프로젝트 DB (wbs_enterprise.db), 초기 데이터 initial_data.json  ※ 백업 대상
+- upload/                   : 첨부파일 (서버가 자동 생성)  ※ 백업 대상
+- logs/ · certs/            : 서버 로그 · HTTPS 인증서 (make_cert.bat 으로 생성, 배포·반출 금지)
+- tools/                    : 빌드 · 배포 · 인증서 도구, tools/tests/ 자동 테스트
+- legal/ · docs/            : 사용권 계약 · 개인정보 처리 안내 · 오픈소스 고지 / 개발 문서
 - Sample/                   : 표준 WBS 4레벨 샘플 데이터 엑셀 파일
 - template/                 : WBS 마스터 템플릿 양식 CSV
 ================================================================================

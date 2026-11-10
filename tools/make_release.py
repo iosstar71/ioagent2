@@ -26,7 +26,7 @@ import build_standalone  # noqa: E402
 CFG = app_config.load()
 VERSION = CFG["version"]
 PKG = app_config.package_name(CFG)
-EXCLUDE_DIRS = {".git", "logs", "__pycache__", ".claude", "node_modules", "certs", "python"}
+EXCLUDE_DIRS = {".git", "logs", "__pycache__", ".claude", "node_modules", "certs", "python", "upload"}
 EXCLUDE_FILES = {".gitattributes", ".gitignore"}
 EXCLUDE_SUFFIX = {".pyc", ".db", ".db-wal", ".db-shm", ".zip", ".nupkg"}
 

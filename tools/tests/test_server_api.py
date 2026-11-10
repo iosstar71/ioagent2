@@ -14,6 +14,7 @@ import shutil
 import socket
 import sqlite3
 import ssl
+import http.client
 import subprocess
 import sys
 import tempfile
@@ -37,15 +38,20 @@ def free_port():
         return s.getsockname()[1]
 
 
+def copy_program(dst):
+    """프로그램 폴더(설정 · 서버 · 화면 · 초기 데이터)를 시험용 폴더로 복사"""
+    shutil.copy(ROOT / "wbs_db_server.py", dst / "wbs_db_server.py")
+    for d in ("conf", "server", "webapp"):
+        shutil.copytree(ROOT / d, dst / d, ignore=shutil.ignore_patterns("__pycache__"))
+    (dst / "data").mkdir()
+    shutil.copy(ROOT / "data" / "initial_data.json", dst / "data" / "initial_data.json")
+
+
 class ServerApiTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = Path(tempfile.mkdtemp(prefix="axpmys_test_"))
-        for name in ("index.html", "wbs_db_server.py", "app.ini"):
-            shutil.copy(ROOT / name, cls.tmp / name)
-        (cls.tmp / "data").mkdir()
-        shutil.copy(ROOT / "data" / "initial_data.json", cls.tmp / "data" / "initial_data.json")
-        shutil.copytree(ROOT / "fonts", cls.tmp / "fonts")
+        copy_program(cls.tmp)
         cls.port = free_port()
         cls.base = f"http://127.0.0.1:{cls.port}"
         cls.pwd = {}
@@ -239,10 +245,10 @@ class ServerApiTest(unittest.TestCase):
         """[v1.2.0] app.ini 의 제품 이름·버전·기본 언어가 서버와 화면 설정에 그대로 반영"""
         import configparser
         cp = configparser.ConfigParser(inline_comment_prefixes=(";", "#"))
-        cp.read(self.tmp / "app.ini", encoding="utf-8")
+        cp.read(self.tmp / "conf" / "app.ini", encoding="utf-8")
         s, d = self.call("/api/db/ping", method="GET")
         self.assertEqual(d["version"], "ver" + cp["app"]["version"])
-        with urllib.request.urlopen(self.base + "/js/app-config.js") as r:
+        with urllib.request.urlopen(self.base + "/static/js/config/app-config.js") as r:
             js = r.read().decode("utf-8")
         self.assertIn('"defaultLang": "ko"', js)
         self.assertIn('"productName": "%s"' % cp["app"]["product_name"], js)
@@ -255,7 +261,7 @@ class ServerApiTest(unittest.TestCase):
             self.assertIn('"uiSwitch": %s' % ("false" if cp["ui"].get("allow_ui_switch", "1") == "0" else "true"), js)
             self.assertIn('"defaultTheme": "%s"' % cp["ui"].get("default_theme", "electric"), js)
         # Pretendard 글꼴 파일은 화면에서 받을 수 있어야 함 (CSP font-src 'self')
-        with urllib.request.urlopen(self.base + "/fonts/Pretendard-Regular.subset.woff2") as r:
+        with urllib.request.urlopen(self.base + "/static/fonts/Pretendard-Regular.subset.woff2") as r:
             self.assertEqual(r.status, 200)
             self.assertGreater(len(r.read()), 200000)
 
@@ -427,6 +433,82 @@ class ServerApiTest(unittest.TestCase):
         _, d = self.call("/api/chat/messages?channel=%EC%A0%84%EC%B2%B4", token=self.admin, method="GET", project=self.pid)
         self.assertTrue(any(m["message"] == "only-in-project" for m in d["messages"]))
 
+    # ---------------------------------------------------------------- 첨부파일
+    def upload(self, token, name, body, system="W1", owner="Ftest0001", length=None):
+        q = urllib.parse.urlencode({"ownerType": "deliverable", "ownerId": owner, "system": system, "name": name})
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        try:
+            conn.putrequest("POST", "/api/files/upload?" + q)
+            conn.putheader("Content-Type", "application/octet-stream")
+            conn.putheader("Content-Length", str(len(body) if length is None else length))
+            if token:
+                conn.putheader("Authorization", "Bearer " + token)
+            conn.endheaders()
+            if length is None:
+                conn.send(body)
+            r = conn.getresponse()
+            return r.status, json.loads(r.read() or b"{}")
+        finally:
+            conn.close()
+
+    def test_50_attachments(self):
+        """[v3.6.0] 첨부파일: 올리기(버전) · 유형/크기 제한 · 권한 · 내려받기 · 휴지통 · 되살리기 · 완전 삭제"""
+        lee, park = self.ready("lead_lee"), self.ready("lead_park")  # W1 담당 / W2 담당
+        pdf = b"%PDF-1.4 iostar attachment test"
+        s, d = self.upload(lee, "화면설계서.pdf", pdf)
+        self.assertEqual((s, d["file"]["version"], d["file"]["size"]), (200, 1, len(pdf)), d)
+        s, d = self.upload(lee, "화면설계서.pdf", pdf + b" v2")
+        self.assertEqual((s, d["file"]["version"]), (200, 2))
+        fid = d["file"]["id"]
+        # 제한: 로그인 필요 · 담당이 아닌 서브시스템 · 허용하지 않는 확장자 · 실행 파일 내용 · 20MB 초과 · 빈 파일
+        self.assertEqual(self.upload(None, "a.pdf", pdf)[0], 401)
+        self.assertEqual(self.upload(lee, "a.pdf", pdf, system="W2", owner="Ftest0002")[0], 403)
+        self.assertEqual(self.upload(lee, "tool.exe", pdf)[0], 415)
+        self.assertEqual(self.upload(lee, "fake.pdf", b"MZ\x90\x00binary")[0], 415)
+        s, d = self.upload(lee, "big.zip", b"", length=20 * 1024 * 1024 + 1)
+        self.assertEqual((s, d.get("code")), (413, "FILE_TOO_LARGE"))
+        self.assertEqual(self.upload(lee, "empty.txt", b"")[0], 400)
+        self.assertEqual(self.upload(lee, "x.pdf", pdf, owner="../etc")[0], 400)
+        # 목록 · 요약 (파일 이름 기준 1개, 버전 2개) · 정책
+        s, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, park)
+        self.assertEqual((s, [f["version"] for f in d["files"]]), (200, [2, 1]))
+        self.assertNotIn("path", d["files"][0])
+        s, d = self.call("/api/files/summary", {}, park)
+        self.assertEqual(d["counts"]["deliverable"]["Ftest0001"], 1)
+        self.assertEqual((d["policy"]["maxBytes"], d["policy"]["trashDays"], "hwp" in d["policy"]["extensions"]), (20 * 1024 * 1024, 30, True))
+        # 내려받기: 프로젝트 참여자 누구나 / 로그인 없이는 불가 / 저장 폴더는 웹으로 직접 열 수 없음
+        req = urllib.request.Request(self.base + "/api/files/download?id=" + fid, headers={"Authorization": "Bearer " + park})
+        with urllib.request.urlopen(req) as r:
+            self.assertEqual(r.read(), pdf + b" v2")
+            self.assertIn("attachment", r.headers.get("Content-Disposition", ""))
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(self.base + "/api/files/download?id=" + fid)
+        self.assertEqual(ctx.exception.code, 401)
+        stored = list((self.tmp / "upload" / "DEFAULT").rglob(fid))
+        self.assertEqual(len(stored), 1)
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            urllib.request.urlopen(self.base + "/upload/" + stored[0].relative_to(self.tmp / "upload").as_posix())
+        self.assertEqual(ctx.exception.code, 404)
+        # 삭제(휴지통): 담당자만 / 휴지통 보기 · 되살리기 · 완전 삭제: PM · 시스템관리자만
+        self.assertEqual(self.call("/api/files/delete", {"id": fid}, park)[0], 403)
+        self.assertEqual(self.call("/api/files/delete", {"id": fid}, lee)[0], 200)
+        _, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, lee)
+        self.assertEqual([f["version"] for f in d["files"]], [1])
+        self.assertEqual(self.call("/api/files/list", {"trash": True}, lee)[0], 403)
+        self.assertEqual(self.call("/api/files/purge", {"id": fid}, lee)[0], 403)
+        s, d = self.call("/api/files/list", {"trash": True}, self.admin)
+        self.assertEqual((s, [f["id"] for f in d["files"]]), (200, [fid]))
+        self.assertEqual(self.call("/api/files/restore", {"id": fid}, self.admin)[0], 200)
+        _, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, lee)
+        self.assertEqual(len(d["files"]), 2)
+        self.assertEqual(self.call("/api/files/purge", {"id": fid}, self.admin)[0], 400)  # 휴지통에 있는 것만
+        self.call("/api/files/delete", {"id": fid}, lee)
+        self.assertEqual(self.call("/api/files/purge", {"id": fid}, self.admin)[0], 200)
+        self.assertFalse(stored[0].exists())
+        # 다른 프로젝트에서는 보이지 않음
+        s, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, self.admin, project=self.pid)
+        self.assertEqual((s, d["files"]), (200, []))
+
     # ---------------------------------------------------------------- 채팅
     def test_30_chat(self):
         s, _ = self.call("/api/chat/send", {"channel": "전체", "message": "hello"}, self.admin)
@@ -450,10 +532,7 @@ class TlsAndUpgradeTest(unittest.TestCase):
     def test_https_and_legacy_upgrade(self):
         tmp = Path(tempfile.mkdtemp(prefix="axpmys_tls_"))
         try:
-            for name in ("index.html", "wbs_db_server.py"):
-                shutil.copy(ROOT / name, tmp / name)
-            (tmp / "data").mkdir()
-            shutil.copy(ROOT / "data" / "initial_data.json", tmp / "data" / "initial_data.json")
+            copy_program(tmp)
             subprocess.run([sys.executable, str(ROOT / "tools" / "make_cert.py"), "--out", str(tmp / "certs")],
                            check=True, stdout=subprocess.DEVNULL)
             # v1.0.9 형식 DB: 비밀번호를 SHA-256 1차 해시 그대로 저장
@@ -461,11 +540,11 @@ class TlsAndUpgradeTest(unittest.TestCase):
             sys.path.insert(0, str(tmp))
             try:
                 import importlib
-                srv = importlib.import_module("wbs_db_server")
-                srv.DB_PATH = tmp / "data" / "wbs_enterprise.db"
-                srv.LOG_SILENT_MODE = True
-                srv.Store.init_schema()
-                conn = sqlite3.connect(str(srv.DB_PATH))
+                cfg = importlib.import_module("server.settings")
+                cfg.DB_PATH = tmp / "data" / "wbs_enterprise.db"
+                cfg.LOG_SILENT_MODE = True
+                importlib.import_module("server.store").Store.init_schema()
+                conn = sqlite3.connect(str(cfg.DB_PATH))
                 users = json.loads(conn.execute("SELECT JSON_TEXT FROM TB_WBS_DATASET WHERE DATA_KEY='projectUsers'").fetchone()[0])
                 for u in users:
                     if u["empNo"] == "qa_han":
@@ -475,7 +554,8 @@ class TlsAndUpgradeTest(unittest.TestCase):
                 conn.close()
             finally:
                 sys.path.remove(str(tmp))
-                sys.modules.pop("wbs_db_server", None)
+                for m in [m for m in sys.modules if m == "server" or m.startswith("server.")]:
+                    sys.modules.pop(m, None)
             proc = subprocess.Popen([sys.executable, "wbs_db_server.py", "--port", str(port), "--host", "127.0.0.1", "--silent",
                                      "--cert", "certs/server.crt", "--key", "certs/server.key"],
                                     cwd=tmp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

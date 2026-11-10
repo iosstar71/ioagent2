@@ -16,7 +16,7 @@ const net = require("net");
 const { spawn } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../../..");
-const FILE_URL = "file://" + path.join(ROOT, "index.html").replace(/\\/g, "/");
+const FILE_URL = "file://" + path.join(ROOT, "webapp", "index.html").replace(/\\/g, "/");
 const results = [];
 let browser;
 
@@ -111,7 +111,7 @@ async function localScenarios() {
   console.log("\n[Local storage mode scenarios]");
   const staticPort = await freePort();
   const py = process.platform === "win32" ? "python" : "python3";
-  const staticSrv = spawn(py, ["-m", "http.server", String(staticPort), "--bind", "127.0.0.1", "--directory", ROOT], { stdio: "ignore" });
+  const staticSrv = spawn(py, ["-m", "http.server", String(staticPort), "--bind", "127.0.0.1", "--directory", path.join(ROOT, "webapp")], { stdio: "ignore" });
   STATIC_URL = `http://127.0.0.1:${staticPort}/index.html`;
   await new Promise(r => setTimeout(r, 1200));
   try {
@@ -709,8 +709,8 @@ function freePort() {
 }
 
 function copyApp(dst) {
-  for (const f of ["index.html", "wbs_db_server.py", "app.ini"]) fs.copyFileSync(path.join(ROOT, f), path.join(dst, f));
-  for (const dir of ["css", "js"]) fs.cpSync(path.join(ROOT, dir), path.join(dst, dir), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, "wbs_db_server.py"), path.join(dst, "wbs_db_server.py"));
+  for (const dir of ["conf", "server", "webapp"]) fs.cpSync(path.join(ROOT, dir), path.join(dst, dir), { recursive: true, filter: (s) => !s.includes("__pycache__") });
   fs.mkdirSync(path.join(dst, "data"));
   fs.copyFileSync(path.join(ROOT, "data", "initial_data.json"), path.join(dst, "data", "initial_data.json"));
 }
@@ -786,6 +786,32 @@ async function serverScenarios() {
     const bView = await b.evaluate(async () => { await ProjectManager.refreshList(); const r = await ServerBackend.request("/api/projects/list", {}); return { list: (ProjectContext.projects || []).map(p => p.id).join(","), api: (r.projects || []).map(p => p.id).join(","), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }; });
     check("Server v3: PM sees only the project they logged into (new project hidden, no project switch)", bView.list === "DEFAULT" && bView.sel === "none", JSON.stringify(bView));
     check("Server: create project + switch + save stays in that project", sp.pid === "P001" && sp.wbs === 0 && sp.name === "서버 신규 프로젝트" && sp.opts === 2 && sb.pid === "DEFAULT" && sb.wbs === defW && !sb.leak, JSON.stringify([sp, sb]));
+
+    // [v3.6.0] 첨부파일 (산출물 📎): 올리기 → 새 버전 → 유형 제한 → 내려받기 → 삭제(휴지통) → 되살리기
+    await a.evaluate(() => switchTab("tab-deliverables")); await a.waitForTimeout(500);
+    await a.click("#deliverablesTableBody .attach-btn"); await a.waitForTimeout(600);
+    const pdf = Buffer.from("%PDF-1.4 e2e attachment");
+    await a.setInputFiles("#attachFileInput", { name: "e2e_설계서.pdf", mimeType: "application/pdf", buffer: pdf }); await a.waitForTimeout(1200);
+    const at1 = await a.evaluate(() => ({ rows: document.querySelectorAll("#attachListBody tr").length, name: (document.querySelector("#attachListBody .attach-name") || {}).textContent,
+      key: /^F[0-9a-f]{18}$/.test(AttachManager.cur.row.fileKey || ""), policy: document.getElementById("attachPolicy").textContent, badge: (document.querySelector("#deliverablesTableBody .attach-btn b") || {}).textContent }));
+    check("Attachment: upload from the deliverables screen -> listed, row linked, count badge, policy text (20MB)", at1.rows === 1 && at1.name === "e2e_설계서.pdf" && at1.key && at1.policy.includes("20MB") && at1.badge === "1", JSON.stringify(at1));
+    await a.setInputFiles("#attachFileInput", [{ name: "e2e_설계서.pdf", mimeType: "application/pdf", buffer: Buffer.concat([pdf, Buffer.from(" v2")]) }, { name: "run.exe", mimeType: "application/octet-stream", buffer: Buffer.from("MZ") }]);
+    await a.waitForTimeout(1500);
+    const at2 = await a.evaluate(() => ({ rows: document.querySelectorAll("#attachListBody tr").length, ver: document.querySelector("#attachListBody tr td:nth-child(2)").textContent,
+      old: document.getElementById("attachOldBtn").textContent, toast: document.body.innerText.includes("run.exe") }));
+    check("Attachment: same name -> new version (older hidden), blocked file type is rejected with a message", at2.rows === 1 && at2.ver === "v2" && at2.old.includes("1") && at2.toast, JSON.stringify(at2));
+    const dl = await a.evaluate(async () => { const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, size: blob.size }; };
+      await AttachManager.download(AttachManager.cur.files[0].id); ExcelSync._triggerDownload = o; return got; });
+    check("Attachment: download returns the latest version with its original name", dl && dl.name === "e2e_설계서.pdf" && dl.size === pdf.length + 3, JSON.stringify(dl));
+    await a.evaluate(() => AttachManager.remove(AttachManager.cur.files[0].id)); await a.waitForTimeout(300);
+    await a.evaluate(() => closeConfirmDialog(true)); await a.waitForTimeout(1200);
+    const at3 = await a.evaluate(() => ({ ver: document.querySelector("#attachListBody tr td:nth-child(2)").textContent, trash: AttachManager.trashCount }));
+    await a.evaluate(() => AttachManager.openTrash()); await a.waitForTimeout(800);
+    const at4 = await a.evaluate(() => ({ rows: document.querySelectorAll("#attachListBody tr").length, title: document.getElementById("attachTitle").textContent }));
+    await a.evaluate(() => AttachManager.restore(AttachManager.cur.files[0].id)); await a.waitForTimeout(1000);
+    const at5 = await a.evaluate(() => AttachManager.trashCount);
+    check("Attachment: delete -> trash (previous version shown), manager restores from trash", at3.ver === "v1" && at3.trash === 1 && at4.rows === 1 && at4.title.includes("휴지통") && at5 === 0, JSON.stringify({ at3, at4, at5 }));
+    await a.evaluate(() => AttachManager.close());
 
     // 서버 중지 → 연결 끊김 표시
     srv.kill();

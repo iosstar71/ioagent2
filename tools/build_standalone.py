@@ -22,7 +22,8 @@ import build_manual_docx  # noqa: E402
 import build_legal  # noqa: E402
 import app_config  # noqa: E402
 
-SRC = ROOT / "index.html"
+WEB = ROOT / "webapp"
+SRC = WEB / "index.html"
 DST = ROOT / "Standalone.html"
 
 LINK_RE = re.compile(r'<link\s+rel="stylesheet"\s+href="([^"]+)"\s*/?>')
@@ -45,17 +46,17 @@ def build() -> Path:
     missing = []
 
     def css_repl(m):
-        path = ROOT / m.group(1)
+        path = WEB / m.group(1)
         if not path.exists():
             missing.append(m.group(1))
             return m.group(0)
         css = path.read_text(encoding="utf-8")
         # css/ 기준 상대 경로(../fonts/...)를 Standalone.html(프로그램 폴더) 기준으로 바꿈
-        css = css.replace('url("../', 'url("')
+        css = css.replace('url("../', 'url("webapp/static/')
         return f'<style data-src="{m.group(1)}">\n{css}\n</style>'
 
     def js_repl(m):
-        path = ROOT / m.group(1)
+        path = WEB / m.group(1)
         if not path.exists():
             missing.append(m.group(1))
             return m.group(0)
@@ -71,10 +72,11 @@ def build() -> Path:
     banner = (
         "<!-- =========================================================================\n"
         "     IOSTAR-PM - Standalone All-in-One (단일 파일 실행본)\n"
-        "     자동 생성 파일: python tools/build_standalone.py  (원본: index.html + css/ + js/)\n"
+        "     자동 생성 파일: python tools/build_standalone.py  (원본: webapp/index.html + webapp/static/)\n"
         "     이 파일 1개만 복사해도 서버 없이 브라우저에서 바로 실행됩니다.\n"
         "     ========================================================================= -->\n"
     )
+    html = html.replace('"architecture.html"', '"webapp/architecture.html"')  # Standalone.html 은 프로그램 폴더에 있음
     html = html.replace("<head>", "<head>\n" + banner, 1)
     html = html.replace("<html lang=\"ko\">", "<html lang=\"ko\" data-build=\"standalone\">", 1)
     DST.write_text(html, encoding="utf-8")

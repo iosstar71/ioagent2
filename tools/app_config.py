@@ -21,7 +21,9 @@ EDITION_NAMES = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}
 
 def load(root=None):
     """app.ini → 평탄한 dict (없는 값은 기본값)"""
-    path = Path(root or ROOT) / "app.ini"
+    path = Path(root or ROOT) / "conf" / "app.ini"
+    if not path.exists():
+        path = Path(root or ROOT) / "app.ini"  # v3.5.0 이하 위치
     cfg = dict(DEFAULTS)
     if path.exists():
         cp = configparser.ConfigParser(inline_comment_prefixes=(";", "#"))
@@ -54,7 +56,7 @@ def package_name(cfg=None):
 
 
 def client_js(cfg=None):
-    """화면용 설정 (js/app-config.js 내용)"""
+    """화면용 설정 (webapp/static/js/config/app-config.js 내용)"""
     c = cfg or load()
     data = client_config(c)
     return ("// [IOSTAR-PM] 화면 설정 (app.ini 에서 자동 생성 - 직접 수정 금지, DB 서버는 이 파일을 app.ini 로 즉시 만들어 보냄)\n"
@@ -62,7 +64,7 @@ def client_js(cfg=None):
 
 
 def build(root=None):
-    out = Path(root or ROOT) / "js" / "app-config.js"
+    out = Path(root or ROOT) / "webapp" / "static" / "js" / "config" / "app-config.js"
     out.write_text(client_js(load(root)), encoding="utf-8")
     print(f"[OK] {out.relative_to(Path(root or ROOT))} built ({out.stat().st_size:,} bytes)")
 

@@ -3024,3 +3024,25 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 [data-theme="brown"] .neo-todo { border-left-color: #7A4A26; }
 [data-theme="brown"] .wbs-id-link { color: #7A4A26; }
 [data-theme="brown"] .master-subtab-btn.active { background: #7A4A26; color: #FFFFFF; border-color: #7A4A26; }
+
+/* ---------- [v3.6.0] 첨부파일 (산출물 관리 📎) ---------- */
+.attach-btn { min-width: 38px; padding: 2px 6px; background: var(--bg-card, #fff); border: 1px solid var(--border, #cbd5e1); color: var(--text-muted, #64748b); }
+.attach-btn.has-files { border-color: var(--primary, #2563eb); color: var(--primary, #2563eb); font-weight: 700; }
+.attach-btn b { margin-left: 2px; }
+.attach-modal { width: 760px; max-width: 94vw; }
+.attach-target { font-weight: 700; margin: 4px 0 10px; color: var(--text-main, #1e293b); font-size: var(--fs-md, 13px); }
+.attach-drop { border: 2px dashed var(--border, #cbd5e1); border-radius: 8px; padding: 14px; text-align: center; background: var(--bg-soft, rgba(148,163,184,0.08)); margin-bottom: 10px; }
+.attach-drop.drag { border-color: var(--primary, #2563eb); background: rgba(37,99,235,0.08); }
+.attach-policy { margin-top: 8px; font-size: var(--fs-xs, 11px); color: var(--text-muted, #64748b); line-height: 1.5; }
+.attach-status { margin-top: 4px; font-size: var(--fs-sm, 12px); color: var(--primary, #2563eb); font-weight: 700; min-height: 1em; }
+.attach-readonly { padding: 8px 12px; border-radius: 6px; background: rgba(245,158,11,0.12); color: #92400e; font-size: var(--fs-sm, 12px); margin-bottom: 10px; }
+.attach-list-wrap { max-height: 46vh; overflow: auto; border: 1px solid var(--border, #e2e8f0); border-radius: 6px; }
+.attach-list { width: 100%; border-collapse: collapse; font-size: var(--fs-sm, 12px); }
+.attach-list th { position: sticky; top: 0; text-align: left; padding: 6px 8px; background: var(--table-head-bg, #f1f5f9); color: var(--table-head-text, #334155); }
+.attach-list td { padding: 6px 8px; border-top: 1px solid var(--border, #e2e8f0); vertical-align: middle; }
+.attach-name { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.attach-date { color: var(--text-muted, #64748b); font-size: var(--fs-xs, 11px); }
+.attach-acts { white-space: nowrap; text-align: right; }
+.attach-old td { opacity: 0.65; }
+.attach-empty { text-align: center; color: var(--text-muted, #64748b); padding: 22px 8px !important; }
+[data-theme="dark"] .attach-readonly { color: #fcd34d; }

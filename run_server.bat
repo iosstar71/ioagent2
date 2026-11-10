@@ -1,8 +1,8 @@
 @echo off
 rem ============================================================================
 rem [IOSTAR-PM shared] Multi-User DB Server Launcher (all editions share this file)
-rem  - Product name, port, DB file, HTTPS certificate paths: app.ini
-rem  - HTTPS starts automatically when the certificate files in app.ini exist (make_cert.bat)
+rem  - Product name, port, DB file, HTTPS certificate paths: conf\app.ini
+rem  - HTTPS starts automatically when the certificate files in conf\app.ini exist (make_cert.bat)
 rem ============================================================================
 chcp 65001 > nul
 setlocal
@@ -14,8 +14,10 @@ set "CFG_edition=KR"
 set "CFG_edition_name="
 set "CFG_version="
 set "CFG_port=8080"
-if exist "app.ini" (
-    for /f "usebackq eol=; tokens=1,* delims==" %%A in ("app.ini") do set "CFG_%%A=%%B"
+set "INI=conf\app.ini"
+if not exist "%INI%" set "INI=app.ini"
+if exist "%INI%" (
+    for /f "usebackq eol=; tokens=1,* delims==" %%A in ("%INI%") do set "CFG_%%A=%%B"
 )
 set "TITLE_ED="
 if defined CFG_edition_name set "TITLE_ED= %CFG_edition_name%"

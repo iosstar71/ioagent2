@@ -24,7 +24,7 @@ def build():
     for key, title, name in DOCS:
         path = ROOT / "legal" / name
         items.append({"key": key, "title": title, "file": "legal/" + name, "text": path.read_text(encoding="utf-8") if path.exists() else ""})
-    out = ROOT / "js" / "legal-text.js"
+    out = ROOT / "webapp" / "static" / "js" / "common" / "legal-text.js"
     out.write_text(
         "// [IOSTAR-PM] 법적 고지 문서 (자동 생성 파일 - 직접 수정 금지)\n"
         "// 원본: legal/*.txt  /  생성: python tools/build_legal.py\n"

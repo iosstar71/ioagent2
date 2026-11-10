@@ -86,7 +86,9 @@ var DataIO = {
     openConfirmDialog(msg, () => {
       try {
         const backup = BackupHistoryManager.createBackupSnapshot(`엑셀올리기(${d.label}:${scope})`, scope, true);
+        const fileKeys = kind === "deliverables" && typeof AttachManager !== "undefined" ? AttachManager.rememberKeys() : null;
         SmartMergeCenter._mergeWorkArrayData(kind, inScope, scope);
+        if (fileKeys) AttachManager.reapplyKeys(fileKeys);  // 첨부파일 연결 유지
         ExcelSync._ensureWbsAndSubsystemsIntegrity();
         if (typeof syncSubsystemWeights === "function") syncSubsystemWeights();
         rebuildAll(true);

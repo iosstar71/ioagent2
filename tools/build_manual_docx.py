@@ -20,8 +20,8 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "manual.html"
-VIEWER = ROOT / "js" / "manual-viewer.js"
+SRC = ROOT / "webapp" / "manual.html"
+VIEWER = ROOT / "webapp" / "static" / "js" / "common" / "manual-viewer.js"
 FONT = "맑은 고딕"
 
 

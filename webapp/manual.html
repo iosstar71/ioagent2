@@ -511,6 +511,21 @@
         </ul>
       </section>
 
+      <!-- v3.6.0 변경 사항 -->
+      <section class="manual-section" id="chU360" data-chapter="chU360">
+        <span class="sec-badge">RELEASE NOTE</span>
+        <h2 class="sec-title">v3.6.0 주요 변경 사항 (산출물 첨부파일 · 폴더 구조 정리)</h2>
+        <ul style="line-height:1.8; font-size:13px;">
+          <li><b>첨부파일</b>: [📑 산출물] 표의 📎 칸을 누르면 그 산출물의 파일을 올리고 · 내려받고 · 지울 수 있습니다. (DB 서버 방식에서 사용)</li>
+          <li><b>크기 · 유형</b>: 파일 1개 최대 20MB. 문서(pdf, hwp, hwpx, doc, docx, xls, xlsx, ppt, pptx, txt, csv, md) · 그림(png, jpg, jpeg, gif, bmp, webp) · 압축(zip, 7z)만 올릴 수 있습니다.</li>
+          <li><b>버전</b>: 같은 이름으로 다시 올리면 새 버전이 됩니다. 최신 버전이 먼저 보이고 [이전 버전 보기]로 지난 버전(최근 10개)도 내려받을 수 있습니다.</li>
+          <li><b>삭제 · 보존</b>: 삭제한 파일은 휴지통에 30일 동안 보관한 뒤 자동으로 완전히 지웁니다. 그 전에는 PM · 시스템관리자가 [🗑 휴지통]에서 되살릴 수 있습니다.</li>
+          <li><b>권한</b>: 올리기 · 삭제는 그 서브시스템 담당자와 PM · 총괄리더, 내려받기는 프로젝트 참여자 누구나 할 수 있습니다.</li>
+          <li><b>백업</b>: 파일은 프로그램 폴더의 <code>upload</code> 폴더에 저장됩니다. 백업할 때 <code>data</code> 폴더와 함께 복사하세요.</li>
+          <li><b>폴더 구조</b>: 설정은 <code>conf/app.ini</code>, 서버 프로그램은 <code>server/</code>, 화면 파일은 <code>webapp/</code>로 정리했습니다. 실행 방법(run_server.bat)은 그대로입니다.</li>
+        </ul>
+      </section>
+
       <!-- v3.5.0 변경 사항 -->
       <section class="manual-section" id="chU350" data-chapter="chU350">
         <span class="sec-badge">RELEASE NOTE</span>

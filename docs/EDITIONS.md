@@ -2,7 +2,7 @@
 
 ## v3.0.0 부터: Neo 하나
 - 브랜치: `iostar-pm-unified`
-- app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=3.x`, `[ui] default_theme`
+- conf/app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=3.x`, `[ui] default_theme`
 - 배포 파일: `IOSTAR-PM_v3.x[_win64].zip`
 - Standard(클래식) 화면과 화면 방식 선택(`default_ui`, `allow_ui_switch`, `projectUsers[].uiMode`)은 없어짐.
   `UiMode` 는 호환용으로 남아 있고 항상 `neo` 를 돌려줌 (CSS 의 `body:not(.ui-neo)` 규칙은 쓰이지 않으며 다음 정리 때 지울 수 있음)
@@ -37,11 +37,11 @@
 - 바꾸는 순서 (국내판은 개발 종료 → Standard 가 기준)
   1. Standard 브랜치에서 수정 → `python tools/check_shared_files.py --update` → 커밋
   2. Neo 브랜치에서 `git checkout iostar-pm-standard -- <바꾼 파일들> tools/shared_files.sha256` → 커밋
-- 제품마다 다른 값은 배치 파일이 아니라 `app.ini` 에 둡니다.
+- 제품마다 다른 값은 배치 파일이 아니라 `conf/app.ini` 에 둡니다.
 - Standard v1.0.1 에서 바꾼 공용 파일: `run_server.bat`(창 제목에 판 이름), `run_tests.bat`(안내 문구),
   `tools/app_config.py`(`edition_name`), 배포 도구 설명 문구. 국내판 v1.2.0 은 개발 종료로 반영하지 않습니다.
 
 ## 공통 엔진 수정
-일정 계산(wbs-engine), 저장·권한(data-store, access-control), DB 서버(wbs_db_server.py) 수정은
+일정 계산(wbs-engine), 저장·권한(data-store, access-control), DB 서버(server/) 수정은
 Standard 에서 먼저 하고 Neo 브랜치로 `git cherry-pick` 합니다. Standard 화면 전용 코드는 `js/g-shell.js` 와
-`css/style.css` 끝의 `[G v1.0.0]`·`[Standard v1.0.1]` 영역에 있습니다.
+`webapp/static/css/style.css` 끝의 `[G v1.0.0]`·`[Standard v1.0.1]` 영역에 있습니다.
