@@ -64,7 +64,14 @@ var DataRegistry = {
       case "projectConfig": if (typeof val === "object") projectConfig = Object.assign({}, projectConfig, val); break;
       case "subsystemsMeta": if (Array.isArray(val)) subsystemsMeta = val; break;
       case "standardDeliverablesMeta": if (Array.isArray(val)) standardDeliverablesMeta = val; break;
-      case "projectUsers": if (Array.isArray(val) && val.length > 0) projectUsers = val; break;
+      case "projectUsers":
+        // [v3.0.0] 이 프로젝트의 사용자(시스템관리자 + 참여자)만 화면에 둠 — 전체 목록은 ProjectContext.allUsers
+        if (Array.isArray(val) && val.length > 0) {
+          ProjectContext.ensureLegacyMembership(val);
+          ProjectContext.allUsers = val;
+          projectUsers = ProjectContext.visibleUsers(val, ProjectContext.current);
+        }
+        break;
       case "wbsData": if (Array.isArray(val)) wbsData = val; break;
       case "deliverablesData": if (Array.isArray(val)) deliverablesData = val; break;
       case "reqMasterData": if (Array.isArray(val)) reqMasterData = val; break;
@@ -249,7 +256,8 @@ var Permission = {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 // [v1.0.10] 현재 프로젝트 (여러 프로젝트 관리)
-//  - 사용자 계정(projectUsers)·화면 테마(theme)는 모든 프로젝트 공통, 그 밖의 데이터는 프로젝트별 저장
+//  - 사용자 계정(projectUsers)·화면 테마(theme)는 한 곳에 저장, 그 밖의 데이터는 프로젝트별 저장
+//  - [v3.0.0] 사용자 정보(역할·담당·부서)는 프로젝트별 참여 정보로 관리, 화면에는 그 프로젝트 사용자만
 //  - 기본 프로젝트(DEFAULT)는 v1.0.9 이하 저장 위치를 그대로 사용 (기존 데이터 이관 불필요)
 // -----------------------------------------------------------------------------
 var ProjectContext = {
@@ -287,26 +295,81 @@ var ProjectContext = {
     try { localStorage.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
   },
 
-  // 프로젝트별 역할 (서버 wbs_db_server.py effective_user 와 같은 규칙)
+  // ---- [v3.0.0] 사용자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
+  //  계정(사번·이름·비밀번호)은 하나, 프로젝트마다 참여 정보 projectRoles[프로젝트ID] = { role, subsystem, dept }
+  //  시스템관리자는 모든 프로젝트에 보이고, 그 밖의 사용자는 참여한 프로젝트에만 보임
+  allUsers: [],
+  isAdminUser(u) { return !!u && AuthManager.normalizeRole(u.baseRole || u.role) === "SYS_ADMIN"; },
+  member(u, pid) {
+    const a = u && u.projectRoles && u.projectRoles[pid || this.current];
+    return a && typeof a === "object" ? a : null;
+  },
+  visibleUsers(list, pid) {
+    return (list || []).filter(u => u && (this.isAdminUser(u) || this.member(u, pid)));
+  },
+  findAny(empNo) {
+    const k = String(empNo || "").toLowerCase();
+    return (this.allUsers.length ? this.allUsers : (typeof projectUsers !== "undefined" ? projectUsers : [])).find(u => String(u.empNo || "").toLowerCase() === k) || null;
+  },
+  // 이전 버전(참여 정보 없음) 사용자 행: 기본 프로젝트 참여로 간주 (샘플·백업 복원 데이터)
+  ensureLegacyMembership(list) {
+    (list || []).forEach(u => {
+      if (!u || this.isAdminUser(u) || (u.projectRoles && typeof u.projectRoles === "object")) return;
+      const role = AuthManager.normalizeRole(u.role);
+      u.projectRoles = { [this.DEFAULT]: { role: role === "SYS_ADMIN" ? "PM" : role, subsystem: u.subsystem || "ALL", dept: u.dept || "" } };
+    });
+    return list;
+  },
+  // 로컬 저장소 1회 이관: 지금까지 접근할 수 있던 프로젝트마다 참여 정보를 만들어 둠
+  MIGRATE_KEY: "IOSTAR_MEMBERSHIP_V3",
+  migrateLocalUsers(list) {
+    let done = false;
+    try { done = localStorage.getItem(this.MIGRATE_KEY) === "1"; } catch (e) {}
+    if (done || !Array.isArray(list)) return false;
+    const projects = this.localList();
+    let changed = false;
+    list.forEach(u => {
+      if (!u || this.isAdminUser(u)) return;
+      const pr = Object.assign({}, u.projectRoles || {});
+      const emp = String(u.empNo || "").toLowerCase();
+      projects.forEach(p => {
+        const old = !p.restricted || (p.members || []).some(m => String(m).toLowerCase() === emp);
+        if (old && !pr[p.id]) {
+          const role = AuthManager.normalizeRole(u.role);
+          pr[p.id] = { role: role === "SYS_ADMIN" ? "PM" : role, subsystem: u.subsystem || "ALL", dept: u.dept || "" };
+          changed = true;
+        }
+      });
+      u.projectRoles = pr;
+    });
+    try { localStorage.setItem(this.MIGRATE_KEY, "1"); } catch (e) {}
+    return changed;
+  },
+
   effective(u, pid) {
     const id = pid || this.current;
     const out = Object.assign({}, u);
-    const base = (typeof AuthManager !== "undefined") ? AuthManager.normalizeRole(u.role) : u.role;
+    const base = (typeof AuthManager !== "undefined") ? AuthManager.normalizeRole(u.baseRole || u.role) : u.role;
     out.baseRole = base;
     out.projectId = id;
-    if (base === "SYS_ADMIN" || id === this.DEFAULT) return out;
-    const a = u.projectRoles && u.projectRoles[id];
-    if (a && typeof a === "object") {
+    if (base === "SYS_ADMIN") return out;
+    const a = this.member(u, id);
+    if (a) {
       const r = AuthManager.normalizeRole(a.role);
       out.role = r === "SYS_ADMIN" ? "PM" : r;
-      out.subsystem = a.subsystem || u.subsystem || "ALL";
+      out.subsystem = a.subsystem || "ALL";
+      if (a.dept) out.dept = a.dept;
+    } else {
+      out.role = "MEMBER";
+      out.subsystem = "";
     }
     return out;
   },
   canAccess(u, project) {
     if (!project) return false;
-    if (AuthManager.normalizeRole(u.baseRole || u.role) === "SYS_ADMIN" || !project.restricted) return true;
-    return (project.members || []).some(m => String(m).toLowerCase() === String(u.empNo || "").toLowerCase());
+    if (this.isAdminUser(u)) return true;
+    const row = this.findAny(u.empNo) || u;
+    return !!this.member(row, project.id);
   }
 };
 
@@ -339,6 +402,15 @@ var LocalBackend = {
     const data = {};
     const revs = {};
     const cache = {};
+    // [v3.0.0] 로컬 저장소 사용자 1회 이관 (프로젝트별 참여 정보)
+    try {
+      const st = this._read(ProjectContext.DEFAULT);
+      if (st && Array.isArray(st.projectUsers)) {
+        if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
+      } else {
+        localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
+      }
+    } catch (e) {}
     (keys || DataRegistry.KEYS).forEach(k => {
       const pid = this._pidFor(k);
       if (!cache[pid]) cache[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid) };
@@ -401,6 +473,8 @@ var LocalBackend = {
   // 전체 덮어쓰기 (초기화/샘플 복원/백업 복원 전용) — 공통 데이터는 기본 프로젝트 위치에 저장
   replaceAll(data) {
     const now = new Date().toLocaleString();
+    // [v3.0.0] 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 사용자 규칙을 따름 (1회 이관 불필요)
+    try { localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); } catch (e) {}
     const groups = {};
     DataRegistry.KEYS.forEach(k => {
       const pid = this._pidFor(k);

@@ -330,6 +330,9 @@ var AuthManager = {
     this._setText("btnLockSubmit", "🔓 로그인");
     const langSel = document.getElementById("inputLoginLang");
     if (langSel) langSel.value = (typeof I18N !== "undefined" ? I18N.lang : "ko");
+    const projRow = document.getElementById("loginProjectRow");
+    if (projRow) projRow.style.display = "";
+    this.fillLoginProjects();
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp && !emp.value) emp.value = (this._readSession() || {}).empNo || "";
     this._err("lockErrorMessage", "");
@@ -362,6 +365,8 @@ var AuthManager = {
       `<span style="font-size:11px; color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) info.style.display = "none";
+    const projRow = document.getElementById("loginProjectRow");
+    if (projRow) projRow.style.display = "none";
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = hasPerm ? this.getCurrentUser().empNo : meta.defaultEmpNo;
     const cancel = document.getElementById("btnLockCancel");
@@ -406,8 +411,31 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // 로그인 처리
   // ---------------------------------------------------------------------------
+  // [v3.0.0] 로그인 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 로그인한 프로젝트를 미리 선택
+  LOGIN_PROJECT_KEY: "IOSTAR_LOGIN_PROJECT",
+  async fillLoginProjects() {
+    const sel = document.getElementById("inputLoginProject");
+    if (!sel) return;
+    let list = [];
+    if (SyncManager.isLocal()) {
+      list = ProjectContext.localList().filter(p => p.status !== "ARCHIVED").map(p => ({ id: p.id, name: p.id === ProjectContext.DEFAULT && ProjectContext.isDefault() ? (projectConfig.projectName || p.name) : p.name }));
+    } else {
+      const res = await ServerBackend.request("/api/projects/public", {});
+      if (res.ok && Array.isArray(res.projects)) list = res.projects;
+    }
+    let last = "";
+    try { last = localStorage.getItem(this.LOGIN_PROJECT_KEY) || ""; } catch (e) {}
+    const pick = list.some(p => p.id === last) ? last : (list.some(p => p.id === ProjectContext.current) ? ProjectContext.current : "");
+    sel.innerHTML = `<option value="">— 프로젝트 선택 —</option>` + list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === pick ? "selected" : ""}>${escapeHtml(p.name || p.id)}</option>`).join("");
+    if (typeof I18N !== "undefined") I18N.translateTree(sel.parentNode);
+  },
+  loginProject() {
+    const sel = document.getElementById("inputLoginProject");
+    return sel ? String(sel.value || "") : "";
+  },
+
   async _verifyLocal(empNo, pwd) {
-    const u = this.findUser(empNo);
+    const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
     if (!u) return { ok: false, message: `등록되지 않은 사번(${empNo})입니다. 신규 사용자 등록을 이용하세요.` };
     const inputHash = await this.hashPassword(pwd);
     let target = u.pwdHash;
@@ -434,22 +462,31 @@ var AuthManager = {
       return;
     }
 
+    // [v3.0.0] 로그인할 프로젝트: 시스템관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
+    const project = this.lockMode === "CONFIG" ? ProjectContext.current : this.loginProject();
     let result;
     if (SyncManager.isLocal()) {
       result = await this._verifyLocal(empNo, pwd);
+      if (result.ok && !ProjectContext.isAdminUser(result.user)) {
+        if (!project) result = { ok: false, message: "로그인할 프로젝트를 선택하세요.", noCount: true };
+        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 사용자가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
+      }
       if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
     } else {
-      const res = await ServerBackend.request("/api/auth/login", { empNo, pwdHash: await this.hashPassword(pwd), lang });
+      const res = await ServerBackend.request("/api/auth/login", { empNo, pwdHash: await this.hashPassword(pwd), lang, loginProject: project });
       if (res.ok) {
         ServerBackend.setToken(res.token);
         if (Array.isArray(res.projects)) ProjectContext.projects = res.projects;
-        if (res.user && res.user.projectId && res.user.projectId !== ProjectContext.current) ProjectContext.set(res.user.projectId);
         result = { ok: true, user: res.user, mustChange: !!(res.user && res.user.mustChangePassword) };
       } else {
         result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "로그인 실패") };
       }
     }
 
+    if (!result.ok && result.noCount) {
+      this._err("lockErrorMessage", `⚠️ ${result.message}`);
+      return;
+    }
     if (!result.ok) {
       this.failedAttempts++;
       if (this.failedAttempts >= 5) {
@@ -473,18 +510,34 @@ var AuthManager = {
     this.failedAttempts = 0;
     pwdEl.value = "";
     const landing = this.lockMode === "CONFIG" ? this.pendingTabId : null;
+    if (project) { try { localStorage.setItem(this.LOGIN_PROJECT_KEY, project); } catch (e) {} }
     if (result.mustChange) {
-      this._forced = { user: result.user, lang, landing, oldPwd: pwd };
+      this._forced = { user: result.user, lang, landing, oldPwd: pwd, project };
       this.showPwdChange(true, true);
       return;
     }
-    await this._completeLogin(result.user, { lang, landing });
+    await this._completeLogin(result.user, { lang, landing, project });
   },
 
   async _completeLogin(user, opts = {}) {
     const prev = this.currentUser ? this.currentUser.empNo : null;
     const next = this._buildSessionUser(user);
     if (opts.lang) next.lang = opts.lang;
+
+    // [v3.0.0] 고른 프로젝트가 지금 화면의 프로젝트와 다르면: 그 프로젝트로 바꿔 다시 불러옴
+    if (opts.project && opts.project !== ProjectContext.current) {
+      const ok = prev ? await this._flushBeforeSwitch() : true;
+      if (!ok) return;
+      if (typeof ProjectManager !== "undefined") ProjectManager._switching = true;
+      this.currentUser = next;
+      this.sessionAuthenticated = true;
+      this._saveSession();
+      ProjectContext.set(opts.project);
+      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
+      showToast("🗂️ 선택한 프로젝트로 들어갑니다...");
+      setTimeout(() => window.location.reload(), 200);
+      return;
+    }
 
     // 이미 다른 계정으로 작업 중이었다면: 미저장 변경 처리 후 화면을 다시 불러옴 (권한 재적용)
     if (prev && prev.toLowerCase() !== String(next.empNo).toLowerCase()) {
@@ -613,7 +666,7 @@ var AuthManager = {
       delete row.pwdReset;
       const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password(${row.empNo})`);
       if (!res.ok) return this._err("pcErrorMessage", res.error || "변경 실패");
-      projectUsers = res.data.projectUsers;
+      DataRegistry.set("projectUsers", res.data.projectUsers);
       SyncManager.setBaseline(["projectUsers"], res.revs);
       if (String(row.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(this.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
     } else {
@@ -625,7 +678,7 @@ var AuthManager = {
     if (forced && String(forced.user.empNo).toLowerCase() === empNo.toLowerCase()) {
       showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다.`);
       const user = SyncManager.isLocal() ? (this.findUser(empNo) || forced.user) : Object.assign({}, forced.user, { mustChangePassword: false });
-      await this._completeLogin(user, { lang: forced.lang, landing: forced.landing });
+      await this._completeLogin(user, { lang: forced.lang, landing: forced.landing, project: forced.project });
       return;
     }
     showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.`);
@@ -640,11 +693,20 @@ var AuthManager = {
     this._setText("lockModalTitle", "👤 신규 사용자 등록");
     this._setText("lockModalDesc", "등록 후 바로 로그인할 수 있습니다. (기본 권한: 일반 사용자)");
     this._err("regErrorMessage", "");
+    // [v3.0.0] 로그인 화면에서 고른 프로젝트의 사용자로 등록
+    const pid = this.loginProject();
+    const psel = document.getElementById("inputLoginProject");
+    const pname = psel && psel.selectedIndex > 0 ? psel.options[psel.selectedIndex].textContent : "";
+    this._setText("regProjectInfo", pid ? `가입 프로젝트: ${escapeHtml(pname || pid)}` : "⚠️ 로그인 화면에서 가입할 프로젝트를 먼저 선택하세요.", true);
     const sel = document.getElementById("regSubsystem");
     if (sel) {
       let subs = (subsystemsMeta || []).map(s => s.name);
+      if (SyncManager.isLocal() && pid && pid !== ProjectContext.current) {
+        const st = LocalBackend._read(pid) || {};
+        subs = (st.subsystemsMeta || []).map(s => s.name);
+      }
       if (!SyncManager.isLocal()) {
-        const info = await ServerBackend.request("/api/auth/bootstrap", {}, "POST");
+        const info = await ServerBackend.request("/api/auth/bootstrap", { projectId: pid }, "POST");
         if (info.ok && Array.isArray(info.subsystems)) subs = info.subsystems;
       }
       sel.innerHTML = subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
@@ -669,22 +731,25 @@ var AuthManager = {
     const rule = this.validateNewPassword(p1);
     if (rule) return this._err("regErrorMessage", rule);
     if (p1 !== p2) return this._err("regErrorMessage", "비밀번호 확인이 일치하지 않습니다.");
+    const pid = this.loginProject();
+    if (!pid) return this._err("regErrorMessage", "로그인 화면에서 가입할 프로젝트를 먼저 선택하세요.");
 
     const newUser = {
       empNo, name, role: "MEMBER", subsystem, dept: dept || "",
       pwdHash: await this.hashPassword(p1), lang,
+      projectRoles: { [pid]: { role: "MEMBER", subsystem, dept: dept || "" } },
       registeredAt: new Date().toISOString().slice(0, 19).replace("T", " ")
     };
 
     if (SyncManager.isLocal()) {
-      await LocalBackend.load(["projectUsers"]).then(r => { if (r.data.projectUsers) projectUsers = r.data.projectUsers; });
-      if (this.findUser(empNo)) return this._err("regErrorMessage", `이미 등록된 사번(${empNo})입니다.`);
+      await LocalBackend.load(["projectUsers"]).then(r => { if (r.data.projectUsers) DataRegistry.set("projectUsers", r.data.projectUsers); });
+      if (ProjectContext.findAny(empNo)) return this._err("regErrorMessage", `이미 등록된 사번(${empNo})입니다.`);
       const res = await LocalBackend.save({ projectUsers: { parts: { [empNo]: newUser }, base: { [empNo]: 0 } } }, false, "self-register");
       if (!res.ok) return this._err("regErrorMessage", res.error || "등록 실패 (이미 등록된 사번일 수 있습니다)");
-      projectUsers = res.data.projectUsers;
+      DataRegistry.set("projectUsers", res.data.projectUsers);
       SyncManager.setBaseline(["projectUsers"], res.revs);
     } else {
-      const res = await ServerBackend.request("/api/auth/register", { user: newUser });
+      const res = await ServerBackend.request("/api/auth/register", { user: newUser, projectId: pid });
       if (!res.ok) return this._err("regErrorMessage", res.message || "등록 실패");
     }
     showToast(`✅ [${name}(${empNo})] 사용자 등록 완료 — 일반 사용자 권한(${subsystem})으로 로그인하세요.`);

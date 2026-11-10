@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM Standard v1.0.1] 브라우저 E2E 자동 테스트 (Playwright)
+// [IOSTAR-PM v3.0.0] 브라우저 E2E 자동 테스트 (Playwright)
 // -----------------------------------------------------------------------------
 //  준비: Node.js 18+ 와 Playwright(Chromium) 설치
 //        npm install playwright      (폐쇄망은 사전 반입한 node_modules / 브라우저 사용)
@@ -82,7 +82,13 @@ async function waitApp(page, extra) {
 // 시나리오별 현재 비밀번호 (초기 1234 → 첫 로그인 때 변경 필수)
 const LOCAL_PWD = {};
 const SERVER_PWD = {};
-async function login(page, emp, store = LOCAL_PWD) {
+// [v3.0.0] 로그인 화면에서 프로젝트 선택 — 시스템관리자는 선택하지 않아도 됨(null), 그 외 사용자는 기본값 DEFAULT
+async function login(page, emp, store = LOCAL_PWD, project) {
+  if (project === undefined) project = emp === "admin" ? null : "DEFAULT";
+  if (project !== null) {
+    await page.waitForFunction(p => !!document.querySelector(`#inputLoginProject option[value="${p}"]`) || p === "", project, { timeout: 8000 }).catch(() => {});
+    await page.selectOption("#inputLoginProject", project).catch(() => {});
+  }
   await page.fill("#inputSecurityEmpNo", emp);
   await page.fill("#inputSecurityPassword", store[emp] || "1234");
   await page.click("#btnLockSubmit");
@@ -179,6 +185,21 @@ async function localMain() {
   });
   check("Delayed status saved / leaf delayed task filter", delayed.stored === "지연" && delayed.rows === delayed.leaf && delayed.rows > 0, JSON.stringify(delayed));
 
+  // [v3.0.0] 계획·실적 진척률: 마이너스·100 초과 입력 불가
+  await page.evaluate(() => { activateTab("tab-wbs"); renderWbsTable(); }); await page.waitForTimeout(300);
+  const pin = page.locator(`#wbsTableBody input:not([readonly])[data-change="UiH.set"][data-change-args*='"aProg"']`).first();
+  const pinArgs = await pin.getAttribute("data-change-args");
+  const pIdx = JSON.parse(pinArgs)[1];
+  const pBefore = await page.evaluate(i => wbsData[i].aProg, pIdx);
+  const pRes = [];
+  for (const v of ["-5", "150"]) {
+    await pin.fill(v); await pin.press("Tab"); await page.waitForTimeout(300);
+    pRes.push(await page.evaluate(i => wbsData[i].aProg, pIdx));
+  }
+  const pToast = await page.evaluate(() => Array.prototype.some.call(document.querySelectorAll("#toastContainer *"), e => /0 ~ 100/.test(e.textContent)));
+  const pOk = await page.evaluate(() => UiH.set("wbsData", wbsData.findIndex(t => t.isLeaf), "pProg", -1) === false && UiH.set("wbsData", wbsData.findIndex(t => t.isLeaf), "pProg", 101) === false && UiH.validPct(0) && UiH.validPct(100));
+  check("v3: progress below 0 or above 100 is rejected (value kept, warning shown)", pRes.every(v => Number(v) === Number(pBefore)) && pToast && pOk, JSON.stringify({ pBefore, pRes, pToast, pOk }));
+
   // 5) 간트 목록·차트 스크롤 정렬
   await page.evaluate(() => activateTab("tab-gantt")); await page.waitForTimeout(400);
   const g = await page.evaluate(() => {
@@ -267,11 +288,22 @@ async function localMain() {
   await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(800); await waitApp(page, "P001");
   const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo}));
   check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify({ pcount, np }));
+  // [v3.0.0] 새 프로젝트: 사용자는 시스템관리자만, 소통 채널은 이 프로젝트의 서브시스템으로
+  const fresh = await page.evaluate(() => ({ users: projectUsers.map(u => u.empNo), ch: (projectConfig.channels || []).join(","), subs: ["전체"].concat(subsystemsMeta.map(m => m.code || m.name)).join(",") }));
+  check("v3: new project starts with admin only; communication channels are per project (its subsystems)", fresh.users.join(",") === "admin" && fresh.ch === fresh.subs, JSON.stringify(fresh));
+  // 다른 프로젝트에서 사용자 복사 (기준정보 > 사용자 > [📥 다른 프로젝트에서 복사])
+  await page.evaluate(() => { GShell.go("tab-master"); SubTabs.show("master", "users"); }); await page.waitForTimeout(400);
+  await page.click("#btnCopyUsers"); await page.waitForTimeout(700);
+  const ucList = await page.$$eval("#ucBody .uc-pick", c => c.map(x => x.value));
+  await page.evaluate(() => document.querySelectorAll("#ucBody .uc-pick").forEach(c => { c.checked = c.value === "lead_lee" || c.value === "pmo_kim"; }));
+  await page.click('[data-click="UserCopy.copy"]'); await page.waitForTimeout(800);
+  const copied = await page.evaluate(() => ({ list: projectUsers.filter(u => ProjectContext.member(u)).map(u => u.empNo + ":" + ProjectContext.member(u).role).sort(), rows: document.querySelectorAll("#projectUsersTableBody tr").length }));
+  check("v3: copy users from another project (role/subsystem kept, only chosen users)", ucList.length >= 4 && copied.list.join(",") === "lead_lee:MEMBER,pmo_kim:PM", JSON.stringify({ ucList, copied }));
   await page.evaluate(() => { const i = projectUsers.findIndex(u => u.empNo === "lead_lee"); ProjectManager.setUserAssignment(i, "role", "PM"); });
   await page.waitForTimeout(800);
   await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(800); await waitApp(page, "DEFAULT");
-  const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: AuthManager.normalizeRole(AuthManager.findUser("lead_lee").role) }));
-  check("Local: back to default project keeps data; per-project role (P001=PM, base=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
+  const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: ProjectContext.effective(AuthManager.findUser("lead_lee"), "DEFAULT").role, ch: (projectConfig.channels || []).length }));
+  check("Local: back to default project keeps data; per-project role (P001=PM, DEFAULT=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
 
   // 7-3) G 화면 틀 (B2)
   const gfit = [];
@@ -313,29 +345,12 @@ async function localMain() {
   check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
-  // [v2.4.0] 화면 방식: 기본은 Neo — Standard(클래식, v2.4 까지)로 바꾸면 Neo 요소가 숨고, 다시 Neo 로 바꿀 수 있음
-  const defMode = await page.evaluate(() => ({ def: APP_CONFIG.defaultUi, mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), ph: document.querySelectorAll(".neo-ph").length }));
+  // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
-  check("Unified: default UI mode is Neo (app.ini default_ui=neo), Pretendard font loaded", defMode.def === "neo" && defMode.mode === "neo" && defMode.cls && defMode.ph >= 10 && fontOk, JSON.stringify({ defMode, fontOk }));
-  await page.selectOption("#gUiModeSelect", "standard").catch(async () => { await page.evaluate(() => UiMode.set("standard")); });
-  await page.waitForTimeout(1500); await waitApp(page);
-  const stdMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), todo: getComputedStyle(document.getElementById("neoTodoCard")).display, ph: !!document.querySelector(".neo-ph"),
-    sel: getComputedStyle(document.getElementById("wbsStatusFilter")).display, saved: AuthManager.findUser("admin").uiMode }));
-  check("Unified: Standard (classic) mode hides Neo parts and is saved on the user", stdMode.mode === "standard" && !stdMode.cls && stdMode.todo === "none" && !stdMode.ph && stdMode.sel !== "none" && stdMode.saved === "standard", JSON.stringify(stdMode));
-  // Standard 방식에서도 WBS 템플릿: 등록된 서브시스템만 · 기존 WBS 가 있으면 추가/교체 선택
-  await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(300);
-  await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
-  await page.selectOption("#tplSystemSelect", "W2"); await page.waitForTimeout(200);
-  const stdTpl = await page.evaluate(() => ({ same: JSON.stringify([...document.querySelectorAll("#tplSystemSelect option")].map(o => o.value)) === JSON.stringify(subsystemsMeta.map(m => m.name || m.code)),
-    free: !!document.getElementById("newSubSystemName"), modes: [...document.querySelectorAll('#tplExisting input[name="tplMode"]')].map(r => r.value).join(","), shown: !document.getElementById("tplExisting").hidden }));
-  await page.evaluate(() => WbsTemplate.close());
-  check("Standard mode: WBS template offers registered subsystems only and append/replace when WBS exists", stdTpl.same && !stdTpl.free && stdTpl.shown && stdTpl.modes === "append,replace", JSON.stringify(stdTpl));
-  await page.selectOption("#gUiModeSelect", "neo").catch(async () => { await page.evaluate(() => UiMode.set("neo")); });
-  await page.waitForTimeout(1500); await waitApp(page);
-  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), saved: AuthManager.findUser("admin").uiMode, ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
-  check("Unified: switching back to Neo reloads with Neo screens (dashboard to-do summary line) and saves the choice", neoMode.mode === "neo" && neoMode.cls && neoMode.saved === "neo" && neoMode.ph >= 10 && neoMode.todo === 6, JSON.stringify(neoMode));
-  if (await page.evaluate(() => typeof NeoTodo !== "undefined" && UiMode.isNeo())) {
+  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, sw: UiMode.canSwitch(), cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
+  check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 6 && fontOk, JSON.stringify({ neoMode, fontOk }));
+  if (await page.evaluate(() => typeof NeoTodo !== "undefined")) {
     await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
     const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: NeoTodo.collect(null).delayed.length }));
     // 진행 중 최하위 과업 하나를 지연으로 만들기 (실적 = 계획 - 20)
@@ -477,6 +492,23 @@ async function localMain() {
     return JSON.stringify({ user: u.empNo, role: u.role, sub: u.subsystem, pid: ProjectContext.current, busy: SyncManager._busy, susp: SyncManager._suspendAuto, timer: !!SyncManager._autoTimer, sw: ProjectManager._switching, auto: SyncManager.isAutoSave(), name: wbsData.find(t => t.id === w2.id).name });
   });
   check("Member: other subsystem changes reverted", perm === true, String(perm));
+  // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만
+  await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
+  const loginOpts = await page.$$eval("#inputLoginProject option", o => o.map(x => x.value));
+  await page.selectOption("#inputLoginProject", "");
+  await page.fill("#inputSecurityEmpNo", "lead_lee"); await page.fill("#inputSecurityPassword", LOCAL_PWD["lead_lee"] || "1234");
+  await page.click("#btnLockSubmit"); await page.waitForTimeout(700);
+  const needProj = await page.evaluate(() => ({ msg: document.getElementById("lockErrorMessage").textContent, locked: document.getElementById("securityLockOverlay").style.display === "flex" }));
+  check("v3: login screen lists projects; non-admin must choose a project", loginOpts.join(",") === ",DEFAULT,P001" && needProj.locked && /프로젝트/.test(needProj.msg), JSON.stringify({ loginOpts, needProj }));
+  await login(page, "lead_lee", LOCAL_PWD, "P001"); await waitApp(page, "P001");
+  const locked = await page.evaluate(() => ({ pid: ProjectContext.current, role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display, badge: document.getElementById("headerProjectNameBadge").textContent, users: projectUsers.map(u => u.empNo).sort().join(",") }));
+  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200);
+  const stay = await page.evaluate(() => ProjectContext.current);
+  check("v3: PM logs into the chosen project only (role from that project, no project switch, users of that project only)", locked.pid === "P001" && locked.role === "PM" && locked.sel === "none" && locked.badge === "E2E 신규 프로젝트" && stay === "P001" && locked.users === "admin,lead_lee,pmo_kim", JSON.stringify({ locked, stay }));
+  await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
+  await login(page, "admin", LOCAL_PWD, ""); await waitApp(page);
+  const adm = await page.evaluate(() => ({ role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }));
+  check("v3: admin can log in without choosing a project and can switch projects", adm.role === "SYS_ADMIN" && adm.sel !== "none", JSON.stringify(adm));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
@@ -560,6 +592,8 @@ async function serverScenarios() {
     await a.waitForTimeout(800);
     await a.evaluate(() => ProjectManager.switchTo("DEFAULT")); await a.waitForTimeout(800); await waitApp(a, "DEFAULT");
     const sb = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, leak: wbsData.some(t => t.name === "SERVER-P001-TASK") }));
+    const bView = await b.evaluate(async () => { await ProjectManager.refreshList(); const r = await ServerBackend.request("/api/projects/list", {}); return { list: (ProjectContext.projects || []).map(p => p.id).join(","), api: (r.projects || []).map(p => p.id).join(","), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }; });
+    check("Server v3: PM sees only the project they logged into (new project hidden, no project switch)", bView.list === "DEFAULT" && bView.sel === "none", JSON.stringify(bView));
     check("Server: create project + switch + save stays in that project", sp.pid === "P001" && sp.wbs === 0 && sp.name === "서버 신규 프로젝트" && sp.opts === 2 && sb.pid === "DEFAULT" && sb.wbs === defW && !sb.leak, JSON.stringify([sp, sb]));
 
     // 서버 중지 → 연결 끊김 표시

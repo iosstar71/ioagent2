@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM v2.4.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
+ * IOSTAR-PM v3.0.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -2722,3 +2722,6 @@ body:not(.ui-neo) .neo-ph-desc { font-size: 11px; }
 [data-theme="dark"] .todo-due.late, [data-theme="dark"] .neo-due.late { background: rgba(239,68,68,0.18); color: #fca5a5; }
 [data-theme="dark"] .todo-tile.today b { color: #fcd34d; } [data-theme="dark"] .todo-tile.late b, [data-theme="dark"] .todo-gap { color: #fca5a5; }
 [data-theme="dark"] .btn[data-btn="add"] { color: #ffffff !important; }
+.login-hint { font-size: 11px; color: var(--text-muted); margin: -2px 0 8px; }
+#regProjectInfo { font-size: 12px; font-weight: 700; color: var(--text-main); margin: 0 0 8px; }
+.channel-scope-note { margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-main); font-size: 12px; color: var(--text-sub); }

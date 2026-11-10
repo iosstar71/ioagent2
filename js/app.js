@@ -550,7 +550,7 @@ let projectConfig = {
   systemTitle: APP_VERSION.title,
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
-  channels: ["전체", "PMO", "W1", "W2", "P1", "A1", "A2", "S1"],
+  channels: [], // [v3.0.0] 소통 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
   customSdlcTypes: [ // SDLC 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
     {
       code: "SDLC_PMO",
@@ -925,37 +925,44 @@ function buildNextEntityId(entityType, sysName) {
 // =============================================================================
 // [기준정보 > 사용자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
 // =============================================================================
+// [v3.0.0] 사용자 정보는 프로젝트별 — 이 프로젝트의 사용자(시스템관리자 + 참여자)만 표시
+//  역할·담당 서브시스템·부서는 이 프로젝트에만 적용, 사번·이름·비밀번호는 계정 공통
 function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
+  const pid = ProjectContext.current;
+  const rows = projectUsers.map((u, idx) => ({ u, idx })).filter(x => ProjectContext.isAdminUser(x.u) || ProjectContext.member(x.u, pid));
+  const amAdmin = ProjectManager.isAdmin();
   if (tbody) {
     tbody.innerHTML = "";
-    const notDefault = !ProjectContext.isDefault();
     const info = document.getElementById("projectUsersScopeInfo");
     if (info) {
       const p = ProjectContext.info();
-      info.style.display = notDefault ? "block" : "none";
-      info.innerHTML = notDefault ? `🗂️ 현재 프로젝트 <b>${escapeHtml(p ? p.name : ProjectContext.current)}</b>: 권한·담당 서브시스템을 바꾸면 이 프로젝트에만 적용됩니다. 지정하지 않은 사용자는 기본 역할을 따릅니다. 사번·계정 추가/삭제는 기본 프로젝트에서 관리합니다.` : "";
+      info.style.display = "block";
+      info.innerHTML = `🗂️ <b>${escapeHtml(p ? p.name : (projectConfig.projectName || pid))}</b> 프로젝트의 사용자입니다. 역할·담당 서브시스템·부서는 이 프로젝트에만 적용되고, 사번·이름·비밀번호는 계정 공통입니다. 다른 프로젝트의 사용자는 ${amAdmin ? "[📥 다른 프로젝트에서 복사]로" : "시스템관리자에게 요청하여"} 가져옵니다.`;
     }
-    projectUsers.forEach((u, idx) => {
+    const copyBtn = document.getElementById("btnCopyUsers");
+    if (copyBtn) copyBtn.style.display = amAdmin ? "" : "none";
+    rows.forEach(({ u, idx }) => {
       const isAdminAccount = (u.empNo || "").toLowerCase() === "admin";
       const asg = ProjectManager.userAssignment(u);
       const role = asg.role;
-      const roleOpts = AuthManager.ROLES.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
+      const roles = AuthManager.ROLES.filter(r => r !== "SYS_ADMIN" || amAdmin || asg.admin);
+      const roleOpts = roles.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${isAdminAccount || notDefault ? "readonly title='기본 관리자 사번(admin) 또는 기본 프로젝트가 아닌 곳에서는 사번을 바꿀 수 없습니다.'" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "empNo", "$trim", "persistChanges")}"></td>
+        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${u._new ? "" : "readonly title='저장된 사번은 바꿀 수 없습니다.'"} data-change="setProjectUserEmpNo" data-change-args="${UiEvents.args(idx, "$trim")}"></td>
         <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "name", "$trim", "persistChanges")}"></td>
         <td>
-          <select style="width:250px; font-weight:bold;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || asg.admin ? "disabled title='시스템 관리자 계정은 모든 프로젝트에서 시스템 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
-          ${notDefault && !asg.admin ? (asg.own ? `<div class="pm-role-tag own">이 프로젝트 지정 <a href="#" data-click="ProjectManager.clearUserAssignment" data-click-args="${UiEvents.args(idx)}">기본값으로</a></div>` : `<div class="pm-role-tag">기본 역할 적용 중</div>`) : ""}
+          <select style="width:250px; font-weight:bold;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='시스템 관리자 계정은 모든 프로젝트에서 시스템 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
+          ${asg.admin ? `<div class="pm-role-tag own">모든 프로젝트 공통</div>` : ""}
         </td>
         <td>
-          <select style="width:125px;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "subsystem", "$value")}">
+          <select style="width:125px;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "subsystem", "$value")}" ${asg.admin ? "disabled" : ""}>
             <option value="ALL" ${asg.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
             ${getSubsystemOptionsHtml(asg.subsystem)}
           </select>
         </td>
-        <td><input type="text" value="${escapeHtml(u.dept || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "dept", "$value", "persistChanges")}"></td>
+        <td><input type="text" value="${escapeHtml(asg.dept || "")}" style="width:100%;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "dept", "$value")}"></td>
         <td>
           <select style="width:90px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "lang", "$value", "persistChanges")}">
             <option value="ko" ${(u.lang || "ko") === "ko" ? "selected" : ""}>한국어</option>
@@ -969,19 +976,36 @@ function renderProjectUsersTable() {
             <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="비밀번호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
-        <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (notDefault && !ProjectManager.isAdmin()) ? "disabled title='기본 관리자(admin)는 삭제할 수 없습니다. 기본 프로젝트가 아닌 곳에서는 시스템관리자만 계정을 삭제할 수 있습니다.'" : ""}>×</button></td>
+        <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='기본 관리자(admin)와 시스템관리자 계정은 시스템관리자만 삭제할 수 있습니다.'" : "title='이 프로젝트에서 빼기 (다른 프로젝트 참여는 유지)'"}>×</button></td>
       `;
       tbody.appendChild(tr);
     });
   }
-  // 권한 등급별 인원 통계
-  const count = r => projectUsers.filter(u => ProjectManager.userAssignment(u).role === r).length;
+  // 권한 등급별 인원 통계 (이 프로젝트 기준)
+  const list = rows.map(x => x.u);
+  const count = r => list.filter(u => ProjectManager.userAssignment(u).role === r).length;
   const setText = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = `${n} 명`; };
-  setText("userStatTotal", projectUsers.length);
+  setText("userStatTotal", list.length);
   setText("userStatAdmin", count("SYS_ADMIN"));
   setText("userStatPm", count("PM"));
   setText("userStatLead", count("LEAD"));
   setText("userStatMember", count("MEMBER"));
+}
+
+// 새로 추가한 행의 사번 변경 (다른 프로젝트·이 프로젝트에 이미 있는 사번은 불가)
+function setProjectUserEmpNo(idx, value) {
+  const u = projectUsers[idx];
+  if (!u || !u._new) return;
+  const v = String(value || "").trim();
+  if (!/^[A-Za-z0-9_.-]{2,30}$/.test(v)) { showToast("⚠️ 사번은 영문/숫자/_.- 2~30자로 입력하세요."); return renderProjectUsersTable(); }
+  const other = ProjectContext.findAny(v) || projectUsers.find((x, i) => i !== idx && String(x.empNo || "").toLowerCase() === v.toLowerCase());
+  if (other && other !== u) {
+    showToast(ProjectManager.isAdmin() ? `⚠️ 이미 있는 사번(${v})입니다. 다른 프로젝트 사용자라면 [📥 다른 프로젝트에서 복사]를 쓰세요.` : `⚠️ 이미 있는 사번(${v})입니다. 다른 프로젝트 사용자는 시스템관리자에게 복사를 요청하세요.`);
+    return renderProjectUsersTable();
+  }
+  u.empNo = v;
+  renderProjectUsersTable();
+  persistChanges();
 }
 
 // 언어 일괄 설정 (전체 사용자)
@@ -1114,20 +1138,21 @@ var ProgressBasisManager = {
 };
 
 function addNewProjectUser() {
-  const nextSeq = projectUsers.length;
-  const newEmpNo = `emp0${nextSeq}`;
+  const pid = ProjectContext.current;
+  let seq = projectUsers.length;
+  const taken = e => !!(ProjectContext.findAny(e) || projectUsers.some(u => String(u.empNo || "").toLowerCase() === e.toLowerCase()));
+  while (taken(`emp0${seq}`)) seq++;
+  const newEmpNo = `emp0${seq}`;
+  const sub = subsystemsMeta[0] ? subsystemsMeta[0].name : "ALL";
   projectUsers.push({
-    empNo: newEmpNo,
-    name: `신규담당자${nextSeq}`,
-    role: "MEMBER",
-    subsystem: subsystemsMeta[0] ? subsystemsMeta[0].name : "ALL",
-    dept: "프로젝트 수행팀",
-    lang: "ko",
-    pwdHash: "" // 초기 기본 비밀번호 '1234' 적용
+    empNo: newEmpNo, name: `신규담당자${seq}`, role: "MEMBER", subsystem: sub, dept: "", lang: "ko",
+    pwdHash: "", // 초기 기본 비밀번호 '1234' 적용
+    projectRoles: { [pid]: { role: "MEMBER", subsystem: sub, dept: "프로젝트 수행팀" } },
+    _new: true
   });
   renderProjectUsersTable();
   persistChanges();
-  showToast(`신규 인력 사번 [${newEmpNo}] 이 추가되었습니다. (초기 비밀번호: 1234)`);
+  showToast(`신규 사용자 [${newEmpNo}] 을(를) 이 프로젝트에 추가했습니다. 사번을 바꿀 수 있습니다. (초기 비밀번호: 1234)`);
 }
 
 async function updateProjectUserPassword(idx) {
@@ -1164,14 +1189,29 @@ function resetProjectUserPassword(idx) {
   });
 }
 
+// [v3.0.0] 사용자 삭제 = 이 프로젝트에서 빼기 (다른 프로젝트 참여가 없으면 계정도 삭제)
 function deleteProjectUser(idx) {
   const u = projectUsers[idx];
   if (!u || (u.empNo || "").toLowerCase() === "admin") {
     showToast("기본 관리자(admin) 계정은 삭제할 수 없습니다.");
     return;
   }
-  openConfirmDialog(`[${u.name}(${u.empNo})] 인력 정보를 삭제하시겠습니까?`, () => {
-    projectUsers.splice(idx, 1);
+  const pid = ProjectContext.current;
+  const adminRow = ProjectContext.isAdminUser(u);
+  if (adminRow && !ProjectManager.isAdmin()) return showToast("시스템관리자 계정은 시스템관리자만 삭제할 수 있습니다.");
+  const full = ProjectContext.findAny(u.empNo) || u;
+  const others = Object.keys(full.projectRoles || {}).filter(k => k !== pid);
+  const msg = adminRow ? `[${u.name}(${u.empNo})] 시스템관리자 계정을 삭제하시겠습니까?`
+    : others.length ? `[${u.name}(${u.empNo})] 사용자를 이 프로젝트에서 뺄까요? (다른 프로젝트 ${others.length}곳의 참여는 유지됩니다)`
+    : `[${u.name}(${u.empNo})] 사용자를 이 프로젝트에서 뺄까요? 다른 프로젝트 참여가 없어 계정도 삭제됩니다.`;
+  openConfirmDialog(msg, () => {
+    if (!adminRow && others.length) {
+      const pr = Object.assign({}, u.projectRoles);
+      delete pr[pid];
+      u.projectRoles = pr;
+    } else {
+      projectUsers.splice(idx, 1);
+    }
     renderProjectUsersTable();
     persistChanges();
   });
@@ -1284,7 +1324,7 @@ var InitialDataLoader = {
       if (clone.projectConfig) projectConfig = Object.assign({}, projectConfig, clone.projectConfig);
       if (Array.isArray(clone.subsystemsMeta)) subsystemsMeta = clone.subsystemsMeta;
       if (Array.isArray(clone.standardDeliverablesMeta)) standardDeliverablesMeta = clone.standardDeliverablesMeta;
-      if (Array.isArray(clone.projectUsers) && clone.projectUsers.length > 0) projectUsers = clone.projectUsers;
+      if (Array.isArray(clone.projectUsers) && clone.projectUsers.length > 0) DataRegistry.set("projectUsers", clone.projectUsers);
       if (Array.isArray(clone.wbsData)) wbsData = clone.wbsData;
       if (Array.isArray(clone.deliverablesData)) deliverablesData = clone.deliverablesData;
       if (Array.isArray(clone.reqMasterData)) reqMasterData = clone.reqMasterData;
@@ -1990,7 +2030,7 @@ function renderWbsTable() {
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td><input type="number" value="${row.weight}" style="width:48px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td><input type="number" min="0" value="${row.weight}" style="width:48px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:78px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
@@ -2032,7 +2072,7 @@ function renderWbsTable() {
       </td>
 
       <td><input type="number" value="${row.pProg}" readonly style="width:46px; padding:2px 3px; text-align:right;"></td>
-      <td><input type="number" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:46px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
+      <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:46px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:88px; padding:2px 4px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
@@ -3631,6 +3671,7 @@ function activateTab(tabId) {
       HomeScreenManager.syncConfigUi();
       NoticeCommManager.renderSettingsChannelTable();
       SubTabs.restore("config", "screen");
+      document.querySelectorAll(".lbl-current-project-name").forEach(el => { el.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current; });
       if (typeof UiMode !== "undefined") UiMode.syncSelects();
       break;
   }
@@ -3976,7 +4017,8 @@ var NoticeCommManager = {
 
   
   getChannels() {
-    const defaultSubs = (typeof getAllSubsystemNames === "function") ? getAllSubsystemNames() : ["PMO", "W1", "W2", "P1", "A1", "A2", "S1"];
+    // [v3.0.0] 채널 기본값은 이 프로젝트의 서브시스템 (다른 프로젝트·샘플 채널을 쓰지 않음)
+    const defaultSubs = (subsystemsMeta || []).map(m => m.code || m.name).filter(Boolean);
     if (projectConfig && Array.isArray(projectConfig.channels) && projectConfig.channels.length > 0) {
       // Remove any obsolete channels like 포털UI, 코어서비스, etc.
       const obsolete = ["포털UI", "코어서비스", "데이터연계", "인프라보안"];
@@ -6222,31 +6264,32 @@ const SmartMergeCenter = {
     }
   },
 
+  // [v3.0.0] 사용자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 사용자는 그대로 둠)
   _mergeUsersList(incomingUsers) {
     if (!Array.isArray(incomingUsers) || incomingUsers.length === 0) return;
-    const map = new Map();
-    // 기존 비밀번호 해시 보존용
-    (projectUsers || []).forEach(u => {
-      if (u && u.empNo) map.set(u.empNo.toLowerCase(), u);
-    });
-    const nextList = [];
+    const pid = ProjectContext.current;
+    const list = (projectUsers || []).slice();
     incomingUsers.forEach(inU => {
       if (!inU || !inU.empNo) return;
-      const key = inU.empNo.toLowerCase();
-      const prev = map.get(key);
-      nextList.push({
-        empNo: inU.empNo,
-        name: inU.name || (prev ? prev.name : inU.empNo),
-        role: key === "admin" ? "SYS_ADMIN" : (inU.role || (prev ? prev.role : "MEMBER")),
-        subsystem: inU.subsystem || (prev ? prev.subsystem : "ALL"),
-        dept: inU.dept !== undefined ? inU.dept : (prev ? prev.dept : ""),
-        pwdHash: inU.pwdHash || (prev ? prev.pwdHash : "")
-      });
+      const key = String(inU.empNo).toLowerCase();
+      let row = list.find(u => String(u.empNo || "").toLowerCase() === key);
+      if (!row) {
+        const other = ProjectContext.findAny(key);
+        if (other && !ProjectContext.isAdminUser(other) && !ProjectManager.isAdmin()) return; // 다른 프로젝트 사용자: 시스템관리자만
+        row = other || { empNo: inU.empNo, name: inU.name || inU.empNo, role: "MEMBER", pwdHash: "", lang: "ko" };
+        list.push(row);
+      }
+      if (inU.name) row.name = inU.name;
+      if (key === "admin" || ProjectContext.isAdminUser(row)) return;
+      const cur = ProjectContext.member(row, pid) || {};
+      const role = AuthManager.normalizeRole(inU.role || cur.role || "MEMBER");
+      row.projectRoles = Object.assign({}, row.projectRoles, { [pid]: {
+        role: role === "SYS_ADMIN" ? "PM" : role,
+        subsystem: inU.subsystem || cur.subsystem || "ALL",
+        dept: inU.dept !== undefined ? inU.dept : (cur.dept || row.dept || "")
+      } });
     });
-    if (!nextList.some(u => u.empNo.toLowerCase() === "admin")) {
-      nextList.unshift({ empNo: "admin", name: "시스템관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "" });
-    }
-    projectUsers = nextList;
+    projectUsers = list;
   },
 
   _extractMasterSheetRows(sheets, targetKey) {
@@ -6626,10 +6669,11 @@ var StorageManager = {
         weeklyReportsData = [];
         RealtimeChatManager.messages = [];
         NoticeCommManager.activeChannel = "전체";
-        projectUsers = [
+        DataRegistry.set("projectUsers", [
           { empNo: "admin", name: "시스템관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
-          { empNo: "pm", name: "프로젝트관리자", role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM", pwdHash: "", lang: "ko" }
-        ];
+          { empNo: "pm", name: "프로젝트관리자", role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM", pwdHash: "", lang: "ko",
+            projectRoles: { [ProjectContext.current]: { role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM" } } }
+        ]);
         try {
           localStorage.removeItem(AuthManager.STORAGE_POLICY_KEY);
           localStorage.removeItem(AuthManager.STORAGE_AUTOLOCK_KEY);

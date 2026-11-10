@@ -1,8 +1,7 @@
 // =============================================================================
-// [IOSTAR-PM v2.3.0] 화면 방식(Standard / Neo) 선택 + Neo 화면 기능 (Standard 화면 틀 위에 더하는 기능)
+// [IOSTAR-PM v3.0.0] Neo 화면 기능 (v3.0.0 부터 화면은 Neo 하나)
 // -----------------------------------------------------------------------------
-//  - UiMode    : 화면 방식 — 사용자별 설정(projectUsers[].uiMode), app.ini [ui] 의 기본값·선택 허용 여부
-//                Neo 이면 body.ui-neo, 아래 Neo 기능은 Neo 방식에서만 동작
+//  - UiMode    : (호환용) 항상 Neo
 //  - NeoTodo   : 대시보드 "확인할 일" — 지연 과업 · 7일 안 마감 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item
 //  - NeoDetail : WBS 오른쪽 상세 패널 — ID 를 누르면 한 과업의 모든 항목을 한 곳에서 보고 고침
 //  - NeoBadges : 메뉴 건수 배지 (지연 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item)
@@ -46,86 +45,20 @@ var NeoUtil = {
 //  - 로그인 후: 사용자 설정(projectUsers[].uiMode)과 다르면 그 방식으로 다시 불러옴
 //  - app.ini allow_ui_switch=0 이면 default_ui 로 고정 (선택 메뉴 숨김)
 // -----------------------------------------------------------------------------
+// [v3.0.0] Standard(클래식) 화면은 v2.4 까지 — 이제 화면은 Neo 하나 (UiMode 는 호환을 위해 남김)
 var UiMode = {
-  KEY: "IOSTAR_UI_MODE",
-  MODES: ["standard", "neo"],
-  LABELS: { standard: "Standard (클래식 — 이번 버전까지)", neo: "Neo (기본)" },
-  current: "standard",
-  cfg() {
-    const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : {};
-    return { def: c.defaultUi === "neo" ? "neo" : "standard", allow: c.uiSwitch !== false };
+  current: "neo",
+  init() { this.apply("neo"); },
+  apply() {
+    this.current = "neo";
+    document.body.classList.add("ui-neo");
+    document.body.classList.remove("ui-standard");
   },
-  init() {
-    const c = this.cfg();
-    let m = c.def;
-    if (c.allow) {
-      const saved = NeoUtil.store(this.KEY);
-      if (this.MODES.indexOf(saved) !== -1) m = saved;
-    }
-    this.apply(m);
-  },
-  apply(m) {
-    this.current = m === "neo" ? "neo" : "standard";
-    document.body.classList.toggle("ui-neo", this.current === "neo");
-    document.body.classList.toggle("ui-standard", this.current !== "neo");
-  },
-  isNeo() { return this.current === "neo"; },
-  canSwitch() { return this.cfg().allow; },
-
-  _landing() {
-    try {
-      const a = document.querySelector(".tab-pane.active");
-      sessionStorage.setItem("AX_PMYS_LANDING_TAB", a ? a.id : "tab-home");
-    } catch (e) {}
-  },
-  // 로그인 직후 호출: 사용자 설정과 현재 방식이 다르면 true (화면을 다시 불러옴)
-  afterLogin(user) {
-    if (!this.canSwitch() || !user) return false;
-    const want = this.MODES.indexOf(user.uiMode) !== -1 ? user.uiMode : null;
-    if (!want) { NeoUtil.store(this.KEY, this.current); return false; }
-    NeoUtil.store(this.KEY, want);
-    if (want === this.current) return false;
-    this._landing();
-    setTimeout(() => window.location.reload(), 150);
-    return true;
-  },
-  // 사용자가 화면 방식을 바꿈: 본인 설정 저장 → 화면 다시 불러오기
-  async set(mode) {
-    mode = mode === "neo" ? "neo" : "standard";
-    if (!this.canSwitch() || mode === this.current) return;
-    if (typeof SyncManager !== "undefined") {
-      if (SyncManager.isLocal()) await SyncManager.flushAutoSave();
-      else if (SyncManager.isDirty()) {
-        const choice = await SyncUI.ask("🖥️ 화면 방식 변경", `저장하지 않은 변경 ${SyncManager.dirtyCount()}건이 있습니다.\n화면 방식을 바꾸기 전에 저장하시겠습니까?`, [
-          { id: "save", label: "💾 저장 후 변경", cls: "btn-primary" },
-          { id: "discard", label: "🗑️ 변경 버리고 변경", cls: "btn-danger" },
-          { id: "cancel", label: "취소", cls: "btn-secondary" }
-        ]);
-        if (choice === "cancel") { this.syncSelects(); return; }
-        if (choice === "save") {
-          const r = await SyncManager.save(null, { notify: false });
-          if (!r.ok && !r.nothing) { this.syncSelects(); return; }
-        }
-      }
-    }
-    NeoUtil.store(this.KEY, mode);
-    const u = typeof AuthManager !== "undefined" ? AuthManager.getCurrentUser() : null;
-    const row = u && AuthManager.findUser(u.empNo);
-    if (row && row.uiMode !== mode) {
-      row.uiMode = mode;
-      try { await SyncManager.save(["projectUsers"], { notify: false }); } catch (e) {}
-    }
-    this._landing();
-    if (typeof showToast === "function") showToast(`🖥️ 화면 방식을 [${this.LABELS[mode]}](으)로 바꿉니다...`);
-    setTimeout(() => window.location.reload(), 300);
-  },
-  syncSelects() {
-    ["gUiModeSelect", "cfgUiModeSelect"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = this.current;
-    });
-    document.querySelectorAll(".ui-mode-field").forEach(el => { el.hidden = !this.canSwitch(); });
-  }
+  isNeo() { return true; },
+  canSwitch() { return false; },
+  afterLogin() { return false; },
+  set() {},
+  syncSelects() {}
 };
 UiMode.init();
 
@@ -304,7 +237,8 @@ var NeoDetail = {
       weight: ["rebuildAll"], pStart: ["rebuildAll"], pEnd: ["rebuildAll"], aStart: ["rebuildAll"], aEnd: ["rebuildAll"], aProg: ["rebuildAll"]
     }[field] || ["persistChanges"];
     const num = field === "weight" || field === "aProg";
-    UiH.set("wbsData", idx, field, num ? (parseFloat(value) || 0) : value, ...after);
+    const v = num ? (value === "" ? "" : parseFloat(value)) : value;
+    if (!UiH.set("wbsData", idx, field, v, ...after)) return this.render();
     if (after.indexOf("rebuildAll") === -1 && typeof renderWbsTable === "function") renderWbsTable();
     this.render();
   },

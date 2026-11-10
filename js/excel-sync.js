@@ -1296,14 +1296,15 @@ const ExcelSync = {
         level: level,
         system: sys || "미분류",
         name: name || "단위과업",
-        weight: isNaN(weightNum) ? 1 : weightNum,
+        weight: isNaN(weightNum) ? 1 : Math.max(0, weightNum),
         reqId: String(raw.reqId || "").trim(),
         pStart: this.normalizeDate(raw.pStart),
         pEnd: this.normalizeDate(raw.pEnd),
         aStart: this.normalizeDate(raw.aStart),
         aEnd: this.normalizeDate(raw.aEnd),
-        pProg: isNaN(pProgNum) ? 0 : pProgNum,
-        aProg: isNaN(aProgNum) ? 0 : aProgNum,
+        // [v3.0.0] 진척률은 0~100 으로 보정 (엑셀에 범위를 벗어난 값이 있어도 그대로 들어가지 않음)
+        pProg: isNaN(pProgNum) ? 0 : Math.min(100, Math.max(0, pProgNum)),
+        aProg: isNaN(aProgNum) ? 0 : Math.min(100, Math.max(0, aProgNum)),
         output: String(raw.output || "").trim()
       };
     }

@@ -156,10 +156,22 @@ var UiH = {
   // 표의 한 칸 수정: UiH.set("wbsData", 3, "name", 값, "persistChanges", ...)
   set(name, idx, field, value, ...after) {
     const arr = this._array(name);
-    if (!arr || !arr[idx]) return;
+    if (!arr || !arr[idx]) return false;
+    // [v3.0.0] 진척률(계획·실적)은 0~100, 가중치는 0 이상만 — 범위를 벗어나면 저장하지 않고 원래 값으로 되돌림
+    const bad = (this.PCT_FIELDS.indexOf(field) !== -1 && !this.validPct(value)) || (field === "weight" && !(Number(value) >= 0));
+    if (bad) {
+      if (typeof showToast === "function") showToast(field === "weight" ? "⚠️ 가중치는 0 이상으로 입력하세요." : "⚠️ 진척률은 0 ~ 100 사이로 입력하세요. (마이너스·100 초과 불가)");
+      const redraw = { wbsData: "renderWbsTable" }[name];
+      const t = redraw && UiEvents.resolve(redraw);
+      if (t) t.fn.call(t.owner);
+      return false;
+    }
     arr[idx][field] = value;
     this._after(after);
+    return true;
   },
+  PCT_FIELDS: ["aProg", "pProg"],
+  validPct(v) { const n = Number(v); return v !== "" && v !== null && !isNaN(n) && n >= 0 && n <= 100; },
   // 표의 한 행 삭제: UiH.removeAt("vocData", 3, "renderVocTable", ...)
   removeAt(name, idx, ...after) {
     const arr = this._array(name);

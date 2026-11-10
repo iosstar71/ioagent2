@@ -211,30 +211,79 @@ def normalize_role(role) -> str:
     return "MEMBER"
 
 
+def membership(row_or_info, pid):
+    """[v3.0.0] 프로젝트 참여 정보: 사용자 행의 projectRoles[프로젝트ID] = {role, subsystem, dept} (있으면 그 프로젝트 사용자)"""
+    roles = (row_or_info or {}).get("projectRoles")
+    a = roles.get(pid) if isinstance(roles, dict) else None
+    return a if isinstance(a, dict) else None
+
+
+def is_sys_admin(row_or_info):
+    return normalize_role((row_or_info or {}).get("baseRole") or (row_or_info or {}).get("role")) == "SYS_ADMIN"
+
+
 def effective_user(base, project, row=None):
-    """프로젝트별 역할: 시스템관리자는 모든 프로젝트 관리자. 그 밖에는 사용자 행의 projectRoles[프로젝트ID] 가 있으면 그 역할·담당을 사용"""
+    """[v3.0.0] 사용자 정보는 프로젝트별: 시스템관리자는 모든 프로젝트 관리자, 그 밖에는 그 프로젝트의 참여 정보(역할·담당·부서)"""
     out = dict(base)
     pid = (project or {}).get("id", DEFAULT_PROJECT)
     out["projectId"] = pid
     out["baseRole"] = base.get("role")
-    if base.get("role") == "SYS_ADMIN" or pid == DEFAULT_PROJECT:
+    if base.get("role") == "SYS_ADMIN":
         return out
-    roles = (row or {}).get("projectRoles") if row is not None else base.get("projectRoles")
-    a = (roles or {}).get(pid) if isinstance(roles, dict) else None
-    if isinstance(a, dict):
+    a = membership(row if row is not None else base, pid)
+    if a:
         role = normalize_role(a.get("role"))
         out["role"] = "PM" if role == "SYS_ADMIN" else role
-        out["subsystem"] = str(a.get("subsystem") or out.get("subsystem") or "ALL")
+        out["subsystem"] = str(a.get("subsystem") or "ALL")
+        if a.get("dept"):
+            out["dept"] = a.get("dept")
+    else:
+        out["role"], out["subsystem"] = "MEMBER", ""
     return out
 
 
 def can_access_project(base, project):
+    """[v3.0.0] 시스템관리자는 모든 프로젝트, 그 밖의 사용자는 참여 중인 프로젝트만"""
     if not project:
         return False
-    if base.get("role") == "SYS_ADMIN" or not project.get("restricted"):
+    if base.get("role") == "SYS_ADMIN":
         return True
-    members = {str(m).lower() for m in (project.get("members") or [])}
-    return str(base.get("empNo", "")).lower() in members
+    return membership(base, project.get("id")) is not None
+
+
+def project_users_view(users, pid):
+    """[v3.0.0] 프로젝트 화면에 보이는 사용자: 시스템관리자 + 이 프로젝트 참여자 (다른 프로젝트 참여 정보는 숨김)"""
+    out = []
+    for u in users or []:
+        if not isinstance(u, dict):
+            continue
+        if is_sys_admin(u):
+            out.append(dict(u, projectRoles={}))
+        elif membership(u, pid):
+            out.append(dict(u, projectRoles={pid: membership(u, pid)}))
+    return out
+
+
+def clamp_progress(key, value):
+    """[v3.0.0] 진척률(계획·실적)은 0~100 만 저장 (화면 입력 검사와 별도로 서버에서도 보정)"""
+    if key != "wbsData" or not isinstance(value, list):
+        return value
+    for t in value:
+        if not isinstance(t, dict):
+            continue
+        for f in ("aProg", "pProg"):
+            if f in t:
+                try:
+                    v = float(t[f] or 0)
+                except (TypeError, ValueError):
+                    v = 0.0
+                t[f] = int(v) if float(v).is_integer() and 0 <= v <= 100 else min(100.0, max(0.0, v))
+        if "weight" in t:
+            try:
+                t["weight"] = max(0.0, float(t["weight"] or 0))
+            except (TypeError, ValueError):
+                t["weight"] = 0.0
+    return value
 
 
 # ---------------------------------------------------------------------------
@@ -319,8 +368,13 @@ def can_write(user, key, part, row):
     return False
 
 
-def own_rows(key, value, revs, user):
-    """[v2.4.0] 개인 데이터(todosData)는 본인 항목과 그 버전 정보만 돌려줌"""
+def own_rows(key, value, revs, user, pid=DEFAULT_PROJECT):
+    """[v2.4.0] 개인 데이터(todosData)는 본인 항목과 그 버전 정보만 돌려줌
+    [v3.0.0] 사용자 목록은 이 프로젝트의 사용자(시스템관리자 + 참여자)만"""
+    if key == "projectUsers" and value is not None:
+        rows = project_users_view(value, pid)
+        ids = {str(u.get("empNo", "")) for u in rows}
+        return rows, {p: v for p, v in (revs or {}).items() if p in ids}
     if DATASETS.get(key, {}).get("scope") != "personal" or not user:
         return value, revs
     me = str(user.get("empNo", "")).lower()
@@ -407,9 +461,39 @@ class Store:
                 cls._bootstrap_datasets(conn)
                 cls._upgrade_password_records(conn)
                 cls._upgrade_multi_project(conn)
+                cls._upgrade_memberships(conn)
             finally:
                 conn.close()
         return "SQLite 표준 테이블(TB_WBS_DATASET 외) 확인 및 초기화가 완료되었습니다."
+
+    # ---- [v3.0.0] 사용자 정보 프로젝트별: 지금 접근할 수 있던 프로젝트마다 참여 정보(역할·담당·부서)를 만들어 둠 (1회) ----
+    @classmethod
+    def _upgrade_memberships(cls, conn):
+        cur = conn.cursor()
+        if cur.execute("SELECT 1 FROM TB_META WHERE META_KEY = 'membership_v3'").fetchone():
+            return
+        users, revs = cls._read_dataset(cur, "projectUsers")
+        projects = [cls._project_row(r) for r in cur.execute(
+            "SELECT PROJECT_ID, PROJECT_NAME, STATUS, RESTRICTED, MEMBERS_JSON, CREATED_AT, CREATED_BY, SORT_ORDER FROM TB_PROJECT").fetchall()]
+        changed = False
+        for u in users or []:
+            if not isinstance(u, dict) or is_sys_admin(u):
+                continue
+            pr = cls._clean_project_roles(u.get("projectRoles"))
+            emp = str(u.get("empNo", "")).lower()
+            for p in projects:
+                old_access = not p["restricted"] or emp in {str(m).lower() for m in p["members"]}
+                if old_access and p["id"] not in pr:
+                    role = normalize_role(u.get("role"))
+                    pr[p["id"]] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(u.get("subsystem") or "ALL")[:50],
+                                   "dept": str(u.get("dept") or "")[:100]}
+            if pr != u.get("projectRoles"):
+                u["projectRoles"] = pr
+                changed = True
+        if changed:
+            cls._write_dataset(cur, "projectUsers", users, revs or {}, "upgrade-v3")
+        cur.execute("INSERT OR REPLACE INTO TB_META VALUES ('membership_v3', ?)", (now_str(),))
+        conn.commit()
 
     # ---- [v1.0.10] 여러 프로젝트: 프로젝트 목록 테이블, 채팅 프로젝트 구분, 조회용 미러 테이블에 PROJECT_ID 추가 ----
     @classmethod
@@ -614,7 +698,7 @@ class Store:
                 cur = conn.cursor()
                 for k in keys:
                     value, r = cls._read_dataset(cur, dkey(pid, k))
-                    value, r = own_rows(k, value, r, user)
+                    value, r = own_rows(k, value, r, user, pid)
                     if value is not None:
                         data[k] = cls.public_value(k, value)
                     revs[k] = r
@@ -692,11 +776,11 @@ class Store:
                 out_data, out_revs = {}, {}
                 for key, ok_parts in accepted.items():
                     value, revs = current[key]
-                    merged = merge_parts(key, value, ok_parts)
+                    merged = clamp_progress(key, merge_parts(key, value, ok_parts))
                     for p in ok_parts:
                         revs[p] = {"rev": int((revs.get(p) or {}).get("rev", 0)) + 1, "by": who, "at": now_str()}
                     cls._write_dataset(cur, dkey(pid, key), merged, revs, who)
-                    out_data[key], out_revs[key] = own_rows(key, cls.public_value(key, merged), revs, user)
+                    out_data[key], out_revs[key] = own_rows(key, cls.public_value(key, merged), revs, user, pid)
                     if key == "projectConfig" and isinstance(merged, dict) and merged.get("projectName"):
                         cur.execute("UPDATE TB_PROJECT SET PROJECT_NAME = ? WHERE PROJECT_ID = ?", (str(merged["projectName"])[:100], pid))
                 cls._write_mirror(cur, accepted.keys(), pid)
@@ -713,43 +797,52 @@ class Store:
             for k, v in value.items():
                 if isinstance(v, dict) and str(k) and set(str(k)) <= PROJECT_ID_CHARS:
                     role = normalize_role(v.get("role"))
-                    out[str(k)] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(v.get("subsystem") or "ALL")[:50]}
+                    out[str(k)] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(v.get("subsystem") or "ALL")[:50],
+                                   "dept": str(v.get("dept") or "")[:100]}
         return out
 
     @staticmethod
     def _sanitize_user_row(user, part, incoming, stored, pid=DEFAULT_PROJECT):
-        """사용자 행: 비밀번호 해시 보존, 일반 사용자는 본인 행의 허용 필드만 변경.
-        [v1.0.10] 시스템관리자가 아닌 관리자는 기본 프로젝트가 아닌 프로젝트에서 그 프로젝트의 역할(projectRoles)만 바꿀 수 있음"""
+        """[v3.0.0] 사용자 정보는 프로젝트별 (계정·비밀번호는 하나):
+        - 이 프로젝트에서 바뀌는 것은 그 프로젝트의 참여 정보(projectRoles[pid] = 역할·담당·부서)와 이름·언어·비밀번호 초기화뿐
+        - 삭제 = 이 프로젝트에서 빼기 (다른 프로젝트 참여가 없으면 계정 삭제)
+        - 다른 프로젝트에만 있는 사번은 시스템관리자만 이 프로젝트에 추가 가능 (그 밖에는 [다른 프로젝트에서 복사] 사용)"""
         is_admin = user.get("baseRole", user["role"]) == "SYS_ADMIN"
-        if incoming is None:
-            if user["role"] not in MANAGER_ROLES or str(part).lower() == "admin" or (pid != DEFAULT_PROJECT and not is_admin):
-                return "BLOCK"
-            return None
-        row = dict(incoming)
-        if not is_admin:
-            # 시스템관리자 권한 부여는 시스템관리자만
-            prev_role = normalize_role((stored or {}).get("role"))
-            if normalize_role(row.get("role")) == "SYS_ADMIN" and prev_role != "SYS_ADMIN":
-                row["role"] = prev_role if stored else "MEMBER"
-            # 프로젝트별 역할은 지금 작업 중인 프로젝트 항목만 변경 가능
-            pr = dict(Store._clean_project_roles((stored or {}).get("projectRoles")))
-            new_pr = Store._clean_project_roles(row.get("projectRoles"))
-            if pid != DEFAULT_PROJECT and user["role"] in MANAGER_ROLES:
-                if pid in new_pr:
-                    pr[pid] = new_pr[pid]
-                else:
-                    pr.pop(pid, None)
-            if pid != DEFAULT_PROJECT and stored and user["role"] in MANAGER_ROLES:
-                # 기본 프로젝트가 아닌 곳에서는 계정의 기본 역할·담당·사번은 바꿀 수 없음
-                keep = dict(stored)
-                for f in ("name", "dept", "lang", "pwdReset", "pwdHash"):
-                    if f in row:
-                        keep[f] = row[f]
-                row = keep
-            row["projectRoles"] = pr
-        elif "projectRoles" in row:
-            row["projectRoles"] = Store._clean_project_roles(row.get("projectRoles"))
         manager = user["role"] in MANAGER_ROLES
+        stored_admin = is_sys_admin(stored)
+        if incoming is None:
+            if not manager or str(part).lower() == "admin" or not stored:
+                return "BLOCK"
+            if stored_admin:
+                return None if is_admin else "BLOCK"
+            pr = Store._clean_project_roles(stored.get("projectRoles"))
+            pr.pop(pid, None)
+            if not pr:
+                return None  # 마지막 프로젝트에서 빠지면 계정 삭제
+            return dict(stored, projectRoles=pr)
+        row = dict(incoming)
+        if stored and not stored_admin and not membership(stored, pid) and not is_admin:
+            return "BLOCK"  # 다른 프로젝트 사용자를 이 프로젝트에서 덮어쓰기 방지
+        # 시스템관리자 지정·해제는 시스템관리자만
+        want_admin = normalize_role(row.get("role")) == "SYS_ADMIN"
+        if not is_admin:
+            want_admin = stored_admin
+        # 참여 정보: 다른 프로젝트 항목은 보존하고 이 프로젝트 항목만 반영
+        pr = dict(Store._clean_project_roles((stored or {}).get("projectRoles")))
+        new_pr = Store._clean_project_roles(row.get("projectRoles"))
+        row.pop("_new", None)
+        if not want_admin:
+            if pid in new_pr:
+                pr[pid] = new_pr[pid]
+            elif stored and pid in pr and manager and isinstance(row.get("projectRoles"), dict):
+                pr.pop(pid)  # 이 프로젝트에서 빼기 (참여 정보를 지운 채 저장)
+            elif not stored or pid not in pr:
+                pr[pid] = {"role": normalize_role(row.get("role")) if normalize_role(row.get("role")) != "SYS_ADMIN" else "MEMBER",
+                           "subsystem": str(row.get("subsystem") or "ALL")[:50], "dept": str(row.get("dept") or "")[:100]}
+        row["projectRoles"] = pr
+        row["role"] = "SYS_ADMIN" if want_admin else (normalize_role(row.get("role")) if is_admin and stored is None else normalize_role((stored or row).get("role")))
+        if row["role"] == "SYS_ADMIN" and not want_admin:
+            row["role"] = "MEMBER"
         reset = bool(row.pop("pwdReset", False)) and manager
         incoming_pwd = str(row.pop("pwdHash", "") or "")
         row.pop("pwdTemp", None)
@@ -762,7 +855,7 @@ class Store:
         else:
             row["pwdHash"] = (stored or {}).get("pwdHash", "")
             row["pwdTemp"] = bool((stored or {}).get("pwdTemp", False))
-        if user["role"] not in MANAGER_ROLES:
+        if not manager:
             if not stored:
                 return "BLOCK"
             safe = dict(stored)
@@ -773,6 +866,42 @@ class Store:
         if str(part).lower() == "admin":
             row["role"] = "SYS_ADMIN"
         return row
+
+    @classmethod
+    def copy_users(cls, user, src, dst, emp_nos=None):
+        """[v3.0.0] 다른 프로젝트의 사용자(참여 정보: 역할·담당·부서)를 이 프로젝트로 복사. 이미 참여 중인 사용자는 건너뜀"""
+        if src == dst:
+            raise AuthError("같은 프로젝트에서는 복사할 수 없습니다.", 400)
+        wanted = {str(e).lower() for e in emp_nos} if isinstance(emp_nos, list) else None
+        copied, skipped = [], []
+        with DB_LOCK:
+            conn = cls.connect()
+            try:
+                cur = conn.cursor()
+                users, revs = cls._read_dataset(cur, "projectUsers")
+                for u in users or []:
+                    a = membership(u, src)
+                    emp = str(u.get("empNo", ""))
+                    if is_sys_admin(u) or not a or (wanted is not None and emp.lower() not in wanted):
+                        continue
+                    if membership(u, dst):
+                        skipped.append(emp)
+                        continue
+                    u.setdefault("projectRoles", {})[dst] = dict(Store._clean_project_roles({src: a})[src])
+                    revs[emp] = {"rev": int((revs.get(emp) or {}).get("rev", 0)) + 1, "by": f"copy({src}->{dst}) {user['empNo']}", "at": now_str()}
+                    copied.append(emp)
+                if copied:
+                    cls._write_dataset(cur, "projectUsers", users, revs, user["empNo"])
+                    cls._write_mirror(cur, ["projectUsers"], dst)
+                    conn.commit()
+            finally:
+                conn.close()
+        return copied, skipped
+
+    @classmethod
+    def project_members(cls, pid):
+        users = cls.get_users()
+        return [{"empNo": u.get("empNo"), "name": u.get("name"), **membership(u, pid)} for u in users if not is_sys_admin(u) and membership(u, pid)]
 
     # ---- 외부 조회용 관계형 미러 테이블 (프로젝트별, PROJECT_ID 컬럼) ----
     @classmethod
@@ -890,6 +1019,9 @@ class Store:
                     src_std = cls._read_dataset(cur, dkey(copy_from, "standardDeliverablesMeta"))[0]
                 cfg = {k: v for k, v in src_cfg.items() if k not in ("milestones", "projectName", "projectStartDate", "projectEndDate", "reportDate")}
                 cfg.update({"projectName": name, "projectStartDate": start, "projectEndDate": end, "reportDate": start})
+                # [v3.0.0] 소통 채널은 프로젝트별: 전체 + 이 프로젝트의 서브시스템
+                subs_for_ch = src_subs if req.get("copySubsystems", True) else []
+                cfg["channels"] = ["전체"] + [str(x.get("code") or x.get("name")) for x in subs_for_ch if isinstance(x, dict) and (x.get("code") or x.get("name"))]
                 data = {
                     "projectConfig": cfg,
                     "subsystemsMeta": src_subs if req.get("copySubsystems", True) else [],
@@ -978,7 +1110,7 @@ class Store:
 
     # ---- 사용자 등록 / 비밀번호 ----
     @classmethod
-    def register_user(cls, new_user):
+    def register_user(cls, new_user, pid=None):
         emp = str(new_user.get("empNo", "")).strip()
         if not emp or len(emp) > 30 or not all(ch.isalnum() or ch in "_.-" for ch in emp):
             raise AuthError("사번은 영문/숫자/_.- 2~30자로 입력하세요.", 400)
@@ -995,6 +1127,11 @@ class Store:
             "lang": "en" if new_user.get("lang") == "en" else "ko",
             "registeredAt": now_str(),
         }
+        # [v3.0.0] 자가 등록은 로그인 화면에서 고른 프로젝트의 일반 사용자로
+        project = cls.get_project(pid) if pid else None
+        if not project or project.get("status") == "ARCHIVED":
+            raise AuthError("가입할 프로젝트를 선택하세요.", 400)
+        row["projectRoles"] = {project["id"]: {"role": "MEMBER", "subsystem": row["subsystem"], "dept": row["dept"]}}
         with DB_LOCK:
             conn = cls.connect()
             try:
@@ -1128,7 +1265,7 @@ class Sessions:
         if not row:
             cls.drop(token)
             return None
-        info.update({"name": row.get("name") or info["name"], "role": normalize_role(row.get("role")),
+        info.update({"name": row.get("name") or info["name"], "role": normalize_role(row.get("role")), "dept": row.get("dept", ""),
                      "subsystem": row.get("subsystem") or "ALL", "lang": row.get("lang", info.get("lang", "ko")),
                      "mustChange": must_change_password(row), "projectRoles": row.get("projectRoles") or {}})
         return info
@@ -1263,6 +1400,9 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         project = Store.get_project(self._project_id(req))
         if not project or not can_access_project(base, project):
             raise AuthError("이 프로젝트에 접근할 권한이 없습니다.", 403, "PROJECT_FORBIDDEN")
+        # [v3.0.0] 시스템관리자가 아니면 로그인한 프로젝트에서만 작업
+        if base.get("role") != "SYS_ADMIN" and base.get("loginProject") and project["id"] != base["loginProject"]:
+            raise AuthError("로그인한 프로젝트에서만 작업할 수 있습니다. 다른 프로젝트는 다시 로그인하세요.", 403, "PROJECT_LOCKED")
         info = effective_user(base, project)
         info["projectStatus"] = project["status"]
         if roles and info["role"] not in roles:
@@ -1351,10 +1491,13 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
 
     # ---- 인증 API ----
     def api_bootstrap(self, req):
-        cfg, _ = Store.load(["projectConfig"])
+        pid = self._project_id(req)
+        if not Store.get_project(pid):
+            pid = DEFAULT_PROJECT
+        cfg, _ = Store.load(["projectConfig"], pid)
         self._send_json(200, {"ok": True, "version": VERSION,
                               "projectName": (cfg.get("projectConfig") or {}).get("projectName", ""),
-                              "subsystems": Store.get_subsystem_names(DEFAULT_PROJECT)})
+                              "subsystems": Store.get_subsystem_names(pid)})
 
     def api_login(self, req):
         emp = str(req.get("empNo", "")).strip()
@@ -1365,16 +1508,53 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             LoginThrottle.fail(emp)
             write_server_log(f"[AUTH] Login failed: {emp} ({self.address_string()})")
             raise AuthError("사번 또는 비밀번호가 일치하지 않습니다.", 401)
+        # [v3.0.0] 로그인할 프로젝트: 시스템관리자는 선택하지 않아도 됨, 그 밖에는 참여 중인 프로젝트를 반드시 선택
+        login_pid = str(req.get("loginProject") or "").strip()
+        project = Store.get_project(login_pid) if login_pid else None
+        if is_sys_admin(row):
+            login_pid = project["id"] if project else ""
+        else:
+            if not project:
+                LoginThrottle.ok(emp)
+                raise AuthError("로그인할 프로젝트를 선택하세요.", 400, "PROJECT_REQUIRED")
+            if not membership(row, project["id"]):
+                LoginThrottle.ok(emp)
+                raise AuthError("선택한 프로젝트의 사용자가 아닙니다. 프로젝트를 확인하세요.", 403, "NOT_PROJECT_MEMBER")
         LoginThrottle.ok(emp)
         token, info = Sessions.create(row)
         if req.get("lang") in ("ko", "en"):
             info["lang"] = req["lang"]
         info["projectRoles"] = row.get("projectRoles") or {}
+        info["loginProject"] = login_pid
         write_server_log(f"[AUTH] Login: {info['empNo']} ({info['role']})")
-        self._send_json(200, {"ok": True, "token": token, "user": public_user(self._effective_for(info, req)),
+        eff = effective_user(info, Store.get_project(login_pid) if login_pid else None) if login_pid else self._effective_for(info, req)
+        self._send_json(200, {"ok": True, "token": token, "user": public_user(eff), "loginProject": login_pid,
                               "projects": self._visible_projects(info)})
 
+    def api_projects_public(self, req):
+        """[v3.0.0] 로그인 화면의 프로젝트 선택 목록 (이름만, 보관된 프로젝트 제외)"""
+        self._send_json(200, {"ok": True, "projects": [{"id": p["id"], "name": p["name"]} for p in Store.list_projects() if p.get("status") != "ARCHIVED"]})
+
+    def api_projects_copy_users(self, req):
+        """[v3.0.0] 다른 프로젝트의 사용자를 지금 프로젝트로 복사 (시스템관리자)"""
+        info = self._require_user(roles={"SYS_ADMIN"}, req=req)
+        src = str(req.get("fromProject") or "")
+        if not Store.get_project(src):
+            raise AuthError("복사할 프로젝트를 찾을 수 없습니다.", 404)
+        copied, skipped = Store.copy_users(info, src, info["projectId"], req.get("empNos"))
+        write_server_log(f"[PROJECT] Users copied {src} -> {info['projectId']}: {len(copied)} by {info['empNo']}")
+        self._send_json(200, {"ok": True, "copied": copied, "skipped": skipped})
+
+    def api_projects_members(self, req):
+        """[v3.0.0] 다른 프로젝트의 사용자 목록 (복사할 사용자 고르기, 시스템관리자)"""
+        self._require_user(roles={"SYS_ADMIN"}, req=req)
+        src = str(req.get("fromProject") or "")
+        self._send_json(200, {"ok": True, "members": Store.project_members(src)})
+
     def _visible_projects(self, base):
+        # [v3.0.0] 시스템관리자가 아니면 로그인한 프로젝트만 (프로젝트 바꾸기 불가)
+        if base.get("role") != "SYS_ADMIN" and base.get("loginProject"):
+            return [p for p in Store.list_projects() if p["id"] == base["loginProject"] and can_access_project(base, p)]
         return [p for p in Store.list_projects() if can_access_project(base, p)]
 
     def _effective_for(self, base, req):
@@ -1395,7 +1575,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
                               "projects": self._visible_projects(base)})
 
     def api_register(self, req):
-        row = Store.register_user(req.get("user") or {})
+        row = Store.register_user(req.get("user") or {}, str(req.get("projectId") or "").strip() or None)
         write_server_log(f"[AUTH] New user registered: {row['empNo']} ({row['subsystem']})")
         self._send_json(200, {"ok": True, "user": Store.public_value("projectUsers", [row])[0]})
 
@@ -1466,12 +1646,17 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     # ---- [v1.0.10] 프로젝트 API ----
     def api_projects_list(self, req):
         base = self._require_user()
-        self._send_json(200, {"ok": True, "projects": self._visible_projects(base), "current": base["projectId"]})
+        projects = self._visible_projects(base)
+        if base.get("baseRole") == "SYS_ADMIN":
+            users = Store.get_users()
+            for p in projects:
+                p["memberCount"] = sum(1 for u in users if not is_sys_admin(u) and membership(u, p["id"]))
+        self._send_json(200, {"ok": True, "projects": projects, "current": base["projectId"]})
 
     def api_projects_create(self, req):
         info = self._require_user()
-        if info.get("baseRole") not in MANAGER_ROLES:
-            raise AuthError("프로젝트는 시스템관리자 또는 프로젝트관리자(PM)만 만들 수 있습니다.", 403)
+        if info.get("baseRole") != "SYS_ADMIN":
+            raise AuthError("프로젝트는 시스템관리자만 만들 수 있습니다.", 403)
         p = Store.create_project(info, req)
         write_server_log(f"[PROJECT] Created {p['id']} by {info['empNo']}")
         self._send_json(200, {"ok": True, "project": p})
@@ -1507,6 +1692,9 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         "/api/projects/create": api_projects_create,
         "/api/projects/update": api_projects_update,
         "/api/projects/delete": api_projects_delete,
+        "/api/projects/public": api_projects_public,
+        "/api/projects/copy-users": api_projects_copy_users,
+        "/api/projects/members": api_projects_members,
         "/api/auth/bootstrap": api_bootstrap,
         "/api/auth/login": api_login,
         "/api/auth/logout": api_logout,

@@ -81,21 +81,21 @@ class ServerApiTest(unittest.TestCase):
             return e.code, json.loads(e.read() or b"{}")
 
     @classmethod
-    def login(cls, emp, pwd):
-        return cls.call("/api/auth/login", {"empNo": emp, "pwdHash": h(pwd)})
+    def login(cls, emp, pwd, project="DEFAULT"):
+        return cls.call("/api/auth/login", {"empNo": emp, "pwdHash": h(pwd), "loginProject": project})
 
     @classmethod
-    def ready(cls, emp):
+    def ready(cls, emp, project="DEFAULT"):
         """로그인 → 초기 비밀번호면 변경(필수) → 사용 가능한 토큰 반환"""
         cur = cls.pwd.get(emp, "1234")
-        s, d = cls.login(emp, cur)
+        s, d = cls.login(emp, cur, project)
         assert s == 200, (emp, s, d)
         if d["user"].get("mustChangePassword"):
             new = "Test" + emp.replace("_", "") + "2026"
             s2, d2 = cls.call("/api/auth/change-password", {"empNo": emp, "oldHash": h(cur), "newHash": h(new)})
             assert s2 == 200, d2
             cls.pwd[emp] = new
-            s, d = cls.login(emp, new)
+            s, d = cls.login(emp, new, project)
         return d["token"]
 
     def load(self, keys, token=None, project=None):
@@ -162,12 +162,14 @@ class ServerApiTest(unittest.TestCase):
     # ---------------------------------------------------------------- 사용자
     def test_20_register_and_login(self):
         s, _ = self.call("/api/auth/register", {"user": {"empNo": "t_user", "name": "테스터", "subsystem": "W1", "pwdHash": h("abcd"), "lang": "en"}})
+        self.assertEqual(s, 400)  # [v3.0.0] 가입할 프로젝트 필수
+        s, _ = self.call("/api/auth/register", {"user": {"empNo": "t_user", "name": "테스터", "subsystem": "W1", "pwdHash": h("abcd"), "lang": "en"}, "projectId": "DEFAULT"})
         self.assertEqual(s, 200)
         s, d = self.login("t_user", "abcd")
         self.assertEqual(s, 200)
         self.assertEqual(d["user"]["role"], "MEMBER")
         self.assertFalse(d["user"]["mustChangePassword"])
-        s, _ = self.call("/api/auth/register", {"user": {"empNo": "t_user", "name": "dup", "subsystem": "W1", "pwdHash": h("abcd")}})
+        s, _ = self.call("/api/auth/register", {"user": {"empNo": "t_user", "name": "dup", "subsystem": "W1", "pwdHash": h("abcd")}, "projectId": "DEFAULT"})
         self.assertEqual(s, 409)
 
     def test_21_change_password_and_reset(self):
@@ -310,46 +312,102 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(n, 1)
         type(self).pid = pid
 
-    def test_41_project_role_override(self):
+    def test_41_project_users_and_login(self):
+        """[v3.0.0] 사용자 정보는 프로젝트별 · 로그인 시 프로젝트 선택 · 시스템관리자 외에는 로그인한 프로젝트만"""
         pid = self.pid
-        token = self.ready("lead_park")
-        s, r = self.call("/api/db/save", {"changes": {"projectConfig": {"parts": {"*": {"projectName": "x"}}, "base": {"*": 1}}}}, token, project=pid)
-        self.assertIn("projectConfig[*]", r.get("blocked", []))
+        self.ready("lead_park")  # 초기 비밀번호 변경
+        # 로그인: 프로젝트 미선택 → 400 (시스템관리자는 미선택 가능), 참여하지 않은 프로젝트 → 403
+        s, d = self.login("lead_park", self.pwd["lead_park"], "")
+        self.assertEqual((s, d.get("code")), (400, "PROJECT_REQUIRED"))
+        s, d = self.login("lead_park", self.pwd["lead_park"], pid)
+        self.assertEqual((s, d.get("code")), (403, "NOT_PROJECT_MEMBER"))
+        s, d = self.call("/api/auth/login", {"empNo": "admin", "pwdHash": h(self.pwd["admin"])})
+        self.assertEqual(s, 200, d)
+        # 새 프로젝트 사용자 목록: 시스템관리자만 (DEFAULT 참여자는 보이지 않음)
+        data, _ = self.load(["projectUsers"], project=pid)
+        self.assertTrue(all(u["role"] == "SYS_ADMIN" for u in data["projectUsers"]))
+        # 다른 프로젝트에서 사용자 복사 (시스템관리자) → 역할·담당 함께 복사, 이미 있으면 건너뜀
+        s, r = self.call("/api/projects/members", {"fromProject": "DEFAULT"}, self.admin, project=pid)
+        self.assertIn("lead_park", [m["empNo"] for m in r["members"]])
+        s, r = self.call("/api/projects/copy-users", {"fromProject": "DEFAULT", "empNos": ["lead_park", "lead_lee"]}, self.admin, project=pid)
+        self.assertEqual(sorted(r["copied"]), ["lead_lee", "lead_park"])
+        s, r = self.call("/api/projects/copy-users", {"fromProject": "DEFAULT", "empNos": ["lead_park"]}, self.admin, project=pid)
+        self.assertEqual(r["skipped"], ["lead_park"])
+        member_tok = self.ready("lead_lee")
+        s, r = self.call("/api/projects/copy-users", {"fromProject": "DEFAULT"}, member_tok)
+        self.assertEqual(s, 403)
         data, revs = self.load(["projectUsers"], project=pid)
+        self.assertEqual(sorted(u["empNo"] for u in data["projectUsers"] if u["role"] != "SYS_ADMIN"), ["lead_lee", "lead_park"])
+        self.assertEqual(set(next(u for u in data["projectUsers"] if u["empNo"] == "lead_park")["projectRoles"].keys()), {pid})
+        # 이 프로젝트에서만 PM 으로 (부서도 프로젝트별)
         row = next(u for u in data["projectUsers"] if u["empNo"] == "lead_park")
-        row["projectRoles"] = {pid: {"role": "PM", "subsystem": "ALL"}}
+        row["projectRoles"] = {pid: {"role": "PM", "subsystem": "ALL", "dept": "2차 PMO"}}
         s, _ = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_park": row}, "base": {"lead_park": revs["projectUsers"]["lead_park"]["rev"]}}}}, self.admin, project=pid)
         self.assertEqual(s, 200)
-        _, me = self.call("/api/auth/me", {}, token, project=pid)
-        self.assertEqual(me["user"]["role"], "PM")
+        s, d = self.login("lead_park", self.pwd["lead_park"], pid)
+        self.assertEqual(s, 200, d)
+        token = d["token"]
+        self.assertEqual((d["user"]["role"], d["user"]["dept"]), ("PM", "2차 PMO"))
+        # 로그인한 프로젝트만: 다른 프로젝트 접근·목록 불가
+        s, d = self.call("/api/db/load", {"keys": ["wbsData"]}, token, project="DEFAULT")
+        self.assertEqual((s, d.get("code")), (403, "PROJECT_LOCKED"))
+        _, lst = self.call("/api/projects/list", {}, token, project=pid)
+        self.assertEqual([p["id"] for p in lst["projects"]], [pid])
+        # 기본 프로젝트에서는 원래 역할(MEMBER) 그대로
+        _, d = self.login("lead_park", self.pwd["lead_park"], "DEFAULT")
+        self.assertEqual(d["user"]["role"], "MEMBER")
+        # PM 은 자기 프로젝트 기준정보 수정 가능, 다른 프로젝트에만 있는 사번을 덮어쓰기는 불가
         cfg, revs = self.load(["projectConfig"], token, project=pid)
         cfg["projectConfig"]["projectName"] = "2차 확산 과제(수정)"
         s, r = self.call("/api/db/save", {"changes": {"projectConfig": {"parts": {"*": cfg["projectConfig"]}, "base": {"*": revs["projectConfig"]["*"]["rev"]}}}}, token, project=pid)
         self.assertEqual(r.get("blocked"), [])
-        _, me = self.call("/api/auth/me", {}, token)
-        self.assertEqual(me["user"]["role"], "MEMBER")  # 기본 프로젝트에서는 기존 역할
+        s, r = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"qa_han": {"empNo": "qa_han", "name": "가로채기", "role": "MEMBER"}}, "base": {}}}}, token, project=pid)
+        self.assertIn("projectUsers[qa_han]", r["blocked"])
+        # 이 프로젝트에서 사용자 삭제 = 이 프로젝트에서만 빠짐 (기본 프로젝트 로그인은 그대로)
+        data, revs = self.load(["projectUsers"], token, project=pid)
+        s, r = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_lee": None}, "base": {"lead_lee": revs["projectUsers"]["lead_lee"]["rev"]}}}}, token, project=pid)
+        self.assertEqual(r.get("blocked"), [])
+        s, d = self.login("lead_lee", self.pwd["lead_lee"], pid)
+        self.assertEqual(s, 403)
+        s, d = self.login("lead_lee", self.pwd["lead_lee"], "DEFAULT")
+        self.assertEqual(s, 200)
         s, r = self.call("/api/projects/list", {}, self.admin)
         self.assertEqual(next(p for p in r["projects"] if p["id"] == pid)["name"], "2차 확산 과제(수정)")
+        # 공개 프로젝트 목록 (로그인 화면용): 이름만
+        s, r = self.call("/api/projects/public", {})
+        self.assertEqual(s, 200)
+        self.assertIn(pid, [p["id"] for p in r["projects"]])
+        self.assertEqual(set(r["projects"][0].keys()), {"id", "name"})
 
-    def test_42_restricted_project(self):
-        s, r = self.call("/api/projects/create", {"name": "보안 과제", "startDate": "2028-01-01", "endDate": "2028-06-30", "restricted": True}, self.admin)
+    def test_42_project_create_delete_admin_only(self):
+        s, r = self.call("/api/projects/create", {"name": "보안 과제", "startDate": "2028-01-01", "endDate": "2028-06-30"}, self.admin)
         pid = r["project"]["id"]
+        cfg, _ = self.load(["projectConfig"], project=pid)
+        self.assertEqual(cfg["projectConfig"]["channels"][0], "전체")  # 소통 채널은 프로젝트별
         token = self.ready("lead_lee")
+        s, r = self.call("/api/projects/create", {"name": "x", "startDate": "2028-01-01", "endDate": "2028-06-30"}, token)
+        self.assertEqual(s, 403)
         s, r = self.call("/api/db/load", {"keys": ["wbsData"]}, token, project=pid)
         self.assertEqual(s, 403)
-        self.assertEqual(r.get("code"), "PROJECT_FORBIDDEN")
-        _, lst = self.call("/api/projects/list", {}, token)
-        self.assertNotIn(pid, [p["id"] for p in lst["projects"]])
-        s, _ = self.call("/api/projects/update", {"id": pid, "members": ["lead_lee"]}, self.admin)
-        self.assertEqual(s, 200)
-        s, _ = self.call("/api/db/load", {"keys": ["wbsData"]}, token, project=pid)
-        self.assertEqual(s, 200)
         s, _ = self.call("/api/projects/delete", {"id": pid}, token)
         self.assertEqual(s, 403)
         s, _ = self.call("/api/projects/delete", {"id": pid}, self.admin)
         self.assertEqual(s, 200)
         s, _ = self.call("/api/db/load", {"keys": ["wbsData"]}, self.admin, project=pid)
         self.assertEqual(s, 403)
+
+    def test_44_progress_range(self):
+        """[v3.0.0] 진척률은 0~100 만 저장"""
+        data, revs = self.load(["wbsData"])
+        rows = [dict(r) for r in data["wbsData"] if r["system"] == "A1"]
+        rows[-1]["aProg"] = 150
+        rows[-2]["aProg"] = -5
+        rows[-3]["weight"] = -1
+        s, r = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"A1": rows}, "base": {"A1": revs["wbsData"]["A1"]["rev"]}}}}, self.admin)
+        self.assertEqual(s, 200)
+        data, _ = self.load(["wbsData"])
+        a1 = [r for r in data["wbsData"] if r["system"] == "A1"]
+        self.assertEqual((a1[-1]["aProg"], a1[-2]["aProg"], a1[-3]["weight"]), (100, 0, 0))
 
     def test_43_chat_per_project(self):
         self.call("/api/chat/send", {"channel": "전체", "message": "only-in-project"}, self.admin, project=self.pid)
@@ -421,7 +479,7 @@ class TlsAndUpgradeTest(unittest.TestCase):
                         time.sleep(0.2)
                 with urllib.request.urlopen(base + "/index.html", context=ctx) as r:
                     self.assertIn("max-age", r.headers.get("Strict-Transport-Security", ""))
-                req = urllib.request.Request(base + "/api/auth/login", data=json.dumps({"empNo": "qa_han", "pwdHash": h("Legacy99x")}).encode(),
+                req = urllib.request.Request(base + "/api/auth/login", data=json.dumps({"empNo": "qa_han", "pwdHash": h("Legacy99x"), "loginProject": "DEFAULT"}).encode(),
                                              headers={"Content-Type": "application/json"}, method="POST")
                 with urllib.request.urlopen(req, context=ctx) as r:
                     self.assertEqual(r.status, 200)

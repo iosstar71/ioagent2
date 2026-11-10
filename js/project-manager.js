@@ -16,14 +16,14 @@ var ProjectManager = {
     const u = AuthManager.getCurrentUser();
     return AuthManager.normalizeRole(u.baseRole || u.role);
   },
-  canCreate() { const r = this.baseRole(); return r === "SYS_ADMIN" || r === "PM"; },
+  // [v3.0.0] 프로젝트 만들기·전환·관리는 시스템관리자만 (그 밖의 사용자는 로그인한 프로젝트만 사용)
+  canCreate() { return this.isAdmin(); },
   isAdmin() { return this.baseRole() === "SYS_ADMIN"; },
-  canManage(p) {
-    if (this.isAdmin()) return true;
-    if (!p) return false;
-    const u = AuthManager.getCurrentUser();
-    const eff = ProjectContext.effective(Object.assign({}, AuthManager.findUser(u.empNo) || u, { role: u.baseRole || u.role }), p.id);
-    return eff.role === "SYS_ADMIN" || eff.role === "PM";
+  canManage(p) { return this.isAdmin(); },
+  // 프로젝트 사용자 수 (시스템관리자 제외)
+  memberCount(p) {
+    if (typeof p.memberCount === "number") return p.memberCount;
+    return (ProjectContext.allUsers || []).filter(u => !ProjectContext.isAdminUser(u) && ProjectContext.member(u, p.id)).length;
   },
 
   // ---- 목록 ----
@@ -33,7 +33,8 @@ var ProjectManager = {
       if (res.ok && Array.isArray(res.projects)) ProjectContext.projects = res.projects;
     } else {
       const u = AuthManager.getCurrentUser();
-      ProjectContext.projects = ProjectContext.localList().filter(p => ProjectContext.canAccess(Object.assign({}, u, { role: u.baseRole || u.role }), p));
+      const list = ProjectContext.localList();
+      ProjectContext.projects = this.isAdmin() ? list : list.filter(p => p.id === ProjectContext.current && ProjectContext.canAccess(Object.assign({}, u, { role: u.baseRole || u.role }), p));
     }
     return ProjectContext.projects;
   },
@@ -41,6 +42,11 @@ var ProjectManager = {
   // 로그인 직후: 현재 프로젝트 접근 확인 + 머리글 표시
   async afterLogin() {
     await this.refreshList();
+    // [v3.0.0] 시스템관리자가 아닌데 이 프로젝트의 사용자가 아니면 다시 로그인 (프로젝트 선택)
+    if (!this.isAdmin() && !ProjectContext.info()) {
+      AuthManager.openLogin("🗂️ 프로젝트 로그인", "이 프로젝트의 사용자가 아닙니다. 참여 중인 프로젝트를 선택해 다시 로그인하세요.");
+      return false;
+    }
     if (!ProjectContext.info()) {
       // 접근할 수 없거나 없는 프로젝트 → 기본 프로젝트로
       if (!ProjectContext.isDefault()) {
@@ -57,9 +63,16 @@ var ProjectManager = {
     const sel = document.getElementById("headerProjectSelect");
     if (!sel) return;
     const list = ProjectContext.projects.length ? ProjectContext.projects : [{ id: ProjectContext.current, name: projectConfig.projectName || ProjectContext.current, status: "ACTIVE" }];
-    sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (보관)" : ""}${p.restricted ? " 🔒" : ""}</option>`).join("");
+    sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (보관)" : ""}</option>`).join("");
+    // [v3.0.0] 프로젝트 전환은 시스템관리자만 — 그 밖의 사용자는 프로젝트 이름만 표시
     const badge = document.getElementById("headerProjectNameBadge");
-    if (badge) badge.style.display = "none";
+    const admin = this.isAdmin();
+    sel.style.display = admin ? "" : "none";
+    if (badge) {
+      badge.style.display = admin ? "none" : "";
+      badge.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current;
+      badge.title = "로그인한 프로젝트 (다른 프로젝트는 다시 로그인하여 선택)";
+    }
     const btn = document.getElementById("btnProjectManager");
     if (btn) btn.style.display = this.canCreate() || this.canManage(ProjectContext.info()) ? "" : "none";
     const cur = ProjectContext.info();
@@ -76,6 +89,11 @@ var ProjectManager = {
 
   async switchTo(pid, onCancel) {
     if (!pid || pid === ProjectContext.current) return;
+    if (!this.isAdmin()) {
+      showToast("ℹ️ 다른 프로젝트는 로그아웃 후 로그인 화면에서 프로젝트를 선택해 들어가세요.");
+      if (onCancel) onCancel();
+      return;
+    }
     const retry = () => this.switchTo(pid, onCancel);
     if (typeof WeeklyReportManager !== "undefined" && WeeklyReportManager.currentWeekReport && !WeeklyReportManager.confirmLeave(retry)) { if (onCancel) onCancel(); return; }
     if (typeof MeetingManager !== "undefined" && MeetingManager.confirmLeave && !MeetingManager.confirmLeave(retry)) { if (onCancel) onCancel(); return; }
@@ -122,7 +140,7 @@ var ProjectManager = {
         <div class="pm-hint">프로젝트마다 WBS·요구사항·VOC·산출물·회의·주간보고·공지·기준정보를 따로 관리합니다. 사용자 계정은 모든 프로젝트 공통이며, 역할·담당 서브시스템은 [기준정보 &gt; d. 사용자 정보]에서 프로젝트별로 지정합니다.</div>
         <div class="table-container" style="max-height:300px;">
           <table class="matrix-table pm-table">
-            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">접근</th><th style="width:140px;">만든 날</th><th style="width:300px;">관리</th></tr></thead>
+            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">사용자</th><th style="width:140px;">만든 날</th><th style="width:300px;">관리</th></tr></thead>
             <tbody id="pmListBody"></tbody>
           </table>
         </div>
@@ -136,7 +154,7 @@ var ProjectManager = {
           </div>
           <div class="pm-form">
             <label class="pm-check"><input type="checkbox" id="pmNewCopy" checked> 현재 프로젝트의 기준정보 복사 (분야·서브시스템·SDLC·ID 규칙·휴일·표준 산출물)</label>
-            <label class="pm-check"><input type="checkbox" id="pmNewRestricted"> 참여자만 접근 (지정한 사용자와 시스템관리자만 볼 수 있음)</label>
+            <span class="pm-check">👥 사용자는 프로젝트별로 관리합니다. 만든 뒤 [기준정보 &gt; 사용자 정보]에서 추가하거나 다른 프로젝트에서 복사하세요.</span>
           </div>
           <div style="display:flex; justify-content:flex-end;">
             <button class="btn btn-sm" data-btn="add" data-click="ProjectManager.create">➕ 프로젝트 만들기</button>
@@ -191,12 +209,12 @@ var ProjectManager = {
       const rows = compact ? "" : `
         <div class="table-container" style="max-height:260px;">
           <table class="matrix-table pm-table">
-            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">접근</th><th style="width:90px;"></th></tr></thead>
+            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">사용자</th><th style="width:90px;"></th></tr></thead>
             <tbody>${list.map(p => `<tr class="${p.id === ProjectContext.current ? "pm-current" : ""}">
               <td><code>${escapeHtml(p.id)}</code></td>
               <td><b>${escapeHtml(p.name || p.id)}</b>${p.id === ProjectContext.current ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
               <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
-              <td>${p.restricted ? `🔒 참여자 ${(p.members || []).length}명` : "전체 사용자"}</td>
+              <td>사용자 ${this.memberCount(p)}명</td>
               <td>${p.id === ProjectContext.current ? "" : `<button class="btn btn-xs" data-btn="nav" data-click="ProjectManager.switchTo" data-click-args="${UiEvents.args(p.id)}">열기</button>`}</td>
             </tr>`).join("")}</tbody>
           </table>
@@ -233,12 +251,11 @@ var ProjectManager = {
         <td><code>${escapeHtml(p.id)}</code></td>
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
         <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
-        <td>${p.restricted ? `🔒 참여자 ${(p.members || []).length}명` : "전체 사용자"}</td>
+        <td>사용자 ${this.memberCount(p)}명</td>
         <td style="font-size:11px;">${escapeHtml(p.createdAt || "-")}</td>
         <td style="display:flex; gap:4px; flex-wrap:wrap;">
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}
           ${manage ? btn("이름 변경", "rename", "neutral", [p.id]) : ""}
-          ${manage && p.id !== ProjectContext.DEFAULT ? btn("참여자", "editMembers", "neutral", [p.id]) : ""}
           ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn(p.status === "ARCHIVED" ? "복원" : "보관", "toggleArchive", "warn", [p.id]) : ""}
           ${this.isAdmin() && p.id !== ProjectContext.DEFAULT && !cur ? btn("삭제", "remove", "danger", [p.id]) : ""}
         </td>
@@ -255,6 +272,8 @@ var ProjectManager = {
     };
     delete cfg.milestones;
     Object.assign(cfg, { projectName: name, projectStartDate: start, projectEndDate: end, reportDate: start });
+    // [v3.0.0] 소통 채널은 프로젝트별: 전체 + 이 프로젝트의 서브시스템
+    cfg.channels = ["전체"].concat(copy ? (subsystemsMeta || []).map(m => m.code || m.name).filter(Boolean) : []);
     const data = {
       projectConfig: cfg,
       subsystemsMeta: copy ? JSON.parse(JSON.stringify(subsystemsMeta)) : [],
@@ -269,7 +288,7 @@ var ProjectManager = {
     const v = id => (document.getElementById(id) ? document.getElementById(id).value.trim() : "");
     const name = v("pmNewName"), start = v("pmNewStart"), end = v("pmNewEnd");
     const copy = document.getElementById("pmNewCopy").checked;
-    const restricted = document.getElementById("pmNewRestricted").checked;
+    const restricted = false;
     if (!name) return showToast("프로젝트 이름을 입력하세요.");
     if (!start || !end || start > end) return showToast("프로젝트 시작일과 종료일을 확인하세요.");
     let project;
@@ -424,34 +443,141 @@ var ProjectManager = {
 
   // ---- 사용자 정보: 프로젝트별 역할 ----
   // 기본 프로젝트가 아니면 역할·담당 서브시스템 변경은 현재 프로젝트에만 적용 (projectRoles)
+  // [v3.0.0] 이 프로젝트의 역할·담당·부서
   userAssignment(u) {
-    if (ProjectContext.isDefault()) return { role: AuthManager.normalizeRole(u.role), subsystem: u.subsystem || "ALL", own: false };
-    const a = u.projectRoles && u.projectRoles[ProjectContext.current];
-    if (AuthManager.normalizeRole(u.role) === "SYS_ADMIN") return { role: "SYS_ADMIN", subsystem: "ALL", own: false, admin: true };
-    return a ? { role: AuthManager.normalizeRole(a.role), subsystem: a.subsystem || "ALL", own: true } : { role: AuthManager.normalizeRole(u.role), subsystem: u.subsystem || "ALL", own: false };
+    if (ProjectContext.isAdminUser(u)) return { role: "SYS_ADMIN", subsystem: "ALL", dept: u.dept || "", own: false, admin: true };
+    const a = ProjectContext.member(u) || {};
+    return { role: AuthManager.normalizeRole(a.role || "MEMBER"), subsystem: a.subsystem || "ALL", dept: a.dept !== undefined ? a.dept : (u.dept || ""), own: true };
   },
   setUserAssignment(idx, field, value) {
     const u = projectUsers[idx];
     if (!u) return;
-    if (ProjectContext.isDefault()) {
-      u[field] = value;
+    const pid = ProjectContext.current;
+    if (ProjectContext.isAdminUser(u)) {
+      if (field === "dept") u.dept = value;
+      else if (field === "role" && value !== "SYS_ADMIN" && this.isAdmin() && String(u.empNo).toLowerCase() !== "admin") {
+        // 시스템관리자 해제 → 이 프로젝트의 사용자로
+        u.role = value;
+        u.projectRoles = Object.assign({}, u.projectRoles, { [pid]: { role: value, subsystem: u.subsystem || "ALL", dept: u.dept || "" } });
+      }
+    } else if (field === "role" && value === "SYS_ADMIN") {
+      if (!this.isAdmin()) { showToast("시스템관리자 권한은 시스템관리자만 줄 수 있습니다."); return renderProjectUsersTable(); }
+      u.role = "SYS_ADMIN";
     } else {
       const cur = this.userAssignment(u);
-      const next = { role: cur.role === "SYS_ADMIN" ? "PM" : cur.role, subsystem: cur.subsystem };
-      next[field] = field === "role" && value === "SYS_ADMIN" ? "PM" : value;
-      u.projectRoles = Object.assign({}, u.projectRoles, { [ProjectContext.current]: next });
+      const next = { role: cur.role, subsystem: cur.subsystem, dept: cur.dept || "" };
+      next[field] = value;
+      u.projectRoles = Object.assign({}, u.projectRoles, { [pid]: next });
     }
-    renderProjectUsersTable();
-    persistChanges();
-  },
-  clearUserAssignment(idx) {
-    const u = projectUsers[idx];
-    if (!u || !u.projectRoles) return;
-    delete u.projectRoles[ProjectContext.current];
-    u.projectRoles = Object.assign({}, u.projectRoles);
     renderProjectUsersTable();
     persistChanges();
   }
 };
+
+// =============================================================================
+// [v3.0.0] 다른 프로젝트에서 사용자 복사 (시스템관리자) — 역할·담당·부서를 그대로 이 프로젝트로
+// =============================================================================
+var UserCopy = {
+  _modal() {
+    let m = document.getElementById("userCopyModal");
+    if (m) return m;
+    m = document.createElement("div");
+    m.id = "userCopyModal";
+    m.className = "modal-overlay pm-modal";
+    m.innerHTML = `
+      <div class="modal-content pm-modal-box">
+        <div class="pm-modal-head">
+          <h3>📥 다른 프로젝트에서 사용자 복사</h3>
+          <button class="btn btn-sm" data-btn="cancel" data-click="UserCopy.close">닫기</button>
+        </div>
+        <div class="pm-hint">고른 사용자의 역할·담당 서브시스템·부서를 지금 프로젝트로 복사합니다. 계정(사번·비밀번호)은 같으므로 같은 비밀번호로 이 프로젝트에 로그인할 수 있습니다. 이미 이 프로젝트에 있는 사용자는 건너뜁니다.</div>
+        <label class="pm-check" style="gap:8px;">복사할 프로젝트 <select id="ucSource" data-change="UserCopy.load"></select></label>
+        <div class="table-container" style="max-height:320px;">
+          <table class="matrix-table pm-table">
+            <thead><tr><th style="width:36px;"><input type="checkbox" id="ucAll" data-change="UserCopy.toggleAll" aria-label="모두 선택"></th><th>사번</th><th>이름</th><th>역할</th><th>담당</th><th>부서</th><th style="width:100px;">이 프로젝트</th></tr></thead>
+            <tbody id="ucBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <span id="ucSummary" class="pm-role-tag"></span>
+          <button class="btn btn-sm" data-btn="add" data-click="UserCopy.copy">📥 선택한 사용자 복사</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    return m;
+  },
+  async open() {
+    if (!ProjectManager.isAdmin()) return showToast("다른 프로젝트의 사용자 복사는 시스템관리자만 할 수 있습니다.");
+    const m = this._modal();
+    await ProjectManager.refreshList();
+    const others = (ProjectContext.projects || []).filter(p => p.id !== ProjectContext.current);
+    const sel = document.getElementById("ucSource");
+    sel.innerHTML = others.length ? others.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name || p.id)} (${escapeHtml(p.id)})</option>`).join("") : `<option value="">다른 프로젝트가 없습니다</option>`;
+    m.style.display = "flex";
+    await this.load();
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
+    if (typeof I18N !== "undefined") I18N.translateTree(m);
+  },
+  close() { const m = document.getElementById("userCopyModal"); if (m) m.style.display = "none"; },
+  async load() {
+    const src = document.getElementById("ucSource").value;
+    const body = document.getElementById("ucBody");
+    let members = [];
+    if (src) {
+      if (ProjectManager.isServer()) {
+        const res = await ServerBackend.request("/api/projects/members", { fromProject: src });
+        members = res.ok ? res.members || [] : [];
+      } else {
+        members = (ProjectContext.allUsers || []).filter(u => !ProjectContext.isAdminUser(u) && ProjectContext.member(u, src))
+          .map(u => Object.assign({ empNo: u.empNo, name: u.name }, ProjectContext.member(u, src)));
+      }
+    }
+    const here = new Set(projectUsers.filter(u => ProjectContext.member(u)).map(u => String(u.empNo).toLowerCase()));
+    this._members = members;
+    body.innerHTML = members.length ? members.map(m => {
+      const has = here.has(String(m.empNo).toLowerCase());
+      return `<tr><td><input type="checkbox" class="uc-pick" value="${escapeAttr(m.empNo)}" ${has ? "disabled" : "checked"} aria-label="${escapeAttr(m.empNo)} 선택"></td>
+        <td><code>${escapeHtml(m.empNo)}</code></td><td>${escapeHtml(m.name || "")}</td><td>${escapeHtml(AuthManager.roleLabel(AuthManager.normalizeRole(m.role)))}</td>
+        <td>${escapeHtml(m.subsystem || "ALL")}</td><td>${escapeHtml(m.dept || "")}</td><td>${has ? '<span class="status-tag tag-completed">이미 있음</span>' : '<span class="status-tag tag-ready">복사 대상</span>'}</td></tr>`;
+    }).join("") : `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">이 프로젝트에 사용자가 없습니다.</td></tr>`;
+    const all = document.getElementById("ucAll");
+    if (all) all.checked = true;
+    document.getElementById("ucSummary").textContent = `사용자 ${members.length}명 · 이미 있음 ${members.filter(m => here.has(String(m.empNo).toLowerCase())).length}명`;
+    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("userCopyModal"));
+  },
+  toggleAll() {
+    const on = document.getElementById("ucAll").checked;
+    document.querySelectorAll("#ucBody .uc-pick:not([disabled])").forEach(c => { c.checked = on; });
+  },
+  async copy() {
+    const src = document.getElementById("ucSource").value;
+    const emps = Array.prototype.map.call(document.querySelectorAll("#ucBody .uc-pick:checked:not([disabled])"), c => c.value);
+    if (!src || !emps.length) return showToast("복사할 사용자를 고르세요.");
+    const pid = ProjectContext.current;
+    let copied = [];
+    if (ProjectManager.isServer()) {
+      if (SyncManager.isDirty(["projectUsers"])) await SyncManager.save(["projectUsers"], { notify: false });
+      const res = await ServerBackend.request("/api/projects/copy-users", { fromProject: src, empNos: emps });
+      if (!res.ok) return showToast("❌ 복사 실패: " + (res.message || ""));
+      copied = res.copied || [];
+      await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
+    } else {
+      emps.forEach(e => {
+        const full = ProjectContext.findAny(e);
+        const a = full && ProjectContext.member(full, src);
+        if (!a || ProjectContext.member(full, pid)) return;
+        let row = projectUsers.find(u => String(u.empNo).toLowerCase() === String(e).toLowerCase());
+        if (!row) { row = full; projectUsers.push(row); }
+        row.projectRoles = Object.assign({}, row.projectRoles, { [pid]: { role: a.role, subsystem: a.subsystem || "ALL", dept: a.dept || "" } });
+        copied.push(e);
+      });
+      await SyncManager.save(["projectUsers"], { notify: false });
+    }
+    this.close();
+    renderProjectUsersTable();
+    showToast(`📥 사용자 ${copied.length}명을 이 프로젝트로 복사했습니다.`);
+  }
+};
+window.UserCopy = UserCopy;
 
 window.ProjectManager = ProjectManager;

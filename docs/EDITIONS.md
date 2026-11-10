@@ -1,15 +1,18 @@
 # IOSTAR-PM 판(Edition) 운영 안내
 
-## v2.3.0 부터: 통합판 하나 (화면 방식 Standard / Neo 선택)
-- 브랜치: `iostar-pm-unified` (Standard v1.0.1 + Neo v2.2.0 통합)
-- app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=2.3.x`, `[ui] default_ui / allow_ui_switch / default_theme`
-- 배포 파일: `IOSTAR-PM_v2.3.x[_win64].zip`
-- 화면 방식은 사용자별(`projectUsers[].uiMode`), 처음 값은 `default_ui`(v2.4.0 부터 neo), `allow_ui_switch=0` 이면 고정
-- Standard(클래식) 화면은 v2.4.x 까지 제공 — 다음 버전에서 Neo 하나로 통합하고 화면 방식 선택을 없앨 예정
-  (통합 시 정리 대상: `UiMode`, CSS `body:not(.ui-neo)` 규칙, `.neo-std-only` 요소, 자동 테스트의 Standard 단계)
-- Neo 전용 코드: `js/neo.js`(UiMode · Neo 기능), CSS `[Neo 2.1]`·`[Neo 2.2]`·`[v2.3.0]` 영역 — Neo 요소는 `body.ui-neo` 일 때만 표시
-- Standard 방식에서도 판매용으로 Neo 기능 자체를 빼야 한다면, 배포 전에 `default_ui=standard`, `allow_ui_switch=0` 으로 고정
-  (화면 설정 방식이므로 기술적 보호 수단은 아님 — 기능을 실제로 빼는 별도 빌드가 필요하면 make_release 에 제외 목록 추가)
+## v3.0.0 부터: Neo 하나
+- 브랜치: `iostar-pm-unified`
+- app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=3.x`, `[ui] default_theme`
+- 배포 파일: `IOSTAR-PM_v3.x[_win64].zip`
+- Standard(클래식) 화면과 화면 방식 선택(`default_ui`, `allow_ui_switch`, `projectUsers[].uiMode`)은 없어짐.
+  `UiMode` 는 호환용으로 남아 있고 항상 `neo` 를 돌려줌 (CSS 의 `body:not(.ui-neo)` 규칙은 쓰이지 않으며 다음 정리 때 지울 수 있음)
+- 사용자 모델: 계정(사번·이름·비밀번호)은 하나, 프로젝트 참여는 `projectUsers[].projectRoles[프로젝트ID] = {role, subsystem, dept}`.
+  `SYS_ADMIN` 은 모든 프로젝트 공통. 이전 데이터는 처음 한 번 자동 이관 (서버: `TB_META.membership_v3`, 로컬: `IOSTAR_MEMBERSHIP_V3`)
+- 로그인: PM 이하는 프로젝트를 골라야 하고 그 프로젝트만 조회 (서버 세션의 `loginProject` 로 고정), 시스템관리자는 선택하지 않아도 됨
+
+## v2.3.0 ~ v2.4.x: 통합판 (화면 방식 Standard / Neo 선택) — 보존용
+- Standard v1.0.1 + Neo v2.2.0 통합, `[ui] default_ui / allow_ui_switch` 로 화면 방식 선택 (v2.4.0 부터 기본 neo)
+- Neo 전용 코드: `js/neo.js`, CSS `[Neo 2.1]`·`[Neo 2.2]`·`[v2.3.0]` 영역
 
 ## 이전 분리판 (보존용)
 

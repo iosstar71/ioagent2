@@ -20,6 +20,11 @@
 
       <!-- 로그인 폼 -->
       <div id="loginFormPane" style="text-align: left;">
+        <div id="loginProjectRow">
+          <label class="login-label" for="inputLoginProject">프로젝트:</label>
+          <select id="inputLoginProject" class="login-input"></select>
+          <div class="login-hint">시스템관리자는 프로젝트를 선택하지 않아도 로그인할 수 있습니다.</div>
+        </div>
         <label class="login-label">사번 (사용자 ID):</label>
         <input type="text" id="inputSecurityEmpNo" value="" placeholder="사번 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
                data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
@@ -70,6 +75,7 @@
 
       <!-- 신규 사용자 등록 폼 (등록 시 기본 권한: 일반 사용자) -->
       <div id="registerFormPane" style="display:none; text-align:left;">
+        <div class="login-hint" id="regProjectInfo"></div>
         <label class="login-label">사번 (로그인 ID) *:</label>
         <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 사번">
         <label class="login-label">성명 *:</label>
@@ -103,7 +109,7 @@
     <div class="brand-title g-brand">
       <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
       <span id="headerSystemTitleText">IOSTAR-PM</span>
-      <span id="headerVersionBadge" class="brand-badge g-ver">v2.4.0</span>
+      <span id="headerVersionBadge" class="brand-badge g-ver">v3.0.0</span>
       <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">27년 가동률 시스템 개선</span>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
     </div>
@@ -151,12 +157,6 @@
             <option value="navy">Navy</option>
             <option value="matte">Matte (무광)</option>
             <option value="dark">Graphite (어두운 화면)</option>
-          </select>
-        </label>
-        <label class="g-menu-field ui-mode-field">화면 방식
-          <select id="gUiModeSelect" data-change="UiMode.set" data-change-args='["$value"]'>
-            <option value="neo">Neo (기본)</option>
-            <option value="standard">Standard (클래식, v2.4 까지)</option>
           </select>
         </label>
         <label class="g-menu-field">메뉴 위치
@@ -2146,7 +2146,7 @@
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver2.4.0" style="width:100%;" data-change="updateProjectTitles">
+                <input type="text" id="cfgSystemTitle" value="IOSTAR-PM ver3.0.0" style="width:100%;" data-change="updateProjectTitles">
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:11px; margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
@@ -2496,6 +2496,7 @@
               <option value="en">English</option>
             </select>
             <button class="btn btn-secondary btn-sm" data-click="applyBulkUserLanguage">전체 사용자에 적용</button>
+            <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 사용자(역할·담당·부서)를 이 프로젝트로 복사 (시스템관리자)">📥 다른 프로젝트에서 복사</button>
             <button class="btn btn-primary btn-sm" data-click="addNewProjectUser">+ 신규 사용자 추가</button>
           </div>
         </div>
@@ -2715,14 +2716,6 @@
                 <option value="dark">Graphite (어두운 화면)</option>
               </select>
             </div>
-          </div>
-          <div class="ui-mode-field ui-mode-row">
-            <label style="display:block; font-size:11.5px; font-weight:bold; margin-bottom:4px;">🖥️ 화면 방식 (내 계정):</label>
-            <select id="cfgUiModeSelect" style="font-weight:bold; min-width:260px;" data-change="UiMode.set" data-change-args='["$value"]'>
-              <option value="neo">Neo (기본) — WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 · 화면 머리줄 통일 · 주간보고 2단</option>
-              <option value="standard">Standard (클래식) — 이번 버전(v2.4)까지만 제공</option>
-            </select>
-            <span class="ui-mode-hint">바꾸면 화면을 다시 불러옵니다. 사용자마다 따로 저장됩니다. Standard(클래식) 화면은 다음 버전부터 Neo 로 통합됩니다.</span>
           </div>
         </div>
         </div>
@@ -3071,6 +3064,7 @@
             </div>
             <span style="font-size: 11.5px; color: #64748b;">공지 &amp; 소통 탭의 피드 및 실시간 채팅 채널을 등록·삭제하고 데이터를 초기화합니다.</span>
           </div>
+          <div class="channel-scope-note">🗂️ <b>소통 채널·공지·소통 피드·채팅은 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
 
           <div class="grid-2" style="margin-top: 10px;">
             <!-- 좌측: 채널 등록 및 관리 -->
