@@ -93,6 +93,25 @@ const GanttRenderer = {
     return row;
   },
 
+  // [v3.4.0] 진척 막대 (B안): 바탕 = 계획 기간, 채움 = 실적 %, ▼ = 기준일 계획 위치, 빗금 = 계획보다 모자란 구간
+  //  상위 Task 는 양 끝 꺾쇠가 있는 얇은 요약 막대 (하위 합산 실적으로 채움), % 는 막대 오른쪽에 표시
+  _progressBar(task, left, width, st) {
+    const p = Math.max(0, Math.min(100, Number(task.pProg) || 0));
+    const a = Math.max(0, Math.min(100, Number(task.aProg) || 0));
+    const late = st.code === "delayed" || a + 0.5 < p;
+    const done = a >= 100;
+    const wrap = document.createElement("div");
+    wrap.className = "gantt-pbar" + (task.isLeaf ? "" : " summary") + (late ? " late" : "") + (done ? " done" : "");
+    wrap.style.left = `${left}px`;
+    wrap.style.width = `${width}px`;
+    wrap.title = `[${task.system}] ${task.name} (${task.pStart} ~ ${task.pEnd || task.pStart})\n계획: ${p}% | 실적: ${a}% | 상태: ${st.label}${late ? ` (계획보다 ${Math.round(p - a)}%p 부족)` : ""}`;
+    wrap.innerHTML = `<i class="gp-fill" style="width:${a}%"></i>` +
+      (task.isLeaf && late ? `<i class="gp-gap" style="left:${a}%; width:${p - a}%"></i>` : "") +
+      (task.isLeaf && p > 0 && p < 100 ? `<i class="gp-mark" style="left:${p}%"></i>` : "") +
+      `<span class="gp-label">${a}%${task.isLeaf ? ` / 계획 ${p}%${late ? ` (−${Math.round(p - a)}%p)` : ""}` : ""}</span>`;
+    return wrap;
+  },
+
   _chartRow(tl) {
     const row = document.createElement("div");
     row.className = "gantt-row";
@@ -206,14 +225,7 @@ const GanttRenderer = {
           ms.title = `[마일스톤 과업] ${task.name} (${task.pStart})`;
           row.appendChild(ms);
         } else {
-          const bar = document.createElement("div");
-          bar.className = "gantt-bar-box";
-          bar.style.left = `${left}px`;
-          bar.style.width = `${width}px`;
-          bar.style.backgroundColor = color;
-          bar.innerText = `${task.aProg}% (계획 ${task.pProg}%)`;
-          bar.title = `[${task.system}] ${task.name} (${task.pStart} ~ ${pEnd})\n계획: ${task.pProg}% | 실적: ${task.aProg}% | 상태: ${st.label}`;
-          row.appendChild(bar);
+          row.appendChild(this._progressBar(task, left, width, st));
         }
       }
       // 서브시스템 마일스톤은 해당 서브시스템 L1 행에 표시

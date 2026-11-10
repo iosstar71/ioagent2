@@ -654,6 +654,29 @@ async function localMain() {
     v330.onlyDone && v330.msPinned && v330.deck.slides >= 6 && v330.deck.sys === v330.done.split(",").filter(Boolean).length && v330.deck.html && /_경영보고_\d{4}W\d{2}_PPT\.pptx$/.test(v330.deck.file) && v330.deck.size > 5000 &&
     v330.menus === "2,2,2,2" && /^[A-Za-z0-9-]+_요구사항_W1_\d{8}\.xlsx$/.test(v330.reqFile) && v330.up.after === v330.up.before && v330.up.othersAfter === v330.up.others && !v330.oldWords, JSON.stringify(v330));
 
+  // [v3.4.0] 간트 B안 막대 · 불릿 차트(대시보드 · 브리핑 홈) · 경영 보고 장표 구성
+  const v340 = await page.evaluate(async () => {
+    const out = {};
+    const t = wbsData.find(x => x.isLeaf && x.pProg >= 30 && x.pProg < 100); const keep = t.aProg; t.aProg = Math.max(0, t.pProg - 20); rebuildAll();
+    GShell.go("tab-gantt"); await new Promise(r => setTimeout(r, 400));
+    out.gantt = { bars: document.querySelectorAll(".gantt-pbar").length, fill: document.querySelectorAll(".gantt-pbar .gp-fill").length, late: document.querySelectorAll(".gantt-pbar.late .gp-gap").length, mark: document.querySelectorAll(".gantt-pbar .gp-mark").length, summary: document.querySelectorAll(".gantt-pbar.summary").length };
+    t.aProg = keep; rebuildAll();
+    GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 300));
+    out.dashBullet = document.querySelectorAll("#dashBulletChart .bl-row").length;
+    GShell.go("tab-home"); HomeScreenManager.setStyle("EXECUTIVE"); await new Promise(r => setTimeout(r, 300));
+    out.homeBullet = document.querySelectorAll("#execBulletChart .bl-row").length;
+    HomeScreenManager.setStyle(HomeScreenManager.roleDefault());
+    const deck = ExecDeck.build(ExecDeck.week());
+    out.names = deck.slides.map(x => x.name).join(",");
+    const texts = deck.slides.map(sl => sl.els.filter(e => e.t === "text").map(e => e.paras.map(q => q.text).join(" ")).join(" ")).join(" ");
+    out.noOldSlide = !/요구사항 · 산출물 · VOC 현황/.test(texts) && !/진행 요약|계획 요약|등록 요약/.test(texts);
+    out.hasPoly = deck.slides.some(sl => sl.els.some(e => e.t === "poly"));
+    return out;
+  });
+  check("v3.4.0: gantt bars show actual fill, plan marker, delay hatching and summary bars; bullet charts on dashboard and briefing home; executive deck order (progress → S-curve → bullet → REQ·VOC → SDLC matrix → delays → subsystems)",
+    v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet >= 1 &&
+    /^표지,목차,종합 진척 현황,S-커브,불릿 차트,요구사항·VOC,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
+
   // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
   const loginOpts = await page.$$eval("#inputLoginProject option", o => o.map(x => x.value));

@@ -76,7 +76,31 @@ var WeeklyExport = {
     return MeetingManager.getWeeklyMeetings(start, end).map(m => ({
       date: m.date, startTime: m.startTime || "", endTime: m.endTime || "", system: m.system || "ALL", title: m.title || "",
       location: m.location || "", host: m.host || "", status: m.status || "",
+      agendaTitles: (m.agendas || []).map(a => a.title).filter(Boolean),
       decisions: (m.agendas || []).map(a => `${a.title}: ${a.decision || "합의"}`).join(" / ") || m.summary || ""
+    }));
+  },
+  // 주차별 누적 계획 진척률 (L1 과업 가중 평균, 대시보드 S-커브와 같은 계산)
+  _planCurve() {
+    const weeks = WeeklyReportManager.getAllWeeks();
+    const tasks = (wbsData || []).filter(d => d.level === 1);
+    const totalW = tasks.reduce((a, d) => a + (parseFloat(d.weight) || 1), 0) || 1;
+    const day = 86400000;
+    return weeks.map(w => {
+      const end = new Date(w.endDate);
+      let sum = 0;
+      tasks.forEach(t => {
+        const s = new Date(t.pStart || projectConfig.projectStartDate), e = new Date(t.pEnd || projectConfig.projectEndDate);
+        const p = end < s ? 0 : end >= e ? 100 : Math.min(100, Math.round((end - s) / day / Math.max(1, (e - s) / day) * 100));
+        sum += p * (parseFloat(t.weight) || 1);
+      });
+      return { w: w.weekNum, label: String(w.startDate).slice(5).replace("-", "/"), p: Math.round(sum / totalW) };
+    });
+  },
+  _sdlc() {
+    const m = (typeof ReportExporter !== "undefined" && ReportExporter._collectMetrics) ? ReportExporter._collectMetrics() : null;
+    return ((m && m.sdlcGroups) || []).filter(g => g.rows && g.rows.length).map(g => ({
+      name: g.spec.name, phases: (g.spec.phases || []).map(p => ({ name: p.name, weight: p.weight })), rows: g.rows
     }));
   },
   takeSnapshot(rep) {
@@ -92,6 +116,9 @@ var WeeklyExport = {
       meetingsCur: this._meetings(rep.startDate, rep.endDate),
       meetingsNext: this._meetings(rep.nextStartDate, rep.nextEndDate),
       actions: this._actionsOfWeek(rep.startDate, rep.endDate),
+      // [v3.4.0] 경영 보고 장표용: S-커브 계획선(주차별) · 단계별 종합 공정 매트릭스(SDLC 만)
+      planCurve: this._planCurve(),
+      sdlc: this._sdlc(),
       // [v3.3.0] 경영 보고 장표용: 지연 과업 · 마일스톤
       delayed: (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, projectConfig.reportDate).code === "delayed")
         .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "" })),

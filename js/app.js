@@ -3235,6 +3235,10 @@ function addNewVoc() {
 // -------------------------------------------------------------
 function renderDashboard() {
   const repDate = projectConfig.reportDate;
+  // [v3.4.0] 불릿 차트 (대시보드 서브시스템 필터 반영)
+  if (typeof BulletChart !== "undefined") {
+    try { const sf = document.getElementById("dashSubsystemFilter"); BulletChart.render("dashBulletChart", BulletChart.liveRows(sf ? sf.value : "ALL")); } catch (e) { console.warn(e); }
+  }
 
   // [ver1.0.4 신규] 대시보드 4대 영역 통합 필터링 (분야 / 서브시스템)
   const dFilterEl = document.getElementById("dashDomainFilter");
@@ -8291,6 +8295,7 @@ var HomeScreenManager = {
   },
 
   renderExecutive() {
+    if (typeof BulletChart !== "undefined") { try { BulletChart.render("execBulletChart", BulletChart.liveRows()); } catch (e) { console.warn(e); } }
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "27년 가동률 시스템 개선";
     const repDay = (typeof WBSEngine !== "undefined" && WBSEngine.getDayOfWeekText) ? WBSEngine.getDayOfWeekText(repDate) : "화";
