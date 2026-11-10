@@ -669,7 +669,7 @@ let projectConfig = {
   exportSettings: {
     xlsxTheme: "Navy Classic",
     xlsxFontSize: 10,
-    docxTheme: "Official Blue",
+    docxTheme: "Official Navy",
     docxFontSize: 10,
     docxFont: "맑은 고딕"
   },
@@ -1952,6 +1952,7 @@ function renderWbsTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
   if (typeof WbsOwner !== "undefined") WbsOwner.fillList();
+  if (typeof WbsFold !== "undefined") WbsFold.apply();
   let outOfRangeCount = 0;
 
   const sysFilterEl = document.getElementById("wbsSubsystemFilter");
@@ -2016,7 +2017,7 @@ function renderWbsTable() {
         </div>
       </td>
       <td>
-        <select style="width:74px; padding:2px 2px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
+        <select style="width:86px; padding:2px 3px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -2024,12 +2025,12 @@ function renderWbsTable() {
         <div style="padding-left: ${indent}px; display:flex; align-items:center;">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
-          <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:150px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
+          <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:180px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td><input type="number" min="0" value="${row.weight}" style="width:42px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
-      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:66px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
+      <td><input type="number" min="0" value="${row.weight}" style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
         <div class="date-input-wrap">
@@ -2037,6 +2038,7 @@ function renderWbsTable() {
                  class="${pStartOutOfRange ? "date-out-of-range" : ""} ${isStartHoliday ? "holiday-date-highlight" : ""}"
                  title="${pStartOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isStartHoliday ? "휴일(주말/공휴일) 경고" : "")}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pStart", "$value", "rebuildAll")}">
+          <span class="wbs-dow ${pStartDay === "토" ? "day-sat" : (pStartDay === "일" ? "day-sun" : "")}">${pStartDay || ""}</span>
         </div>
       </td>
 
@@ -2046,6 +2048,7 @@ function renderWbsTable() {
                  class="${pEndOutOfRange ? "date-out-of-range" : ""} ${isEndHoliday ? "holiday-date-highlight" : ""}"
                  title="${pEndOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isEndHoliday ? "휴일(주말/공휴일) 경고" : "")}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pEnd", "$value", "rebuildAll")}">
+          <span class="wbs-dow ${pEndDay === "토" ? "day-sat" : (pEndDay === "일" ? "day-sun" : "")}">${pEndDay || ""}</span>
         </div>
       </td>
 
@@ -2054,6 +2057,7 @@ function renderWbsTable() {
           <input type="date" value="${row.aStart || ""}" data-dow="${aStartDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aStartOutOfRange ? "date-out-of-range" : ""}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aStart", "$value", "rebuildAll")}">
+          <span class="wbs-dow ${aStartDay === "토" ? "day-sat" : (aStartDay === "일" ? "day-sun" : "")}">${aStartDay || ""}</span>
         </div>
       </td>
 
@@ -2062,13 +2066,14 @@ function renderWbsTable() {
           <input type="date" value="${row.aEnd || ""}" data-dow="${aEndDay || ""}" ${isLeaf ? "" : "readonly"}
                  class="${aEndOutOfRange ? "date-out-of-range" : ""}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aEnd", "$value", "rebuildAll")}">
+          <span class="wbs-dow ${aEndDay === "토" ? "day-sat" : (aEndDay === "일" ? "day-sun" : "")}">${aEndDay || ""}</span>
         </div>
       </td>
 
       <td><input type="number" value="${row.pProg}" readonly style="width:44px; padding:2px 3px; text-align:right;"></td>
       <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:44px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
-      <td><input type="text" class="wbs-owner" list="wbsOwnerList" maxlength="40" value="${escapeHtml(row.owner || "")}" title="${isLeaf ? "담당자 (목록에서 고르거나 직접 입력, 1명)" : "담당자 — 상위 Task 에 지정하면 하위 Task 에도 자동 지정"}" data-change="WbsOwner.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
-      <td><input type="text" value="${escapeHtml(row.output || "")}" style="width:76px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
+      <td class="col-fold"><input type="text" class="wbs-owner" list="wbsOwnerList" maxlength="40" value="${escapeHtml(row.owner || "")}" title="${isLeaf ? "담당자 (목록에서 고르거나 직접 입력, 1명)" : "담당자 — 상위 Task 에 지정하면 하위 Task 에도 자동 지정"}" data-change="WbsOwner.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
+      <td class="col-fold"><input type="text" value="${escapeHtml(row.output || "")}" style="width:106px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
           <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
@@ -7149,7 +7154,7 @@ var WeeklyReportManager = {
             : (st === "진행중" ? `${t.name} 진행 중 (현재 진척률 ${t.aProg}%)` : `${t.name} 착수 준비`);
           const sub = subDetail.get("C" + t.id);
           curTasks.push({
-            id: `CT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name,
+            id: `CT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name, owner: t.owner || "",
             pProg: t.pProg, aProg: t.aProg, pStart: t.pStart, pEnd: t.pEnd, aStart: t.aStart, aEnd: t.aEnd,
             status: sub ? sub.status : st,
             detail: sub && sub.detail ? sub.detail : detail
@@ -7158,7 +7163,7 @@ var WeeklyReportManager = {
         if (this.isNextWeekTask(t, nextWeekObj.startDate, nextWeekObj.endDate, weekObj.endDate)) {
           const sub = subDetail.get("N" + t.id);
           nxtTasks.push({
-            id: `NT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name,
+            id: `NT-${sys}-${t.id}`, system: sys, wbsId: t.id, level: t.level, name: t.name, owner: t.owner || "",
             pProg: t.pProg, pStart: t.pStart, pEnd: t.pEnd, status: "계획",
             detail: sub && sub.detail ? sub.detail : `차주 ${t.name} 추진 예정`
           });
@@ -7195,6 +7200,8 @@ var WeeklyReportManager = {
     if (!r) return "";
     const c = Object.assign({}, r);
     delete c.updatedAt;
+    delete c.snapshot;
+    delete c.revision;
     return JSON.stringify(c);
   },
 
@@ -7418,6 +7425,12 @@ var WeeklyReportManager = {
     rep.coverageNote = `통합 보고서: ${allRep ? "작성 완료" : "미작성"} / 작성 완료 서브시스템 ${doneSys.length}개${doneSys.length ? ` (${doneSys.join(", ")})` : ""}`
       + (missing.length ? ` / 미작성 ${missing.length}개 (${missing.join(", ")})` : " / 미작성 없음");
     rep.integratedFrom = { done: doneSys, missing, auto: false, allDone: !!allRep };
+    // [v3.1.0] 작성 시점 자료: 통합 보고서의 것, 없으면 가장 최근에 작성 완료된 서브시스템 보고서의 것
+    const snaps = (allRep && allRep.snapshot ? [allRep.snapshot] : []).concat(sysReps.map(r => r.snapshot).filter(Boolean)).sort((a, b) => String(b.takenAt).localeCompare(String(a.takenAt)));
+    if (allRep && allRep.snapshot) rep.snapshot = allRep.snapshot;
+    else if (snaps.length) rep.snapshot = snaps[0];
+    rep.revision = allRep ? (allRep.revision || 1) : 0;
+    rep.status = "DONE";
     return rep;
   },
 
@@ -7480,7 +7493,9 @@ var WeeklyReportManager = {
   MAX_REPORT_CHARS: 32000,
   FIELD_LIMITS: { summary: 3000, issues: 2000, detail: 1000, name: 200 },
   reportSize(rep) {
-    return JSON.stringify(rep || this.currentWeekReport || {}).length;
+    const r = Object.assign({}, rep || this.currentWeekReport || {});
+    delete r.snapshot; // [v3.1.0] 작성 시점 자료는 크기 계산에서 제외
+    return JSON.stringify(r).length;
   },
   _checkSize(extra = 0, notify = true) {
     const size = this.reportSize() + extra;
@@ -7556,9 +7571,9 @@ var WeeklyReportManager = {
     const list = this._listOf(kind);
     if (kind === "cur") {
       const st = t.aProg >= 100 ? "완료" : (t.aProg > 0 ? "진행중" : "계획");
-      list.push({ id: `CT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, pProg: t.pProg, aProg: t.aProg, pStart: t.pStart, pEnd: t.pEnd, aStart: t.aStart, aEnd: t.aEnd, status: st, detail: "" });
+      list.push({ id: `CT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, owner: t.owner || "", pProg: t.pProg, aProg: t.aProg, pStart: t.pStart, pEnd: t.pEnd, aStart: t.aStart, aEnd: t.aEnd, status: st, detail: "" });
     } else {
-      list.push({ id: `NT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, pProg: t.pProg, pStart: t.pStart, pEnd: t.pEnd, status: "계획", detail: "" });
+      list.push({ id: `NT-${t.system}-${t.id}`, added: true, system: t.system, wbsId: t.id, level: t.level, name: t.name, owner: t.owner || "", pProg: t.pProg, pStart: t.pStart, pEnd: t.pEnd, status: "계획", detail: "" });
     }
     const ex = this._excludedOf(kind);
     const i = ex.indexOf(t.id);
@@ -7603,7 +7618,10 @@ var WeeklyReportManager = {
     const dirty = this._canon(rep) !== this._draftBase;
     el.innerHTML = `📝 <b>${escapeHtml(rep.weekLabel)}</b> · 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b>
       · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:#d97706; font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
-      ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}`;
+      ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
+      ${rep.snapshot ? `<span class="wr-basis snap" title="지표·요구사항·VOC·회의·Action Item 은 작성 완료 시점 자료로 표시·내려받기 합니다.">📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})</span>`
+        : `<span class="wr-basis live" title="작성 완료하면 그 시점의 자료가 보고서와 함께 저장됩니다.">⏱ 현재 자료 기준</span>`}
+      <div class="wr-docno">문서 번호 <code>${escapeHtml(WeeklyExport.docNo(rep))}</code></div>`;
     const btn = document.getElementById("btnWrComplete");
     if (btn) {
       btn.disabled = !writable;
@@ -7627,17 +7645,23 @@ var WeeklyReportManager = {
       : `<span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
-    const detail = `<input type="text" maxlength="1000" value="${escapeHtml(t.detail || "")}" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}" style="width:100%; font-size:11px; padding:3px 6px;">`;
+    const detail = `<textarea class="wr-detail" rows="2" maxlength="1000" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}">${escapeHtml(t.detail || "")}</textarea>`;
+    // [v3.1.0] 담당자: WBS 과업은 WBS 담당자(보고서에 함께 저장), 직접 입력 항목은 입력
+    const ownerCell = t.manual
+      ? `<input type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" style="width:100%; font-size:11px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
+      : `<span class="wr-owner">${escapeHtml(t.owner || "-")}</span>`;
     const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" data-click="WeeklyReportManager.removeItem" data-click-args="${UiEvents.args(k)}">✕</button>`;
     const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
     const lvl = t.manual ? "-" : `L${t.level || 4}`;
+    const done = t.manual ? "" : (t.aEnd || (t.aProg >= 100 ? (t.pEnd || "") : ""));
+    const schedCell = t.manual ? sched : `<div class="wr-sched">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}${kind === "cur" && done ? `<br><b>완료 ${escapeHtml(done)}</b>` : ""}</div>`;
+    const idCell = `${wbsCell}${t.manual ? "" : `<span class="wr-lvl">${lvl}</span>`}`;
     tr.innerHTML = kind === "cur" ? `
-      <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
-      <td><span style="font-size:10px; color:#1e40af; font-weight:bold;">${escapeHtml(t.manual ? "-" : (t.aEnd || (t.aProg >= 100 ? (t.pEnd || "-") : "-")))}</span></td>
+      <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td><td><strong>${t.manual ? "-" : (t.aProg ?? 0) + "%"}</strong></td>
       <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>` : `
-      <td>${sysCell}</td><td>${wbsCell}</td><td>${lvl}</td><td style="text-align:left;">${nameCell}</td><td>${sched}</td>
+      <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td>
       <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>`;
@@ -7674,7 +7698,7 @@ var WeeklyReportManager = {
       curTbody.innerHTML = "";
       const tasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        curTbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
+        curTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
         tasks.forEach(t => curTbody.appendChild(this._taskRow("cur", t)));
       }
@@ -7691,7 +7715,9 @@ var WeeklyReportManager = {
       }
     // [ver1.0.4] 금주 진행 회의 및 차주 예정 회의 실시간 렌더링
     if (typeof MeetingManager !== "undefined") {
-      const curMtgs = MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate);
+      // [v3.1.0] 작성 완료본은 작성 시점의 회의 목록
+      const snapMtg = list => (list || []).map(m => Object.assign({}, m, { agendas: null, summary: m.decisions }));
+      const curMtgs = rep.snapshot ? snapMtg(rep.snapshot.meetingsCur) : MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate);
       const curMtgsBody = document.getElementById("wrCurrentMeetingsBody");
       if (curMtgsBody) {
         curMtgsBody.innerHTML = "";
@@ -7717,7 +7743,7 @@ var WeeklyReportManager = {
         }
       }
 
-      const nxtMtgs = MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate);
+      const nxtMtgs = rep.snapshot ? snapMtg(rep.snapshot.meetingsNext) : MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate);
       const nxtMtgsBody = document.getElementById("wrNextMeetingsBody");
       if (nxtMtgsBody) {
         nxtMtgsBody.innerHTML = "";
@@ -7771,6 +7797,9 @@ var WeeklyReportManager = {
     rep.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
     rep.updatedBy = u.empNo || "";
     if (!rep.author) rep.author = u.name || "";
+    // [v3.1.0] 판 번호 + 작성 시점 자료 (지난 주간보고는 이 자료로 보여 주고 내려받음)
+    rep.revision = (parseInt(rep.revision, 10) || 0) + 1;
+    rep.snapshot = WeeklyExport.takeSnapshot(rep);
     const copy = JSON.parse(JSON.stringify(rep));
     const idx = weeklyReportsData.findIndex(r => r.id === rep.id);
     if (idx !== -1) weeklyReportsData[idx] = copy;
@@ -7825,7 +7854,7 @@ var WeeklyReportManager = {
     // 사용자가 직접 추가한 WBS 과업(added)은 자동 편성 대상이 아니어도 유지하고 일정·진척만 최신화
     const keepAdded = (list, freshList) => (list || []).filter(t => t.added && t.wbsId && !freshList.some(f => f.wbsId === t.wbsId)).map(t => {
       const w = wbsData.find(x => x.id === t.wbsId);
-      return w ? Object.assign({}, t, { name: w.name, level: w.level, pProg: w.pProg, aProg: w.aProg, pStart: w.pStart, pEnd: w.pEnd, aStart: w.aStart, aEnd: w.aEnd }) : t;
+      return w ? Object.assign({}, t, { name: w.name, level: w.level, owner: w.owner || "", pProg: w.pProg, aProg: w.aProg, pStart: w.pStart, pEnd: w.pEnd, aStart: w.aStart, aEnd: w.aEnd }) : t;
     });
     const curFresh = freshReport.currentWeekTasks.filter(t => !exCur.includes(t.wbsId));
     const nxtFresh = freshReport.nextWeekTasks.filter(t => !exNxt.includes(t.wbsId));
@@ -7841,6 +7870,9 @@ var WeeklyReportManager = {
     freshReport.nextWeekSummary = this.currentWeekReport.nextWeekSummary;
     freshReport.issuesNotes = this.currentWeekReport.issuesNotes;
     freshReport.author = this.currentWeekReport.author;
+    // [v3.1.0] 판 번호는 유지, 작성 시점 자료는 다시 [작성 완료] 할 때 새로 저장 (그 전까지 내려받기는 현재 자료 기준)
+    if (this.currentWeekReport.revision) freshReport.revision = this.currentWeekReport.revision;
+    if (this.currentWeekReport.updatedAt) freshReport.updatedAt = this.currentWeekReport.updatedAt;
 
     this.currentWeekReport = freshReport; // 저장은 [작성 완료] 시 반영
 
@@ -7997,214 +8029,20 @@ var WeeklyReportManager = {
 
   // [ver1.0.4] 주간보고 엑셀 다운로드 (XLSX 형태)
   // forceIntegrated=true: 현재 작성 단위와 관계없이 통합(전체) 보고서로 생성 (대시보드 엑셀 보고서)
+  // [v3.1.0] 엑셀·워드 내려받기는 WeeklyExport (같은 보고서 모델 · 파일 이름 규칙 · 작성 시점 자료)
   exportExcel(forceIntegrated = false, repOverride = null) {
     if (!repOverride && !this.currentWeekReport) this.init();
     if (!repOverride) this.readInputsIntoCurrentReport();
-
     let rep = repOverride || this.currentWeekReport;
-    if (!repOverride && forceIntegrated && rep.scope !== "ALL") {
-      const wObj = this.getAllWeeks().find(w => w.weekNum === rep.weekNo);
-      rep = (weeklyReportsData || []).find(r => r.id === this.reportId(wObj, "ALL", "")) || this.buildReport(wObj, "ALL", "");
-    }
-    const sc = this.reportScope(rep);
-    const scopeSystems = this.scopeSystems(sc.scope, sc.value);
-    const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
-    const filterSys = "ALL";
-    const scopeLabel = this.scopeFileLabel(sc.scope, sc.value);
-    const projName = (projectConfig && projectConfig.projectName) || "27년_가동률_시스템_개선";
-    const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
-
-    // Sheet 1: 주간보고 종합요약
-    const s1Rows = [
-      { cells: [`[${projName} 주간보고서] ${rep.weekLabel} (${scopeLabel})`], styleId: 3, height: 28 },
-      { cells: ["프로젝트명", projName, "보고주차", rep.weekLabel, "금주기간", `${rep.startDate} ~ ${rep.endDate}`, "차주기간", `${rep.nextStartDate} ~ ${rep.nextEndDate}`, "보고기준일", `${rep.reportDate}`], styleId: 2, height: 22 },
-      { cells: ["작성자", rep.author || "김총괄 수석PM", "적용범위", scopeLabel, "갱신일시", rep.updatedAt, "전체계획", `${m ? m.totalPlan : 0}%`, "전체실적", `${m ? m.totalActual : 0}%`], styleId: 2, height: 22 },
-      { cells: [], styleId: 0, height: 12 },
-      { cells: ["【금주 중점 추진 실적 총괄 요약】"], styleId: 3, height: 24 },
-      { cells: [rep.currentWeekSummary || "(작성된 요약 없음)"], styleId: 2, height: 28 },
-      { cells: [], styleId: 0, height: 10 },
-      { cells: ["【차주 중점 추진 목표 및 계획 요약】"], styleId: 3, height: 24 },
-      { cells: [rep.nextWeekSummary || "(작성된 요약 없음)"], styleId: 2, height: 28 },
-      { cells: [], styleId: 0, height: 10 },
-      { cells: ["【주요 현안 및 지원 요청사항】"], styleId: 3, height: 24 },
-      { cells: [rep.issuesNotes || "(특이사항 없음)"], styleId: 2, height: 28 }
-    ];
-    if (rep.coverageNote) {
-      s1Rows.push({ cells: [], styleId: 0, height: 10 });
-      s1Rows.push({ cells: ["【주간보고 작성 현황】"], styleId: 3, height: 24 });
-      s1Rows.push({ cells: [rep.coverageNote], styleId: 2, height: 28 });
-    }
-
-    let s1SubsysTitleRow = s1Rows.length + 2;
-    if (m && m.subsystemRows) {
-      s1Rows.push({ cells: [], styleId: 0, height: 12 });
-      s1SubsysTitleRow = s1Rows.length + 1;
-      s1Rows.push({ cells: ["【서브시스템별 공정 진척 현황】"], styleId: 3, height: 26 });
-      s1Rows.push({ cells: ["분야", "서브시스템", "공정유형", "담당PM", "가중치(%)", "Task수", "계획(%)", "실적(%)", "달성률(%)", "지연(건)"], styleId: 1, height: 24 });
-      m.subsystemRows.forEach(r => {
-        if (inScope(r[1])) s1Rows.push({ cells: r, styleId: 2, height: 20 });
-      });
-    }
-
-    // [ver1.0.4 요건 3] 제목 짤림 방지: A1:J1, A5:J5, A14:J14 셀 병합
-    const s1Merges = [
-      "A1:J1", "A5:J5", "A6:J6", "A8:J8", "A9:J9", "A11:J11", "A12:J12",
-      `A${s1SubsysTitleRow}:J${s1SubsysTitleRow}`
-    ].concat(rep.coverageNote ? ["A14:J14", "A15:J15"] : []);
-
-    // Sheet 2: 금주 추진 실적
-    const s2Rows = [
-      { cells: [`[${rep.weekLabel}] 금주 세부 Task 추진 실적 및 조치내역 (${rep.startDate} ~ ${rep.endDate})`], styleId: 3, height: 28 },
-      { cells: ["서브시스템", "WBS ID", "레벨", "Task명", "계획(%)", "실적(%)", "추진상태", "상세 추진실적 및 조치내역"], styleId: 1, height: 24 }
-    ];
-    const curTasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
-    curTasks.forEach(t => {
-      s2Rows.push({
-        cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.manual ? "-" : `L${t.level || 4}`, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.manual ? "-" : `${t.aProg ?? 0}%`, t.status || "완료", t.detail || ""],
-        styleId: 2,
-        height: 22
-      });
-    });
-
-    // Sheet 3: 차주 추진 계획
-    const s3Rows = [
-      { cells: [`[${rep.weekLabel}] 차주 세부 Task 추진 계획 (${rep.nextStartDate} ~ ${rep.nextEndDate})`], styleId: 3, height: 28 },
-      { cells: ["서브시스템", "WBS ID", "레벨", "Task명", "목표계획(%)", "추진상태", "차주 중점 추진계획 및 준비사항"], styleId: 1, height: 24 }
-    ];
-    const nxtTasks = (rep.nextWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
-    nxtTasks.forEach(t => {
-      s3Rows.push({
-        cells: [t.system, t.manual ? "직접입력" : t.wbsId, t.manual ? "-" : `L${t.level || 4}`, t.name, t.manual ? "-" : `${t.pProg ?? 0}%`, t.status || "계획", t.detail || ""],
-        styleId: 2,
-        height: 22
-      });
-    });
-
-    // Sheet 4: VOC 진행 현황 (대기/진행 분리)
-    const s4Rows = [
-      { cells: [`[${rep.weekLabel}] 현장 VOC 및 개선 이슈 진행 현황 (대기·진행 분리)`], styleId: 3, height: 28 },
-      { cells: ["VOC ID", "서브시스템", "우선순위", "요청제목", "요청자", "접수일자", "목표완료일", "처리상태", "조치결과 및 향후 계획"], styleId: 1, height: 24 }
-    ];
-    const vocList = vocData.filter(v => inScope(v.system) && v.status !== "삭제");
-    vocList.forEach(v => {
-      s4Rows.push({
-        cells: [v.id, v.system, v.priority, v.title, v.requester || "", v.reqDate || "", v.targetDate || "", v.status, v.action || ""],
-        styleId: 2,
-        height: 22
-      });
-    });
-
-    // [ver1.0.4 요건 3] Sheet 5: 금주 및 차주 회의 일정 추가
-    const curMtgs = MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate).filter(m => m.system === "ALL" || inScope(m.system));
-    const nxtMtgs = MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate).filter(m => m.system === "ALL" || inScope(m.system));
-
-    const s5Rows = [
-      { cells: [`[${projName} 주간보고] 금주 진행 및 차주 예정 프로젝트 회의 일정 (${scopeLabel})`], styleId: 3, height: 28 },
-      { cells: ["프로젝트명", projName, "보고주차", rep.weekLabel, "금주기간", `${rep.startDate} ~ ${rep.endDate}`, "차주기간", `${rep.nextStartDate} ~ ${rep.nextEndDate}`], styleId: 2, height: 22 },
-      { cells: [], styleId: 0, height: 10 },
-      { cells: [`【금주 진행 및 완료 회의 실적】 (${rep.startDate} ~ ${rep.endDate})`], styleId: 3, height: 24 },
-      { cells: ["No", "회의일자", "시간", "서브시스템", "회의명칭", "회의장소", "주관/발표", "진행상태"], styleId: 1, height: 24 }
-    ];
-
-    if (curMtgs.length === 0) {
-      s5Rows.push({ cells: ["-", "-", "-", "-", "(금주 공식 회의 일정 없음)", "-", "-", "-"], styleId: 2, height: 22 });
-    } else {
-      curMtgs.forEach((m, idx) => {
-        s5Rows.push({
-          cells: [idx + 1, m.date, `${m.startTime || ""}~${m.endTime || ""}`, m.system, m.title, m.location || "-", m.host || "-", m.status || "완료"],
-          styleId: 2,
-          height: 22
-        });
-      });
-    }
-
-    s5Rows.push({ cells: [], styleId: 0, height: 12 });
-    const nxtMtgTitleRow = s5Rows.length + 1;
-    s5Rows.push({ cells: [`【차주 중점 추진 회의 계획】 (${rep.nextStartDate} ~ ${rep.nextEndDate})`], styleId: 3, height: 24 });
-    s5Rows.push({ cells: ["No", "회의일자", "시간", "서브시스템", "회의명칭", "회의장소", "주관/발표", "추진상태"], styleId: 1, height: 24 });
-
-    if (nxtMtgs.length === 0) {
-      s5Rows.push({ cells: ["-", "-", "-", "-", "(차주 예정 회의 일정 없음)", "-", "-", "-"], styleId: 2, height: 22 });
-    } else {
-      nxtMtgs.forEach((m, idx) => {
-        s5Rows.push({
-          cells: [idx + 1, m.date, `${m.startTime || ""}~${m.endTime || ""}`, m.system, m.title, m.location || "-", m.host || "-", m.status || "예정"],
-          styleId: 2,
-          height: 22
-        });
-      });
-    }
-
-    const s5Merges = ["A1:H1", "A4:H4", `A${nxtMtgTitleRow}:H${nxtMtgTitleRow}`];
-
-    const blob = ExcelSync._buildXlsxBlob([
-      { name: "1_주간보고_종합요약", colWidths: [20, 24, 16, 18, 14, 14, 14, 14, 14, 14], rows: s1Rows, merges: s1Merges },
-      { name: "2_금주_추진실적", colWidths: [14, 14, 8, 36, 12, 12, 12, 45], rows: s2Rows, merges: ["A1:H1"] },
-      { name: "3_차주_추진계획", colWidths: [14, 14, 8, 36, 14, 12, 45], rows: s3Rows, merges: ["A1:G1"] },
-      { name: "4_VOC_진행현황", colWidths: [12, 14, 10, 38, 14, 14, 14, 12, 40], rows: s4Rows, merges: ["A1:I1"] },
-      { name: "5_금주차주_회의일정", colWidths: [8, 14, 14, 14, 38, 24, 16, 12], rows: s5Rows, merges: s5Merges }
-    ]);
-
-    const filename = `[주간보고]_${projName}_${scopeLabel}_${rep.weekLabel.replace(/\s+/g, "_")}.xlsx`;
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`📥 [주간보고 엑셀 다운로드 완료] ${filename} 파일이 다운로드되었습니다.`);
+    if (!repOverride && forceIntegrated && rep.scope !== "ALL") rep = this.buildWeekIntegrated(rep.weekNo) || rep;
+    return WeeklyExport.download(rep, "EXCEL");
   },
 
   exportDocx(useTables = true, repOverride = null) {
     if (!repOverride && !this.currentWeekReport) this.init();
     if (!repOverride) this.readInputsIntoCurrentReport();
-
     const rep = repOverride || this.currentWeekReport;
-    const sc = this.reportScope(rep);
-    const scopeSystems = this.scopeSystems(sc.scope, sc.value);
-    const inScope = sys => sc.scope === "ALL" || scopeSystems.includes(sys);
-    const projName = (projectConfig && projectConfig.projectName) || "27년 가동률 시스템 개선";
-    const sysTitle = (projectConfig && projectConfig.systemTitle) || APP_VERSION.title;
-    const repDate = (projectConfig && projectConfig.reportDate) || "2027-06-01";
-    const repDay = WBSEngine.getDayOfWeekText(repDate);
-    const m = (typeof ReportExporter !== "undefined" && typeof ReportExporter._collectMetrics === "function") ? ReportExporter._collectMetrics() : null;
-
-    const reportMeta = {
-      projectName: projName,
-      systemTitle: sysTitle,
-      reportDate: repDate,
-      reportDay: repDay,
-      author: rep.author || "김총괄 수석PM",
-      weekLabel: rep.weekLabel,
-      startDate: rep.startDate,
-      endDate: rep.endDate,
-      nextStartDate: rep.nextStartDate,
-      nextEndDate: rep.nextEndDate,
-      projectStartDate: projectConfig.projectStartDate || "2027-01-01",
-      projectEndDate: projectConfig.projectEndDate || "2027-12-31",
-      domains: projectConfig.domains || ["관리공통", "개선공정", "신규공정"],
-      subsystems: scopeSystems,
-      scopeLabel: this.scopeLabel(sc.scope, sc.value),
-      currentWeekSummary: rep.currentWeekSummary,
-      nextWeekSummary: rep.nextWeekSummary,
-      issuesNotes: rep.issuesNotes,
-      coverageNote: rep.coverageNote || "",
-      metrics: m,
-      reqMasterData: reqMasterData.filter(r => inScope(r.system)),
-      vocData: vocData.filter(v => inScope(v.system)),
-      currentWeekTasks: rep.currentWeekTasks || [],
-      nextWeekTasks: rep.nextWeekTasks || [],
-      currentWeekMeetings: MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate).filter(m => m.system === "ALL" || inScope(m.system)),
-      nextWeekMeetings: MeetingManager.getNextWeekMeetings(rep.nextStartDate, rep.nextEndDate).filter(m => m.system === "ALL" || inScope(m.system)),
-      currentWeekActionItems: (typeof MeetingManager !== "undefined") ? MeetingManager.getAllActionItems() : []
-    };
-
-    if (typeof DocxBuilder === "undefined" || typeof DocxBuilder.buildDocxBlob !== "function") {
-      showToast("⚠️ 워드 생성 엔진을 초기화할 수 없습니다.", "error");
-      return;
-    }
-
-    const blob = DocxBuilder.buildDocxBlob(reportMeta, useTables);
-    const modeTag = useTables ? "(서술형_표포함)" : "(완전서술형_표없음)";
-    const filename = `[주간보고서]_${projName}_${this.scopeFileLabel(sc.scope, sc.value)}_${rep.weekLabel.replace(/\s+/g, "_")}_${modeTag}.docx`;
-
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`📄 [주간보고 워드 다운로드 완료] ${filename} 파일이 다운로드되었습니다.`);
+    return WeeklyExport.download(rep, useTables ? "WORD" : "WORD_TEXT");
   },
 
   exportNarrativeDoc() {
@@ -8242,18 +8080,18 @@ var HomeScreenManager = {
     }
     if (!projectConfig.exportSettings) {
       projectConfig.exportSettings = {
-        exportTheme: "Official Blue",
+        exportTheme: "Official Navy",
         exportFontSize: 10,
         exportFont: "맑은 고딕",
-        xlsxTheme: "Official Blue",
+        xlsxTheme: "Official Navy",
         xlsxFontSize: 10,
-        docxTheme: "Official Blue",
+        docxTheme: "Official Navy",
         docxFontSize: 10,
         docxFont: "맑은 고딕"
       };
     } else {
       if (!projectConfig.exportSettings.exportTheme) {
-        projectConfig.exportSettings.exportTheme = projectConfig.exportSettings.unifiedTheme || projectConfig.exportSettings.docxTheme || projectConfig.exportSettings.xlsxTheme || "Official Blue";
+        projectConfig.exportSettings.exportTheme = projectConfig.exportSettings.unifiedTheme || projectConfig.exportSettings.docxTheme || projectConfig.exportSettings.xlsxTheme || "Official Navy";
       }
       if (!projectConfig.exportSettings.exportFont) {
         projectConfig.exportSettings.exportFont = projectConfig.exportSettings.docxFont || projectConfig.exportSettings.xlsxFont || "맑은 고딕";
@@ -8281,11 +8119,14 @@ var HomeScreenManager = {
     const selUnifiedFont = document.getElementById("cfgExportUnifiedFont");
     const selUnifiedSize = document.getElementById("cfgExportUnifiedFontSize");
 
-    const curTheme = exp.exportTheme || exp.unifiedTheme || exp.docxTheme || exp.xlsxTheme || "Official Blue";
+    const curTheme = exp.exportTheme || exp.unifiedTheme || exp.docxTheme || exp.xlsxTheme || "Official Navy";
     const curFont = exp.exportFont || exp.docxFont || exp.xlsxFont || "맑은 고딕";
     const curSize = String(exp.exportFontSize || exp.docxFontSize || exp.xlsxFontSize || 10);
 
-    if (selUnifiedTheme) selUnifiedTheme.value = curTheme;
+    if (selUnifiedTheme) selUnifiedTheme.value = ExcelSync.normalizeExportTheme(curTheme);
+    const fc = document.getElementById("cfgFileCode");
+    if (fc) fc.value = projectConfig.fileCode || "";
+    this.renderFileNameSample();
     if (selUnifiedFont) selUnifiedFont.value = curFont;
     if (selUnifiedSize) selUnifiedSize.value = curSize;
   },
@@ -8388,6 +8229,20 @@ var HomeScreenManager = {
     showToast(`📊 공통 보고서 스타일이 '${value}'(으)로 일원화 설정되었습니다. 주간보고 워드, 회의록 워드, 공정표 XLSX 다운로드 시 즉시 반영됩니다.`);
   },
 
+  // [v3.1.0] 주간보고 파일 이름 약칭
+  onFileCodeChange(v) {
+    projectConfig.fileCode = WeeklyExport.safe(v).slice(0, 20);
+    const fc = document.getElementById("cfgFileCode");
+    if (fc) fc.value = projectConfig.fileCode;
+    this.renderFileNameSample();
+    if (typeof persistChanges === "function") persistChanges();
+  },
+  renderFileNameSample() {
+    const el = document.getElementById("cfgFileNameSample");
+    if (!el || typeof WeeklyExport === "undefined") return;
+    el.textContent = `예) ${WeeklyExport.fileCode()}_주간보고_2027W22_ALL_DOC-T_v2.docx`;
+  },
+
   render() {
     this.ensureConfig();
     const mode = this.getCurrentMode();
@@ -8409,6 +8264,7 @@ var HomeScreenManager = {
       if (sw.parentElement.lastElementChild !== sw) sw.parentElement.appendChild(sw);
     }
 
+    if (mode === "EXECUTIVE" && typeof ExecReport !== "undefined") { try { ExecReport.render(); } catch (e) { console.warn(e); } }
     const boxes = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
     Object.keys(boxes).forEach(k => {
       const el = document.getElementById(boxes[k]);

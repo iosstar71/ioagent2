@@ -571,6 +571,7 @@ var AuthManager = {
     this._expiredNotified = false;
     this._saveSession();
     this._overlay(false);
+    if (typeof UiScale !== "undefined") UiScale.apply(); // [v3.1.0] 사용자별 글자 크기
     this.updateUserBadge();
     this.resetIdleTimer();
 

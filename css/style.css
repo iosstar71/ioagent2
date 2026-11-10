@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM v3.0.2 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
+ * IOSTAR-PM v3.1.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -2766,3 +2766,62 @@ body:not(.ui-neo) .neo-ph-desc { font-size: 11px; }
 #wbsTable .date-input-wrap input[type="date"] { width: 94px; }
 /* [v3.0.2] 확인 대화 상자는 로그인 화면 위에도 보이게 (로그인 화면의 비밀번호 초기화 확인) */
 #confirmDialogModal { z-index: 100001 !important; }
+
+/* [v3.1.0] 주간보고 항목 표: 담당자 칸, 일정 2줄, 상세 내용은 2줄 입력 칸 */
+#wrCurrentTasksTable td, #wrNextTasksTable td { vertical-align: middle; }
+.wr-detail { width: 100%; min-height: 38px; font: inherit; font-size: 11.5px; line-height: 1.4; padding: 4px 6px; resize: vertical; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-card); color: var(--text-main); }
+.wr-sched { font-size: 10.5px; color: var(--text-sub); white-space: nowrap; line-height: 1.45; }
+.wr-sched b { color: var(--primary); }
+.wr-lvl { display: block; font-size: 10px; color: var(--text-muted); }
+.wr-owner { font-size: 11.5px; font-weight: 600; }
+.wr-basis { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.wr-basis.snap { background: #DCFCE7; color: #166534; }
+.wr-basis.live { background: #FEF3C7; color: #92400E; }
+[data-theme="dark"] .wr-basis.snap { background: rgba(34,197,94,0.18); color: #86efac; }
+[data-theme="dark"] .wr-basis.live { background: rgba(245,158,11,0.18); color: #fcd34d; }
+.wr-docno { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+.wr-docno code { font-size: 11px; background: var(--bg-main); padding: 1px 6px; border-radius: 4px; color: var(--text-sub); }
+
+/* [v3.1.0] 홈 경영 보고 카드 */
+.exec-report-info { margin: 6px 0 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg-main); border: 1px solid var(--border-color); }
+.exec-report-line { font-size: 12px; color: var(--text-sub); line-height: 1.7; }
+.exec-report-file code { font-size: 10.5px; word-break: break-all; }
+.exec-report-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.exec-report-btns .btn { justify-content: center; padding: 9px 8px; }
+.exec-report-note { margin-top: 12px; font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+
+/* [v3.1.0] 머리글 오른쪽 단추: 글자를 붙여 잘 보이게 (도움말 · 화면 · 관리) */
+.g-header .g-icon-btn.g-labeled { min-width: 0; height: 32px; padding: 0 11px; gap: 5px; font-size: 13px; border: 1px solid rgba(255,255,255,0.28); }
+.g-header .g-icon-btn.g-ui-btn { background: rgba(255,255,255,0.2); }
+[data-theme="matte"] .g-header .g-icon-btn.g-labeled { border-color: #CFCCC5; }
+[data-theme="matte"] .g-header .g-icon-btn.g-ui-btn { background: #E4E2DC; }
+.g-ui-menu { min-width: 300px; }
+.g-theme-swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 2px 10px 8px; }
+.g-swatch { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-main); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.g-swatch i { width: 22px; height: 22px; border-radius: 6px; flex: none; border: 1px solid rgba(0,0,0,0.12); }
+.g-swatch.active { outline: 2px solid var(--primary); outline-offset: 1px; }
+.g-scale-btns { display: flex; gap: 6px; padding: 2px 10px 4px; }
+.g-scale { flex: 1; padding: 6px 4px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-main); font: inherit; font-weight: 700; cursor: pointer; }
+.g-scale[data-scale="1"] { font-size: 12px; } .g-scale[data-scale="1.15"] { font-size: 13.5px; } .g-scale[data-scale="1.3"] { font-size: 15px; }
+.g-scale.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.g-menu-hint { padding: 2px 12px 6px; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+@media (max-width: 1500px) {
+  .g-header .g-search kbd { display: none; }
+  .g-header #headerCurrentUserBadge { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+}
+@media (max-width: 1280px) {
+  .g-header .g-icon-btn.g-labeled .g-lbl { display: none; }
+}
+
+/* [v3.1.0] WBS: 요일 다시 표시(작게) · 담당자·산출물 접기 · 칸 폭 넉넉하게 */
+#wbsTable .date-input-wrap { display: flex; align-items: center; gap: 2px; }
+#wbsTable .wbs-dow { font-size: 10px; font-weight: 700; color: var(--text-muted); min-width: 11px; text-align: center; }
+#wbsTable .wbs-dow.day-sat { color: #2563eb !important; }
+#wbsTable .wbs-dow.day-sun { color: #dc2626 !important; }
+#wbsTable.wbs-fold .col-fold { display: none; }
+#wbsTable input.wbs-owner { width: 92px; }
+.wbs-fold-btn[aria-pressed="true"] { background: var(--primary); color: #fff; border-color: var(--primary); }
+.g-hidden-field { display: none !important; }
+/* [v3.1.0] 알림(토스트)은 머리글 아래에 — 머리글 오른쪽 단추(도움말 · 화면 · 관리 · 사용자)를 가리지 않게 */
+.toast-container { top: 64px; pointer-events: none; }
+.toast-container .toast-item { pointer-events: auto; }

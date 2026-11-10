@@ -641,3 +641,75 @@ var NeoPage = {
 document.addEventListener("click", e => {
   if (e.target.closest(".neo-dd-item")) setTimeout(() => NeoPage.closeMenus(), 0);
 }, true);
+
+// -----------------------------------------------------------------------------
+// [v3.1.0] 화면 설정 메뉴: 테마 견본 · 글자 크기 (보통 100% / 크게 115% / 아주 크게 130%)
+//  글자 크기는 화면 전체를 확대(CSS zoom)하는 방식 — 표·간트도 같은 비율로 커짐, 사용자별 기억
+// -----------------------------------------------------------------------------
+var UiScale = {
+  KEY: "IOSTAR_UI_SCALE_",
+  STEPS: [1, 1.15, 1.3],
+  _key() { const u = (typeof AuthManager !== "undefined" && AuthManager.currentUser) || {}; return this.KEY + (u.empNo || "_"); },
+  get() {
+    let v = 1;
+    try { v = parseFloat(localStorage.getItem(this._key()) || localStorage.getItem(this.KEY + "_") || "1"); } catch (e) {}
+    return this.STEPS.indexOf(v) === -1 ? 1 : v;
+  },
+  apply(v) {
+    v = v || this.get();
+    document.documentElement.style.zoom = v === 1 ? "" : String(v);
+    document.documentElement.dataset.uiScale = String(v);
+    this.sync();
+    if (typeof renderGantt === "function" && document.querySelector("#tab-gantt.active")) setTimeout(renderGantt, 60);
+  },
+  set(v) {
+    v = parseFloat(v);
+    if (this.STEPS.indexOf(v) === -1) v = 1;
+    try { localStorage.setItem(this._key(), String(v)); localStorage.setItem(this.KEY + "_", String(v)); } catch (e) {}
+    this.apply(v);
+  },
+  pickTheme(t) {
+    if (typeof changeTheme === "function") changeTheme(t);
+    const sel = document.getElementById("themeSelector");
+    if (sel) sel.value = t;
+    this.sync();
+  },
+  sync() {
+    const v = this.get();
+    document.querySelectorAll(".g-scale").forEach(b => { const on = parseFloat(b.dataset.scale) === v; b.classList.toggle("active", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+    const th = document.body.dataset.theme;
+    document.querySelectorAll(".g-swatch").forEach(b => { const on = b.dataset.themePick === th; b.classList.toggle("active", on); b.setAttribute("aria-pressed", on ? "true" : "false"); });
+  }
+};
+UiScale.apply();
+
+// -----------------------------------------------------------------------------
+// [v3.1.0] WBS 담당자 · 산출물 칸 접기 — 접으면 표 전체가 한 화면에 들어오고, 펼치면 가로 스크롤
+//  사용자별 기억, 처음에는 화면 폭이 1600px 보다 좁으면 접힌 상태
+// -----------------------------------------------------------------------------
+var WbsFold = {
+  KEY: "IOSTAR_WBS_FOLD_",
+  _key() { const u = (typeof AuthManager !== "undefined" && AuthManager.currentUser) || {}; return this.KEY + (u.empNo || "_"); },
+  isFolded() {
+    let v = null;
+    try { v = localStorage.getItem(this._key()); } catch (e) {}
+    return v === null ? window.innerWidth < 1600 : v === "1";
+  },
+  toggle() {
+    const next = !this.isFolded();
+    try { localStorage.setItem(this._key(), next ? "1" : "0"); } catch (e) {}
+    this.apply();
+  },
+  apply() {
+    const t = document.getElementById("wbsTable");
+    const on = this.isFolded();
+    if (t) t.classList.toggle("wbs-fold", on);
+    const b = document.getElementById("btnWbsFold");
+    if (b) {
+      b.textContent = on ? "▶ 담당자·산출물 펼치기" : "◀ 담당자·산출물 접기";
+      b.title = on ? "접어 둔 담당자 · 산출물 칸을 다시 보여 줍니다 (표가 넓어지면 가로 스크롤)" : "담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다";
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      if (typeof I18N !== "undefined") I18N.translateTree(b.parentNode);
+    }
+  }
+};

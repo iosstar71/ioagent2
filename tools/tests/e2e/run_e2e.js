@@ -271,6 +271,30 @@ async function localMain() {
     return [...t.matchAll(/<w:tr>[\s\S]*?<\/w:tr>/g)].some(r => (r[0].match(/<w:tc>/g) || []).length !== grid);
   }).length;
   check("Word weekly report tables: header/data/grid columns consistent", tables.length > 0 && badTables === 0, `tables=${tables.length}, bad=${badTables}`);
+  // [v3.1.0] 파일 이름 규칙 · 엑셀/워드 같은 목차 · 작성 시점 자료(snapshot)
+  const names = await page.evaluate(() => {
+    const out = [], orig = ExcelSync._triggerDownload;
+    ExcelSync._triggerDownload = (blob, name) => out.push(name);
+    try { WeeklyReportManager.exportWeek("EXCEL"); WeeklyReportManager.exportWeek("WORD"); WeeklyReportManager.exportWeek("WORD_TEXT"); } finally { ExcelSync._triggerDownload = orig; }
+    return out;
+  });
+  const sections = (xml.match(/[1-6]\. (개요 및 핵심 지표|금주 추진 실적|차주 추진 계획|이슈 · 요구사항 · VOC|회의 · Action Item|작성 현황)/g) || []).length;
+  check("v3.1.0: weekly file names follow the rule (code_주간보고_yyyyWnn_scope_format_rev) and Word has the 6 unified sections", names.length === 3 && /^[A-Za-z0-9_-]+_주간보고_\d{4}W\d{2}_ALL_XLSX_(v\d+|AUTO)\.xlsx$/.test(names[0]) && /_DOC-T_/.test(names[1]) && /_DOC-N_/.test(names[2]) && sections >= 6, JSON.stringify({ names, sections }));
+  const snap = await page.evaluate(() => {
+    const W = WeeklyReportManager;
+    const saved = weeklyReportsData.find(r => r.scope === "SYS" && r.scopeValue === "W1");
+    const t = wbsData.find(x => x.isLeaf && x.system === "W1" && saved.currentWeekTasks.some(c => c.wbsId === x.id));
+    const w1 = mdl => (mdl.sections[0].tables[0].rows.find(r => r[1] === "W1") || [])[6];
+    const before = w1(WeeklyExport.model(saved));
+    const leaves = wbsData.filter(x => x.isLeaf && x.system === "W1"), orig = leaves.map(x => x.aProg);
+    leaves.forEach(x => { x.aProg = 0; }); rebuildAll();
+    const live = w1(WeeklyExport.model(Object.assign({}, saved, { snapshot: null })));
+    const after = w1(WeeklyExport.model(saved));
+    const row = WeeklyExport.model(saved).sections[1].tables[0].rows.find(r => r[1] === t.id);
+    leaves.forEach((x, i) => { x.aProg = orig[i]; }); rebuildAll();
+    return { has: !!saved.snapshot, rev: saved.revision, before, after, live, rowActual: row && row[5], storedActual: (saved.currentWeekTasks.find(c => c.wbsId === t.id) || {}).aProg, doc: WeeklyExport.docNo(saved), size: W.reportSize(saved) < JSON.stringify(saved).length };
+  });
+  check("v3.1.0: a completed weekly report keeps the data of when it was written (snapshot), revision and document number", snap.has && snap.rev >= 1 && snap.before === snap.after && snap.live !== snap.after && snap.rowActual === snap.storedActual + "%" && /_S-W1_v\d+$/.test(snap.doc) && snap.size, JSON.stringify(snap));
 
   // 7) 협업 데이터 JSON 왕복
   await page.evaluate(() => activateTab("tab-merge")); await page.waitForTimeout(300);
@@ -343,6 +367,33 @@ async function localMain() {
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
   check("Themes: Electric (default) · Navy · Matte · Graphite (Teal removed); left menu option", side && themes === "electric,navy,matte,dark", themes);
+  // [v3.1.0] 보고서 테마 5가지 · 머리글 [🎨 화면] 메뉴(테마 견본 · 글자 크기) · WBS 담당자·산출물 접기
+  const ui310 = await page.evaluate(async () => {
+    const out = {};
+    out.exportThemes = [...document.querySelectorAll("#cfgExportUnifiedTheme option")].map(o => o.value).join(",");
+    out.oldMapped = [ExcelSync.normalizeExportTheme("Pastel Mint"), ExcelSync.normalizeExportTheme("Warm Brown"), ExcelSync.normalizeExportTheme("Official Blue")].join(",");
+    const btns = ["btnHeaderManual", "gUiBtn", "gAdminBtn"].map(id => document.getElementById(id).getBoundingClientRect().width);
+    out.btnWide = btns.every(w => w >= 60);
+    document.getElementById("gUiBtn").click(); await new Promise(r => setTimeout(r, 150));
+    out.swatches = document.querySelectorAll("#gUiMenu .g-swatch").length;
+    document.querySelector('#gUiMenu .g-swatch[data-theme-pick="matte"]').click(); await new Promise(r => setTimeout(r, 150));
+    out.theme = document.body.dataset.theme;
+    document.querySelector('#gUiMenu .g-scale[data-scale="1.3"]').click(); await new Promise(r => setTimeout(r, 150));
+    out.zoom = document.documentElement.style.zoom;
+    UiScale.set(1); changeTheme("navy"); GShell.closeMenus();
+    out.zoomBack = document.documentElement.style.zoom;
+    GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 300));
+    const t = document.getElementById("wbsTable");
+    const f1 = t.classList.contains("wbs-fold"), w1 = t.scrollWidth <= t.parentElement.clientWidth + 2;
+    WbsFold.toggle(); await new Promise(r => setTimeout(r, 100));
+    const f2 = t.classList.contains("wbs-fold"), ownerShown = getComputedStyle(t.querySelector("th.col-fold")).display !== "none";
+    WbsFold.toggle();
+    out.fold = { f1, w1, f2, ownerShown, dow: document.querySelectorAll("#wbsTableBody .wbs-dow").length > 0 };
+    return out;
+  });
+  check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
+    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 4 && ui310.theme === "matte" && ui310.zoom === "1.3" && ui310.zoomBack === "" &&
+    ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow, JSON.stringify(ui310));
   // [Standard v1.0.1] 1단(묶음)·2단(하위) 메뉴 구분, 간트 머리글 테마, 설정 화면 선택지 정리, 판 이름 표시
   await page.click('.g-group[data-group="sc"]'); await page.waitForTimeout(150);
   await page.click('.g-nav-top .g-sub[data-tab="tab-gantt"]'); await page.waitForTimeout(500);

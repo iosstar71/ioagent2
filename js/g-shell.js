@@ -189,6 +189,7 @@ var GShell = {
     set("gDensitySelect", document.body.getAttribute("data-density") === "compact" ? "compact" : "standard");
     set("gLangSelect", typeof I18N !== "undefined" ? I18N.lang : "ko");
     if (typeof UiMode !== "undefined") UiMode.syncSelects();
+    if (typeof UiScale !== "undefined") UiScale.sync();
   },
 
   // 언어: 화면에 바로 적용하고 로그인한 사용자 설정으로 저장
