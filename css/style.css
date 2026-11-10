@@ -2892,7 +2892,7 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 [data-theme="dark"] .gantt-pbar.summary { background: #475569; }
 [data-theme="dark"] .gantt-pbar .gp-mark { border-left-color: #F8FAFC; }
 [data-theme="dark"] .gantt-pbar .gp-mark::before { border-top-color: #F8FAFC; }
-[data-theme="dark"] .gantt-pbar.summary .gp-fill, [data-theme="dark"] .gantt-pbar.summary .gp-label { background: #93C5FD; color: #93C5FD; }
+[data-theme="dark"] .gantt-pbar.summary .gp-fill { background: #60A5FA; } [data-theme="dark"] .gantt-pbar.summary .gp-label { color: #93C5FD; }
 
 /* [v3.4.0] 불릿 차트 */
 .bullet-box { width: 100%; }
