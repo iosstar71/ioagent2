@@ -1489,6 +1489,7 @@ var AppBoot = {
     HomeScreenManager.init();
     rebuildAll();
     if (typeof GShell !== "undefined") GShell.init(); // [Standard] 2단 메뉴·머리글 (G v1.0.0 에서 시작)
+    if (typeof NeoPage !== "undefined") NeoPage.init(); // [Neo 2.2] 화면 머리줄 통일 · 내려받기/올리기 메뉴
     this.uiReady = true;
   }
 };
@@ -3391,72 +3392,165 @@ function saveConfig() {
   rebuildAll();
 }
 
-function openTemplateModal() { document.getElementById("templateModal").style.display = "flex"; }
-function closeTemplateModal() { document.getElementById("templateModal").style.display = "none"; }
+// =============================================================================
+// [Neo 2.2] 서브시스템별 WBS 템플릿 추가
+//  - 기준정보에 등록된 서브시스템만 선택 (이전: 이름을 직접 입력하면 서브시스템이 자동 등록됨)
+//  - 템플릿은 서브시스템 유형에 맞게 자동 선택 (SDLC → 지정한 SDLC 단계 / REQ → 개선과제 단계), 다른 템플릿도 선택 가능
+//  - 단계별 계획 기간은 프로젝트 기간을 가중치 비율로 나눠 자동 지정 (이전: 2026년 고정 날짜)
+//  - 이미 WBS 가 있으면 추가(Append: 기존 L1 아래에 덧붙임) 또는 교체(Replace: 기존 과업 삭제 후 새로 생성) 선택
+// =============================================================================
+var WbsTemplate = {
+  metas() { return (subsystemsMeta || []).filter(m => m && (m.name || m.code)); },
+  sysKey(m) { return String(m.name || m.code).trim(); },
+  existing(sys) { return wbsData.filter(t => String(t.system || "").trim() === sys); },
+  _val(id) { const el = document.getElementById(id); return el ? el.value : ""; },
+  mode() { const r = document.querySelector('input[name="tplMode"]:checked'); return r ? r.value : "append"; },
 
-function appendSubsystemTemplate(type) {
-  const sysName = document.getElementById("newSubSystemName").value.trim() || "신규서브시스템";
-  if (!subsystemsMeta.some(m => m.name === sysName)) {
-    subsystemsMeta.push({
-      code: sysName,
-      name: sysName,
-      type: type === "REQ" ? "REQ" : "SDLC",
-      weight: 30,
-      pm: "담당PM",
-      desc: `${sysName} 템플릿 과업`
-    });
-  }
+  open(preset) {
+    const sel = document.getElementById("tplSystemSelect");
+    const list = this.metas();
+    const cur = preset || this._val("wbsSubsystemFilter");
+    sel.innerHTML = list.map(m => {
+      const k = this.sysKey(m);
+      const n = this.existing(k).length;
+      return `<option value="${escapeAttr(k)}" ${k === cur ? "selected" : ""}>${escapeHtml(k)}${m.domain ? ` · ${escapeHtml(m.domain)}` : ""} (${m.type === "REQ" ? "개선 REQ" : "SDLC"})${n ? ` — 기존 과업 ${n}개` : " — 과업 없음"}</option>`;
+    }).join("");
+    document.getElementById("tplNoSystem").hidden = list.length > 0;
+    sel.disabled = !list.length;
+    const radio = document.querySelector('input[name="tplMode"][value="append"]');
+    if (radio) radio.checked = true;
+    this.render();
+    const m = document.getElementById("templateModal");
+    m.style.display = "flex";
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
+    if (typeof I18N !== "undefined") I18N.translateTree(m);
+  },
+  close() { document.getElementById("templateModal").style.display = "none"; },
+  goMaster() { this.close(); if (typeof GShell !== "undefined") GShell.go("tab-master"); else switchTab("tab-master"); },
 
-  let templateRows = [];
-  if (type === "SDLC") {
-    const spec = WBSEngine.getActiveSdlcSpec();
-    templateRows.push({
-      level: 1, system: sysName, name: `${sysName} 구축 프로젝트 (${spec.shortLabel})`, weight: 30, reqId: "SYS-ROOT", pStart: "", pEnd: "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: ""
+  // 서브시스템을 바꾸면 템플릿 선택지와 기존 과업 안내를 다시 표시
+  render() {
+    const sys = this._val("tplSystemSelect");
+    const meta = this.metas().find(m => this.sysKey(m) === sys);
+    const tsel = document.getElementById("tplTypeSelect");
+    const opts = WBSEngine.getActiveSdlcList().map(sp => [`SDLC:${sp.code}`, `SDLC · ${sp.name}`]);
+    if (meta && meta.type !== "REQ" && meta.sdlcCode && !opts.some(o => o[0] === `SDLC:${meta.sdlcCode}`)) {
+      const sp = WBSEngine.getSdlcSpecByCode(meta.sdlcCode);
+      opts.unshift([`SDLC:${sp.code}`, `SDLC · ${sp.name}`]);
+    }
+    opts.push(["REQ", "개선(REQ) 단계 · 기준정보의 개선과제 공정 단계"]);
+    const def = !meta ? "" : meta.type === "REQ" ? "REQ" : `SDLC:${meta.sdlcCode || (opts[0] && opts[0][0].slice(5))}`;
+    tsel.innerHTML = opts.map(([v, l]) => `<option value="${escapeAttr(v)}" ${v === def ? "selected" : ""}>${escapeHtml(l)}${v === def ? " (서브시스템 설정)" : ""}</option>`).join("");
+    tsel.disabled = !meta;
+    const n = sys ? this.existing(sys).length : 0;
+    document.getElementById("tplExisting").hidden = !n;
+    document.getElementById("tplExistingCount").textContent = n;
+    this.renderPreview();
+    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("templateModal"));
+  },
+
+  phases(type) {
+    if (type === "REQ") {
+      const ph = typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager.getPhases() : [];
+      return { label: "개선(REQ)", phases: ph };
+    }
+    const sp = WBSEngine.getSdlcSpecByCode(String(type || "").replace(/^SDLC:/, ""));
+    return { label: sp.name, phases: sp.phases || [] };
+  },
+
+  // 프로젝트 기간을 단계 가중치 비율로 나눈 계획 기간
+  schedule(phases) {
+    const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const s = new Date((projectConfig.projectStartDate || projectConfig.reportDate || iso(new Date())) + "T00:00:00");
+    let e = new Date((projectConfig.projectEndDate || "") + "T00:00:00");
+    if (isNaN(e) || e < s) { e = new Date(s); e.setMonth(e.getMonth() + 6); }
+    const days = Math.max(phases.length, Math.round((e - s) / 86400000) + 1);
+    const total = phases.reduce((a, p) => a + (parseFloat(p.weight) || 1), 0) || 1;
+    let cur = new Date(s), acc = 0;
+    return phases.map((p, i) => {
+      acc += parseFloat(p.weight) || 1;
+      const end = i === phases.length - 1 ? new Date(e) : new Date(s.getTime() + (Math.round(days * acc / total) - 1) * 86400000);
+      // 시작일은 다음 평일, 종료일은 이전 평일로 (주말·공휴일 제외, 단계 기간을 벗어나지 않게)
+      const hol = projectConfig.holidays || [];
+      const st = WBSEngine.getNextWorkingDay(iso(cur), hol, iso(end < cur ? cur : end));
+      let en = new Date(end < cur ? cur : end);
+      for (let g = 0; g < 10 && WBSEngine.isHoliday(iso(en), hol) && iso(en) > st; g++) en.setDate(en.getDate() - 1);
+      const r = [st, iso(en)];
+      cur = new Date((end < cur ? cur : end).getTime() + 86400000);
+      return r;
     });
-    const dateSlots = spec.code === "DETAILED"
-      ? [
-          ["2026-10-05", "2026-10-16"],
-          ["2026-10-19", "2026-11-06"],
-          ["2026-11-09", "2026-12-04"],
-          ["2026-12-07", "2026-12-18"],
-          ["2026-12-21", "2026-12-24"],
-          ["2026-12-28", "2026-12-30"]
-        ]
-      : [
-          ["2026-10-06", "2026-10-30"],
-          ["2026-11-02", "2026-12-04"],
-          ["2026-12-07", "2026-12-18"],
-          ["2026-12-21", "2026-12-30"]
-        ];
-    spec.phases.forEach((ph, idx) => {
-      const slot = dateSlots[idx] || ["2026-10-06", "2026-12-30"];
-      templateRows.push({
-        level: 2,
-        system: sysName,
-        name: ph.taskName,
-        weight: ph.weight,
-        reqId: `SYS-0${idx + 1}`,
-        pStart: slot[0],
-        pEnd: slot[1],
-        aStart: "",
-        aEnd: "",
-        pProg: 0,
-        aProg: 0,
-        output: ph.output
-      });
-    });
-  } else {
-    templateRows = [
-      { level: 1, system: sysName, name: `${sysName} 기능 개선 과업`, weight: 30, reqId: "REQ-MOD-01", pStart: "", pEnd: "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "" },
-      { level: 2, system: sysName, name: "요구사항 분석 및 DB 설계", weight: 15, reqId: "REQ-MOD-01", pStart: "2026-10-12", pEnd: "2026-11-12", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "요구정의서" },
-      { level: 2, system: sysName, name: "화면 및 배치 개발·검증", weight: 15, reqId: "REQ-MOD-01", pStart: "2026-11-16", pEnd: "2026-12-24", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "프로그램소스" }
-    ];
+  },
+
+  build(sys, type, withRoot) {
+    const meta = this.metas().find(m => this.sysKey(m) === sys) || {};
+    const t = this.phases(type);
+    const slots = this.schedule(t.phases);
+    const rows = [];
+    if (withRoot) {
+      rows.push({ id: "", level: 1, system: sys, name: `${sys} ${type === "REQ" ? "개선 과업" : "구축"} (${t.label})`, weight: parseFloat(meta.weight) || 10,
+        reqId: "", pStart: slots.length ? slots[0][0] : "", pEnd: slots.length ? slots[slots.length - 1][1] : "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "" });
+    }
+    t.phases.forEach((p, i) => rows.push({ id: "", level: 2, system: sys, name: p.name || p.taskName || `단계 ${i + 1}`, weight: parseFloat(p.weight) || 1,
+      reqId: "", pStart: slots[i][0], pEnd: slots[i][1], aStart: "", aEnd: "", pProg: 0, aProg: 0, output: p.output || "" }));
+    return rows;
+  },
+
+  // 추가(Append) 시 기존 L1 이 있으면 단계 과업만 덧붙임
+  _plan() {
+    const sys = this._val("tplSystemSelect"), type = this._val("tplTypeSelect");
+    if (!sys || !type) return null;
+    const ex = this.existing(sys);
+    const mode = ex.length ? this.mode() : "new";
+    const hasRoot = ex.some(t => (parseInt(t.level, 10) || 1) === 1);
+    const rows = this.build(sys, type, mode !== "append" || !hasRoot);
+    return { sys, type, ex, mode, rows };
+  },
+
+  renderPreview() {
+    const body = document.getElementById("tplPreviewBody");
+    const note = document.getElementById("tplPreviewNote");
+    const btn = document.getElementById("tplApplyBtn");
+    const plan = this._plan();
+    if (!plan) { body.innerHTML = ""; note.textContent = ""; btn.disabled = true; return; }
+    body.innerHTML = plan.rows.map(r => `<tr><td><span class="lvl-badge lvl-${r.level}">L${r.level}</span></td><td style="padding-left:${(r.level - 1) * 14 + 6}px;">${escapeHtml(r.name)}</td><td style="text-align:right;">${r.weight}</td><td>${r.pStart} ~ ${r.pEnd}</td><td>${escapeHtml(r.output)}</td></tr>`).join("");
+    note.textContent = plan.mode === "replace" ? `— 기존 ${plan.ex.length}개 삭제 후 ${plan.rows.length}개 생성`
+      : plan.mode === "append" ? `— 기존 ${plan.ex.length}개 뒤에 ${plan.rows.length}개 추가` : `— ${plan.rows.length}개 생성`;
+    btn.textContent = plan.mode === "replace" ? "♻️ 교체 실행" : "➕ 템플릿 추가";
+    btn.setAttribute("data-btn", plan.mode === "replace" ? "danger" : "add");
+    btn.disabled = false;
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(btn.parentNode);
+    if (typeof I18N !== "undefined") { I18N.translateTree(body); I18N.translateTree(note.parentNode); I18N.translateTree(btn.parentNode); }
+  },
+
+  apply() {
+    const plan = this._plan();
+    if (!plan) return showToast("대상 서브시스템을 선택하세요.");
+    if (typeof Permission !== "undefined" && !Permission.canWriteSubsystem(plan.sys)) {
+      return showToast(`⚠️ [${plan.sys}] 서브시스템의 WBS 를 바꿀 권한이 없습니다.`);
+    }
+    const run = () => {
+      if (plan.mode === "replace") {
+        for (let i = wbsData.length - 1; i >= 0; i--) if (String(wbsData[i].system || "").trim() === plan.sys) wbsData.splice(i, 1);
+      }
+      // 같은 서브시스템 과업 묶음의 끝에 넣음 (정렬·재채번은 rebuildAll 에서 처리)
+      let at = -1;
+      wbsData.forEach((t, i) => { if (String(t.system || "").trim() === plan.sys) at = i; });
+      if (at === -1) wbsData.push(...plan.rows); else wbsData.splice(at + 1, 0, ...plan.rows);
+      this.close();
+      rebuildAll(true);
+      const fl = document.getElementById("wbsSubsystemFilter");
+      if (fl && [...fl.options].some(o => o.value === plan.sys)) { fl.value = plan.sys; renderWbsTable(); }
+      showToast(plan.mode === "replace" ? `♻️ [${plan.sys}] WBS 를 템플릿으로 교체했습니다. (기존 ${plan.ex.length}개 삭제, ${plan.rows.length}개 생성)`
+        : `✅ [${plan.sys}] WBS 에 템플릿 과업 ${plan.rows.length}개를 추가했습니다.`);
+    };
+    if (plan.mode === "replace") {
+      openConfirmDialog(`⚠️ [${plan.sys}] 서브시스템의 기존 WBS 과업 ${plan.ex.length}개(입력한 실적·진척률 포함)를 모두 지우고 템플릿 과업 ${plan.rows.length}개로 교체합니다.\n계속하시겠습니까?`, run);
+    } else run();
   }
-  templateRows.forEach(r => wbsData.push(r));
-  closeTemplateModal();
-  rebuildAll();
-  showToast(`[${sysName}] 서브시스템 템플릿이 추가되었습니다.`);
-}
+};
+// 이전 이름 호환
+function openTemplateModal() { WbsTemplate.open(); }
+function closeTemplateModal() { WbsTemplate.close(); }
 
 // 탭 화면 활성화 (권한 검사는 AuthManager.installTabGuards 에서 단일 래핑)
 // ※ 탭 이동 시 화면의 미저장 변경 데이터는 메모리에 그대로 유지됩니다.

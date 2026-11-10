@@ -21,3 +21,8 @@
   - Neo 전용 코드: `js/neo.js`, `css/style.css` 끝의 `[Neo 2.1]` 영역
   - 공통 파일에 넣은 연결 지점(Standard 에서 cherry-pick 할 때 충돌 주의): `renderDashboard`(NeoTodo.render),
     `renderWbsTable`(행 data-wbs-id · ID 버튼 · NeoChips/NeoDetail), `GShell.renderNav`(NeoBadges.apply)
+- v2.2.0: 완료 — WBS 템플릿 추가 개선(등록 서브시스템만 · 추가/교체 · 미리 보기 · 프로젝트 기간 자동 일정),
+  화면 머리줄 통일, 내려받기/올리기 메뉴, 주간보고 2단 화면
+  - Neo 전용 코드: `js/neo.js` 의 `NeoPage`, CSS `[Neo 2.2]` 영역 / 화면 제목·설명은 `index.html` 에서 직접 변경
+  - 공통 코드 변경(Standard 반영 시 함께 가져갈 것): `js/app.js` 의 `WbsTemplate`(이전 `appendSubsystemTemplate` 대체),
+    `index.html` 의 `#templateModal`, `AppBoot.initUi` 의 `NeoPage.init()` 호출

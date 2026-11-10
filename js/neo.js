@@ -474,3 +474,112 @@ setInterval(() => { if (document.getElementById("gNav")) NeoBadges.refresh(); },
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
+
+// -----------------------------------------------------------------------------
+// 6. [Neo 2.2] 화면 머리줄 통일 · 내려받기/올리기 메뉴
+//  - 모든 화면 맨 위: 왼쪽 [제목 + 한 줄 설명], 오른쪽 [화면 버튼 · ⬇ 내려받기 ▾ · ⬆ 올리기 ▾ · 저장 상태/저장/새로고침]
+//  - 화면마다 따로 있던 저장 줄(.sync-toolbar)은 머리줄 오른쪽 끝으로 옮김
+//  - 머리줄의 내려받기(엑셀·워드·JSON·PPT) 버튼은 [⬇ 내려받기] 메뉴로, 올리기 버튼은 [⬆ 올리기] 메뉴로 묶음
+// -----------------------------------------------------------------------------
+var NeoPage = {
+  init() {
+    if (this._ready) return;
+    this._ready = true;
+    document.querySelectorAll(".tab-pane").forEach(pane => this.normalize(pane));
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".neo-dd")) this.closeMenus();
+    });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") this.closeMenus(); });
+  },
+
+  normalize(pane) {
+    const head = pane.querySelector(":scope > .sub-header-bar");
+    if (!head || head.classList.contains("neo-ph")) return;
+    head.classList.add("neo-ph");
+    head.removeAttribute("style");
+    const title = head.querySelector(".sub-title");
+    const desc = head.querySelector(".neo-ph-desc");
+    const main = document.createElement("div");
+    main.className = "neo-ph-main";
+    if (title) main.appendChild(title);
+    if (desc) main.appendChild(desc);
+    const actions = document.createElement("div");
+    actions.className = "neo-ph-actions";
+    // 제목 외의 요소(배지·버튼 등)는 순서대로 오른쪽으로 (기준일 배지는 머리글에 있으므로 숨김)
+    Array.prototype.slice.call(head.childNodes).forEach(n => {
+      if (n.nodeType !== 1) return;
+      Array.prototype.slice.call(n.children || []).forEach(c => {
+        if (c === title || c === desc) return;
+        actions.appendChild(c);
+      });
+      if (n !== main) n.remove();
+    });
+    actions.querySelectorAll(".current-date-badge").forEach(b => { if (b.querySelector(".lbl-current-date")) b.classList.add("neo-hide"); });
+    head.innerHTML = "";
+    head.appendChild(main);
+    head.appendChild(actions);
+    this.groupIO(actions);
+    // 저장 줄을 머리줄 오른쪽 끝으로 (자리표시는 남겨 중복 생성 방지)
+    const bar = pane.querySelector(":scope > .sync-toolbar");
+    if (bar) {
+      const holder = document.createElement("div");
+      holder.className = "sync-toolbar neo-hide";
+      holder.setAttribute("aria-hidden", "true");
+      bar.parentNode.insertBefore(holder, bar);
+      bar.classList.add("neo-ph-sync");
+      const scope = bar.querySelector(".sync-toolbar-scope");
+      if (scope) { bar.title = "저장 범위: " + scope.textContent.replace(/^🗂️\s*/, ""); scope.classList.add("neo-hide"); }
+      actions.appendChild(bar);
+    }
+    if (typeof I18N !== "undefined") I18N.translateTree(head);
+  },
+
+  // 내려받기(-down, 📥) · 올리기(-up, 📤) 버튼을 메뉴로 묶음
+  groupIO(actions) {
+    const btns = Array.prototype.slice.call(actions.querySelectorAll("button"));
+    const isDown = b => /-down$/.test(b.getAttribute("data-btn") || "") || /^\s*📥/.test(b.textContent);
+    const isUp = b => /-up$/.test(b.getAttribute("data-btn") || "") || /^\s*📤/.test(b.textContent);
+    const make = (list, key, label) => {
+      if (!list.length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "neo-dd";
+      wrap.setAttribute("data-dd", key);
+      wrap.innerHTML = `<button type="button" class="btn btn-sm neo-dd-btn" data-btn="${key === "down" ? "excel-down" : "json-up"}" data-click="NeoPage.toggle" data-click-args="${UiEvents.args(key)}" aria-haspopup="true" aria-expanded="false">${label} ▾</button><div class="neo-dd-menu" role="menu" hidden></div>`;
+      const menu = wrap.querySelector(".neo-dd-menu");
+      const lbl = actions.querySelector(".neo-dd-label");
+      if (lbl && key === "down") { lbl.classList.add("neo-dd-title"); menu.appendChild(lbl); }
+      // 버튼을 놓여 있던 자리에 메뉴를 둠
+      list[0].parentNode.insertBefore(wrap, list[0]);
+      list.forEach(b => { b.classList.add("neo-dd-item"); b.setAttribute("role", "menuitem"); menu.appendChild(b); });
+      // 빈 묶음 상자(버튼만 담고 있던 div) 정리
+      Array.prototype.slice.call(actions.querySelectorAll("div")).forEach(d => {
+        if (!d.closest(".neo-dd") && !d.classList.contains("sync-toolbar") && !d.children.length && !d.textContent.trim()) d.remove();
+      });
+    };
+    make(btns.filter(isDown), "down", "⬇ 내려받기");
+    make(btns.filter(isUp), "up", "⬆ 올리기");
+  },
+
+  toggle(key, ev) {
+    const pane = document.querySelector(".tab-pane.active");
+    const wrap = pane && pane.querySelector(`.neo-ph .neo-dd[data-dd="${key}"]`);
+    if (!wrap) return;
+    const menu = wrap.querySelector(".neo-dd-menu");
+    const open = menu.hidden;
+    this.closeMenus();
+    menu.hidden = !open;
+    wrap.querySelector(".neo-dd-btn").setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      const first = menu.querySelector("button:not([disabled])");
+      if (first) first.focus();
+    }
+  },
+  closeMenus() {
+    document.querySelectorAll(".neo-dd-menu").forEach(m => { m.hidden = true; });
+    document.querySelectorAll(".neo-dd-btn").forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+};
+// 메뉴 항목을 누르면 메뉴 닫기 (항목 동작은 원래 버튼의 data-click 그대로)
+document.addEventListener("click", e => {
+  if (e.target.closest(".neo-dd-item")) setTimeout(() => NeoPage.closeMenus(), 0);
+}, true);

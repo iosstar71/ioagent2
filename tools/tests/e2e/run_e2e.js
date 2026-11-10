@@ -365,6 +365,46 @@ async function localMain() {
     check("Neo: Graphite (dark) has no bright boxes left on any screen", bright.length === 0, bright.slice(0, 8).join(", "));
   }
 
+  // [Neo 2.2] WBS 템플릿 (등록된 서브시스템만 · 추가/교체) · 화면 머리줄 · 내려받기 메뉴 · 주간보고 2단 화면
+  if (await page.evaluate(() => typeof NeoPage !== "undefined")) {
+    await page.setViewportSize({ width: 1500, height: 950 });
+    await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(400);
+    await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(400);
+    const tplOpts = await page.evaluate(() => ({ opts: [...document.querySelectorAll("#tplSystemSelect option")].map(o => o.value), metas: subsystemsMeta.map(m => m.name || m.code), freeInput: !!document.getElementById("newSubSystemName") }));
+    check("Template: only registered subsystems can be chosen (no free text)", JSON.stringify(tplOpts.opts) === JSON.stringify(tplOpts.metas) && !tplOpts.freeInput, JSON.stringify(tplOpts));
+    await page.selectOption("#tplSystemSelect", "W1"); await page.waitForTimeout(250);
+    const w1 = await page.evaluate(() => ({ n: wbsData.filter(t => t.system === "W1").length, l1: wbsData.filter(t => t.system === "W1" && t.level === 1).length, shown: !document.getElementById("tplExisting").hidden, rows: document.querySelectorAll("#tplPreviewBody tr").length }));
+    await page.click("#tplApplyBtn"); await page.waitForTimeout(800);
+    const w1b = await page.evaluate(() => ({ n: wbsData.filter(t => t.system === "W1").length, l1: wbsData.filter(t => t.system === "W1" && t.level === 1).length,
+      ok: wbsData.filter(t => t.system === "W1").slice(-4).every(t => t.level === 2 && t.pStart >= projectConfig.projectStartDate && t.pEnd <= projectConfig.projectEndDate && !WBSEngine.isHoliday(t.pStart, projectConfig.holidays) && !WBSEngine.isHoliday(t.pEnd, projectConfig.holidays) && /^\d+\.\d+$/.test(t.id)) }));
+    check("Template append: existing WBS kept, phase tasks added under the same L1 (business-day dates, renumbered)", w1.shown && w1.rows >= 2 && w1b.l1 === 1 && w1b.n === w1.n + w1.rows && w1b.ok, JSON.stringify({ w1, w1b }));
+    await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
+    await page.selectOption("#tplSystemSelect", "PMO"); await page.waitForTimeout(200);
+    await page.check('input[name="tplMode"][value="replace"]'); await page.waitForTimeout(200);
+    const pre = await page.evaluate(() => document.querySelectorAll("#tplPreviewBody tr").length);
+    await page.click("#tplApplyBtn"); await page.waitForTimeout(300);
+    await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(800);
+    const pmo = await page.evaluate(() => { const r = wbsData.filter(t => t.system === "PMO"); return { n: r.length, l1: r.filter(t => t.level === 1).length, names: r.map(t => t.name).slice(1), others: wbsData.filter(t => t.system === "W2").length }; });
+    check("Template replace (after confirm): old PMO tasks removed, rebuilt from template; other subsystems untouched", pmo.n === pre && pmo.l1 === 1 && pmo.others > 0 && pmo.names.indexOf("착수단계") !== -1, JSON.stringify(pmo));
+
+    const heads = await page.evaluate(() => [...document.querySelectorAll(".tab-pane")].map(p => { const h = p.querySelector(":scope > .sub-header-bar.neo-ph"); return [p.id, !!h && !!h.querySelector(".neo-ph-main .sub-title") && !!h.querySelector(".neo-ph-desc"), p.querySelectorAll(".sync-toolbar-state").length <= 1 && (!p.querySelector(".sync-toolbar-state") || !!h.querySelector(".sync-toolbar-state"))]; }).filter(x => !(x[1] && x[2])));
+    check("Neo: every screen has the unified header (title + description + save status on the right)", heads.length === 0, JSON.stringify(heads));
+
+    await page.evaluate(() => GShell.go("tab-weekly-report")); await page.waitForTimeout(600);
+    await page.click('#tab-weekly-report .neo-dd[data-dd="down"] .neo-dd-btn'); await page.waitForTimeout(200);
+    const dd = await page.evaluate(() => { const m = document.querySelector('#tab-weekly-report .neo-dd[data-dd="down"] .neo-dd-menu'); return { open: !m.hidden, items: m.querySelectorAll(".neo-dd-item").length, loose: document.querySelectorAll('#tab-weekly-report .neo-ph-actions > button[data-btn$="-down"]').length }; });
+    const dl0 = page.downloads.length;
+    await page.click('#tab-weekly-report .neo-dd-menu .neo-dd-item[data-click-args*="EXCEL"]'); await page.waitForTimeout(1500);
+    const ddClosed = await page.evaluate(() => document.querySelector('#tab-weekly-report .neo-dd-menu').hidden);
+    check("Neo: header download buttons grouped in the [⬇ Download] menu; item downloads and closes the menu", dd.open && dd.items === 3 && dd.loose === 0 && page.downloads.length > dl0 && ddClosed, JSON.stringify({ dd, ddClosed, dl: page.downloads.length - dl0 }));
+
+    const split = await page.evaluate(() => { const l = document.getElementById("wrListCard").getBoundingClientRect(), d = document.getElementById("wrDetailPanel").getBoundingClientRect(); return { side: l.right <= d.left + 1 && Math.abs(l.top - d.top) < 40, sw: document.documentElement.scrollWidth <= window.innerWidth }; });
+    await page.click('#wrSavedListBody tr.wr-list-row:nth-child(3)'); await page.waitForTimeout(900);
+    const pick = await page.evaluate(() => ({ banner: document.getElementById("wrScopeBanner").textContent, active: (document.querySelector("#wrSavedListBody tr.wr-list-row.active td:nth-child(2)") || {}).textContent || "" }));
+    check("Neo: weekly report is two panes (list left, report right); picking a unit opens it on the right", split.side && split.sw && /W1/.test(pick.banner) && /W1/.test(pick.active), JSON.stringify({ split, pick }));
+    await page.evaluate(() => GShell.go("tab-home"));
+  }
+
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);
   await login(page, "lead_lee"); await page.waitForTimeout(800);

@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM Neo v2.1.0 — 통합 스타일시트 (단일 CSS 파일)
+ * IOSTAR-PM Neo v2.2.0 — 통합 스타일시트 (단일 CSS 파일)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -2353,3 +2353,70 @@ body.neo-side-collapsed .g-side-item.active { border-left: 0; box-shadow: inset 
 [data-theme="dark"] th { background: #0b1120; color: #e2e8f0; }
 [data-theme="dark"] .phase-summary-box { background: rgba(34,197,94,0.1) !important; border-color: rgba(34,197,94,0.35) !important; }
 body.g-edition .sub-header-bar .sub-title { white-space: nowrap; }
+
+/* [Neo 2.2] 서브시스템별 WBS 템플릿 추가 창 */
+.tpl-modal { width: min(760px, 94vw); display: grid; gap: 10px; }
+.tpl-hint { margin: 0; color: var(--text-sub); font-size: 12px; line-height: 1.55; }
+.tpl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tpl-field { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text-sub); }
+.tpl-field select { width: 100%; padding: 6px 8px; font-weight: 600; }
+.tpl-empty { padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px; font-size: 12.5px; color: var(--text-sub); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tpl-empty[hidden], .tpl-existing[hidden] { display: none; }
+.tpl-existing { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid #fcd34d; border-radius: 8px; background: rgba(245,158,11,0.08); }
+.tpl-existing-title { font-size: 12.5px; font-weight: 700; color: var(--text-main); }
+.tpl-radio { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.5; color: var(--text-sub); cursor: pointer; }
+.tpl-radio input { margin-top: 3px; }
+.tpl-preview-title { font-size: 12px; font-weight: 800; color: var(--text-main); }
+.tpl-preview-title span { font-weight: 600; color: var(--text-muted); }
+.tpl-preview { max-height: 260px; }
+.tpl-preview td { font-size: 12px; }
+.tpl-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.tpl-preview td:nth-child(2) { text-align: left; }
+
+/* =============================================================================
+   [Neo 2.2] 화면 머리줄 통일 · 내려받기/올리기 메뉴 · 주간보고 2단 화면
+   ============================================================================= */
+.sub-header-bar.neo-ph { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: none; }
+.neo-ph-main { display: grid; gap: 2px; min-width: 0; flex: 1 1 320px; }
+.neo-ph .sub-title { font-size: 16px; font-weight: 800; color: var(--text-main); white-space: nowrap; line-height: 1.3; }
+.neo-ph-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+.neo-ph-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; flex: 0 1 auto; }
+.neo-ph-actions > * { flex: 0 0 auto; }
+/* 머리줄 오른쪽 끝 저장 상태 */
+.sync-toolbar.neo-ph-sync { margin: 0 0 0 4px; padding: 3px 4px 3px 10px; border: 1px solid var(--border-color); border-style: solid; border-radius: 16px; background: var(--bg-main); gap: 6px; flex-wrap: nowrap; }
+.sync-toolbar.neo-ph-sync .btn { border-radius: 12px; }
+.tab-pane > .sync-toolbar.neo-hide { display: none !important; }
+/* 내려받기 / 올리기 메뉴 */
+.neo-dd { position: relative; }
+.neo-dd-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 120; min-width: 230px; display: grid; gap: 2px; padding: 6px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: 0 12px 30px rgba(15,23,42,0.2); }
+.neo-dd-menu[hidden] { display: none; }
+.neo-dd-title { display: block; padding: 4px 8px 6px; font-weight: 700; }
+.neo-dd-menu .btn.neo-dd-item { justify-content: flex-start; width: 100%; padding: 7px 10px; border: 0 !important; border-radius: 6px; background: transparent !important; color: var(--text-main) !important; box-shadow: none !important; font-weight: 600; text-align: left; }
+.neo-dd-menu .btn.neo-dd-item:hover:not(:disabled) { background: color-mix(in srgb, var(--primary, #1e3a8a) 10%, transparent) !important; }
+.neo-dd-menu .btn.neo-dd-item:disabled, .neo-dd-menu .btn.neo-dd-item[aria-disabled="true"] { opacity: 0.5; }
+
+/* 주간보고 2단 화면: 왼쪽 보고 단위 목록 · 오른쪽 보고서 */
+.neo-wr-split { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 14px; align-items: start; }
+.neo-wr-split > #wrListCard { position: sticky; top: 58px; margin: 0; max-height: calc(100vh - 140px); display: flex; flex-direction: column; }
+body.g-edition[data-layout="sidebar-left"] .neo-wr-split > #wrListCard { top: 12px; }
+.neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: none !important; flex: 1 1 auto; min-height: 120px; }
+.neo-wr-split #wrListCard .card-title { flex-direction: column; align-items: stretch; gap: 8px; }
+.neo-wr-split #wrListCard .card-title > div { justify-content: flex-start; }
+.neo-wr-split #wrWeekSelect { min-width: 0 !important; flex: 1 1 160px; }
+.neo-wr-split #wrListCard th:nth-child(1), .neo-wr-split #wrListCard td:nth-child(1),
+.neo-wr-split #wrListCard th:nth-child(5), .neo-wr-split #wrListCard td:nth-child(5),
+.neo-wr-split #wrListCard th:nth-child(6), .neo-wr-split #wrListCard td:nth-child(6),
+.neo-wr-split #wrListCard th:nth-child(7), .neo-wr-split #wrListCard td:nth-child(7) { display: none; }
+.neo-wr-split #wrListCard table { table-layout: auto; }
+.neo-wr-split:has(#wrListShowAll:checked) #wrListCard th:nth-child(1), .neo-wr-split:has(#wrListShowAll:checked) #wrListCard td:nth-child(1) { display: table-cell; font-size: 10.5px; }
+.neo-wr-split #wrListCard th, .neo-wr-split #wrListCard td { width: auto !important; font-size: 12px; }
+.neo-wr-split #wrListCard td:nth-child(2) { text-align: left; }
+.neo-wr-split #wrListCard tr.wr-list-row { cursor: pointer; }
+.neo-wr-split #wrListCard tr.wr-list-row.active td { background: color-mix(in srgb, var(--primary, #1e3a8a) 12%, transparent) !important; font-weight: 700; }
+.neo-wr-split #wrListCard tr.wr-list-row.active td:first-child, .neo-wr-split #wrListCard tr.wr-list-row.active td:nth-child(2) { box-shadow: inset 3px 0 0 var(--primary, #1e3a8a); }
+.neo-wr-split > #wrDetailPanel { min-width: 0; }
+@media (max-width: 1279px) {
+  .neo-wr-split { grid-template-columns: 1fr; }
+  .neo-wr-split > #wrListCard { position: static; max-height: none; }
+  .neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: 260px !important; }
+}
