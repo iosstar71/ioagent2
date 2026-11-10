@@ -128,7 +128,6 @@ var WeeklyExport = {
         ["전체 계획", pct(m.totalPlan)], ["전체 실적", pct(m.totalActual)],
         ["달성률", `${m.achieveRate || rate(m.totalPlan, m.totalActual)}%`], ["지연 Task", `${m.cntDel || 0}건`]
       ],
-      texts: [["금주 실적 요약", rep.currentWeekSummary || "(작성된 요약 없음)"], ["차주 계획 요약", rep.nextWeekSummary || "(작성된 요약 없음)"]],
       tables: [T("서브시스템별 공정 진척", ["분야", "서브시스템", "공정 유형", "담당 PM", "Task 수", "계획", "실적", "달성률", "지연"],
         [12, 14, 16, 14, 9, 9, 9, 9, 8],
         subRows.map(r => [r[0], r[1], r[2], r[3], String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
@@ -243,7 +242,8 @@ var WeeklyExport = {
         push([], 0, 8);
       });
       const widths = (sec.tables && sec.tables[0] && sec.tables[0].widths) || [18, 30, 18, 30];
-      const colWidths = Array.from({ length: width }, (_, i) => Math.max(widths[i] || 12, i < 4 && sec.info ? 16 : 0));
+      const infoW = sec.info ? [16, 40, 16, 40] : [];
+      const colWidths = Array.from({ length: width }, (_, i) => Math.max(widths[i] || 12, infoW[i] || 0));
       return { name: sheetNames[si], colWidths, rows, merges };
     });
     return ExcelSync._buildXlsxBlob(sheets);
@@ -259,15 +259,22 @@ var WeeklyExport = {
     const C = pal.primary, H = pal.headerBg, HT = pal.headerTextColor, SUB = pal.subHeaderBg, B = pal.border;
     const run = (text, o = {}) => `<w:r><w:rPr>${o.b ? "<w:b/>" : ""}${o.color ? `<w:color w:val="${o.color}"/>` : ""}${o.sz ? `<w:sz w:val="${o.sz}"/>` : ""}</w:rPr>${String(text).split(/\r?\n/).map((l, i) => `${i ? "<w:br/>" : ""}<w:t xml:space="preserve">${esc(l)}</w:t>`).join("")}</w:r>`;
     const para = (inner, o = {}) => `<w:p><w:pPr>${o.style ? `<w:pStyle w:val="${o.style}"/>` : ""}${o.jc ? `<w:jc w:val="${o.jc}"/>` : ""}${o.shd ? `<w:shd w:val="clear" w:color="auto" w:fill="${o.shd}"/>` : ""}${o.ind ? `<w:ind w:left="${o.ind}"/>` : ""}<w:spacing w:before="${o.before || 40}" w:after="${o.after || 60}"/></w:pPr>${inner}</w:p>`;
-    const TW = 9400;
+    const TW = 14200; // A4 가로 (본문 폭)
     const table = t => {
-      const total = t.widths.slice(0, t.headers.length).reduce((a, b) => a + b, 0) || 1;
-      const ws = t.headers.map((_, i) => Math.max(500, Math.round((t.widths[i] || 10) / total * TW)));
-      const cell = (text, w, head) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${head ? `<w:shd w:val="clear" w:color="auto" w:fill="${H}"/>` : ""}</w:tcPr>${para(run(text, head ? { b: true, color: HT } : {}), { jc: head ? "center" : "", before: 30, after: 30 })}</w:tc>`;
+      // 칸 폭: 짧은 칸(숫자·상태·ID)은 글자가 세로로 쪼개지지 않을 만큼 최소 폭을 주고, 나머지는 긴 글 칸이 나눠 가짐
+      const MIN = { "계획": 760, "실적": 760, "달성률": 860, "지연": 760, "Task 수": 820, "전체": 760, "진행": 760, "완료": 760, "보류": 760, "완료율": 860,
+        "상태": 900, "목표 계획": 900, "목표일": 1150, "일자": 1150, "시간": 1150, "WBS ID": 1000, "ID": 1000, "VOC ID": 1000, "서브시스템": 1050, "분야": 1000, "우선순위": 900, "담당자": 1000, "요청자": 1000, "담당 PM": 1150 };
+      const mins = t.headers.map(h => MIN[h] || 0);
+      const fixedSum = mins.reduce((a, b) => a + b, 0);
+      const flexIdx = t.headers.map((h, i) => (mins[i] ? -1 : i)).filter(i => i >= 0);
+      const flexTotal = flexIdx.reduce((a, i) => a + (t.widths[i] || 10), 0) || 1;
+      const ws = t.headers.map((_, i) => mins[i] || Math.max(1200, Math.round((t.widths[i] || 10) / flexTotal * Math.max(1500 * flexIdx.length, TW - fixedSum))));
+      const tsz = (pal.fontSize - 1) * 2;
+      const cell = (text, w, head) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${head ? `<w:shd w:val="clear" w:color="auto" w:fill="${H}"/>` : ""}<w:tcMar><w:left w:w="60" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tcMar></w:tcPr>${para(run(text, head ? { b: true, color: HT, sz: tsz } : { sz: tsz }), { jc: head ? "center" : "", before: 20, after: 20 })}</w:tc>`;
       const rows = t.rows.length ? t.rows : [[t.empty].concat(t.headers.slice(1).map(() => ""))];
       const border = `<w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(k => `<w:${k} w:val="single" w:sz="4" w:space="0" w:color="${B}"/>`).join("")}</w:tblBorders>`;
-      return `<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/>${border}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${ws.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>` +
-        `<w:tr>${t.headers.map((h, i) => cell(h, ws[i], true)).join("")}</w:tr>` +
+      return `<w:tbl><w:tblPr><w:tblW w:w="${ws.reduce((a, b) => a + b, 0)}" w:type="dxa"/>${border}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${ws.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>` +
+        `<w:tr><w:trPr><w:tblHeader/></w:trPr>${t.headers.map((h, i) => cell(h, ws[i], true)).join("")}</w:tr>` +
         rows.map(r => `<w:tr>${t.headers.map((_, i) => cell(r[i] === undefined ? "" : r[i], ws[i], false)).join("")}</w:tr>`).join("") + `</w:tbl>`;
     };
     const body = [];
@@ -283,7 +290,7 @@ var WeeklyExport = {
             const a = sec.info[i], b = sec.info[i + 1] || ["", ""];
             rows.push([a[0], a[1], b[0], b[1]]);
           }
-          const ws = [1700, 3000, 1700, 3000];
+          const ws = [2200, 4900, 2200, 4900];
           const cell = (text, w, label) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${label ? `<w:shd w:val="clear" w:color="auto" w:fill="${SUB}"/>` : ""}</w:tcPr>${para(run(text, label ? { b: true, color: C } : {}), { before: 30, after: 30 })}</w:tc>`;
           const border = `<w:tblBorders>${["top", "left", "bottom", "right", "insideH", "insideV"].map(k => `<w:${k} w:val="single" w:sz="4" w:space="0" w:color="${B}"/>`).join("")}</w:tblBorders>`;
           body.push(`<w:tbl><w:tblPr><w:tblW w:w="${TW}" w:type="dxa"/>${border}<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${ws.map(w => `<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>` +
@@ -304,7 +311,7 @@ var WeeklyExport = {
     });
     const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body.join("")}
-<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1200" w:right="1250" w:bottom="1200" w:left="1250"/></w:sectPr></w:body></w:document>`;
+<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="1000" w:right="1300" w:bottom="1000" w:left="1300"/></w:sectPr></w:body></w:document>`;
     const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${font}" w:eastAsia="${font}" w:hAnsi="${font}" w:cs="${font}"/><w:sz w:val="${sz}"/><w:color w:val="1F2937"/></w:rPr></w:rPrDefault></w:docDefaults>
