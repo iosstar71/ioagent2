@@ -332,6 +332,8 @@ var AuthManager = {
     if (langSel) langSel.value = (typeof I18N !== "undefined" ? I18N.lang : "ko");
     const projRow = document.getElementById("loginProjectRow");
     if (projRow) projRow.style.display = "";
+    const psel = document.getElementById("inputLoginProject");
+    if (psel) psel.disabled = false;
     this.fillLoginProjects();
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp && !emp.value) emp.value = (this._readSession() || {}).empNo || "";
@@ -365,8 +367,10 @@ var AuthManager = {
       `<span style="font-size:11px; color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) info.style.display = "none";
+    // [v3.0.1] 권한 인증은 지금 프로젝트에서 — 프로젝트 줄은 보이되 바꿀 수 없음
     const projRow = document.getElementById("loginProjectRow");
-    if (projRow) projRow.style.display = "none";
+    if (projRow) projRow.style.display = "";
+    this.fillLoginProjects(true);
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = hasPerm ? this.getCurrentUser().empNo : meta.defaultEmpNo;
     const cancel = document.getElementById("btnLockCancel");
@@ -413,9 +417,17 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // [v3.0.0] 로그인 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 로그인한 프로젝트를 미리 선택
   LOGIN_PROJECT_KEY: "IOSTAR_LOGIN_PROJECT",
-  async fillLoginProjects() {
+  async fillLoginProjects(lockCurrent) {
     const sel = document.getElementById("inputLoginProject");
     if (!sel) return;
+    if (lockCurrent) {
+      const info = ProjectContext.info ? ProjectContext.info() : null;
+      const name = (info && info.name) || projectConfig.projectName || ProjectContext.current;
+      sel.innerHTML = `<option value="${escapeAttr(ProjectContext.current)}" selected>${escapeHtml(name)}</option>`;
+      sel.disabled = true;
+      return;
+    }
+    sel.disabled = false;
     let list = [];
     if (SyncManager.isLocal()) {
       list = ProjectContext.localList().filter(p => p.status !== "ARCHIVED").map(p => ({ id: p.id, name: p.id === ProjectContext.DEFAULT && ProjectContext.isDefault() ? (projectConfig.projectName || p.name) : p.name }));

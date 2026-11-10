@@ -1365,6 +1365,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Project-Id")
         if getattr(self, "_csp", False):
             self.send_header("Content-Security-Policy", CSP_POLICY)
+        if getattr(self, "_static", False):
+            self.send_header("Cache-Control", "no-cache")
         if TLS_ACTIVE:
             self.send_header("Strict-Transport-Security", "max-age=15552000")
         self.send_header("X-Content-Type-Options", "nosniff")
@@ -1437,6 +1439,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             self._send_app_config()
             return
         self._csp = path in CSP_PAGES
+        self._static = True  # [v3.0.1] 화면 파일은 매번 서버에 확인 (업그레이드 후 이전 화면이 캐시로 남지 않게)
         super().do_GET()
 
     def _send_app_config(self):

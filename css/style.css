@@ -1,5 +1,5 @@
 /* =============================================================================
- * IOSTAR-PM v3.0.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
+ * IOSTAR-PM v3.0.1 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
@@ -1200,8 +1200,12 @@ tr.wbs-row-lvl-5 { background-color: var(--lvl-5-bg); border-left: 4px solid var
   z-index: 99999;
   display: none;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  overflow-y: auto;          /* [v3.0.1] 낮은 화면에서도 로그인 상자 전체를 스크롤해서 볼 수 있게 */
+  padding: 16px 0;
+  box-sizing: border-box;
 }
+.security-lock-overlay > .security-lock-modal { margin: auto; flex-shrink: 0; }
 .security-lock-modal {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
