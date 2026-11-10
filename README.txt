@@ -1,10 +1,8 @@
 ================================================================================
-⚡ IOSTAR-PM Neo v2.2.0
+⚡ IOSTAR-PM v2.3.0 (통합판 — 화면 방식 Standard / Neo 선택)
    - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
-   - 이 브랜치: Neo v2.2.0 (브랜치 iostar-pm-neo, Standard v1.0.1 에서 분기 — 개발 계획 docs/NEO_PLAN.md)
-   - 안정 판: Standard v1.0.1 (브랜치 iostar-pm-standard, G v1.0.0 에서 이름 변경)
-   - 판 구성: Standard v1.0.x (현재 기본 판) / Neo v2.x (다음 세대 화면, 브랜치 iostar-pm-neo)
-             국내판 v1.2.0 은 개발 종료 (더 이상 기능 추가·수정 없음)
+   - 이 브랜치: iostar-pm-unified (Standard v1.0.1 과 Neo v2.2.0 을 하나의 소스로 통합)
+   - 이전 분리판 브랜치(iostar-pm-standard, iostar-pm-neo)는 이력으로 보존, 국내판 v1.2.0 은 개발 종료
    - 공식 크레딧: Developed & Designed by Iostar
 ================================================================================
 
@@ -24,6 +22,26 @@
   2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
      → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
      - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+
+■ [v2.3.0] — Standard · Neo 통합 (한 소스, 화면 방식 선택) · Electric 테마 · Pretendard 글꼴
+1. 화면 방식 선택: 사용자 메뉴(오른쪽 위 이름) 또는 [시스템 설정 > 화면·테마]의 [화면 방식]
+   - Standard: 기본 화면 (Standard v1.0.1 화면)
+   - Neo: 대시보드 확인할 일 · WBS 오른쪽 상세 패널 · 메뉴 건수 배지 · WBS 상태 칩 · 왼쪽 메뉴 접기 · 화면 머리줄 통일
+          · 내려받기/올리기 메뉴 · 주간보고 2단 화면 (Neo v2.2.0 기능 전체)
+   - 사용자마다 따로 저장 (projectUsers[].uiMode), 바꾸면 미저장 변경을 확인한 뒤 화면을 다시 불러옴
+   - app.ini [ui]: default_ui(처음 방식, 기본 standard) · allow_ui_switch(0 이면 선택 메뉴 숨기고 default_ui 로 고정)
+2. 테마: Electric (기본, 새로 추가) · Navy · Graphite(어두운 화면) — Teal 은 삭제
+   - Electric: 모노톤 바탕 + 일렉트릭 블루 1색 + 라임 하이라이트, 검정 캡슐형 1단 메뉴, 대시보드 실적 진척률 강조 카드
+   - 이전에 Teal 등 다른 테마를 쓰던 프로젝트는 자동으로 Electric(그 밖의 진한 테마는 Navy, 어두운 테마는 Graphite)으로 바뀜
+   - app.ini [ui] default_theme 으로 새 프로젝트의 처음 테마 지정
+3. 글꼴: Pretendard 1.3.9 (SIL Open Font License 1.1) 를 fonts/ 에 포함 — 모든 화면 · 테마 공통
+   - 라이선스 원문 fonts/Pretendard-LICENSE.txt, 고지 legal/THIRD_PARTY_NOTICES.txt (원본 파일을 수정 없이 포함)
+   - 글꼴 파일이 없으면 PC 의 맑은 고딕 등으로 표시
+4. 공통 기능 (두 화면 방식 모두): WBS 서브시스템별 템플릿 추가 개선(등록 서브시스템만 · 추가/교체 · 미리 보기),
+   어두운 화면 정리, Neo v2.1~2.2 에서 고친 오류
+5. 판 표시: app.ini edition=MAIN (통합판, 판 이름 표시 없음) → 배포 파일 IOSTAR-PM_v2.3.0[_win64].zip, 머리글 배지 v2.3.0
+6. 공용 파일 변경: run_server.bat(판 이름이 없으면 창 제목에서 생략), tools/app_config.py([ui] 설정, MAIN 판)
+7. 자동 테스트: 화면 방식(기본 Standard → Neo 전환·저장 → Standard 복귀), 테마 3종, 글꼴 로드, app.ini [ui] 전달 (E2E 67 · API 21)
 
 ■ [Neo v2.2.0] — WBS 템플릿 추가 개선 · 화면 머리줄 통일 · 내려받기/올리기 메뉴 · 주간보고 2단 화면
 1. WBS [📋 서브시스템별 템플릿 추가] 개선

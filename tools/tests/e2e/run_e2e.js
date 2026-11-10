@@ -131,7 +131,7 @@ async function localMain() {
   //   계정 전환·프로젝트 전환처럼 화면을 다시 불러오는 검사는 http:// 에서 수행)
   page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(STATIC_URL); await page.waitForTimeout(900);
-  check("Login screen starts in Korean (app.ini default_lang=ko)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.getElementById("headerVersionBadge").textContent === APP_CONFIG.editionName + " v" + APP_CONFIG.version));
+  check("Login screen starts in Korean with the default theme (app.ini default_lang=ko, default_theme=electric)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.body.dataset.theme === APP_CONFIG.defaultTheme && document.getElementById("headerVersionBadge").textContent === (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
@@ -294,7 +294,7 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("G: left menu option + 3 themes (navy, teal, graphite)", side && themes === "navy,teal,dark", themes);
+  check("Themes: Electric (default) · Navy · Graphite (Teal removed); left menu option", side && themes === "electric,navy,dark", themes);
   // [Standard v1.0.1] 1단(묶음)·2단(하위) 메뉴 구분, 간트 머리글 테마, 설정 화면 선택지 정리, 판 이름 표시
   await page.click('.g-group[data-group="sc"]'); await page.waitForTimeout(150);
   await page.click('.g-nav-top .g-sub[data-tab="tab-gantt"]'); await page.waitForTimeout(500);
@@ -308,12 +308,22 @@ async function localMain() {
   check("Standard: group menu (filled box) vs sub menu (underline tab) are visually distinct", look.crumb && look.gAct !== look.sAct && parseInt(look.sBorder, 10) >= 2, JSON.stringify(look));
   check("Standard: gantt header row uses the theme header color", look.head === look.hb && look.tree === look.hb, JSON.stringify(look));
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
-    return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: APP_CONFIG.editionName + " v" + APP_CONFIG.version }; });
+    return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
   await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "navy,teal,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
-  if (await page.evaluate(() => typeof NeoTodo !== "undefined")) {
+  // [v2.3.0] 화면 방식: 기본은 Standard (Neo 요소 숨김), 사용자 메뉴에서 Neo 로 바꾸면 다시 불러온 뒤 Neo 기능 동작
+  const stdMode = await page.evaluate(() => ({ def: APP_CONFIG.defaultUi, mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), todo: getComputedStyle(document.getElementById("neoTodoCard")).display, ph: !!document.querySelector(".neo-ph"),
+    sel: getComputedStyle(document.getElementById("wbsStatusFilter")).display, theme: document.body.dataset.theme, font: document.fonts.check("13px Pretendard") }));
+  await page.evaluate(() => document.fonts.ready);
+  const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
+  check("Unified: default UI mode is Standard (Neo parts hidden), Pretendard font loaded", stdMode.mode === stdMode.def && !stdMode.cls && stdMode.todo === "none" && !stdMode.ph && stdMode.sel !== "none" && fontOk, JSON.stringify({ stdMode, fontOk }));
+  await page.selectOption("#gUiModeSelect", "neo").catch(async () => { await page.evaluate(() => UiMode.set("neo")); });
+  await page.waitForTimeout(1500); await waitApp(page);
+  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, cls: document.body.classList.contains("ui-neo"), saved: AuthManager.findUser("admin").uiMode, ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-col").length }));
+  check("Unified: switching to Neo reloads with Neo screens and saves the choice on the user", neoMode.mode === "neo" && neoMode.cls && neoMode.saved === "neo" && neoMode.ph >= 10 && neoMode.todo === 5, JSON.stringify(neoMode));
+  if (await page.evaluate(() => typeof NeoTodo !== "undefined" && UiMode.isNeo())) {
     await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
     const before = await page.evaluate(() => ({ cols: document.querySelectorAll("#neoTodoCard .neo-todo-col").length, delayed: NeoTodo.collect(null).delayed.length }));
     // 진행 중 최하위 과업 하나를 지연으로 만들기 (실적 = 계획 - 20)
@@ -404,6 +414,10 @@ async function localMain() {
     check("Neo: weekly report is two panes (list left, report right); picking a unit opens it on the right", split.side && split.sw && /W1/.test(pick.banner) && /W1/.test(pick.active), JSON.stringify({ split, pick }));
     await page.evaluate(() => GShell.go("tab-home"));
   }
+  // 다른 사용자는 각자 화면 방식 (admin = Neo, lead_lee = 기본 Standard) → 마지막에 admin 을 Standard 로 되돌림
+  await page.evaluate(() => UiMode.set("standard")); await page.waitForTimeout(1500); await waitApp(page);
+  const backStd = await page.evaluate(() => ({ mode: UiMode.current, saved: AuthManager.findUser("admin").uiMode, ph: !!document.querySelector(".neo-ph") }));
+  check("Unified: switching back to Standard restores the standard screens", backStd.mode === "standard" && backStd.saved === "standard" && !backStd.ph, JSON.stringify(backStd));
 
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);

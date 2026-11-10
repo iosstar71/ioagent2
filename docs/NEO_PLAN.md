@@ -26,3 +26,4 @@
   - Neo 전용 코드: `js/neo.js` 의 `NeoPage`, CSS `[Neo 2.2]` 영역 / 화면 제목·설명은 `index.html` 에서 직접 변경
   - 공통 코드 변경(Standard 반영 시 함께 가져갈 것): `js/app.js` 의 `WbsTemplate`(이전 `appendSubsystemTemplate` 대체),
     `index.html` 의 `#templateModal`, `AppBoot.initUi` 의 `NeoPage.init()` 호출
+- v2.3.0: Standard 와 통합 — 화면 방식(Standard/Neo) 선택, Electric 테마(기본)·Navy·Graphite, Pretendard 글꼴 (docs/EDITIONS.md)

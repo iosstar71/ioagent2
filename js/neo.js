@@ -1,6 +1,8 @@
 // =============================================================================
-// [IOSTAR-PM Neo 2.1] Neo 전용 화면 기능 (Standard 화면 틀 위에 더하는 기능)
+// [IOSTAR-PM v2.3.0] 화면 방식(Standard / Neo) 선택 + Neo 화면 기능 (Standard 화면 틀 위에 더하는 기능)
 // -----------------------------------------------------------------------------
+//  - UiMode    : 화면 방식 — 사용자별 설정(projectUsers[].uiMode), app.ini [ui] 의 기본값·선택 허용 여부
+//                Neo 이면 body.ui-neo, 아래 Neo 기능은 Neo 방식에서만 동작
 //  - NeoTodo   : 대시보드 "확인할 일" — 지연 과업 · 7일 안 마감 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item
 //  - NeoDetail : WBS 오른쪽 상세 패널 — ID 를 누르면 한 과업의 모든 항목을 한 곳에서 보고 고침
 //  - NeoBadges : 메뉴 건수 배지 (지연 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item)
@@ -37,6 +39,95 @@ var NeoUtil = {
     return `D-${n}`;
   }
 };
+
+// -----------------------------------------------------------------------------
+// 0. 화면 방식 (Standard / Neo)
+//  - 처음 화면: 이 브라우저에서 마지막에 쓴 방식 → 없으면 app.ini default_ui
+//  - 로그인 후: 사용자 설정(projectUsers[].uiMode)과 다르면 그 방식으로 다시 불러옴
+//  - app.ini allow_ui_switch=0 이면 default_ui 로 고정 (선택 메뉴 숨김)
+// -----------------------------------------------------------------------------
+var UiMode = {
+  KEY: "IOSTAR_UI_MODE",
+  MODES: ["standard", "neo"],
+  LABELS: { standard: "Standard (기본 화면)", neo: "Neo (확인할 일 · 상세 패널)" },
+  current: "standard",
+  cfg() {
+    const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : {};
+    return { def: c.defaultUi === "neo" ? "neo" : "standard", allow: c.uiSwitch !== false };
+  },
+  init() {
+    const c = this.cfg();
+    let m = c.def;
+    if (c.allow) {
+      const saved = NeoUtil.store(this.KEY);
+      if (this.MODES.indexOf(saved) !== -1) m = saved;
+    }
+    this.apply(m);
+  },
+  apply(m) {
+    this.current = m === "neo" ? "neo" : "standard";
+    document.body.classList.toggle("ui-neo", this.current === "neo");
+    document.body.classList.toggle("ui-standard", this.current !== "neo");
+  },
+  isNeo() { return this.current === "neo"; },
+  canSwitch() { return this.cfg().allow; },
+
+  _landing() {
+    try {
+      const a = document.querySelector(".tab-pane.active");
+      sessionStorage.setItem("AX_PMYS_LANDING_TAB", a ? a.id : "tab-home");
+    } catch (e) {}
+  },
+  // 로그인 직후 호출: 사용자 설정과 현재 방식이 다르면 true (화면을 다시 불러옴)
+  afterLogin(user) {
+    if (!this.canSwitch() || !user) return false;
+    const want = this.MODES.indexOf(user.uiMode) !== -1 ? user.uiMode : null;
+    if (!want) { NeoUtil.store(this.KEY, this.current); return false; }
+    NeoUtil.store(this.KEY, want);
+    if (want === this.current) return false;
+    this._landing();
+    setTimeout(() => window.location.reload(), 150);
+    return true;
+  },
+  // 사용자가 화면 방식을 바꿈: 본인 설정 저장 → 화면 다시 불러오기
+  async set(mode) {
+    mode = mode === "neo" ? "neo" : "standard";
+    if (!this.canSwitch() || mode === this.current) return;
+    if (typeof SyncManager !== "undefined") {
+      if (SyncManager.isLocal()) await SyncManager.flushAutoSave();
+      else if (SyncManager.isDirty()) {
+        const choice = await SyncUI.ask("🖥️ 화면 방식 변경", `저장하지 않은 변경 ${SyncManager.dirtyCount()}건이 있습니다.\n화면 방식을 바꾸기 전에 저장하시겠습니까?`, [
+          { id: "save", label: "💾 저장 후 변경", cls: "btn-primary" },
+          { id: "discard", label: "🗑️ 변경 버리고 변경", cls: "btn-danger" },
+          { id: "cancel", label: "취소", cls: "btn-secondary" }
+        ]);
+        if (choice === "cancel") { this.syncSelects(); return; }
+        if (choice === "save") {
+          const r = await SyncManager.save(null, { notify: false });
+          if (!r.ok && !r.nothing) { this.syncSelects(); return; }
+        }
+      }
+    }
+    NeoUtil.store(this.KEY, mode);
+    const u = typeof AuthManager !== "undefined" ? AuthManager.getCurrentUser() : null;
+    const row = u && AuthManager.findUser(u.empNo);
+    if (row && row.uiMode !== mode) {
+      row.uiMode = mode;
+      try { await SyncManager.save(["projectUsers"], { notify: false }); } catch (e) {}
+    }
+    this._landing();
+    if (typeof showToast === "function") showToast(`🖥️ 화면 방식을 [${this.LABELS[mode]}](으)로 바꿉니다...`);
+    setTimeout(() => window.location.reload(), 300);
+  },
+  syncSelects() {
+    ["gUiModeSelect", "cfgUiModeSelect"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = this.current;
+    });
+    document.querySelectorAll(".ui-mode-field").forEach(el => { el.hidden = !this.canSwitch(); });
+  }
+};
+UiMode.init();
 
 // -----------------------------------------------------------------------------
 // 1. 대시보드 "확인할 일"
@@ -106,6 +197,7 @@ var NeoTodo = {
   },
 
   render(systems) {
+    if (!UiMode.isNeo()) return;
     this._systems = systems || null;
     const box = document.getElementById("neoTodoCard");
     if (!box) return;
@@ -197,6 +289,7 @@ var NeoDetail = {
     return p;
   },
   open(idx) {
+    if (!UiMode.isNeo()) return;
     const row = wbsData[idx];
     if (!row) return;
     this._id = String(row.id);
@@ -338,7 +431,7 @@ var NeoDetail = {
   },
   // 표가 다시 그려진 뒤 (renderWbsTable 끝에서 호출)
   afterTable() {
-    if (!this.isOpen()) return;
+    if (!UiMode.isNeo() || !this.isOpen()) return;
     if (!this.row()) return this.close();
     this.render();
   }
@@ -357,12 +450,14 @@ var NeoBadges = {
   },
   // GShell.renderNav 끝에서 호출 (메뉴를 다시 그릴 때마다)
   apply(nav) {
+    if (!UiMode.isNeo()) return;
     this._counts = this.compute();
     this._sig = JSON.stringify(this._counts);
     this._paint(nav || document.getElementById("gNav"));
     NeoSide.apply(nav);
   },
   refresh() {
+    if (!UiMode.isNeo()) return;
     const c = this.compute();
     const sig = JSON.stringify(c);
     if (sig === this._sig) return;
@@ -410,7 +505,7 @@ var NeoChips = {
   // renderWbsTable 끝에서 호출: 분야·서브시스템 조회 범위의 최하위 Task 상태별 건수
   render() {
     const box = document.getElementById("neoStatusChips");
-    if (!box) return;
+    if (!box || !UiMode.isNeo()) return;
     const val = id => { const el = document.getElementById(id); return el ? el.value : "ALL"; };
     const dF = val("wbsDomainFilter"), sF = val("wbsSubsystemFilter"), cur = val("wbsStatusFilter") || "ALL";
     const leaves = wbsData.filter(t => t.isLeaf && (dF === "ALL" || WBSEngine.getSubsystemDomain(t.system) === dF) && (sF === "ALL" || t.system === sF));
@@ -463,7 +558,7 @@ document.addEventListener("keydown", e => {
   NeoDetail.close();
 });
 // 데이터가 바뀌면 메뉴 배지 갱신 (가벼운 계산이므로 짧은 주기로 확인)
-setInterval(() => { if (document.getElementById("gNav")) NeoBadges.refresh(); }, 2000);
+setInterval(() => { if (UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh(); }, 2000);
 // WBS 화면을 떠나면 상세 패널 닫기
 (function watchWbsPane() {
   const start = () => {
@@ -483,7 +578,7 @@ setInterval(() => { if (document.getElementById("gNav")) NeoBadges.refresh(); },
 // -----------------------------------------------------------------------------
 var NeoPage = {
   init() {
-    if (this._ready) return;
+    if (this._ready || !UiMode.isNeo()) return;
     this._ready = true;
     document.querySelectorAll(".tab-pane").forEach(pane => this.normalize(pane));
     document.addEventListener("click", e => {

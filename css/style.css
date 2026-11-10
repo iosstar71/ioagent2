@@ -1,8 +1,11 @@
 /* =============================================================================
- * IOSTAR-PM Neo v2.2.0 — 통합 스타일시트 (단일 CSS 파일)
+ * IOSTAR-PM v2.3.0 — 통합 스타일시트 (단일 CSS 파일, 화면 방식 Standard · Neo 공용)
  *  v1.0.7 까지 css/style.css · css/themes.css · index.html 인라인 <style> 2곳에 나뉘어 있던 규칙을
  *  기존 적용 순서(style.css → themes.css → 인라인)를 유지하여 한 파일로 통합하고, 완전히 동일한 중복 규칙은 제거
  * ============================================================================= */
+
+/* [v2.3.0] 기본 글꼴: Pretendard (SIL OFL 1.1, fonts/Pretendard-LICENSE.txt) — 파일이 없으면 맑은 고딕 등 PC 글꼴 */
+@font-face { font-family: "Pretendard"; src: url("../fonts/PretendardVariable.woff2") format("woff2-variations"), url("../fonts/PretendardVariable.woff2") format("woff2"); font-weight: 45 920; font-style: normal; font-display: swap; }
 
 /* ---------- [원본: css/style.css] ---------- */
 .btn {
@@ -933,7 +936,7 @@ header .btn[data-btn="refresh"], header .btn[data-btn="cancel"], header .btn[dat
 }
 
 /* ---------- [원본: index.html 인라인 #1] ---------- */
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", Dotum, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Malgun Gothic", Dotum, sans-serif; }
 body { background-color: var(--bg-main); color: var(--text-main); font-size: 13px; line-height: 1.4; }
 header {
   background: var(--header-bg);
@@ -2005,7 +2008,7 @@ header {
 .legal-box { width: min(860px, 94vw); }
 .legal-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .legal-tabs .btn.active { outline: 2px solid var(--primary, #1e40af); font-weight: 700; }
-.legal-text { white-space: pre-wrap; font-family: "Malgun Gothic", -apple-system, sans-serif; font-size: 12.5px; line-height: 1.7; max-height: 58vh; overflow: auto; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 12px 14px; margin: 0; }
+.legal-text { white-space: pre-wrap; font-family: "Pretendard", "Malgun Gothic", -apple-system, sans-serif; font-size: 12.5px; line-height: 1.7; max-height: 58vh; overflow: auto; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; padding: 12px 14px; margin: 0; }
 
 /* =============================================================================
    [G v1.0.0] B2 레이아웃: 한 줄 머리글 + 2단 메뉴 + ⚙ 관리·사용자 메뉴 + 검색(Ctrl+K) + 저장 줄
@@ -2396,27 +2399,92 @@ body.g-edition .sub-header-bar .sub-title { white-space: nowrap; }
 .neo-dd-menu .btn.neo-dd-item:disabled, .neo-dd-menu .btn.neo-dd-item[aria-disabled="true"] { opacity: 0.5; }
 
 /* 주간보고 2단 화면: 왼쪽 보고 단위 목록 · 오른쪽 보고서 */
-.neo-wr-split { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 14px; align-items: start; }
-.neo-wr-split > #wrListCard { position: sticky; top: 58px; margin: 0; max-height: calc(100vh - 140px); display: flex; flex-direction: column; }
-body.g-edition[data-layout="sidebar-left"] .neo-wr-split > #wrListCard { top: 12px; }
-.neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: none !important; flex: 1 1 auto; min-height: 120px; }
-.neo-wr-split #wrListCard .card-title { flex-direction: column; align-items: stretch; gap: 8px; }
-.neo-wr-split #wrListCard .card-title > div { justify-content: flex-start; }
-.neo-wr-split #wrWeekSelect { min-width: 0 !important; flex: 1 1 160px; }
-.neo-wr-split #wrListCard th:nth-child(1), .neo-wr-split #wrListCard td:nth-child(1),
-.neo-wr-split #wrListCard th:nth-child(5), .neo-wr-split #wrListCard td:nth-child(5),
-.neo-wr-split #wrListCard th:nth-child(6), .neo-wr-split #wrListCard td:nth-child(6),
-.neo-wr-split #wrListCard th:nth-child(7), .neo-wr-split #wrListCard td:nth-child(7) { display: none; }
-.neo-wr-split #wrListCard table { table-layout: auto; }
-.neo-wr-split:has(#wrListShowAll:checked) #wrListCard th:nth-child(1), .neo-wr-split:has(#wrListShowAll:checked) #wrListCard td:nth-child(1) { display: table-cell; font-size: 10.5px; }
-.neo-wr-split #wrListCard th, .neo-wr-split #wrListCard td { width: auto !important; font-size: 12px; }
-.neo-wr-split #wrListCard td:nth-child(2) { text-align: left; }
-.neo-wr-split #wrListCard tr.wr-list-row { cursor: pointer; }
-.neo-wr-split #wrListCard tr.wr-list-row.active td { background: color-mix(in srgb, var(--primary, #1e3a8a) 12%, transparent) !important; font-weight: 700; }
-.neo-wr-split #wrListCard tr.wr-list-row.active td:first-child, .neo-wr-split #wrListCard tr.wr-list-row.active td:nth-child(2) { box-shadow: inset 3px 0 0 var(--primary, #1e3a8a); }
-.neo-wr-split > #wrDetailPanel { min-width: 0; }
+.neo-wr-split { display: block; }
+body.ui-neo .neo-wr-split { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 14px; align-items: start; }
+body.ui-neo .neo-wr-split > #wrListCard { position: sticky; top: 58px; margin: 0; max-height: calc(100vh - 140px); display: flex; flex-direction: column; }
+body.ui-neo.g-edition[data-layout="sidebar-left"] .neo-wr-split > #wrListCard { top: 12px; }
+body.ui-neo .neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: none !important; flex: 1 1 auto; min-height: 120px; }
+body.ui-neo .neo-wr-split #wrListCard .card-title { flex-direction: column; align-items: stretch; gap: 8px; }
+body.ui-neo .neo-wr-split #wrListCard .card-title > div { justify-content: flex-start; }
+body.ui-neo .neo-wr-split #wrWeekSelect { min-width: 0 !important; flex: 1 1 160px; }
+body.ui-neo .neo-wr-split #wrListCard th:nth-child(1), body.ui-neo .neo-wr-split #wrListCard td:nth-child(1),
+body.ui-neo .neo-wr-split #wrListCard th:nth-child(5), body.ui-neo .neo-wr-split #wrListCard td:nth-child(5),
+body.ui-neo .neo-wr-split #wrListCard th:nth-child(6), body.ui-neo .neo-wr-split #wrListCard td:nth-child(6),
+body.ui-neo .neo-wr-split #wrListCard th:nth-child(7), body.ui-neo .neo-wr-split #wrListCard td:nth-child(7) { display: none; }
+body.ui-neo .neo-wr-split #wrListCard table { table-layout: auto; }
+body.ui-neo .neo-wr-split:has(#wrListShowAll:checked) #wrListCard th:nth-child(1), body.ui-neo .neo-wr-split:has(#wrListShowAll:checked) #wrListCard td:nth-child(1) { display: table-cell; font-size: 10.5px; }
+body.ui-neo .neo-wr-split #wrListCard th, body.ui-neo .neo-wr-split #wrListCard td { width: auto !important; font-size: 12px; }
+body.ui-neo .neo-wr-split #wrListCard td:nth-child(2) { text-align: left; }
+body.ui-neo .neo-wr-split #wrListCard tr.wr-list-row { cursor: pointer; }
+body.ui-neo .neo-wr-split #wrListCard tr.wr-list-row.active td { background: color-mix(in srgb, var(--primary, #1e3a8a) 12%, transparent) !important; font-weight: 700; }
+body.ui-neo .neo-wr-split #wrListCard tr.wr-list-row.active td:first-child, body.ui-neo .neo-wr-split #wrListCard tr.wr-list-row.active td:nth-child(2) { box-shadow: inset 3px 0 0 var(--primary, #1e3a8a); }
+body.ui-neo .neo-wr-split > #wrDetailPanel { min-width: 0; }
 @media (max-width: 1279px) {
-  .neo-wr-split { grid-template-columns: 1fr; }
-  .neo-wr-split > #wrListCard { position: static; max-height: none; }
-  .neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: 260px !important; }
+  body.ui-neo .neo-wr-split { grid-template-columns: 1fr; }
+  body.ui-neo .neo-wr-split > #wrListCard { position: static; max-height: none; }
+  body.ui-neo .neo-wr-split > #wrListCard > div[style*="max-height"] { max-height: 260px !important; }
 }
+
+/* =============================================================================
+   [v2.3.0] 화면 방식 (Standard / Neo) — 한 소스에서 body.ui-neo 로 Neo 전용 요소를 켜고 끔
+   ============================================================================= */
+body:not(.ui-neo) #neoTodoCard, body:not(.ui-neo) #neoStatusChips, body:not(.ui-neo) .neo-detail,
+body:not(.ui-neo) .neo-side-toggle { display: none !important; }
+body.ui-neo .neo-std-only { display: none !important; }
+body:not(.ui-neo) .wbs-id-link { cursor: default; text-decoration: none; color: inherit; padding: 0; }
+body:not(.ui-neo) .wbs-id-link:hover { background: transparent; }
+body:not(.ui-neo) .neo-ph-desc { font-size: 11px; }
+
+/* =============================================================================
+   [v2.3.0] Electric 테마 (기본) — 모노톤 바탕 + 일렉트릭 블루 1색 + 라임 하이라이트
+   ============================================================================= */
+[data-theme="electric"] {
+  --hero-bg-from: #2523C9; --hero-bg-mid: #3D3BFF; --hero-bg-to: #6F6DFF;
+  --bg-main: #F4F5F7; --bg-card: #FFFFFF; --border-color: #E3E5EA;
+  --text-main: #111318; --text-sub: #3B4048; --text-muted: #5A5F6B;
+  --primary: #3D3BFF; --primary-light: #6F6DFF; --accent: #3D3BFF;
+  --success: #0B7A4E; --warning: #8A5A00; --danger: #D92B1A;
+  --header-bg: #111318; --highlight: #D7FF3A;
+  --lvl-1-bg: #ECECFF; --lvl-1-border: #3D3BFF; --lvl-1-text: #111318;
+  --lvl-2-bg: #F4F4FF; --lvl-2-border: #6F6DFF; --lvl-2-text: #1E1CB0;
+  --lvl-3-bg: #F6F7F9; --lvl-3-border: #8A8FFF; --lvl-3-text: #111318;
+  --lvl-4-bg: #FAFAFB; --lvl-4-border: #B8BBC4; --lvl-4-text: #3B4048;
+  --lvl-5-bg: #FFFFFF; --lvl-5-border: #D9DCE2; --lvl-5-text: #5A5F6B;
+}
+[data-theme="electric"] .card, [data-theme="electric"] .kpi-card, [data-theme="electric"] .sub-header-bar { border-radius: 14px; border-color: #E6E8EC; box-shadow: none; }
+[data-theme="electric"] .kpi-card { border-left-width: 1px !important; border-left-color: #E6E8EC !important; }
+[data-theme="electric"] .kpi-value { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+/* 대시보드: 실적 진척률 카드를 강조 카드로 */
+[data-theme="electric"] #tab-dashboard .grid-4 > .kpi-card:nth-child(2) { background: #3D3BFF; border-color: #3D3BFF !important; }
+[data-theme="electric"] #tab-dashboard .grid-4 > .kpi-card:nth-child(2) .kpi-value { color: #FFFFFF !important; }
+[data-theme="electric"] #tab-dashboard .grid-4 > .kpi-card:nth-child(2) .kpi-title,
+[data-theme="electric"] #tab-dashboard .grid-4 > .kpi-card:nth-child(2) .kpi-sub { color: #E4E3FF; }
+/* 1단 메뉴: 검정 캡슐 + 선택 묶음 흰 칩, 2단 메뉴: 굵은 파란 밑줄 */
+[data-theme="electric"] .g-groups { background: #111318; border-color: #111318; border-radius: 14px; padding: 4px; }
+[data-theme="electric"] .g-group { color: #C9CCD3; border-radius: 10px; }
+[data-theme="electric"] .g-group:hover { background: rgba(255,255,255,0.10); box-shadow: none; }
+[data-theme="electric"] .g-group.active, [data-theme="electric"] .g-group.active:hover { background: #FFFFFF; color: #111318; box-shadow: none; }
+[data-theme="electric"] .g-group-count { background: rgba(255,255,255,0.14); color: #E6E8EB; }
+[data-theme="electric"] .g-group.active .g-group-count { background: #ECECFF; color: #1E1CB0; }
+[data-theme="electric"] .g-group-count.neo-alert, [data-theme="electric"] .g-group.active .g-group-count.neo-alert { background: #D7FF3A; color: #111318; }
+[data-theme="electric"] .g-subs { background: transparent; }
+[data-theme="electric"] .g-sub.active { background: transparent; border-bottom-color: #3D3BFF; color: #111318; }
+[data-theme="electric"] .g-crumb { color: #9AA0AB; }
+[data-theme="electric"] .neo-badge { background: #D7FF3A; color: #111318; }
+[data-theme="electric"] .neo-todo-total { background: #D7FF3A; color: #111318; }
+[data-theme="electric"] .neo-todo { border-left-width: 1px; }
+[data-theme="electric"] .g-side-title { border-left-color: #3D3BFF; }
+[data-theme="electric"] .g-side-group.cur .g-side-title { background: #111318; color: #FFFFFF; }
+/* 버튼: 저장·주 버튼은 파랑, 보조 버튼은 흰 바탕 */
+[data-theme="electric"] .btn { border-radius: 8px; }
+[data-theme="electric"] .btn-primary, [data-theme="electric"] .btn[data-btn="save"] { background: #3D3BFF !important; border-color: #3D3BFF !important; color: #FFFFFF !important; }
+[data-theme="electric"] .btn[data-btn="refresh"] { background: #FFFFFF !important; border-color: #3D3BFF !important; color: #2F2DE0 !important; }
+[data-theme="electric"] .btn[data-btn="nav"] { background: #ECECFF !important; border-color: #D5D4FF !important; color: #2F2DE0 !important; }
+[data-theme="electric"] .btn[data-btn="add"] { background: #111318 !important; border-color: #111318 !important; }
+[data-theme="electric"] .wbs-id-link { color: #2F2DE0; }
+[data-theme="electric"] .current-date-badge { background: #ECECFF; color: #1E1CB0; border-color: #D5D4FF; }
+[data-theme="electric"] .g-header .g-ver { background: #D7FF3A; color: #111318; }
+.ui-mode-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border-color); }
+.ui-mode-row > label { margin: 0 !important; }
+.ui-mode-hint { font-size: 11.5px; color: var(--text-muted); }
+.ui-mode-field[hidden] { display: none !important; }

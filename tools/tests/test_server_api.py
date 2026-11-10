@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-[IOSTAR-PM Standard v1.0.1] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
+[IOSTAR-PM v2.3.0] DB 서버 API 자동 테스트 (Python 표준 라이브러리만 사용)
 
 프로그램 폴더를 임시 폴더로 복사한 뒤 빈 DB 로 wbs_db_server.py 를 기동하여 검증합니다.
 (실제 운영 DB data/wbs_enterprise.db 는 건드리지 않음)
@@ -45,6 +45,7 @@ class ServerApiTest(unittest.TestCase):
             shutil.copy(ROOT / name, cls.tmp / name)
         (cls.tmp / "data").mkdir()
         shutil.copy(ROOT / "data" / "initial_data.json", cls.tmp / "data" / "initial_data.json")
+        shutil.copytree(ROOT / "fonts", cls.tmp / "fonts")
         cls.port = free_port()
         cls.base = f"http://127.0.0.1:{cls.port}"
         cls.pwd = {}
@@ -246,6 +247,15 @@ class ServerApiTest(unittest.TestCase):
         # [Standard v1.0.1] 판 표시 이름 (STANDARD → Standard)
         if cp["app"].get("edition", "").upper() == "STANDARD":
             self.assertIn('"editionName": "Standard"', js)
+        # [v2.3.0] 화면 방식·기본 테마 ([ui] 섹션) 이 화면 설정에 전달
+        if cp.has_section("ui"):
+            self.assertIn('"defaultUi": "%s"' % cp["ui"].get("default_ui", "standard"), js)
+            self.assertIn('"uiSwitch": %s' % ("false" if cp["ui"].get("allow_ui_switch", "1") == "0" else "true"), js)
+            self.assertIn('"defaultTheme": "%s"' % cp["ui"].get("default_theme", "electric"), js)
+        # Pretendard 글꼴 파일은 화면에서 받을 수 있어야 함 (CSP font-src 'self')
+        with urllib.request.urlopen(self.base + "/fonts/PretendardVariable.woff2") as r:
+            self.assertEqual(r.status, 200)
+            self.assertGreater(len(r.read()), 1000000)
 
     # ---------------------------------------------------------------- 여러 프로젝트 (v1.0.10)
     def test_40_project_isolation(self):

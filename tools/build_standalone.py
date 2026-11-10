@@ -50,6 +50,8 @@ def build() -> Path:
             missing.append(m.group(1))
             return m.group(0)
         css = path.read_text(encoding="utf-8")
+        # css/ 기준 상대 경로(../fonts/...)를 Standalone.html(프로그램 폴더) 기준으로 바꿈
+        css = css.replace('url("../', 'url("')
         return f'<style data-src="{m.group(1)}">\n{css}\n</style>'
 
     def js_repl(m):

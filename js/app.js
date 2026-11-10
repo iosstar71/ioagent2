@@ -2040,7 +2040,7 @@ function renderWbsTable() {
   });
 
   // [Neo 2.1] 상태 칩 필터 건수 · 상세 패널 선택 행 표시
-  if (typeof NeoChips !== "undefined") { NeoChips.render(); NeoDetail.afterTable(); }
+  if (typeof UiMode !== "undefined" && UiMode.isNeo()) { NeoChips.render(); NeoDetail.afterTable(); }
 
   const errChip = document.getElementById("stat-chip-error");
   const errCount = document.getElementById("stat-count-error");
@@ -3622,6 +3622,7 @@ function activateTab(tabId) {
       HomeScreenManager.syncConfigUi();
       NoticeCommManager.renderSettingsChannelTable();
       SubTabs.restore("config", "screen");
+      if (typeof UiMode !== "undefined") UiMode.syncSelects();
       break;
   }
   if (typeof LayoutManager !== "undefined") LayoutManager.adjustSidebar();
@@ -3632,13 +3633,17 @@ function switchTab(tabId) {
   activateTab(tabId);
 }
 
-// [Standard v1.0.1] 테마는 Navy · Teal · Graphite(어두운 화면) 3가지 — 이전 버전의 다른 테마 값은 가까운 테마로
-const STANDARD_THEMES = ["navy", "teal", "dark"];
+// [v2.3.0] 테마는 Electric(기본) · Navy · Graphite(어두운 화면) 3가지 — 이전 버전의 다른 테마 값(Teal 등)은 가까운 테마로
+const STANDARD_THEMES = ["electric", "navy", "dark"];
+function defaultTheme() {
+  const t = typeof APP_CONFIG !== "undefined" ? APP_CONFIG.defaultTheme : "";
+  return STANDARD_THEMES.indexOf(t) !== -1 ? t : "electric";
+}
 function normalizeTheme(theme) {
   if (STANDARD_THEMES.indexOf(theme) !== -1) return theme;
-  if (theme === "graphite" || theme === "cyber-neon") return "dark";
-  if (theme === "emerald" || theme === "mint") return "teal";
-  return "navy";
+  if (theme === "graphite" || theme === "cyber-neon" || theme === "charcoal") return "dark";
+  if (theme === "ocean" || theme === "purple" || theme === "brown") return "navy";
+  return defaultTheme();
 }
 
 function changeTheme(theme) {
@@ -4866,7 +4871,7 @@ var LayoutManager = {
   },
 
   syncThemeSelect() {
-    const curTheme = document.body.getAttribute("data-theme") || "navy";
+    const curTheme = document.body.getAttribute("data-theme") || defaultTheme();
     const hdrTheme = document.getElementById("themeSelector");
     if (hdrTheme) hdrTheme.value = curTheme;
     const cfgTheme = document.getElementById("cfgThemeSelect");
@@ -6502,7 +6507,7 @@ var StorageManager = {
       exportedAt: now.toISOString(),
       exportedBy: AuthManager.getCurrentUser().empNo,
       systemSettings: {
-        theme: document.body.getAttribute("data-theme") || "navy",
+        theme: document.body.getAttribute("data-theme") || defaultTheme(),
         authPolicy: AuthManager.getAuthPolicy(),
         autoLockMinutes: AuthManager.getAutoLockMinutes(),
         dbConfig: DbConnector.config
@@ -6618,7 +6623,7 @@ var StorageManager = {
           localStorage.removeItem(AuthManager.STORAGE_POLICY_KEY);
           localStorage.removeItem(AuthManager.STORAGE_AUTOLOCK_KEY);
         } catch (e) {}
-        DataRegistry.set("theme", "navy");
+        DataRegistry.set("theme", defaultTheme());
         this._afterBulkReplace("✅ [완전 초기화 완료] 모든 설정, 기준정보 및 업무 데이터가 초기 상태로 초기화되었습니다.");
       }
     );

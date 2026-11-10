@@ -17,10 +17,11 @@ set "CFG_port=8080"
 if exist "app.ini" (
     for /f "usebackq eol=; tokens=1,* delims==" %%A in ("app.ini") do set "CFG_%%A=%%B"
 )
-if not defined CFG_edition_name set "CFG_edition_name=%CFG_edition%"
+set "TITLE_ED="
+if defined CFG_edition_name set "TITLE_ED= %CFG_edition_name%"
 
 echo ============================================================================
-echo [%CFG_product_name% %CFG_edition_name% ver%CFG_version%] Multi-User DB Web Server (Port: %CFG_port%)
+echo [%CFG_product_name%%TITLE_ED% ver%CFG_version%] Multi-User DB Web Server (Port: %CFG_port%)
 echo Current Directory: %~dp0
 echo ============================================================================
 

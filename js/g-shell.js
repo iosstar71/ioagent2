@@ -42,7 +42,7 @@ var GShell = {
     const layout = document.body.getAttribute("data-layout");
     if (layout !== "top-nav" && layout !== "sidebar-left" && typeof LayoutManager !== "undefined") LayoutManager.setLayout("top-nav", false);
     const theme = document.body.getAttribute("data-theme");
-    if (["navy", "teal", "dark"].indexOf(theme) === -1 && typeof changeTheme === "function") changeTheme("navy");
+    if (typeof normalizeTheme === "function" && normalizeTheme(theme) !== theme && typeof changeTheme === "function") changeTheme(normalizeTheme(theme));
     this.renderNav();
     this.renderAdmin();
     this.syncSettings();
@@ -188,6 +188,7 @@ var GShell = {
     set("headerLayoutSelector", document.body.getAttribute("data-layout"));
     set("gDensitySelect", document.body.getAttribute("data-density") === "compact" ? "compact" : "standard");
     set("gLangSelect", typeof I18N !== "undefined" ? I18N.lang : "ko");
+    if (typeof UiMode !== "undefined") UiMode.syncSelects();
   },
 
   // 언어: 화면에 바로 적용하고 로그인한 사용자 설정으로 저장

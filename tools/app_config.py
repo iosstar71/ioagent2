@@ -11,11 +11,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULTS = {
     "product_name": "IOSTAR-PM", "edition": "KR", "version": "0.0.0", "default_lang": "ko",
+    "default_ui": "standard", "allow_ui_switch": "1", "default_theme": "electric",
     "host": "0.0.0.0", "port": "8080", "db_file": "wbs_enterprise.db", "log_dir": "logs",
     "cert_file": "certs/server.crt", "key_file": "certs/server.key",
 }
 # 판 코드 → 표시 이름 (app.ini 의 edition_name 으로 바꿀 수 있음, 국내판은 표시하지 않음)
-EDITION_NAMES = {"KR": "", "STANDARD": "Standard", "NEO": "Neo"}
+EDITION_NAMES = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}
 
 
 def load(root=None):
@@ -32,11 +33,21 @@ def load(root=None):
     cfg["edition"] = cfg.get("edition", "KR").upper()
     if not cfg.get("edition_name"):
         cfg["edition_name"] = EDITION_NAMES.get(cfg["edition"], cfg["edition"])
+    cfg["default_ui"] = "neo" if str(cfg.get("default_ui", "")).lower() == "neo" else "standard"
+    cfg["allow_ui_switch"] = "0" if str(cfg.get("allow_ui_switch", "1")).strip() in ("0", "false", "no") else "1"
+    cfg["default_theme"] = cfg.get("default_theme", "electric").lower() if cfg.get("default_theme", "").lower() in ("electric", "navy", "dark") else "electric"
     return cfg
 
 
+def client_config(c):
+    """화면용 설정 값 (서버의 /js/app-config.js 와 같은 내용)"""
+    return {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
+            "version": c["version"], "defaultLang": c["default_lang"],
+            "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"]}
+
+
 def package_name(cfg=None):
-    """배포 파일 이름: 국내판 IOSTAR-PM_v1.2.0 / Standard IOSTAR-PM-Standard_v1.0.1"""
+    """배포 파일 이름: 통합판 IOSTAR-PM_v2.3.0 / 이전 분리판 IOSTAR-PM-Standard_v1.0.1"""
     c = cfg or load()
     suffix = "-" + c["edition_name"] if c.get("edition_name") else ""
     return f"{c['product_name']}{suffix}_v{c['version']}"
@@ -45,8 +56,7 @@ def package_name(cfg=None):
 def client_js(cfg=None):
     """화면용 설정 (js/app-config.js 내용)"""
     c = cfg or load()
-    data = {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
-            "version": c["version"], "defaultLang": c["default_lang"]}
+    data = client_config(c)
     return ("// [IOSTAR-PM] 화면 설정 (app.ini 에서 자동 생성 - 직접 수정 금지, DB 서버는 이 파일을 app.ini 로 즉시 만들어 보냄)\n"
             "var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n")
 

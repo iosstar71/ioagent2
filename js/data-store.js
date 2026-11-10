@@ -50,7 +50,7 @@ var DataRegistry = {
       case "communicationsData": return typeof communicationsData !== "undefined" ? communicationsData : [];
       case "meetingsData": return typeof meetingsData !== "undefined" ? meetingsData : [];
       case "weeklyReportsData": return typeof weeklyReportsData !== "undefined" ? weeklyReportsData : [];
-      case "theme": return document.body.getAttribute("data-theme") || "navy";
+      case "theme": return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "electric");
     }
     return undefined;
   },
