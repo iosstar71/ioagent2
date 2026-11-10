@@ -1084,8 +1084,8 @@ var SyncUI = {
         modal.style.cssText = "display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:10050; align-items:center; justify-content:center;";
         modal.innerHTML = `
           <div class="modal-content" style="max-width:520px; width:92%; background:var(--bg-card,#fff); border-radius:10px; padding:20px; box-shadow:0 12px 32px rgba(0,0,0,0.25);">
-            <h3 id="syncAskTitle" style="margin-bottom:10px; font-size:16px;"></h3>
-            <div id="syncAskMsg" style="white-space:pre-line; font-size:13px; line-height:1.6; margin-bottom:16px; color:var(--text-main);"></div>
+            <h3 id="syncAskTitle" style="margin-bottom:10px; font-size:var(--fs-lg, 16px);"></h3>
+            <div id="syncAskMsg" style="white-space:pre-line; font-size:var(--fs-base, 13px); line-height:1.6; margin-bottom:16px; color:var(--text-main);"></div>
             <div id="syncAskBtns" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;"></div>
           </div>`;
         document.body.appendChild(modal);

@@ -313,7 +313,7 @@ var AuthManager = {
     this._setText("lockModalTitle", title || "🔐 시스템 로그인");
     this._setText("lockModalDesc",
       (desc || "사번과 비밀번호를 입력하여 로그인하세요.") +
-      `<br><span style="font-size:11px; color:var(--text-muted);">* 초기 비밀번호: <b>1234</b> (기본 관리자 사번: admin)</span>`, true);
+      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 비밀번호: <b>1234</b> (기본 관리자 사번: admin)</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
@@ -366,7 +366,7 @@ var AuthManager = {
     this._setText("lockModalTitle", `${meta.name} 권한 인증`);
     this._setText("lockModalDesc",
       `<b>[${meta.name}]</b> 메뉴는 <b>${meta.reqRoleLabel}</b> 권한이 필요합니다.<br>` +
-      `<span style="font-size:11px; color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
+      `<span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) info.style.display = "none";
     // [v3.0.1] 권한 인증은 지금 프로젝트에서 — 프로젝트 줄은 보이되 바꿀 수 없음
@@ -882,7 +882,7 @@ var AuthManager = {
       if (!ok && !mark) {
         mark = document.createElement("span");
         mark.className = "tab-lock-mark";
-        mark.style.cssText = "margin-left:3px; font-size:10px;";
+        mark.style.cssText = "margin-left:3px; font-size:var(--fs-2xs, 10px);";
         mark.textContent = "🔒";
         btn.appendChild(mark);
       } else if (ok && mark) {

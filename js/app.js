@@ -114,10 +114,10 @@ function renderDomainChips() {
     chip.style.alignItems = "center";
     chip.style.gap = "4px";
     chip.style.padding = "3px 8px";
-    chip.style.fontSize = "11px";
+    chip.style.fontSize = "var(--fs-xs, 11px)";
     chip.innerHTML = `
       <b>${escapeHtml(d)}</b>
-      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:12px;" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="분야 삭제">×</button>
+      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="분야 삭제">×</button>
     `;
     container.appendChild(chip);
   });
@@ -355,13 +355,13 @@ function renderSubsystemsMetaTable() {
         </select>
       </td>
       <td>
-        <select style="width:160px; font-size:11px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "sdlcCode", "$value", "rebuildAll")}" ${sub.type === "REQ" ? "disabled title='개선타입은 SDLC 단계 매칭 대상이 아닙니다'" : ""}>
+        <select style="width:160px; font-size:var(--fs-xs, 11px);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "sdlcCode", "$value", "rebuildAll")}" ${sub.type === "REQ" ? "disabled title='개선타입은 SDLC 단계 매칭 대상이 아닙니다'" : ""}>
           ${sdlcOptionsHtml}
         </select>
       </td>
       <td><input type="number" value="${sub.weight}" style="width:65px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "weight", "$num", "syncSubsystemWeights", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "pm", "$value", "persistChanges")}"></td>
-      <td><input type="text" value="${escapeHtml(sub.desc || "")}" style="width:100%; font-size:11px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "desc", "$value", "persistChanges")}"></td>
+      <td><input type="text" value="${escapeHtml(sub.desc || "")}" style="width:100%; font-size:var(--fs-xs, 11px);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "desc", "$value", "persistChanges")}"></td>
       <td style="text-align:center;"><b>${taskCount}</b>개</td>
       <td style="text-align:right;"><b style="color:var(--success);">${aProg}%</b></td>
       <td><button class="btn btn-danger btn-sm" data-click="deleteSubsystemMeta" data-click-args="${UiEvents.args(idx)}">×</button></td>
@@ -444,10 +444,10 @@ function renderStandardDeliverablesMetaTable() {
           <th style="width: 45px; text-align:center;">No</th>
           <th style="width: 140px;">표준 공정단계</th>
           <th>필수 표준 산출물 명칭</th>
-          <th style="width: 75px; text-align:center;">1회차${maxR < 1 ? '<br><span style="font-size:9px;color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">2회차${maxR < 2 ? '<br><span style="font-size:9px;color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">3회차${maxR < 3 ? '<br><span style="font-size:9px;color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">4회차${maxR < 4 ? '<br><span style="font-size:9px;color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">1회차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">2회차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">3회차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">4회차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
           <th style="width: 125px;">기준일자</th>
           <th style="width: 140px;">비고</th>
           <th style="width: 50px; text-align:center;">삭제</th>
@@ -475,16 +475,16 @@ function renderStandardDeliverablesMetaTable() {
       if (!isEnabled) {
         return `
           <td style="text-align:center; opacity:0.38; background:#f8fafc; cursor:not-allowed;">
-            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:11px; color:#94a3b8; cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}회차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
+            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:#94a3b8; cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}회차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
               <input type="checkbox" disabled style="cursor:not-allowed;">
-              <span style="font-size:10px;">${rNum}회차</span>
+              <span style="font-size:var(--fs-2xs, 10px);">${rNum}회차</span>
             </label>
           </td>
         `;
       }
       return `
         <td style="text-align:center;">
-          <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:11px; color:${colorHex};" title="${rNum}회차 필수 제출 대상 여부">
+          <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:var(--fs-xs, 11px); color:${colorHex};" title="${rNum}회차 필수 제출 대상 여부">
             <input type="checkbox" ${item[key] ? "checked" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, key, "$checked", "persistChanges")}">
             ${rNum}회차
           </label>
@@ -971,7 +971,7 @@ function renderProjectUsersTable() {
         </td>
         <td>
           <div style="display:flex; gap:4px; align-items:center;">
-            <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:11px;">
+            <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:var(--fs-xs, 11px);">
             <button class="btn btn-sm" data-btn="save" data-click="updateProjectUserPassword" data-click-args="${UiEvents.args(idx)}">변경</button>
             <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="비밀번호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
@@ -1633,10 +1633,10 @@ function renderCustomSdlcCards() {
   summaryDiv.style.justifyContent = "space-between";
   summaryDiv.style.alignItems = "center";
   summaryDiv.innerHTML = `
-    <span style="font-size:12px; color:#166534; font-weight:bold;">
+    <span style="font-size:var(--fs-sm, 12px); color:#166534; font-weight:bold;">
       📋 SDLC 마스터 등록 풀: <b>${masterList.length}/8개</b> | 프로젝트 선택 활성화: <b>${activeCodes.length}/4개</b>
     </span>
-    <span style="font-size:11px; color:#15803d;">
+    <span style="font-size:var(--fs-xs, 11px); color:#15803d;">
       (프로젝트 활성으로 선택된 SDLC만 서브시스템 배정 및 단계별 진척 현황 매트릭스에 렌더링됩니다)
     </span>
   `;
@@ -1656,12 +1656,12 @@ function renderCustomSdlcCards() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span class="badge" style="background:${isActive ? "#059669" : "#64748b"}; color:#fff; font-size:10px;">
+          <span class="badge" style="background:${isActive ? "#059669" : "#64748b"}; color:#fff; font-size:var(--fs-2xs, 10px);">
             ${isActive ? "✅ 프로젝트 활성" : "비활성 (보관)"}
           </span>
-          ${sdlc.isRecommended ? '<span class="badge" style="background:#0284c7; color:#fff; font-size:9.5px;">⭐ 추천타입</span>' : ''}
-          <strong style="font-size:13px; color:var(--text-main);">${escapeHtml(sdlc.name)}</strong>
-          <span style="font-size:11px; color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
+          ${sdlc.isRecommended ? '<span class="badge" style="background:#0284c7; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">⭐ 추천타입</span>' : ''}
+          <strong style="font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sdlc.name)}</strong>
+          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center;">
           <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
@@ -1671,8 +1671,8 @@ function renderCustomSdlcCards() {
           ${masterList.length > 1 ? `<button class="btn btn-danger btn-sm" data-click="deleteCustomSdlcType" data-click-args="${UiEvents.args(idx)}">삭제</button>` : ""}
         </div>
       </div>
-      <p style="font-size:11px; color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
-      <div style="padding:6px 8px; background:rgba(0,0,0,0.02); border-radius:6px; font-size:11px; color:${isActive ? "#047857" : "#475569"}; line-height:1.5;">
+      <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
+      <div style="padding:6px 8px; background:rgba(0,0,0,0.02); border-radius:6px; font-size:var(--fs-xs, 11px); color:${isActive ? "#047857" : "#475569"}; line-height:1.5;">
         <b>공정 파이프라인:</b> ${escapeHtml(phaseNames || "정의된 단계 없음")}<br>
         <span style="color:#64748b;">• 소속 서브시스템 수: <b>${assignedCount}개</b> | 단계 수: <b>${(sdlc.phases || []).length}단계</b></span>
       </div>
@@ -1768,7 +1768,7 @@ function renderEditSdlcPhasesTable() {
       <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
       <td><input type="number" value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
       <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
-      <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:11px;" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
+      <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:var(--fs-xs, 11px);" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
       <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "renderEditSdlcPhasesTable")}">×</button></td>
     `;
     tbody.appendChild(tr);
@@ -2006,7 +2006,7 @@ function renderWbsTable() {
 
     // 하위 레벨이 접혀 있는지 표시 뱃지
     const hasHiddenChildren = !isLeaf && row.level === maxLvl;
-    const foldBadge = hasHiddenChildren ? `<span style="font-size:10px; color:var(--accent); font-weight:bold; margin-right:3px;" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
+    const foldBadge = hasHiddenChildren ? `<span style="font-size:var(--fs-2xs, 10px); color:var(--accent); font-weight:bold; margin-right:3px;" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
 
     tr.innerHTML = `
       <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
@@ -2017,7 +2017,7 @@ function renderWbsTable() {
         </div>
       </td>
       <td>
-        <select style="width:86px; padding:2px 3px; font-size:11px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
+        <select style="width:86px; padding:2px 3px; font-size:var(--fs-xs, 11px);" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -2029,8 +2029,8 @@ function renderWbsTable() {
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td><input type="number" min="0" value="${row.weight}" style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
-      <td><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
+      <td class="col-fold"><input type="number" min="0" value="${row.weight}" style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td class="col-fold"><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
         <div class="date-input-wrap">
@@ -2557,7 +2557,7 @@ function renderPhaseMatrix() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:10px;">${escapeHtml(domain)}</span></td>
+      <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
       <td><strong>${escapeHtml(sys)}</strong></td>
       <td>${typeBadge}</td>
       <td>${wP}%</td>
@@ -2680,7 +2680,7 @@ function renderPhaseMatrix() {
 
         groupRowsHtml += `
           <tr>
-            <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:10px;">${escapeHtml(domain)}</span></td>
+            <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
             <td><strong>${escapeHtml(sys)}</strong></td>
             ${phTds}
             <td class="col-total">${rootP}%</td>
@@ -2717,7 +2717,7 @@ function renderPhaseMatrix() {
       sdlcTablesHtml += `
         <div style="margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "#bae6fd" : "#ddd6fe"};">
-            <span style="font-weight:bold; font-size:12px; color:var(--primary);">
+            <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--primary);">
               📂 SDLC 유형: ${escapeHtml(spec.name)} (${escapeHtml(spec.desc || "")}) — 소속 서브시스템 ${groupSystems.length}개
             </span>
           </div>
@@ -2774,7 +2774,7 @@ function renderPhaseMatrix() {
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:10px;">${escapeHtml(domain)}</span></td>
+          <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
           <td><strong>${escapeHtml(sys)}</strong></td>
           <td><span class="lvl-badge lvl-3">${escapeHtml(req.id)}</span></td>
           <td>${escapeHtml(req.name)}</td>
@@ -2817,16 +2817,16 @@ function renderSubsystemCards(systems) {
     card.innerHTML = `
       <div class="card-title">
         <span>
-          <span class="badge" style="background:#f1f5f9; color:#334155; font-size:10px; margin-right:4px;">${escapeHtml(domain)}</span>
+          <span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
           <b>${escapeHtml(sys)}</b>
-          <span style="font-size:11px; color:var(--text-muted); font-weight:normal;">(${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"} · 가중치 ${meta.weight}% · PM: ${escapeHtml(meta.pm || "-")})</span>
+          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"} · 가중치 ${meta.weight}% · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
         <span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>
       </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:var(--fs-sm, 12px);">
         <span>계획 진척율: <b>${pVal}%</b></span>
         <span>실행 과업: <b>${leafTasks.length}개</b></span>
-        <span>실적 진척율: <b style="color:var(--success); font-size:14px;">${aVal}%</b></span>
+        <span>실적 진척율: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
       </div>
       <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
         <div style="background:var(--success); width:${Math.min(100, aVal)}%; height:100%;"></div>
@@ -3492,8 +3492,8 @@ function renderHolidays() {
 
     const dayName = WBSEngine.getDayOfWeekText(h.date);
     const typeBadge = h.type === "CUSTOM"
-      ? `<span class="status-tag tag-progress" style="font-size:9px;">사용자휴일</span>`
-      : `<span class="status-tag tag-completed" style="font-size:9px;">법정공휴일</span>`;
+      ? `<span class="status-tag tag-progress" style="font-size:calc(9px * var(--fs-scale, 1));">사용자휴일</span>`
+      : `<span class="status-tag tag-completed" style="font-size:calc(9px * var(--fs-scale, 1));">법정공휴일</span>`;
 
     tbody.innerHTML += `
       <tr>
@@ -4137,7 +4137,7 @@ var NoticeCommManager = {
           : "background:#f1f5f9; color:#334155; border:1px solid #cbd5e1;";
         const label = isActive ? `✓ #${escapeHtml(c)} (${count})` : `#${escapeHtml(c)} (${count})`;
         return `
-          <button class="${btnClass}" style="${activeStyle} font-size:11.5px; padding:4px 9px; border-radius:4px; transition:all 0.15s ease;" data-channel="${escapeHtml(c)}" data-click="NoticeCommManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
+          <button class="${btnClass}" style="${activeStyle} font-size:calc(11.5px * var(--fs-scale, 1)); padding:4px 9px; border-radius:4px; transition:all 0.15s ease;" data-channel="${escapeHtml(c)}" data-click="NoticeCommManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
             ${label}
           </button>
         `;
@@ -4178,9 +4178,9 @@ var NoticeCommManager = {
       tr.innerHTML = `
         <td style="text-align:center;"><b>${idx + 1}</b></td>
         <td><strong style="color:#0f172a;"># ${escapeHtml(c)}</strong></td>
-        <td style="font-size:11.5px; color:#64748b;">${c === "전체" ? "전사 공통 기본 채널 (고정)" : "프로젝트 커스텀 소통 채널"}</td>
+        <td style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#64748b;">${c === "전체" ? "전사 공통 기본 채널 (고정)" : "프로젝트 커스텀 소통 채널"}</td>
         <td style="text-align:center;">
-          ${c === "전체" ? '<span style="font-size:11px; color:#94a3b8; font-weight:bold;">고정</span>' : `<button class="btn btn-danger btn-sm" data-click="NoticeCommManager.deleteChannel" data-click-args="${UiEvents.args(String(c))}">삭제</button>`}
+          ${c === "전체" ? '<span style="font-size:var(--fs-xs, 11px); color:#94a3b8; font-weight:bold;">고정</span>' : `<button class="btn btn-danger btn-sm" data-click="NoticeCommManager.deleteChannel" data-click-args="${UiEvents.args(String(c))}">삭제</button>`}
         </td>
       `;
       tbody.appendChild(tr);
@@ -4261,7 +4261,7 @@ var NoticeCommManager = {
     listEl.innerHTML = "";
 
     if (!Array.isArray(noticesData) || noticesData.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:13px;">등록된 공지사항이 없습니다. 상단 [➕ 신규 공지사항 등록] 버튼을 눌러 등록하세요.</div>';
+      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:var(--fs-base, 13px);">등록된 공지사항이 없습니다. 상단 [➕ 신규 공지사항 등록] 버튼을 눌러 등록하세요.</div>';
       return;
     }
 
@@ -4280,7 +4280,7 @@ var NoticeCommManager = {
     });
 
     if (sorted.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:13px;">검색 조건에 일치하는 공지사항이 없습니다.</div>';
+      listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:var(--fs-base, 13px);">검색 조건에 일치하는 공지사항이 없습니다.</div>';
       return;
     }
 
@@ -4295,31 +4295,31 @@ var NoticeCommManager = {
       card.style.boxShadow = item.isPinned ? "0 2px 8px rgba(245, 158, 11, 0.15)" : "0 1px 3px rgba(0,0,0,0.04)";
 
       const priorityBadge = item.priority === "긴급"
-        ? '<span class="badge" style="background:#dc2626; color:#fff; font-size:10.5px;">🚨 긴급</span>'
-        : (item.priority === "중요" ? '<span class="badge" style="background:#d97706; color:#fff; font-size:10.5px;">⚠️ 중요</span>' : '<span class="badge" style="background:#0284c7; color:#fff; font-size:10.5px;">일반</span>');
+        ? '<span class="badge" style="background:#dc2626; color:#fff; font-size:calc(10.5px * var(--fs-scale, 1));">🚨 긴급</span>'
+        : (item.priority === "중요" ? '<span class="badge" style="background:#d97706; color:#fff; font-size:calc(10.5px * var(--fs-scale, 1));">⚠️ 중요</span>' : '<span class="badge" style="background:#0284c7; color:#fff; font-size:calc(10.5px * var(--fs-scale, 1));">일반</span>');
 
       const canManage = this.hasNoticePermission(item);
       const actionButtons = canManage ? `
-        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'}" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.togglePinNotice" data-click-args="${UiEvents.args(String(item.id))}">
+        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'}" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.togglePinNotice" data-click-args="${UiEvents.args(String(item.id))}">
           ${item.isPinned ? '📌 고정해제' : '📌 상단고정'}
         </button>
-        <button class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.openEditNoticeModal" data-click-args="${UiEvents.args(String(item.id))}">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:11px;" data-click="NoticeCommManager.deleteNotice" data-click-args="${UiEvents.args(String(item.id))}">🗑️ 삭제</button>
-      ` : '<span style="font-size:10.5px; color:#94a3b8; padding:2px 6px; background:#f1f5f9; border-radius:4px;">🔒 조회전용</span>';
+        <button class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.openEditNoticeModal" data-click-args="${UiEvents.args(String(item.id))}">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.deleteNotice" data-click-args="${UiEvents.args(String(item.id))}">🗑️ 삭제</button>
+      ` : '<span style="font-size:calc(10.5px * var(--fs-scale, 1)); color:#94a3b8; padding:2px 6px; background:#f1f5f9; border-radius:4px;">🔒 조회전용</span>';
 
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            ${item.isPinned ? '<span style="font-size:15px;" title="상단 고정 공지">📌</span>' : ''}
+            ${item.isPinned ? '<span style="font-size:calc(15px * var(--fs-scale, 1));" title="상단 고정 공지">📌</span>' : ''}
             ${priorityBadge}
-            <strong style="font-size:14px; color:#0f172a;">${escapeHtml(item.title)}</strong>
+            <strong style="font-size:var(--fs-md, 14px); color:#0f172a;">${escapeHtml(item.title)}</strong>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:11px; color:#64748b;">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
+            <span style="font-size:var(--fs-xs, 11px); color:#64748b;">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
             ${actionButtons}
           </div>
         </div>
-        <div style="font-size:13px; line-height:1.7; color:#334155; white-space:pre-wrap; background:rgba(0,0,0,0.02); padding:10px 14px; border-radius:6px; border:1px solid rgba(0,0,0,0.05);">${escapeHtml(item.content)}</div>
+        <div style="font-size:var(--fs-base, 13px); line-height:1.7; color:#334155; white-space:pre-wrap; background:rgba(0,0,0,0.02); padding:10px 14px; border-radius:6px; border:1px solid rgba(0,0,0,0.05);">${escapeHtml(item.content)}</div>
       `;
       listEl.appendChild(card);
     });
@@ -4354,9 +4354,9 @@ var NoticeCommManager = {
     if (filtered.length === 0) {
       container.innerHTML = `
         <div style="text-align:center; padding:45px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; margin:10px 0;">
-          <div style="font-size:24px; margin-bottom:6px;">💬</div>
-          <div style="font-size:14px; font-weight:bold; color:var(--primary); margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
-          <div style="font-size:11.5px; color:#64748b; margin-bottom:12px;">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
+          <div style="font-size:var(--fs-2xl, 24px); margin-bottom:6px;">💬</div>
+          <div style="font-size:var(--fs-md, 14px); font-weight:bold; color:var(--primary); margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#64748b; margin-bottom:12px;">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
           <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.setChannel" data-click-args='["전체"]'>🌐 전체 채널 보기</button>
         </div>
       `;
@@ -4384,10 +4384,10 @@ var NoticeCommManager = {
         repliesHtml = '<div style="margin-top:12px; padding-left:14px; border-left:3px solid #38bdf8; display:flex; flex-direction:column; gap:8px;">';
         post.replies.forEach(rep => {
           repliesHtml += `
-            <div style="background:#f0f9ff; padding:10px 12px; border-radius:6px; font-size:12px; border:1px solid #e0f2fe;">
+            <div style="background:#f0f9ff; padding:10px 12px; border-radius:6px; font-size:var(--fs-sm, 12px); border:1px solid #e0f2fe;">
               <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                 <span style="font-weight:bold; color:#0369a1;">💬 ${escapeHtml(rep.author)} (${escapeHtml(rep.role || "")})</span>
-                <span style="color:#94a3b8; font-size:10.5px;">${escapeHtml(rep.date || "")}</span>
+                <span style="color:#94a3b8; font-size:calc(10.5px * var(--fs-scale, 1));">${escapeHtml(rep.date || "")}</span>
               </div>
               <div style="color:#334155; white-space:pre-wrap; line-height:1.5;">${escapeHtml(rep.content)}</div>
             </div>
@@ -4398,31 +4398,31 @@ var NoticeCommManager = {
 
       const canManagePost = this.hasCommPermission(post);
       const postActionButtons = canManagePost ? `
-        <button class="btn btn-secondary btn-sm" style="padding:2px 7px; font-size:10.5px;" data-click="NoticeCommManager.openEditCommPost" data-click-args="${UiEvents.args(String(post.id))}">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" style="padding:2px 7px; font-size:10.5px;" data-click="NoticeCommManager.deleteCommPost" data-click-args="${UiEvents.args(String(post.id))}">🗑️ 삭제</button>
+        <button class="btn btn-secondary btn-sm" style="padding:2px 7px; font-size:calc(10.5px * var(--fs-scale, 1));" data-click="NoticeCommManager.openEditCommPost" data-click-args="${UiEvents.args(String(post.id))}">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm" style="padding:2px 7px; font-size:calc(10.5px * var(--fs-scale, 1));" data-click="NoticeCommManager.deleteCommPost" data-click-args="${UiEvents.args(String(post.id))}">🗑️ 삭제</button>
       ` : "";
 
       const displayTitle = post.title || (post.taskId ? `[과업 #${post.taskId}] ${post.content.slice(0, 30)}...` : (post.content.length > 30 ? post.content.slice(0, 30) + "..." : post.content));
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="badge" style="background:#0284c7; color:#fff; font-size:10px;">#${escapeHtml(post.channel || "전체")}</span>
-            ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:10px;">과업 #WBS-${escapeHtml(post.taskId)}</span>` : ""}
-            <strong style="color:#0f172a; font-size:13.5px;">${escapeHtml(post.author)}</strong>
-            <span style="font-size:11px; color:#64748b;">(${escapeHtml(post.role || "")})</span>
+            <span class="badge" style="background:#0284c7; color:#fff; font-size:var(--fs-2xs, 10px);">#${escapeHtml(post.channel || "전체")}</span>
+            ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:var(--fs-2xs, 10px);">과업 #WBS-${escapeHtml(post.taskId)}</span>` : ""}
+            <strong style="color:#0f172a; font-size:calc(13.5px * var(--fs-scale, 1));">${escapeHtml(post.author)}</strong>
+            <span style="font-size:var(--fs-xs, 11px); color:#64748b;">(${escapeHtml(post.role || "")})</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:11px; color:#94a3b8;">${escapeHtml(post.date)}</span>
+            <span style="font-size:var(--fs-xs, 11px); color:#94a3b8;">${escapeHtml(post.date)}</span>
             ${postActionButtons}
           </div>
         </div>
-        <div style="font-size:14px; font-weight:bold; color:var(--primary, #1e3a8a); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+        <div style="font-size:var(--fs-md, 14px); font-weight:bold; color:var(--primary, #1e3a8a); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
           <span>📌</span> <span>${escapeHtml(displayTitle)}</span>
         </div>
-        <div style="font-size:13px; line-height:1.6; color:#1e293b; margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(post.content)}</div>
+        <div style="font-size:var(--fs-base, 13px); line-height:1.6; color:#1e293b; margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(post.content)}</div>
         ${repliesHtml}
         <div style="margin-top:12px; display:flex; gap:8px;">
-          <input type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="flex:1; padding:6px 12px; font-size:12px; border:1px solid #cbd5e1; border-radius:4px;" data-keydown="NoticeCommManager.addReply" data-keydown-args="${UiEvents.args(String(post.id))}" data-keydown-key="Enter">
+          <input type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="flex:1; padding:6px 12px; font-size:var(--fs-sm, 12px); border:1px solid #cbd5e1; border-radius:4px;" data-keydown="NoticeCommManager.addReply" data-keydown-args="${UiEvents.args(String(post.id))}" data-keydown-key="Enter">
           <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.addReply" data-click-args="${UiEvents.args(String(post.id))}">💬 답글</button>
         </div>
       `;
@@ -4464,8 +4464,8 @@ var NoticeCommManager = {
 
       colDiv.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid ${col.border};">
-          <strong style="font-size:13.5px; color:#1e293b;">${col.title}</strong>
-          <span class="badge" style="background:${col.badge}; color:#fff; font-size:10px;">${colPosts.length}건</span>
+          <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#1e293b;">${col.title}</strong>
+          <span class="badge" style="background:${col.badge}; color:#fff; font-size:var(--fs-2xs, 10px);">${colPosts.length}건</span>
         </div>
         <div id="kanbanCol_${col.id}" style="display:flex; flex-direction:column; gap:10px;"></div>
       `;
@@ -4483,19 +4483,19 @@ var NoticeCommManager = {
           <div style="border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                <span class="badge" style="background:#0284c7; color:#fff; font-size:9.5px; padding:2px 6px;">#${escapeHtml(post.channel || "전체")}</span>
-                ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:9px; padding:2px 6px;">과업 #${escapeHtml(post.taskId)}</span>` : ""}
+                <span class="badge" style="background:#0284c7; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1)); padding:2px 6px;">#${escapeHtml(post.channel || "전체")}</span>
+                ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9px * var(--fs-scale, 1)); padding:2px 6px;">과업 #${escapeHtml(post.taskId)}</span>` : ""}
               </div>
-              <span style="font-size:10.5px; color:#94a3b8;">${escapeHtml((post.date || "").split(" ")[0])}</span>
+              <span style="font-size:calc(10.5px * var(--fs-scale, 1)); color:#94a3b8;">${escapeHtml((post.date || "").split(" ")[0])}</span>
             </div>
-            <div class="kanban-card-title" style="font-size:13.5px; font-weight:800; color:var(--primary, #1e3a8a); line-height:1.45; word-break:keep-all;">
+            <div class="kanban-card-title" style="font-size:calc(13.5px * var(--fs-scale, 1)); font-weight:800; color:var(--primary, #1e3a8a); line-height:1.45; word-break:keep-all;">
               📌 ${escapeHtml(cardTitle)}
             </div>
           </div>
-          <div style="font-size:11.5px; color:#475569; margin-bottom:10px; line-height:1.55; max-height:60px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml(post.content)}</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:6px;">
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#475569; margin-bottom:10px; line-height:1.55; max-height:60px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml(post.content)}</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:var(--fs-xs, 11px); color:#64748b; border-top:1px dashed #e2e8f0; padding-top:6px;">
             <span style="font-weight:600;">👤 ${escapeHtml(post.author)}</span>
-            <select data-change="NoticeCommManager.updatePostStatus" data-change-args="${UiEvents.args(String(post.id), "$value")}" style="font-size:11px; padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1; font-weight:bold; background:#ffffff; color:#1e293b;">
+            <select data-change="NoticeCommManager.updatePostStatus" data-change-args="${UiEvents.args(String(post.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 6px; border-radius:4px; border:1px solid #cbd5e1; font-weight:bold; background:#ffffff; color:#1e293b;">
               <option value="OPEN" ${col.id==='OPEN'?'selected':''}>논의중</option>
               <option value="PROGRESS" ${col.id==='PROGRESS'?'selected':''}>조치중</option>
               <option value="RESOLVED" ${col.id==='RESOLVED'?'selected':''}>해결완료</option>
@@ -4525,10 +4525,10 @@ var NoticeCommManager = {
     summaryBox.style.padding = "14px 18px";
     summaryBox.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:14px; font-weight:bold; color:#38bdf8;">⏱️ 프로젝트 일일 스탠드업 &amp; 블로커 현황판</span>
-        <span style="font-size:11px; color:#94a3b8;">기준일자: ${escapeHtml(projectConfig.reportDate || "2026-06-30")}</span>
+        <span style="font-size:var(--fs-md, 14px); font-weight:bold; color:#38bdf8;">⏱️ 프로젝트 일일 스탠드업 &amp; 블로커 현황판</span>
+        <span style="font-size:var(--fs-xs, 11px); color:#94a3b8;">기준일자: ${escapeHtml(projectConfig.reportDate || "2026-06-30")}</span>
       </div>
-      <div style="display:flex; gap:16px; font-size:12px; color:#cbd5e1;">
+      <div style="display:flex; gap:16px; font-size:var(--fs-sm, 12px); color:#cbd5e1;">
         <span>• 등록된 소통 안건: <b>${communicationsData.length}건</b></span>
         <span>• 긴급 공지: <b>${noticesData.filter(n=>n.priority==='긴급').length}건</b></span>
         <span>• WBS 연계 이슈: <b>${communicationsData.filter(c=>c.taskId).length}건</b></span>
@@ -4546,19 +4546,19 @@ var NoticeCommManager = {
       item.style.gap = "12px";
       item.style.alignItems = "flex-start";
       item.innerHTML = `
-        <div style="width:28px; height:28px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; flex-shrink:0;">
+        <div style="width:28px; height:28px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-size:var(--fs-sm, 12px); font-weight:bold; flex-shrink:0;">
           ${pIdx + 1}
         </div>
         <div style="flex:1; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
             <div>
-              <strong style="color:var(--primary); font-size:13px;">${escapeHtml(post.author)}</strong>
-              <span style="font-size:11px; color:#64748b; margin-left:4px;">(${escapeHtml(post.role || "")})</span>
-              ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:9.5px; margin-left:6px;">#WBS-${escapeHtml(post.taskId)}</span>` : ""}
+              <strong style="color:var(--primary); font-size:var(--fs-base, 13px);">${escapeHtml(post.author)}</strong>
+              <span style="font-size:var(--fs-xs, 11px); color:#64748b; margin-left:4px;">(${escapeHtml(post.role || "")})</span>
+              ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:6px;">#WBS-${escapeHtml(post.taskId)}</span>` : ""}
             </div>
-            <span style="font-size:11px; color:#94a3b8;">${escapeHtml(post.date)}</span>
+            <span style="font-size:var(--fs-xs, 11px); color:#94a3b8;">${escapeHtml(post.date)}</span>
           </div>
-          <div style="font-size:12.5px; line-height:1.6; color:#334155;">${escapeHtml(post.content)}</div>
+          <div style="font-size:calc(12.5px * var(--fs-scale, 1)); line-height:1.6; color:#334155;">${escapeHtml(post.content)}</div>
         </div>
       `;
       standupWrap.appendChild(item);
@@ -4840,7 +4840,7 @@ var RealtimeChatManager = {
     if (!stream) return;
 
     if (!Array.isArray(msgs) || msgs.length === 0) {
-      stream.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#94a3b8; font-size:13px;">
+      stream.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#94a3b8; font-size:var(--fs-base, 13px);">
         💬 <b>#${escapeHtml(this.activeChannel)}</b> 채널에 등록된 실시간 메시지가 없습니다.<br>
         팀원들에게 첫 메시지를 전송해보세요! (Enter 키로 즉시 전송)
       </div>`;
@@ -4853,12 +4853,12 @@ var RealtimeChatManager = {
       const isMe = m.senderEmpNo === curUser.empNo || m.senderName === curUser.name;
       html += `
         <div style="display:flex; flex-direction:column; align-items:${isMe ? 'flex-end' : 'flex-start'}; margin-bottom:12px;">
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:11px; color:#64748b;">
-            <strong style="color:${isMe ? '#2563eb' : '#1e293b'}; font-size:12px;">${escapeHtml(m.senderName)}</strong>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:var(--fs-xs, 11px); color:#64748b;">
+            <strong style="color:${isMe ? '#2563eb' : '#1e293b'}; font-size:var(--fs-sm, 12px);">${escapeHtml(m.senderName)}</strong>
             <span>(${escapeHtml(m.userRole || "MEMBER")})</span>
-            <span style="font-size:10px; color:#94a3b8;">${escapeHtml(m.createdAt || "")}</span>
+            <span style="font-size:var(--fs-2xs, 10px); color:#94a3b8;">${escapeHtml(m.createdAt || "")}</span>
           </div>
-          <div style="max-width:75%; padding:9px 15px; border-radius:${isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px'}; background:${isMe ? '#2563eb' : '#f1f5f9'}; color:${isMe ? '#ffffff' : '#1e293b'}; font-size:13px; line-height:1.55; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,0.06);">
+          <div style="max-width:75%; padding:9px 15px; border-radius:${isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px'}; background:${isMe ? '#2563eb' : '#f1f5f9'}; color:${isMe ? '#ffffff' : '#1e293b'}; font-size:var(--fs-base, 13px); line-height:1.55; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,0.06);">
             ${escapeHtml(m.message)}
           </div>
         </div>
@@ -5102,7 +5102,7 @@ var ReqPhaseManager = {
         <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;color:#0f766e;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
         <td><input type="number" value="${p.weight}" style="width:70px;text-align:right;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
         <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "output", "$value")}"></td>
-        <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:11px;" placeholder="쉼표로 구분" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "keywords", "$split")}"></td>
+        <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:var(--fs-xs, 11px);" placeholder="쉼표로 구분" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "keywords", "$split")}"></td>
         <td style="text-align:center;"><button class="btn btn-danger btn-sm" data-click="ReqPhaseManager.deletePhase" data-click-args="${UiEvents.args(idx)}">×</button></td>
       `;
       tbody.appendChild(tr);
@@ -7333,7 +7333,7 @@ var WeeklyReportManager = {
       <td>${escapeHtml(r ? (r.author || "-") : "-")}</td>
       <td style="text-align:center;">${status}</td>
       <td style="text-align:center;">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
-      <td style="font-size:11px;">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
+      <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
       <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" data-click="WeeklyReportManager.openUnit" data-click-args="${arg}" data-click-stop="1" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
     </tr>`;
   },
@@ -7635,20 +7635,20 @@ var WeeklyReportManager = {
     const id = escapeHtml(t.id);
     const k = `'${kind}', '${id}'`;
     const sysCell = t.manual
-      ? `<select style="font-size:11px; width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
+      ? `<select style="font-size:var(--fs-xs, 11px); width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
       : `<span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span>`;
     const nameCell = t.manual
-      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:11px; font-weight:bold;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
+      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:var(--fs-xs, 11px); font-weight:bold;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
       : escapeHtml(t.name);
     const sched = t.manual
-      ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:10px; width:120px;" title="목표일 (선택)" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "pEnd", "$value")}">`
-      : `<span style="font-size:10px; color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
+      ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:var(--fs-2xs, 10px); width:120px;" title="목표일 (선택)" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "pEnd", "$value")}">`
+      : `<span style="font-size:var(--fs-2xs, 10px); color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
     const detail = `<textarea class="wr-detail" rows="2" maxlength="1000" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}">${escapeHtml(t.detail || "")}</textarea>`;
     // [v3.1.0] 담당자: WBS 과업은 WBS 담당자(보고서에 함께 저장), 직접 입력 항목은 입력
     const ownerCell = t.manual
-      ? `<input type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" style="width:100%; font-size:11px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
+      ? `<input type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" style="width:100%; font-size:var(--fs-xs, 11px);" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
       : `<span class="wr-owner">${escapeHtml(t.owner || "-")}</span>`;
     const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" data-click="WeeklyReportManager.removeItem" data-click-args="${UiEvents.args(k)}">✕</button>`;
     const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
@@ -7659,11 +7659,11 @@ var WeeklyReportManager = {
     tr.innerHTML = kind === "cur" ? `
       <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td><td><strong>${t.manual ? "-" : (t.aProg ?? 0) + "%"}</strong></td>
-      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>` : `
       <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td>
-      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:11px; padding:2px 4px;">${statusOpts}</select></td>
+      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px;">${statusOpts}</select></td>
       <td>${detail}</td><td style="text-align:center;">${remove}</td>`;
     if (t.manual) tr.style.background = "rgba(254,243,199,0.35)";
     return tr;
@@ -7731,12 +7731,12 @@ var WeeklyReportManager = {
             tr.innerHTML = `
               <td style="text-align:center;">${mIdx + 1}</td>
               <td style="text-align:center;">
-                <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:10px;">${escapeHtml(m.system)}</span>
+                <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(m.system)}</span>
               </td>
               <td><strong>${escapeHtml(m.title)}</strong></td>
-              <td style="text-align:center; font-size:11px;">${m.date} (${m.startTime}~${m.endTime})</td>
-              <td style="text-align:center; font-size:11px;">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:11px; color:#1e293b;">${decs || escapeHtml(m.summary || "정상 완료")}</td>
+              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
+              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
+              <td style="font-size:var(--fs-xs, 11px); color:#1e293b;">${decs || escapeHtml(m.summary || "정상 완료")}</td>
             `;
             curMtgsBody.appendChild(tr);
           });
@@ -7757,12 +7757,12 @@ var WeeklyReportManager = {
             tr.innerHTML = `
               <td style="text-align:center;">${mIdx + 1}</td>
               <td style="text-align:center;">
-                <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:10px;">${escapeHtml(m.system)}</span>
+                <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(m.system)}</span>
               </td>
               <td><strong>${escapeHtml(m.title)}</strong></td>
-              <td style="text-align:center; font-size:11px;">${m.date} (${m.startTime}~${m.endTime})</td>
-              <td style="text-align:center; font-size:11px;">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:11px; color:#475569;">${escapeHtml(agds || m.summary || "공정 협의")}</td>
+              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
+              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
+              <td style="font-size:var(--fs-xs, 11px); color:#475569;">${escapeHtml(agds || m.summary || "공정 협의")}</td>
             `;
             nxtMtgsBody.appendChild(tr);
           });
@@ -7900,7 +7900,7 @@ var WeeklyReportManager = {
 
     if (!Array.isArray(weeklyReportsData) || weeklyReportsData.length === 0) {
       listEl.innerHTML = `
-        <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:12px;">
+        <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:var(--fs-sm, 12px);">
           ℹ️ 저장된 이전 주간보고서 이력이 없습니다.<br>
           현재 주간보고서를 저장(💾 주간보고 저장)하시면 이력으로 보관됩니다.
         </div>
@@ -7925,17 +7925,17 @@ var WeeklyReportManager = {
       item.style.transition = "all 0.15s ease";
       item.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <strong style="font-size:12.5px; color:${isSel ? "#1e40af" : "#1e293b"};">📅 ${escapeHtml(r.weekLabel)}</strong>
-          <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:10px;">${escapeHtml(r.reportDate || "")}</span>
+          <strong style="font-size:calc(12.5px * var(--fs-scale, 1)); color:${isSel ? "#1e40af" : "#1e293b"};">📅 ${escapeHtml(r.weekLabel)}</strong>
+          <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:var(--fs-2xs, 10px);">${escapeHtml(r.reportDate || "")}</span>
         </div>
-        <div style="font-size:11px; color:#64748b; margin-bottom:4px;">
+        <div style="font-size:var(--fs-xs, 11px); color:#64748b; margin-bottom:4px;">
           👤 작성: ${escapeHtml(r.author || "PM")} | 갱신: ${escapeHtml(r.updatedAt ? r.updatedAt.substring(0, 10) : "-")}
         </div>
-        <div style="font-size:11px; color:#334155; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+        <div style="font-size:var(--fs-xs, 11px); color:#334155; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
           ${escapeHtml(r.currentWeekSummary || "(요약 없음)")}
         </div>
         <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-          <button class="btn btn-outline btn-xs" style="color:#2563eb; border-color:#93c5fd; background:#fff; font-size:10.5px;" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
+          <button class="btn btn-outline btn-xs" style="color:#2563eb; border-color:#93c5fd; background:#fff; font-size:calc(10.5px * var(--fs-scale, 1));" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
             📋 바로 복사
           </button>
         </div>
@@ -7971,10 +7971,10 @@ var WeeklyReportManager = {
     prevEl.innerHTML = `
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h4 style="margin:0; font-size:14px; color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
-          <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:11px;">과업: 금주 ${cCount}건 / 차주 ${nCount}건</span>
+          <h4 style="margin:0; font-size:var(--fs-md, 14px); color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
+          <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:var(--fs-xs, 11px);">과업: 금주 ${cCount}건 / 차주 ${nCount}건</span>
         </div>
-        <div style="font-size:11px; color:#475569; display:flex; gap:16px;">
+        <div style="font-size:var(--fs-xs, 11px); color:#475569; display:flex; gap:16px;">
           <span><b>작성자:</b> ${escapeHtml(r.author || "PM")}</span>
           <span><b>기준일자:</b> ${escapeHtml(r.reportDate || "-")}</span>
           <span><b>금주기간:</b> ${escapeHtml(r.startDate || "")} ~ ${escapeHtml(r.endDate || "")}</span>
@@ -7983,24 +7983,24 @@ var WeeklyReportManager = {
 
       <div style="display:flex; flex-direction:column; gap:10px;">
         <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:11.5px; color:#1e40af; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e40af; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>🎯</span> 【금주 중점 추진 실적 총괄 요약】
           </div>
-          <div style="font-size:11.5px; color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
         <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:11.5px; color:#0369a1; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#0369a1; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>🚀</span> 【차주 중점 추진 목표 및 계획 요약】
           </div>
-          <div style="font-size:11.5px; color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
         <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:11.5px; color:#b45309; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#b45309; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>⚠️</span> 【주요 현안 및 지원 요청사항】
           </div>
-          <div style="font-size:11.5px; color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
         </div>
       </div>
 
@@ -8423,26 +8423,26 @@ var HomeScreenManager = {
 
         tile.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-weight:800; font-size:13px; color:#1e293b;">${escapeHtml(sys)}</div>
-            <div style="font-size:11px; font-weight:700; display:flex; align-items:center; gap:3px;">
+            <div style="font-weight:800; font-size:var(--fs-base, 13px); color:#1e293b;">${escapeHtml(sys)}</div>
+            <div style="font-size:var(--fs-xs, 11px); font-weight:700; display:flex; align-items:center; gap:3px;">
               <span>${lightIcon}</span>
               <span style="color:${rateColor};">${lightText}</span>
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-size:11px; color:#64748b;">달성률</span>
-            <span style="font-size:20px; font-weight:900; color:${rateColor};">${rate}%</span>
+            <span style="font-size:var(--fs-xs, 11px); color:#64748b;">달성률</span>
+            <span style="font-size:calc(20px * var(--fs-scale, 1)); font-weight:900; color:${rateColor};">${rate}%</span>
           </div>
           <div style="width:100%; background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden; margin-bottom:8px;">
             <div style="width:${Math.min(100, aProg)}%; background:${cardBorder}; height:100%;"></div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-size:11px; color:#475569; border-top:1px dashed #e2e8f0; padding-top:6px;">
+          <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs, 11px); color:#475569; border-top:1px dashed #e2e8f0; padding-top:6px;">
             <span>계획 <b>${pProg}%</b> / 실적 <b>${aProg}%</b></span>
             <span>${sysDelays > 0 ? `<b style="color:#ef4444;">지연 ${sysDelays}</b>` : '<span style="color:#10b981;">지연 0</span>'}</span>
           </div>
-          <div style="font-size:10px; color:#94a3b8; margin-top:4px; display:flex; justify-content:space-between;">
+          <div style="font-size:var(--fs-2xs, 10px); color:#94a3b8; margin-top:4px; display:flex; justify-content:space-between;">
             <span>PM: ${escapeHtml(pmName)}</span>
-            <span class="badge" style="font-size:9px; padding:1px 4px;">${sysType}</span>
+            <span class="badge" style="font-size:calc(9px * var(--fs-scale, 1)); padding:1px 4px;">${sysType}</span>
           </div>
         `;
         gridEl.appendChild(tile);
@@ -8524,7 +8524,7 @@ var HomeScreenManager = {
     if (badge) badge.textContent = `${uncompleted.length}건 진행중`;
 
     if (uncompleted.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:12px;">🎉 모든 과업이 100% 완료되었거나 필터 조건에 해당하는 미완료 Task이 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:var(--fs-sm, 12px);">🎉 모든 과업이 100% 완료되었거나 필터 조건에 해당하는 미완료 Task이 없습니다.</td></tr>`;
       return;
     }
 
@@ -8534,21 +8534,21 @@ var HomeScreenManager = {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:10px;">${escapeHtml(t.system)}</span></td>
+        <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(t.system)}</span></td>
         <td><strong>${escapeHtml(t.id)}</strong></td>
         <td style="text-align:left; font-weight:600; color:#1e293b;">${escapeHtml(t.name)}</td>
-        <td style="font-size:11px; color:#64748b;">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
+        <td style="font-size:var(--fs-xs, 11px); color:#64748b;">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
         <td>
           <div style="display:flex; align-items:center; gap:6px;">
             <div style="flex:1; background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden;">
               <div style="width:${t.aProg || 0}%; background:#2563eb; height:100%;"></div>
             </div>
-            <span style="font-size:11px; font-weight:700; color:#2563eb; width:30px; text-align:right;">${t.aProg || 0}%</span>
+            <span style="font-size:var(--fs-xs, 11px); font-weight:700; color:#2563eb; width:30px; text-align:right;">${t.aProg || 0}%</span>
           </div>
         </td>
         <td>${stTag}</td>
         <td style="text-align:center;">
-          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:10px;" title="이 과업의 실적을 즉시 100% 완료 상태로 반영">
+          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:var(--fs-2xs, 10px);" title="이 과업의 실적을 즉시 100% 완료 상태로 반영">
             ✓ 100% 완료
           </button>
         </td>
@@ -8623,7 +8623,7 @@ var HomeScreenManager = {
       : ((typeof projectNoticesData !== "undefined" && Array.isArray(projectNoticesData)) ? projectNoticesData : []);
 
     if (notices.length === 0) {
-      listEl.innerHTML = `<div style="font-size:11px; color:#64748b; padding:12px; text-align:center;">등록된 공지사항이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
+      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:#64748b; padding:12px; text-align:center;">등록된 공지사항이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
       return;
     }
     notices.slice(0, 4).forEach(n => {
@@ -8644,11 +8644,11 @@ var HomeScreenManager = {
         }
       };
       item.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:calc(11.5px * var(--fs-scale, 1));">
           <strong style="color:var(--primary);">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
-          <span style="font-size:10px; color:#64748b;">${escapeHtml(n.date || "")}</span>
+          <span style="font-size:var(--fs-2xs, 10px); color:#64748b;">${escapeHtml(n.date || "")}</span>
         </div>
-        <div style="font-size:11px; color:#475569; margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
+        <div style="font-size:var(--fs-xs, 11px); color:#475569; margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
       `;
       listEl.appendChild(item);
     });
@@ -8665,7 +8665,7 @@ var HomeScreenManager = {
       : ((typeof teamChatMessages !== "undefined" && Array.isArray(teamChatMessages)) ? teamChatMessages : []);
 
     if (comms.length === 0) {
-      stream.innerHTML = `<div style="color:#94a3b8; font-size:11px; text-align:center; padding:16px;">등록된 소통 피드 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
+      stream.innerHTML = `<div style="color:#94a3b8; font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 소통 피드 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
       return;
     }
 
@@ -8677,7 +8677,7 @@ var HomeScreenManager = {
       p.style.borderRadius = "4px";
       p.style.background = "#ffffff";
       p.style.border = "1px solid #e2e8f0";
-      p.style.fontSize = "11px";
+      p.style.fontSize = "var(--fs-xs, 11px)";
       p.style.cursor = "pointer";
       p.style.transition = "background 0.15s ease";
       p.onmouseenter = () => { p.style.background = "#eff6ff"; };
@@ -8695,7 +8695,7 @@ var HomeScreenManager = {
       const text = m.content || m.text || "";
       const time = m.createdAt ? m.createdAt.substring(5, 16) : (m.time || "");
 
-      p.innerHTML = `<span style="font-weight:700; color:#2563eb;">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span style="color:#334155;">${escapeHtml(text)}</span> <span style="color:#94a3b8; font-size:9.5px; margin-left:4px;">(${escapeHtml(time)})</span>`;
+      p.innerHTML = `<span style="font-weight:700; color:#2563eb;">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span style="color:#334155;">${escapeHtml(text)}</span> <span style="color:#94a3b8; font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:4px;">(${escapeHtml(time)})</span>`;
       stream.appendChild(p);
     });
     stream.scrollTop = stream.scrollHeight;

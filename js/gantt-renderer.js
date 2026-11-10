@@ -26,7 +26,7 @@ const GanttRenderer = {
         const mEnd = new Date(y, m, 0);
         cols.push({
           width: colW, days: mEnd.getDate(),
-          html: `<span class="gh-main" style="font-size:11.5px;">${m}월</span><span class="gh-sub">${y}년</span>`,
+          html: `<span class="gh-main" style="font-size:calc(11.5px * var(--fs-scale, 1));">${m}월</span><span class="gh-sub">${y}년</span>`,
           title: `${y}년 ${m}월 (${this._iso(cur)} ~ ${this._iso(mEnd)})`
         });
         cur.setMonth(cur.getMonth() + 1);
@@ -50,7 +50,7 @@ const GanttRenderer = {
         const iso = this._iso(cur);
         cols.push({
           width: colW, days: 7,
-          html: `<span class="gh-main" style="font-size:11px;">${w}주차</span><span class="gh-sub">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
+          html: `<span class="gh-main" style="font-size:var(--fs-xs, 11px);">${w}주차</span><span class="gh-sub">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
           title: `${w}주차: ${iso} ~ ${this._iso(end)}`
         });
         cur.setDate(cur.getDate() + 7);
@@ -73,7 +73,7 @@ const GanttRenderer = {
       cols.push({
         width: dayW, days: 1,
         cls: `${dow === 0 || dow === 6 ? "weekend" : ""} ${isHoliday ? "holiday" : ""}`,
-        html: `<span>${d.getDate()}</span><span style="font-size:8px;display:block;line-height:8px;">${dn}</span>`,
+        html: `<span>${d.getDate()}</span><span style="font-size:calc(8px * var(--fs-scale, 1));display:block;line-height:8px;">${dn}</span>`,
         title: `${iso} (${dn}) ${isHoliday ? "(휴일)" : ""}`
       });
     }
@@ -187,7 +187,7 @@ const GanttRenderer = {
     filtered.forEach(task => {
       tree.appendChild(this._treeRow(`
         <span class="lvl-badge lvl-${task.level}">L${task.level}</span>
-        <span style="font-size:11px; color:var(--text-muted); margin-right:4px;">[${escapeHtml(task.id)}]</span>
+        <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-right:4px;">[${escapeHtml(task.id)}]</span>
         <span style="font-weight:${task.level <= 2 ? "bold" : "normal"}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</span>`, task.level));
 
       const row = this._chartRow(tl);

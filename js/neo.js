@@ -644,7 +644,7 @@ document.addEventListener("click", e => {
 
 // -----------------------------------------------------------------------------
 // [v3.1.0] 화면 설정 메뉴: 테마 견본 · 글자 크기 (보통 100% / 크게 115% / 아주 크게 130%)
-//  글자 크기는 화면 전체를 확대(CSS zoom)하는 방식 — 표·간트도 같은 비율로 커짐, 사용자별 기억
+//  [v3.2.0] 글자 크기 토큰(--fs-scale) 방식 — 글자만 커지고 칸·여백은 유지, 사용자별 기억
 // -----------------------------------------------------------------------------
 var UiScale = {
   KEY: "IOSTAR_UI_SCALE_",
@@ -657,7 +657,10 @@ var UiScale = {
   },
   apply(v) {
     v = v || this.get();
-    document.documentElement.style.zoom = v === 1 ? "" : String(v);
+    // [v3.2.0] 화면 확대(zoom) 대신 글자 크기 토큰(--fs-scale)만 바꿈 — 배치는 유지되고 글자만 커짐
+    document.documentElement.style.zoom = "";
+    if (v === 1) document.documentElement.style.removeProperty("--fs-scale");
+    else document.documentElement.style.setProperty("--fs-scale", String(v));
     document.documentElement.dataset.uiScale = String(v);
     this.sync();
     if (typeof renderGantt === "function" && document.querySelector("#tab-gantt.active")) setTimeout(renderGantt, 60);
@@ -684,7 +687,7 @@ var UiScale = {
 UiScale.apply();
 
 // -----------------------------------------------------------------------------
-// [v3.1.0] WBS 담당자 · 산출물 칸 접기 — 접으면 표 전체가 한 화면에 들어오고, 펼치면 가로 스크롤
+// [v3.1.0] WBS 담당자 · 산출물 칸 접기 ([v3.2.0] 가중치 · REQ ID 도 함께) — 접으면 표 전체가 한 화면에 들어오고, 펼치면 가로 스크롤
 //  사용자별 기억, 처음에는 화면 폭이 1600px 보다 좁으면 접힌 상태
 // -----------------------------------------------------------------------------
 var WbsFold = {
@@ -706,8 +709,8 @@ var WbsFold = {
     if (t) t.classList.toggle("wbs-fold", on);
     const b = document.getElementById("btnWbsFold");
     if (b) {
-      b.textContent = on ? "▶ 담당자·산출물 펼치기" : "◀ 담당자·산출물 접기";
-      b.title = on ? "접어 둔 담당자 · 산출물 칸을 다시 보여 줍니다 (표가 넓어지면 가로 스크롤)" : "담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다";
+      b.textContent = on ? "▶ 가중치·REQ·담당자·산출물 펼치기" : "◀ 가중치·REQ·담당자·산출물 접기";
+      b.title = on ? "접어 둔 가중치 · REQ ID · 담당자 · 산출물 칸을 다시 보여 줍니다 (표가 넓어지면 가로 스크롤)" : "가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다";
       b.setAttribute("aria-pressed", on ? "true" : "false");
       if (typeof I18N !== "undefined") I18N.translateTree(b.parentNode);
     }

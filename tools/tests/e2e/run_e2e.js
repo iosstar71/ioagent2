@@ -379,21 +379,38 @@ async function localMain() {
     document.querySelector('#gUiMenu .g-swatch[data-theme-pick="matte"]').click(); await new Promise(r => setTimeout(r, 150));
     out.theme = document.body.dataset.theme;
     document.querySelector('#gUiMenu .g-scale[data-scale="1.3"]').click(); await new Promise(r => setTimeout(r, 150));
-    out.zoom = document.documentElement.style.zoom;
+    // [v3.2.0] 글자 크기 = 토큰(--fs-scale), 화면 확대(zoom) 아님 — 본문 글자 13px → 16.9px, 화면 폭은 그대로
+    out.zoom = document.documentElement.style.getPropertyValue("--fs-scale") + "|" + document.documentElement.style.zoom + "|" + getComputedStyle(document.body).fontSize + "|" + (document.documentElement.scrollWidth <= window.innerWidth);
     UiScale.set(1); changeTheme("navy"); GShell.closeMenus();
-    out.zoomBack = document.documentElement.style.zoom;
+    out.zoomBack = document.documentElement.style.getPropertyValue("--fs-scale") + getComputedStyle(document.body).fontSize;
     GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 300));
     const t = document.getElementById("wbsTable");
     const f1 = t.classList.contains("wbs-fold"), w1 = t.scrollWidth <= t.parentElement.clientWidth + 2;
     WbsFold.toggle(); await new Promise(r => setTimeout(r, 100));
     const f2 = t.classList.contains("wbs-fold"), ownerShown = getComputedStyle(t.querySelector("th.col-fold")).display !== "none";
+    const foldCols = [...t.querySelectorAll("thead th.col-fold")].map(th => th.textContent.trim()).join(",");
     WbsFold.toggle();
-    out.fold = { f1, w1, f2, ownerShown, dow: document.querySelectorAll("#wbsTableBody .wbs-dow").length > 0 };
+    out.fold = { f1, w1, f2, ownerShown, foldCols, dow: document.querySelectorAll("#wbsTableBody .wbs-dow").length > 0 };
     return out;
   });
   check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 4 && ui310.theme === "matte" && ui310.zoom === "1.3" && ui310.zoomBack === "" &&
-    ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow, JSON.stringify(ui310));
+    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 4 && ui310.theme === "matte" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+    ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
+  // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
+  const big = await page.evaluate(async () => {
+    UiScale.set(1.3); const over = [];
+    for (const t of ["tab-home", "tab-dashboard", "tab-matrix", "tab-wbs", "tab-gantt", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-config"]) {
+      GShell.go(t); await new Promise(r => setTimeout(r, 200));
+      if (document.documentElement.scrollWidth > window.innerWidth + 1) over.push(t);
+    }
+    const h = document.querySelector("header");
+    GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 200));
+    const t = document.getElementById("wbsTable"); const folded = t.classList.contains("wbs-fold"), fit = t.scrollWidth <= t.parentElement.clientWidth + 2;
+    const fs = getComputedStyle(document.querySelector("#wbsTableBody td")).fontSize;
+    UiScale.set(1);
+    return { over, header: h.scrollWidth <= h.clientWidth, folded, fit, fs };
+  });
+  check("v3.2.0: text size 130% (tokens) — no page overflow on any screen, header fits, folded WBS fits the screen", big.over.length === 0 && big.header && big.folded && big.fit && parseFloat(big.fs) > 14, JSON.stringify(big));
   // [Standard v1.0.1] 1단(묶음)·2단(하위) 메뉴 구분, 간트 머리글 테마, 설정 화면 선택지 정리, 판 이름 표시
   await page.click('.g-group[data-group="sc"]'); await page.waitForTimeout(150);
   await page.click('.g-nav-top .g-sub[data-tab="tab-gantt"]'); await page.waitForTimeout(500);

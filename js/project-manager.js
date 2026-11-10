@@ -252,7 +252,7 @@ var ProjectManager = {
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
         <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
         <td>사용자 ${this.memberCount(p)}명</td>
-        <td style="font-size:11px;">${escapeHtml(p.createdAt || "-")}</td>
+        <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(p.createdAt || "-")}</td>
         <td style="display:flex; gap:4px; flex-wrap:wrap;">
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}
           ${manage ? btn("이름 변경", "rename", "neutral", [p.id]) : ""}
