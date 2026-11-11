@@ -1007,6 +1007,28 @@ async function serverScenarios() {
     check("v3.8 server: System settings Task reset of a chosen project clears only its tasks (project info kept, current project untouched)",
       tgt.includes("P001") && tgt.includes("__ALL__") && clr.p1wbs === 0 && clr.p1cfg && clr.cur === "DEFAULT" && clr.curWbs > 0, JSON.stringify({ tgt, clr }));
 
+    // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
+    a.once("dialog", d => d.accept("서버 복사 프로젝트"));
+    const pt = await a.evaluate(async () => {
+      GShell.go("tab-config"); SubTabs.show("config", "project"); await new Promise(r => setTimeout(r, 600));
+      const o = ExcelSync._triggerDownload; const got = []; ExcelSync._triggerDownload = (bl, n) => got.push({ bl, n });
+      document.getElementById("ptDownTarget").value = "DEFAULT"; await ProjectTransfer.download("EXCEL");
+      document.getElementById("ptDownTarget").value = "__ALL__"; await ProjectTransfer.download("JSON");
+      ExcelSync._triggerDownload = o;
+      const bundle = JSON.parse(await got[1].bl.text());
+      document.getElementById("ptUpTarget").value = "__NEW__";
+      await ProjectTransfer.upload({ target: { files: [new File([got[0].bl], got[0].n)], value: "" } });
+      await new Promise(r => setTimeout(r, 800));
+      const p = ProjectData.projects().find(x => x.name === "서버 복사 프로젝트");
+      const res = p ? await ServerBackend.request("/api/db/load", { keys: ["wbsData", "meetingsData", "weeklyReportsData", "subsystemsMeta", "projectConfig"], projectId: p.id }) : { data: {} };
+      const ul = await ServerBackend.request("/api/admin/users/list", {});
+      const members = (ul.users || []).filter(u => p && u.projectRoles && u.projectRoles[p.id]).length;
+      return { files: got.map(g => g.n), bundleN: (bundle.projects || []).length, bundleSchema: bundle.schemaVersion, pid: p && p.id, wbs: (res.data.wbsData || []).length, cur: wbsData.length,
+        mtg: (res.data.meetingsData || []).length, wr: (res.data.weeklyReportsData || []).length, subs: (res.data.subsystemsMeta || []).length, name: (res.data.projectConfig || {}).projectName, members, curPid: ProjectContext.current };
+    });
+    check("v3.9.2 server: System settings download a project (Excel) / all projects (JSON), and upload a file as a new project (duplicate name renamed)",
+      pt.files.length === 2 && pt.bundleN >= 2 && pt.bundleSchema === "IOSTAR_PROJECTS_BUNDLE_v1" && !!pt.pid && pt.wbs === pt.cur && pt.mtg > 0 && pt.subs > 0 && pt.name === "서버 복사 프로젝트" && pt.members > 0 && pt.curPid === "DEFAULT", JSON.stringify(pt));
+
     // 서버 중지 → 연결 끊김 표시
     srv.kill();
     await new Promise(r => setTimeout(r, 800));

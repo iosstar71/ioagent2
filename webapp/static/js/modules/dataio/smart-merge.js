@@ -170,7 +170,7 @@ const SmartMergeCenter = {
     return rows;
   },
 
-  applyConfigRows(rows) {
+  applyConfigRows(rows, opts = {}) {
     if (!Array.isArray(rows) || rows.length === 0) return false;
     const domains = [];
     const sdlcMap = new Map();
@@ -256,8 +256,11 @@ const SmartMergeCenter = {
     if (milestones.length > 0) projectConfig.milestones = milestones;
     rows.forEach(r => {
       if (r.category === "PROJECT_INFO" && r.key === "layoutType" && r.value) {
-        LayoutManager.setLayout(r.value.trim(), false);
-        if (r.extra1) LayoutManager.setDensity(r.extra1.trim(), false);
+        if (opts.noUi) { projectConfig.layoutType = r.value.trim(); if (r.extra1) projectConfig.uiDensity = r.extra1.trim(); }
+        else {
+          LayoutManager.setLayout(r.value.trim(), false);
+          if (r.extra1) LayoutManager.setDensity(r.extra1.trim(), false);
+        }
       }
       if (r.category === "BASIC" && r.key === "progressBasis" && r.value) {
         projectConfig.progressBasis = r.value.trim() === "BUSINESS" ? "BUSINESS" : "CALENDAR";

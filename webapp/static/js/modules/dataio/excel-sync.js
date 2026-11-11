@@ -1578,13 +1578,14 @@ const ExcelSync = {
     }
   },
 
+  // opts.sheets: 이미 읽은 시트 (그러면 기다림 없이 바로 처리) · opts.silent: 알림 · 자동 백업 없음 · opts.noRebuild: 화면 다시 그리지 않음
   async importMasterWorkbook(e, opts = {}) {
     const file = e && e.target && e.target.files ? e.target.files[0] : e instanceof File ? e : null;
     if (e && e.target) e.target.value = "";
-    if (!file) return;
+    if (!file && !opts.sheets) return;
 
     try {
-      const sheets = await this._parseUploadedFile(file);
+      const sheets = opts.sheets || await this._parseUploadedFile(file);
       const bucket = {
         wbs: [],
         subsystems: [],
@@ -1681,7 +1682,7 @@ const ExcelSync = {
       if (typeof BackupHistoryManager !== "undefined" && !opts.silent) {
         BackupHistoryManager.createBackupSnapshot("전체엑셀통합로드", "ALL", true);
       }
-      if (configRows.length && typeof SmartMergeCenter !== "undefined") SmartMergeCenter.applyConfigRows(configRows);
+      if (configRows.length && typeof SmartMergeCenter !== "undefined") SmartMergeCenter.applyConfigRows(configRows, { noUi: !!opts.noRebuild });
       if (userRows.length && typeof SmartMergeCenter !== "undefined") {
         SmartMergeCenter._mergeUsersList(userRows.map((r, i) => this._normalizeRowData("users", r, i)).filter(Boolean));
       }
@@ -1693,7 +1694,7 @@ const ExcelSync = {
 
       this._ensureWbsAndSubsystemsIntegrity();
       if (typeof syncSubsystemWeights === "function") syncSubsystemWeights();
-      if (typeof rebuildAll === "function") rebuildAll();
+      if (typeof rebuildAll === "function" && !opts.noRebuild) rebuildAll();
 
       if (!opts.silent) showToast(
         `엑셀 파일로부터 성공적으로 데이터를 로드했습니다.\n(WBS: ${bucket.wbs.length}건, 서브시스템: ${bucket.subsystems.length}건, 산출물: ${bucket.deliverables.length}건, REQ: ${bucket.req.length}건, VOC: ${bucket.voc.length}건)`

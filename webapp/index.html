@@ -2722,6 +2722,30 @@
           <div class="pm-hint">프로젝트마다 WBS·요구사항·VOC·산출물·회의·주간보고·공지·기준정보를 따로 관리합니다. [➕ 새 프로젝트 등록]으로 프로젝트를 추가하고, [🗂️ 프로젝트 관리 열기]에서 이름 변경·참여자 지정·보관·삭제를 합니다. 사용자별 역할·담당 서브시스템은 [기준정보 &gt; d. 사용자 정보]에서 프로젝트별로 지정합니다.</div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
+        <!-- [v3.9.2] 프로젝트 파일 내려받기 · 올리기 (모든 프로젝트 / 특정 프로젝트, 엑셀 / JSON) -->
+        <div class="card" style="border-left:4px solid #0d9488; margin-top:16px;">
+          <div class="card-title"><span>📦 프로젝트 파일 내려받기 · 올리기 (엑셀 / JSON)</span><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 시스템관리자</span></div>
+          <div class="grid-2" style="gap:14px;">
+            <div class="proj-box proj-box-blue">
+              <div class="proj-box-title">📥 내려받기</div>
+              <p>모든 프로젝트 또는 특정 프로젝트를 파일로 내려받습니다. 엑셀은 프로젝트마다 파일 1개(기준정보 · 업무 · 사용자 · 주간보고 · 회의록 · 공지 · 소통 시트), JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
+              <div class="proj-box-btns">
+                <select id="ptDownTarget" style="min-width:220px;"></select>
+                <button class="btn btn-sm" data-btn="excel-down" data-click="ProjectTransfer.download" data-click-args='["EXCEL"]'>📥 엑셀</button>
+                <button class="btn btn-sm" data-btn="json-down" data-click="ProjectTransfer.download" data-click-args='["JSON"]'>📥 JSON</button>
+              </div>
+            </div>
+            <div class="proj-box proj-box-amber">
+              <div class="proj-box-title">📤 올리기 — 새 프로젝트 추가 · 프로젝트 바꾸기</div>
+              <p>프로젝트 엑셀 · 프로젝트 백업 JSON · 모든 프로젝트 JSON 을 올려 <b>새 프로젝트로 추가</b>하거나, 고른 프로젝트를 파일 내용으로 바꿉니다. 같은 이름의 프로젝트가 이미 있으면 새 이름을 물어봅니다. 파일의 사용자는 그 프로젝트 참여자로 추가됩니다. (새 계정의 초기 비밀번호 1234)</p>
+              <div class="proj-box-btns">
+                <select id="ptUpTarget" style="min-width:240px;"></select>
+                <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
+                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 올리기 (엑셀 / JSON)</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="master-subpane active" data-group="config" data-subpane="screen">
@@ -3656,6 +3680,7 @@
   <script src="static/js/modules/dataio/data-io.js"></script>
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
+  <script src="static/js/core/project-transfer.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>
