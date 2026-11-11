@@ -26,18 +26,21 @@ var ProjectTransfer = {
 
   // ---- 화면 ----
   async render() {
-    if (!ProjectData.isAdmin()) return;
+    if (!ProjectData.canManage()) return;
     await ProjectManager.refreshList();
-    const list = ProjectData.projects();
+    // [v4.0.0] 시스템관리자: 모든 프로젝트 / PM: 지금 프로젝트만
+    const admin = ProjectData.isAdmin();
+    const list = admin ? ProjectData.projects() : ProjectData.projects().filter(p => p.id === ProjectContext.current);
     const down = document.getElementById("ptDownTarget"), up = document.getElementById("ptUpTarget");
     if (down) {
       const keep = down.value;
-      down.innerHTML = `<option value="${this.ALL}">모든 프로젝트 (${list.length}개)</option>` + list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}</option>`).join("");
+      down.innerHTML = (admin ? `<option value="${this.ALL}">모든 프로젝트 (${list.length}개)</option>` : "") + list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}</option>`).join("");
       if ([...down.options].some(o => o.value === keep)) down.value = keep;
+      else down.value = ProjectContext.current;
     }
     if (up) {
       const keep = up.value;
-      up.innerHTML = `<option value="${this.NEW}">➕ 새 프로젝트로 추가</option>` + list.map(p => `<option value="${escapeAttr(p.id)}">♻️ [${escapeHtml(p.name)}] 프로젝트를 파일 내용으로 바꾸기</option>`).join("");
+      up.innerHTML = (admin ? `<option value="${this.NEW}">➕ 새 프로젝트로 추가</option>` : "") + list.map(p => `<option value="${escapeAttr(p.id)}">♻️ [${escapeHtml(p.name)}] 프로젝트를 파일 내용으로 바꾸기</option>`).join("");
       if ([...up.options].some(o => o.value === keep)) up.value = keep;
     }
   },
@@ -91,14 +94,15 @@ var ProjectTransfer = {
 
   // ---- 내려받기 ----
   async download(format) {
-    if (!ProjectData.isAdmin()) return showToast("🚫 시스템관리자만 할 수 있습니다.");
-    const target = (document.getElementById("ptDownTarget") || {}).value || ProjectContext.current;
+    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
+    let target = (document.getElementById("ptDownTarget") || {}).value || ProjectContext.current;
+    if (!ProjectData.isAdmin()) target = ProjectContext.current;  // PM 은 지금 프로젝트만
     const list = ProjectData.projects();
     const ids = target === this.ALL ? list.map(p => p.id) : [target];
     const stamp = ProjectData._stamp();
     try {
       const items = [];
-      const full = await this.fullUsers();
+      const full = ProjectData.isAdmin() ? await this.fullUsers() : this.allUsers();
       for (const pid of ids) {
         const { data, users } = await this.load(pid, full);
         items.push({ pid, name: (list.find(p => p.id === pid) || {}).name || (data.projectConfig || {}).projectName || pid, data, users });
@@ -149,6 +153,37 @@ var ProjectTransfer = {
     return [{ name: (result.data.projectConfig || {}).projectName || file.name.replace(/\.[^.]+$/, ""), data: result.data, users: result.users }];
   },
 
+  // [v4.0.0] 같은 이름의 프로젝트가 있을 때: 새 이름으로 추가 / 그 프로젝트에 덮어쓰기 / 건너뛰기
+  askDuplicate(name, same, taken) {
+    return new Promise(resolve => {
+      const m = document.getElementById("dupProjectModal");
+      document.getElementById("dupProjectName").textContent = name;
+      const inp = document.getElementById("dupNewName");
+      let n = `${name} (2)`, k = 2;
+      while (taken.some(t => this._norm(t) === this._norm(n))) n = `${name} (${++k})`;
+      inp.value = n;
+      document.querySelector('input[name="dupAction"][value="new"]').checked = true;
+      document.getElementById("dupErr").textContent = "";
+      m.style.display = "flex";
+      this._dup = { resolve, taken, same };
+    });
+  },
+  dupDone(ok) {
+    const d = this._dup;
+    if (!d) return;
+    if (!ok) { document.getElementById("dupProjectModal").style.display = "none"; this._dup = null; return d.resolve(null); }
+    const act = (document.querySelector('input[name="dupAction"]:checked') || {}).value || "new";
+    if (act === "new") {
+      const n = document.getElementById("dupNewName").value.trim().slice(0, 100);
+      if (!n) { document.getElementById("dupErr").textContent = "새 이름을 입력하세요."; return; }
+      if (d.taken.some(t => this._norm(t) === this._norm(n))) { document.getElementById("dupErr").textContent = "그 이름의 프로젝트도 이미 있습니다. 다른 이름을 입력하세요."; return; }
+      document.getElementById("dupProjectModal").style.display = "none"; this._dup = null;
+      return d.resolve({ action: "new", name: n });
+    }
+    document.getElementById("dupProjectModal").style.display = "none"; this._dup = null;
+    d.resolve({ action: "overwrite" });
+  },
+
   // 같은 이름이 있으면 새 이름을 받음 (취소하면 null)
   uniqueName(name, taken) {
     let n = String(name || "").trim() || "새 프로젝트";
@@ -161,14 +196,15 @@ var ProjectTransfer = {
   },
 
   async pick() {
-    if (!ProjectData.isAdmin()) return showToast("🚫 시스템관리자만 할 수 있습니다.");
+    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
     document.getElementById("ptUpInput").click();
   },
   async upload(e) {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
-    if (!file || !ProjectData.isAdmin()) return;
-    const target = (document.getElementById("ptUpTarget") || {}).value || this.NEW;
+    if (!file || !ProjectData.canManage()) return;
+    let target = (document.getElementById("ptUpTarget") || {}).value || this.NEW;
+    if (!ProjectData.isAdmin()) target = ProjectContext.current;  // PM 은 지금 프로젝트 복원만
     let items;
     try { items = await this.parse(file); } catch (err) { return showToast("⚠️ 파일을 읽지 못했습니다: " + err.message); }
     if (!items.length) return showToast("⚠️ 프로젝트 백업 파일이 아닙니다. (프로젝트 엑셀 · 프로젝트 백업 JSON · 모든 프로젝트 JSON 을 쓰세요)");
@@ -185,22 +221,35 @@ var ProjectTransfer = {
         } catch (err) { showToast("❌ 올리기 실패: " + err.message); }
       });
     }
-    const taken = ProjectData.projects().map(p => p.name);
-    const added = [];
+    const added = [], replaced = [];
     for (const it of items) {
-      const name = this.uniqueName(it.name, taken);
-      if (!name) continue;
+      const projects = ProjectData.projects();
+      const same = projects.find(p => this._norm(p.name) === this._norm(it.name));
+      let choice = { action: "new", name: String(it.name || "").trim() || "새 프로젝트" };
+      if (same) {
+        choice = await this.askDuplicate(it.name, same, projects.map(p => p.name));
+        if (!choice) continue;
+      }
       try {
-        const pid = await this.create(name, it.data.projectConfig || {});
-        await this.write(pid, Object.assign({}, it, { name }), false);
-        taken.push(name);
-        added.push(name);
+        if (choice.action === "overwrite") {
+          if (same.id === ProjectContext.current) {
+            BackupHistoryManager.createBackupSnapshot("프로젝트덮어쓰기직전백업", "ALL", false);
+          }
+          await this.write(same.id, it, true);
+          replaced.push(same.name);
+          if (same.id === ProjectContext.current) await SyncManager.refresh(null, { silent: true, skipConfirm: true });
+        } else {
+          const pid = await this.create(choice.name, it.data.projectConfig || {});
+          await this.write(pid, Object.assign({}, it, { name: choice.name }), false);
+          added.push(choice.name);
+        }
       } catch (err) {
-        showToast(`❌ [${name}] 추가 실패: ${err.message}`);
+        showToast(`❌ [${choice.name || it.name}] 실패: ${err.message}`);
       }
     }
     await this.afterChange();
-    if (added.length) showToast(`✅ 프로젝트 ${added.length}개를 추가했습니다: ${added.join(", ")} — 머리글의 프로젝트 선택에서 열 수 있습니다.`);
+    const msg = [added.length ? `추가 ${added.length}개: ${added.join(", ")}` : "", replaced.length ? `덮어쓰기 ${replaced.length}개: ${replaced.join(", ")}` : ""].filter(Boolean).join(" · ");
+    if (msg) showToast(`✅ 프로젝트 ${msg} — 머리글의 프로젝트 선택에서 열 수 있습니다.`);
   },
   async afterChange() {
     await ProjectManager.refreshList();

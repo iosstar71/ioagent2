@@ -592,6 +592,70 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W1": [row]}, "base": {"W1": 1}}}}, self.admin, project=pid)
         self.assertEqual(s, 409, d)
 
+    def test_54_lead_scope(self):
+        """[v4.0.0] 총괄리더는 담당 서브시스템만 (담당 ALL 이면 전체)"""
+        for emp, sub in (("lead_w1", "W1"), ("lead_all", "ALL")):
+            s, d = self.call("/api/admin/users/save", {"isNew": True, "empNo": emp, "name": emp, "sysAdmin": False,
+                                                       "projectRoles": {"DEFAULT": {"role": "LEAD", "subsystem": sub}}}, self.admin)
+            self.assertEqual(s, 200, d)
+        w1, al = self.ready("lead_w1"), self.ready("lead_all")
+        data, revs = self.load(["wbsData"], token=al)
+        rows = {p: [r for r in data["wbsData"] if r["system"] == p] for p in ("W1", "W2")}
+        base = {p: (revs["wbsData"].get(p) or {}).get("rev", 0) for p in ("W1", "W2")}
+        s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W2": rows["W2"]}, "base": {"W2": base["W2"]}}}}, w1)
+        self.assertIn("wbsData[W2]", d.get("blocked", []))
+        s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W1": rows["W1"]}, "base": {"W1": base["W1"]}}}}, w1)
+        self.assertEqual((s, d.get("blocked")), (200, []), d)
+        s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W2": rows["W2"]}, "base": {"W2": base["W2"]}}}}, al)
+        self.assertEqual((s, d.get("blocked")), (200, []), d)
+
+    def test_55_system_backup_restore(self):
+        """[v4.0.0] 시스템 전체 백업(첨부 선택) · 목록 · 내려받기 · 올리기 · 복원 · 자동 백업 설정 — 시스템관리자 전용"""
+        self.assertEqual(self.call("/api/admin/backup/list", {}, self.ready("pmo_kim"))[0], 403)
+        s, d = self.call("/api/admin/backup/create", {"withFiles": False}, self.admin)
+        self.assertEqual(s, 200, d)
+        name = d["name"]
+        s, d = self.call("/api/admin/backup/create", {"withFiles": True}, self.admin)
+        with_files = next(b for b in d["backups"] if b["name"] == d["name"])
+        self.assertTrue(with_files["withFiles"])
+        # 백업 뒤에 바꾼 공지는 복원하면 사라짐
+        self.call("/api/db/save", {"changes": {"noticesData": {"parts": {"N-AFTER": {"id": "N-AFTER", "title": "after backup"}}, "base": {}}}}, self.admin)
+        req = urllib.request.Request(self.base + "/api/admin/backup/download?name=" + name, headers={"Authorization": "Bearer " + self.admin})
+        with urllib.request.urlopen(req) as r:
+            blob = r.read()
+        self.assertEqual(blob[:2], b"PK")
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=20)
+        conn.request("POST", "/api/admin/backup/upload", body=blob, headers={"Authorization": "Bearer " + self.admin, "Content-Type": "application/octet-stream"})
+        up = json.loads(conn.getresponse().read()); conn.close()
+        self.assertTrue(up["ok"] and up["name"].endswith("_uploaded.zip"), up)
+        s, d = self.call("/api/admin/backup/restore", {"name": up["name"]}, self.admin)
+        self.assertEqual(s, 200, d)
+        self.assertTrue(any(b["name"] == d["before"] and b["kind"] == "before-restore" for b in d["backups"]))
+        admin = self.ready("admin")  # 계정은 백업 시점 그대로라 다시 로그인
+        data, _ = self.load(["noticesData"], token=admin)
+        self.assertFalse(any(n.get("id") == "N-AFTER" for n in data["noticesData"]))
+        type(self).admin = admin
+        s, d = self.call("/api/admin/backup/settings", {"enabled": True, "hours": 12, "keep": 3, "withFiles": False}, admin)
+        self.assertEqual((s, d["auto"]["enabled"], d["auto"]["hours"], d["auto"]["keep"]), (200, True, 12, 3))
+        self.call("/api/admin/backup/settings", {"enabled": False}, admin)
+        self.assertEqual(self.call("/api/admin/backup/restore", {"name": "../x.zip"}, admin)[0], 400)
+
+    def test_56_server_snapshots(self):
+        """[v4.0.0] 복원 지점(스냅샷)을 서버에 보관 — PM 은 자기 프로젝트, 시스템관리자는 모두"""
+        pm = self.ready("pmo_kim")
+        meta = {"id": "BKP-T1", "createdAt": "2027-06-04 10:00:00", "actionType": "시험", "wbsCount": 1}
+        s, d = self.call("/api/snapshots/save", {"projectId": "DEFAULT", "meta": meta, "payload": {"wbsData": [{"id": "1"}]}}, pm)
+        self.assertEqual(s, 200, d)
+        self.assertEqual(self.call("/api/snapshots/save", {"projectId": "DEFAULT", "meta": meta, "payload": {}}, self.ready("lead_lee"))[0], 403)
+        s, d = self.call("/api/snapshots/list", {"projectId": "DEFAULT"}, pm)
+        self.assertEqual([m["id"] for m in d["snapshots"]][:1], ["BKP-T1"])
+        s, d = self.call("/api/snapshots/get", {"projectId": "DEFAULT", "id": "BKP-T1"}, pm)
+        self.assertEqual(d["payload"]["wbsData"][0]["id"], "1")
+        self.assertEqual(self.call("/api/snapshots/list", {"all": True}, pm)[0], 403)
+        s, d = self.call("/api/snapshots/list", {"all": True}, self.admin)
+        self.assertTrue(any(m["id"] == "BKP-T1" for m in d["snapshots"]))
+        self.assertEqual(self.call("/api/snapshots/delete", {"projectId": "DEFAULT", "id": "BKP-T1"}, pm)[0], 200)
+
     # ---------------------------------------------------------------- 채팅
     def test_30_chat(self):
         s, _ = self.call("/api/chat/send", {"channel": "전체", "message": "hello"}, self.admin)

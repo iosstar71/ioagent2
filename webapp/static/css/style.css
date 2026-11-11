@@ -3119,3 +3119,13 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 .pl-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
 .pl-card p { font-size: var(--fs-xs, 11px); color: var(--text-sub); margin: 0 0 6px; }
 .pl-phases { font-size: var(--fs-xs, 11px); color: var(--text-sub); line-height: 1.5; background: rgba(0,0,0,0.02); padding: 6px 8px; border-radius: 6px; }
+
+/* ---------- [v4.0.0] 스마트 병합 > 백업 · 복원 ---------- */
+.bk-role { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; font-size: var(--fs-sm, 12px); background: color-mix(in srgb, var(--primary, #1e40af) 8%, var(--bg-card, #fff)); border: 1px solid color-mix(in srgb, var(--primary, #1e40af) 25%, transparent); }
+.bk-sec { margin-bottom: 16px; }
+.bk-who { font-size: var(--fs-xs, 11px); color: var(--text-muted); font-weight: normal; }
+.bk-hint { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+.bk-check { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-sm, 12px); cursor: pointer; }
+.bk-auto { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; border: 1px dashed var(--border-color, #cbd5e1); border-radius: 8px; font-size: var(--fs-sm, 12px); }
+.bk-locked { position: relative; opacity: 0.55; }
+.bk-sec.bk-locked::after { content: "🔒 시스템관리자 전용"; position: absolute; top: 10px; right: 14px; font-size: var(--fs-xs, 11px); font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 8px; border-radius: 10px; }

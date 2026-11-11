@@ -783,12 +783,13 @@ async function localMain() {
   await page.evaluate(() => ProjectData._clear(["P001"], ["P001"])); await page.waitForTimeout(500);
   const p1After = await page.evaluate(() => { const st = LocalBackend._read("P001") || {}; return { wbs: (st.wbsData || []).length, subs: (st.subsystemsMeta || []).length, cfg: !!st.projectConfig, snap: BackupHistoryManager.snapshots[0].projectId }; });
   check("v3.8: Task reset of another project (local): its tasks cleared, master data kept, snapshot tagged with that project", p1After.wbs === 0 && p1After.subs === p1Before.subs && p1After.cfg && p1After.snap === "P001", JSON.stringify({ p1Before, p1After }));
-  await page.evaluate(() => MasterSubTabs.show("backup")); await page.waitForTimeout(400);
+  await page.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await page.waitForTimeout(800);
   const before38 = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, subs: subsystemsMeta.length, name: projectConfig.projectName,
-    rows: document.querySelectorAll("#projectBackupHistoryBody tr").length, other: BackupHistoryManager.snapshots.filter(s => s.projectId === "P001").length }));
+    rows: document.querySelectorAll("#backupHistoryTableBody tr").length, other: BackupHistoryManager.snapshots.filter(s => s.projectId === "P001").length }));
   const backupBlob = await page.evaluate(async () => { const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
     ProjectData.exportProject(); ExcelSync._triggerDownload = o; return got ? { name: got.name, text: await got.blob.text() } : null; });
-  await page.click('#masterSub-backup [data-click="ProjectData.clearCurrentTasks"]'); await page.waitForTimeout(300);
+  await page.selectOption("#cfgClearTarget", "DEFAULT");
+  await page.click('#mergeBackupPane [data-click="ProjectData.clearFromConfig"]'); await page.waitForTimeout(300);
   await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(900);
   const cleared = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, del: deliverablesData.length, mtg: meetingsData.length, notice: noticesData.length, comm: communicationsData.length,
     wr: weeklyReportsData.length, voc: vocData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, std: standardDeliverablesMeta.length }));
@@ -798,9 +799,9 @@ async function localMain() {
   await page.waitForTimeout(300);
   await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(1000);
   const restored = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, name: projectConfig.projectName,
-    rows: document.querySelectorAll("#projectBackupHistoryBody tr").length, p1rows: [...document.querySelectorAll("#projectBackupHistoryBody tr")].some(tr => tr.textContent.includes("P001")) }));
-  check("v3.8: project backup JSON → restore brings this project back (other projects' snapshots not listed here)", backupBlob.name.includes("프로젝트백업") && restored.wbs === before38.wbs && restored.req === before38.req
-    && restored.mtg === before38.mtg && restored.notice === before38.notice && restored.name === before38.name && before38.other >= 1 && !restored.p1rows, JSON.stringify({ before38, restored, file: backupBlob.name }));
+    p1locked: [...document.querySelectorAll("#backupHistoryTableBody tr")].filter(tr => /P001|서버 신규|신규/.test(tr.children[2].textContent)).every(tr => tr.querySelector('[data-click*="restore"]').disabled) }));
+  check("v3.8/4.0: project backup JSON → restore brings this project back (another project's restore point cannot be restored here)", backupBlob.name.includes("프로젝트백업") && restored.wbs === before38.wbs && restored.req === before38.req
+    && restored.mtg === before38.mtg && restored.notice === before38.notice && restored.name === before38.name && before38.other >= 1 && restored.p1locked, JSON.stringify({ before38, restored, file: backupBlob.name }));
   // [v3.9.0] 공정 유형: 시스템 설정에서 관리, 프로젝트는 활성화 · 계획 일정만
   await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "process"); }); await page.waitForTimeout(500);
   const pl1 = await page.evaluate(() => ({ sdlc: document.querySelectorAll("#plSdlcCards .pl-card").length, req: document.querySelectorAll("#plReqCards .pl-card").length }));
@@ -866,6 +867,23 @@ async function localMain() {
   check("v3.9.1: project backup as Excel → restore brings the whole project back; uploads no longer download an automatic backup file by default",
     /프로젝트백업.*\.xlsx$/.test(xr.name) && xr2.wbs === xr.before.wbs && xr2.wr === xr.before.wr && xr2.mtg === xr.before.mtg && xr2.notice === xr.before.notice && xr2.subs === xr.before.subs
     && !xr2.auto && page.downloads.length === dlBefore && !xr2.pkgUploadBtn, JSON.stringify({ xr, xr2, dl: page.downloads.length - dlBefore }));
+  // [v4.0.0] 로컬: 종합본 가져오기 — 내 담당 서브시스템은 내 자료 유지
+  const cons = await page.evaluate(async () => {
+    GShell.go("tab-merge"); await new Promise(r => setTimeout(r, 300));
+    const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (bl, n) => { got = { bl, n }; };
+    SmartMergeCenter.downloadMasterPackage("JSON"); ExcelSync._triggerDownload = o;
+    const j = JSON.parse(await got.bl.text());
+    const sys = (subsystemsMeta[0] || {}).name;
+    j.wbsData = j.wbsData.map(t => Object.assign({}, t, { name: t.name + "_종합" }));
+    const realUser = AuthManager.currentUser; AuthManager.currentUser = Object.assign({}, realUser, { role: "MEMBER", subsystem: sys });
+    try {
+      await SmartMergeCenter.importConsolidated({ target: { files: [new File([JSON.stringify(j)], "consolidated.json")], value: "" } });
+      await new Promise(r => setTimeout(r, 300)); closeConfirmDialog(true); await new Promise(r => setTimeout(r, 900));
+    } finally { AuthManager.currentUser = realUser; }
+    return { box: getComputedStyle(document.getElementById("consolidateBox")).display, mine: wbsData.filter(t => t.system === sys).every(t => !t.name.endsWith("_종합")),
+      others: wbsData.filter(t => t.system !== sys).length > 0 && wbsData.filter(t => t.system !== sys).every(t => t.name.endsWith("_종합")) };
+  });
+  check("v4.0 local: consolidated package import keeps my subsystem's own data and takes the rest from the package", cons.box !== "none" && cons.mine && cons.others, JSON.stringify(cons));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
@@ -997,7 +1015,7 @@ async function serverScenarios() {
     check("Attachment on meeting minutes: file listed, badge shown, minutes draft not marked as changed", mt.rows === 1 && mt.title.includes("[회의]") && mt.badge === "1" && !mt.dirty, JSON.stringify(mt));
 
     // [v3.8.0] 시스템 설정 > 백업·복원·초기화: 고른 프로젝트의 Task 정보만 초기화 (서버)
-    await a.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "backup"); }); await a.waitForTimeout(600);
+    await a.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await a.waitForTimeout(900);
     const tgt = await a.evaluate(() => [...document.querySelectorAll("#cfgClearTarget option")].map(o => o.value));
     await a.selectOption("#cfgClearTarget", "P001");
     await a.click('[data-click="ProjectData.clearFromConfig"]'); await a.waitForTimeout(300);
@@ -1008,17 +1026,23 @@ async function serverScenarios() {
       tgt.includes("P001") && tgt.includes("__ALL__") && clr.p1wbs === 0 && clr.p1cfg && clr.cur === "DEFAULT" && clr.curWbs > 0, JSON.stringify({ tgt, clr }));
 
     // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
-    a.once("dialog", d => d.accept("서버 복사 프로젝트"));
-    const pt = await a.evaluate(async () => {
-      GShell.go("tab-config"); SubTabs.show("config", "project"); await new Promise(r => setTimeout(r, 600));
+    await a.evaluate(async () => {
+      GShell.go("tab-merge"); SubTabs.show("merge", "backup"); await new Promise(r => setTimeout(r, 800));
       const o = ExcelSync._triggerDownload; const got = []; ExcelSync._triggerDownload = (bl, n) => got.push({ bl, n });
       document.getElementById("ptDownTarget").value = "DEFAULT"; await ProjectTransfer.download("EXCEL");
       document.getElementById("ptDownTarget").value = "__ALL__"; await ProjectTransfer.download("JSON");
       ExcelSync._triggerDownload = o;
       const bundle = JSON.parse(await got[1].bl.text());
       document.getElementById("ptUpTarget").value = "__NEW__";
-      await ProjectTransfer.upload({ target: { files: [new File([got[0].bl], got[0].n)], value: "" } });
-      await new Promise(r => setTimeout(r, 800));
+      window.__ptGot = got; window.__bundle = bundle;
+      window.__up = ProjectTransfer.upload({ target: { files: [new File([got[0].bl], got[0].n)], value: "" } });
+    });
+    await a.waitForTimeout(1200);
+    const dupShown = await a.evaluate(() => ({ shown: getComputedStyle(document.getElementById("dupProjectModal")).display === "flex", name: document.getElementById("dupProjectName").textContent, def: document.getElementById("dupNewName").value }));
+    await a.fill("#dupNewName", "서버 복사 프로젝트"); await a.click("#dupOkBtn");
+    const pt = await a.evaluate(async () => {
+      await window.__up; await new Promise(r => setTimeout(r, 800));
+      const got = window.__ptGot, bundle = window.__bundle;
       const p = ProjectData.projects().find(x => x.name === "서버 복사 프로젝트");
       const res = p ? await ServerBackend.request("/api/db/load", { keys: ["wbsData", "meetingsData", "weeklyReportsData", "subsystemsMeta", "projectConfig"], projectId: p.id }) : { data: {} };
       const ul = await ServerBackend.request("/api/admin/users/list", {});
@@ -1026,7 +1050,30 @@ async function serverScenarios() {
       return { files: got.map(g => g.n), bundleN: (bundle.projects || []).length, bundleSchema: bundle.schemaVersion, pid: p && p.id, wbs: (res.data.wbsData || []).length, cur: wbsData.length,
         mtg: (res.data.meetingsData || []).length, wr: (res.data.weeklyReportsData || []).length, subs: (res.data.subsystemsMeta || []).length, name: (res.data.projectConfig || {}).projectName, members, curPid: ProjectContext.current };
     });
-    check("v3.9.2 server: System settings download a project (Excel) / all projects (JSON), and upload a file as a new project (duplicate name renamed)",
+    // 같은 이름 → [그 프로젝트에 덮어쓰기]: 새 프로젝트가 늘지 않음
+    const nBefore = await a.evaluate(() => ProjectData.projects().length);
+    await a.evaluate(async () => {
+      const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (bl, n) => { got = { bl, n }; };
+      document.getElementById("ptDownTarget").value = "P001"; await ProjectTransfer.download("JSON"); ExcelSync._triggerDownload = o;
+      document.getElementById("ptUpTarget").value = "__NEW__";
+      window.__up2 = ProjectTransfer.upload({ target: { files: [new File([got.bl], got.n)], value: "" } });
+    });
+    await a.waitForTimeout(1200);
+    await a.check('input[name="dupAction"][value="overwrite"]'); await a.click("#dupOkBtn");
+    const ow = await a.evaluate(async () => { await window.__up2; await new Promise(r => setTimeout(r, 600)); return { n: ProjectData.projects().length }; });
+    check("v4.0 server: same project name on upload → choose new name or overwrite (modal)", dupShown.shown && dupShown.name.length > 0 && dupShown.def.includes("(2)") && ow.n === nBefore, JSON.stringify({ dupShown, ow, nBefore }));
+    // 시스템 전체 백업 (시스템관리자): 만들기 → 목록
+    const sb40 = await a.evaluate(async () => { document.getElementById("bkWithFiles").checked = false; await SystemBackup.create();
+      return { rows: document.querySelectorAll("#bkServerList tr").length, server: getComputedStyle(document.getElementById("bkServerBox")).display, first: (SystemBackup.list[0] || {}).kind, locked: document.querySelectorAll("#mergeBackupPane .bk-locked").length }; });
+    check("v4.0 server: admin creates a system backup in Smart merge > Backup · Restore (listed, nothing locked)", sb40.rows >= 1 && sb40.server !== "none" && sb40.first === "manual" && sb40.locked === 0, JSON.stringify(sb40));
+    // PM: 같은 화면, 지금 프로젝트만 · 시스템 전체 부분 비활성
+    const pmv = await b.evaluate(async () => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); await new Promise(r => setTimeout(r, 900));
+      return { tab: getComputedStyle(document.getElementById("mergeBackupTabBtn")).display, down: [...document.querySelectorAll("#ptDownTarget option")].map(o => o.value), up: [...document.querySelectorAll("#ptUpTarget option")].map(o => o.value),
+        clear: [...document.querySelectorAll("#cfgClearTarget option")].map(o => o.value), locked: [...document.querySelectorAll("#mergeBackupPane .bk-locked")].length,
+        createDisabled: document.querySelector('[data-click="SystemBackup.create"]').disabled, factoryDisabled: document.querySelector('[data-click="StorageManager.resetToFactoryBlank"]').disabled }; });
+    check("v4.0 server: PM sees Backup · Restore for the current project only; system-wide parts are disabled", pmv.tab !== "none" && pmv.down.join() === "DEFAULT" && pmv.up.join() === "DEFAULT" && pmv.clear.join() === "DEFAULT"
+      && pmv.locked >= 2 && pmv.createDisabled && pmv.factoryDisabled, JSON.stringify(pmv));
+    check("v3.9.2 server: download a project (Excel) / all projects (JSON), and upload a file as a new project (duplicate name renamed)",
       pt.files.length === 2 && pt.bundleN >= 2 && pt.bundleSchema === "IOSTAR_PROJECTS_BUNDLE_v1" && !!pt.pid && pt.wbs === pt.cur && pt.mtg > 0 && pt.subs > 0 && pt.name === "서버 복사 프로젝트" && pt.members > 0 && pt.curPid === "DEFAULT", JSON.stringify(pt));
 
     // 서버 중지 → 연결 끊김 표시

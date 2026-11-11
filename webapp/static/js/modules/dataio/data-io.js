@@ -6,7 +6,7 @@
 //               {파일약칭}_{대상}_{범위}_{기준일}.xlsx  예) PRJ_WBS_W1_20270601.xlsx
 //   - 올리기  : 같은 양식의 엑셀(.xlsx · .xls · .csv)을 그 화면의 조회 범위에 반영
 //               서브시스템을 고른 상태 → 그 서브시스템 행만 교체 (다른 서브시스템은 그대로)
-//               [전체]를 고른 상태 → 전체 교체 (시스템관리자 · PM · 총괄리더만)
+//               [전체]를 고른 상태 → 전체 교체 (시스템관리자 · PM, 담당이 ALL 인 총괄리더)
 //               반영 전에 건수 · 범위를 확인하고, 자동 백업을 만든 뒤 반영
 //   - 버튼 문구 · 색: 📥 엑셀 내려받기 / 📤 엑셀 올리기 (data-btn="excel-down" / "excel-up")
 // =============================================================================
@@ -35,7 +35,7 @@ var DataIO = {
     if (!d) return;
     const scope = this.scope(kind);
     if (scope === "ALL" && !SmartMergeCenter.canBulkWork()) {
-      showToast(`🚫 [${d.label}] 전체 범위 올리기는 시스템관리자 · PM · 총괄리더만 할 수 있습니다. [서브시스템 조회]에서 담당 서브시스템을 고른 뒤 올리세요.`);
+      showToast(`🚫 [${d.label}] 전체 범위 올리기는 시스템관리자 · PM(담당이 ALL 인 총괄리더 포함)만 할 수 있습니다. [서브시스템 조회]에서 담당 서브시스템을 고른 뒤 올리세요.`);
       return;
     }
     if (scope !== "ALL" && typeof Permission !== "undefined" && Permission.canWriteSubsystem && !Permission.canWriteSubsystem(scope)) {

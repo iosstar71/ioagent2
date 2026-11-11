@@ -11,7 +11,8 @@ def dkey(pid, key):
 
 
 MANAGER_ROLES = {"SYS_ADMIN", "PM"}
-ALL_SUBSYSTEM_ROLES = {"SYS_ADMIN", "PM", "LEAD"}
+# [v4.0.0] 총괄리더(LEAD)는 담당 서브시스템만 — 담당을 ALL 로 지정하면 프로젝트 전체
+ALL_SUBSYSTEM_ROLES = {"SYS_ADMIN", "PM"}
 USER_SELF_FIELDS = {"name", "dept", "lang"}
 
 

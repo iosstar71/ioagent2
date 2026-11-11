@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer
 from . import settings
 from .settings import APP_CONFIG, APP_NAME, BASE_DIR, DATA_DIR, EXTRA_ALLOWED_ORIGINS, FILE_MAX_BYTES, UPLOAD_DIR, WEB_DIR
 from .logger import write_server_log
-from . import user_admin
+from . import backup, user_admin
 from .files import FileStore
 from .store import Store
 from .handler import WbsHttpHandler
@@ -76,6 +76,7 @@ def main():
     Store.init_schema()
     FileStore.init_schema()
     user_admin.ensure_second_admin()
+    backup.start_auto()
     server = WbsServer((args.host, args.port), WbsHttpHandler)
     scheme = "http"
     resolve = lambda v: pathlib.Path(v) if pathlib.Path(v).is_absolute() else BASE_DIR / v  # noqa: E731

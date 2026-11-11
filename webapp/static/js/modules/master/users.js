@@ -114,7 +114,7 @@ var SubTabs = {
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
     if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
-    if (group === "config" && name === "project" && typeof ProjectTransfer !== "undefined") ProjectTransfer.render();
+    if (group === "merge" && name === "backup" && typeof BackupPane !== "undefined") BackupPane.render();
     if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
     if (group === "config" && name === "process" && typeof ProcessLib !== "undefined") ProcessLib.renderAdmin();
     if (group === "master" && name === "phase") {
@@ -127,6 +127,9 @@ var SubTabs = {
   restore(group, def) {
     let name = def;
     try { name = sessionStorage.getItem(this.KEY + group) || def; } catch (e) {}
+    // 없어졌거나 숨겨진 서브 탭이면 기본 탭으로
+    const btn = document.querySelector(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn[data-subtab="${name}"]`);
+    if (!btn || btn.style.display === "none") name = def;
     this.show(group, name);
   }
 };

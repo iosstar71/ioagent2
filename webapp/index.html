@@ -1624,7 +1624,7 @@
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">🔀 데이터 가져오기·내보내기</span>
           <span class="neo-ph-desc">엑셀 / JSON 파일로 데이터를 내려받거나, 파일을 올려 현재 데이터에 합치기</span>
-          <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress">🔑 다운로드: 모든 사용자 | 업무 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더 | 기준정보 업로드: 관리자·PM</span>
+          <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress">🔑 다운로드: 모든 사용자 | 업무 데이터 전체(ALL) 업로드: 관리자·PM (총괄리더는 담당이 ALL 일 때) | 기준정보 업로드: 관리자·PM</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
@@ -1635,6 +1635,12 @@
         </div>
       </div>
 
+      <!-- [v4.0.0] 서브 탭: 스마트 병합(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 시스템관리자 · PM) -->
+      <div class="master-subtab-bar" data-group="merge">
+        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>🔀 스마트 병합</button>
+        <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
+      </div>
+      <div class="master-subpane active" data-group="merge" data-subpane="merge">
       <!-- [위젯 1: 가장 많이 사용하는 실무 Task 데이터 다중선택 스마트 병합] -->
       <div class="config-group-banner" style="background: linear-gradient(90deg, #0f766e, #0d9488);">
         <span>📊 ① 서브시스템별 업무 데이터 (WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록)</span>
@@ -1652,7 +1658,7 @@
               <select id="workDataSubsysSelect" class="merge-scope-select" style="padding:6px 12px; font-weight:bold; min-width:240px;"></select>
             </div>
             <div id="workDataPermissionHint" style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#0f766e; font-weight:600;">
-              * 여러 서브시스템이 들어 있는 파일을 올려도 선택한 서브시스템 데이터만 골라서 합칩니다. 주간보고는 그 서브시스템 보고서만, 회의록은 그 서브시스템 회의(+ 통합 회의)만. ([전체(ALL)] 올리기는 관리자·PM·총괄리더)
+              * 여러 서브시스템이 들어 있는 파일을 올려도 선택한 서브시스템 데이터만 골라서 합칩니다. 주간보고는 그 서브시스템 보고서만, 회의록은 그 서브시스템 회의(+ 통합 회의)만. ([전체(ALL)] 올리기는 시스템관리자 · PM, 담당이 ALL 인 총괄리더)
             </div>
           </div>
         </div>
@@ -1860,8 +1866,14 @@
                 📥 엑셀 내려받기 (전체)
               </button>
             </div>
-            <div class="pm-hint" style="margin:0;">📤 <b>프로젝트 전체 올리기(복원)</b>는 [기준정보 &gt; 💾 백업·초기화]에서 합니다. (엑셀 / JSON, 시스템관리자 · PM) — 서브시스템별 · 항목별 올리기는 위 ① · ② · ③을 쓰세요.
-              <button type="button" class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup" style="margin-left:6px;">➡️ 백업·초기화로 이동</button></div>
+            <div id="consolidateBox" class="proj-box proj-box-blue" style="display:none;">
+              <div class="proj-box-title">📥 종합본 가져오기 (로컬 저장소 방식 · 모든 사용자)</div>
+              <p>PM 이 합쳐서 나눠 준 종합본(④ 엑셀 / JSON)을 내 브라우저에 반영해 전체 진행 상황을 봅니다. <b>내 담당 서브시스템 자료는 내 것을 그대로 둡니다.</b></p>
+              <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]'>📥 종합본 가져오기</button>
+            </div>
+            <div class="pm-hint" style="margin:0;">📤 <b>프로젝트 전체 복원 · 새 프로젝트 추가</b>는 [💾 백업 · 복원] 탭에서 합니다. (시스템관리자 · PM)
+              <button type="button" class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup" style="margin-left:6px;">➡️ 백업 · 복원으로 이동</button></div>
             <div style="display:none;">
               <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
               <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
@@ -1879,7 +1891,101 @@
         <span id="fileSyncDetailStatus"></span>
         <button id="btnFileHandleSync"></button>
       </div>
-    </div>
+          </div>
+
+      <!-- [v4.0.0] 💾 백업 · 복원 (비상 대응) — 시스템관리자 · PM 만, 권한 없는 기능은 비활성 -->
+      <div class="master-subpane" data-group="merge" data-subpane="backup" id="mergeBackupPane">
+        <div class="bk-role" id="bkRoleNote"></div>
+
+        <div class="card bk-sec" data-need="manager" style="border-left:4px solid #0284c7;">
+          <div class="card-title"><span>🗂️ ① 프로젝트 백업 · 복원 (엑셀 / JSON)</span><span class="bk-who">시스템관리자: 모든 프로젝트 · PM: 지금 프로젝트</span></div>
+          <div class="grid-2" style="gap:14px;">
+            <div class="proj-box proj-box-blue">
+              <div class="proj-box-title">📥 백업 내려받기</div>
+              <p>프로젝트의 기본정보 · 기준정보 · 사용자(참여자)와 Task 정보(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 · 공지 · 소통)를 파일로 보관합니다. 엑셀은 프로젝트마다 파일 1개, JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
+              <div class="proj-box-btns">
+                <select id="ptDownTarget" style="min-width:230px;"></select>
+                <button class="btn btn-sm" data-btn="excel-down" data-click="ProjectTransfer.download" data-click-args='["EXCEL"]'>📥 엑셀</button>
+                <button class="btn btn-sm" data-btn="json-down" data-click="ProjectTransfer.download" data-click-args='["JSON"]'>📥 JSON</button>
+              </div>
+            </div>
+            <div class="proj-box proj-box-amber">
+              <div class="proj-box-title">📤 복원 · 새 프로젝트 추가</div>
+              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 복원 지점을 자동으로 만듭니다.</p>
+              <div class="proj-box-btns">
+                <select id="ptUpTarget" style="min-width:250px;"></select>
+                <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
+                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 올리기 (엑셀 / JSON)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bk-sec" data-need="manager" style="border-left:4px solid #d97706;">
+          <div class="card-title"><span>🔄 ② 초기화</span><span class="bk-who">지우기 전에 복원 지점을 자동으로 만듭니다</span></div>
+          <div class="proj-box-btns" style="margin-bottom:10px;">
+            <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">Task 정보 초기화 대상:</label>
+            <select id="cfgClearTarget" style="min-width:240px;"></select>
+            <button class="btn btn-sm" data-btn="warn" data-click="ProjectData.clearFromConfig" title="기본정보 · 기준정보는 두고 WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 소통(채팅 포함)만 지움">🧹 Task 정보 초기화</button>
+          </div>
+          <div class="proj-box-btns">
+            <button class="btn btn-sm" data-btn="danger" data-click="ProjectData.resetProject" title="지금 프로젝트: 이름 · 기간만 두고 기준정보 · Task 정보를 빈 상태로">⚠️ 지금 프로젝트 전체 초기화</button>
+            <button class="btn btn-sm" data-btn="warn" data-click="StorageManager.resetToSampleData" title="지금 프로젝트를 2027 제조 샘플로">🔄 제조 샘플 복원</button>
+            <button class="btn btn-sm" data-btn="neutral" data-click="RealtimeChatManager.clearAllChat" title="지금 프로젝트의 채팅 기록만 삭제 (과업 데이터는 그대로)">💬 채팅 기록 초기화</button>
+            <button class="btn btn-sm" data-btn="danger" data-need="admin" data-click="StorageManager.resetToFactoryBlank" title="지금 프로젝트와 사용자 목록을 처음 상태로 (시스템관리자)">⚠️ 완전 초기화 (사용자 포함)</button>
+          </div>
+        </div>
+
+        <div class="card bk-sec" data-need="admin" style="border-left:4px solid #dc2626;">
+          <div class="card-title"><span>🖥️ ③ 시스템 전체 백업 · 복원</span><span class="bk-who">시스템관리자 전용 — 모든 프로젝트 · 사용자 계정 · 공정 유형 · 시스템 설정</span></div>
+          <div id="bkServerBox">
+            <div class="proj-box-btns" style="margin-bottom:10px;">
+              <label class="bk-check"><input type="checkbox" id="bkWithFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.create">💾 지금 시스템 백업 만들기</button>
+              <input type="file" id="bkUploadInput" style="display:none;" accept=".zip" data-change="SystemBackup.upload" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 PC 의 백업 파일(zip) 올리기</button>
+              <span class="bk-hint" id="bkFolder"></span>
+            </div>
+            <div class="bk-auto">
+              <b>⏱ 자동 백업 (선택)</b>
+              <label class="bk-check"><input type="checkbox" id="bkAutoOn"> 사용</label>
+              <label>간격 <input type="number" id="bkAutoHours" min="1" max="720" value="24" style="width:64px;"> 시간</label>
+              <label>보관 <input type="number" id="bkAutoKeep" min="1" max="365" value="14" style="width:64px;"> 개</label>
+              <label class="bk-check"><input type="checkbox" id="bkAutoFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.saveAuto">저장</button>
+              <span class="bk-hint" id="bkAutoLast"></span>
+            </div>
+            <div class="table-container" style="max-height:260px; margin-top:10px;">
+              <table class="m-table">
+                <thead><tr><th style="width:150px;">만든 때</th><th style="width:110px;">구분</th><th style="width:80px;">첨부</th><th style="width:90px;">크기</th><th>파일 이름</th><th style="width:220px; text-align:center;">관리</th></tr></thead>
+                <tbody id="bkServerList"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="bkLocalBox" style="display:none;">
+            <p class="bk-hint">로컬 저장소 방식: 이 브라우저에 저장된 모든 프로젝트 · 사용자 · 설정을 JSON 파일 1개로 보관하고 되돌립니다.</p>
+            <div class="proj-box-btns">
+              <button class="btn btn-sm" data-btn="json-down" data-click="SystemBackup.exportLocal">📥 시스템 전체 백업 (JSON)</button>
+              <input type="file" id="bkLocalInput" style="display:none;" accept=".json" data-change="SystemBackup.importLocal" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="json-up" data-click="UiH.clickEl" data-click-args='["bkLocalInput"]'>📤 시스템 전체 복원 (JSON)</button>
+              <span id="storageUsageText" class="bk-hint"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bk-sec" data-need="manager" style="border-left:4px solid #7c3aed;">
+          <div class="card-title"><span>🕒 ④ 복원 지점 (자동 · 수동 스냅샷)</span>
+            <span style="display:flex; gap:6px; align-items:center;"><span class="bk-who" id="bkSnapWhere"></span>
+            <button class="btn btn-secondary btn-sm" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["수동백업", "ALL", false]'>+ 지금 복원 지점 만들기</button></span></div>
+          <div class="table-container" style="max-height: 280px;">
+            <table id="backupHistoryTable">
+              <thead><tr><th style="width:155px;">만든 때</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th style="width:240px; text-align:center;">내려받기 / 복원</th></tr></thead>
+              <tbody id="backupHistoryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</div>
 
     <!-- =================================================================== -->
     <!-- 9. 기준정보 관리 (tab-master) - [권한: 프로젝트 관리자(PM) / 시스템 관리자] -->
@@ -2194,7 +2300,6 @@
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="ui-report" data-click="MasterSubTabs.show" data-click-args='["ui-report"]'>📊 보고서 양식</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 소통 채널</button>
-        <button class="master-subtab-btn" data-subtab="backup" data-click="MasterSubTabs.show" data-click-args='["backup"]'>💾 백업·초기화</button>
       </div>
 
       <div class="master-subpane" data-group="master" id="masterSub-basic" data-subpane="basic">
@@ -2512,51 +2617,6 @@
       <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-report" data-subpane="ui-report"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
-      <!-- [v3.8.0] 프로젝트 단위 백업 · 복원 · 초기화 -->
-      <div class="master-subpane" data-group="master" id="masterSub-backup" data-subpane="backup">
-        <div class="card" style="border-left:4px solid #dc2626;">
-          <div class="card-title">
-            <span>💾 프로젝트 백업 · 복원 · 초기화 — <b class="lbl-project-scope"></b></span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">* 지금 프로젝트만 대상입니다. 사용자 계정 · 다른 프로젝트 · 시스템 설정은 바뀌지 않습니다. (PM · 시스템관리자)</span>
-          </div>
-          <div class="grid-2" style="gap:14px; margin-bottom:14px;">
-            <div class="proj-box proj-box-blue">
-              <div class="proj-box-title">💾 프로젝트 백업 · 복원</div>
-              <p>기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물)와 Task 정보(WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통)를 <b>엑셀 또는 JSON 파일 1개</b>로 보관하거나, 그 파일로 이 프로젝트를 바꿉니다. 복원해도 프로젝트 이름은 그대로입니다.
-                 엑셀은 스마트병합 [④ 전체 일괄]과 같은 양식이라, 다른 프로젝트에서 내려받은 엑셀이나 샘플 엑셀(<code>Sample/2027_제조_스마트공장_샘플_4레벨.xlsx</code>)로 새 프로젝트를 채울 때 씁니다.</p>
-              <div class="proj-box-btns">
-                <button class="btn btn-sm" data-btn="excel-down" data-need-manager="1" data-click="ProjectData.exportProject" data-click-args='["EXCEL"]'>📥 엑셀 백업 내려받기</button>
-                <button class="btn btn-sm" data-btn="json-down" data-need-manager="1" data-click="ProjectData.exportProject" data-click-args='["JSON"]'>📥 JSON 백업 내려받기</button>
-                <input type="file" id="projectRestoreInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectData.importProject" data-change-args='["$event"]'>
-                <button class="btn btn-sm" data-btn="excel-up" data-need-manager="1" data-click="UiH.clickEl" data-click-args='["projectRestoreInput"]'>📤 백업 올리기 · 복원 (엑셀 / JSON)</button>
-              </div>
-            </div>
-            <div class="proj-box proj-box-red">
-              <div class="proj-box-title">🔄 프로젝트 초기화</div>
-              <p>• <b>Task 정보 초기화</b>: 기본정보 · 기준정보는 그대로 두고 WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)만 지웁니다.<br>
-                 • <b>프로젝트 전체 초기화</b>: 프로젝트 이름 · 기간만 두고 기준정보와 Task 정보를 모두 빈 상태로 되돌립니다.<br>
-                 두 경우 모두 지우기 전에 자동 백업을 만듭니다.</p>
-              <div class="proj-box-btns">
-                <button class="btn btn-sm" data-btn="warn" data-need-manager="1" data-click="ProjectData.clearCurrentTasks">🧹 Task 정보 초기화</button>
-                <button class="btn btn-sm" data-btn="danger" data-need-manager="1" data-click="ProjectData.resetProject">⚠️ 프로젝트 전체 초기화</button>
-              </div>
-            </div>
-          </div>
-          <div style="border-top:1px solid var(--border-color); padding-top:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-weight:bold; font-size:var(--fs-sm, 12px);">🕒 이 프로젝트의 백업 스냅샷 (이 브라우저에 최근 12개 보관 · 시점 복원)</span>
-              <button class="btn btn-secondary btn-sm" data-need-manager="1" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["프로젝트수동백업", "ALL", false]'>+ 스냅샷 백업</button>
-            </div>
-            <div class="table-container" style="max-height: 260px;">
-              <table>
-                <thead><tr><th style="width:155px;">백업 일시</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th style="width:240px; text-align:center;">내려받기 / 복원</th></tr></thead>
-                <tbody id="projectBackupHistoryBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
       
 
@@ -2599,7 +2659,7 @@
           <div>
             <span>📋 프로젝트 투입인력 계정 및 권한 일람표</span>
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
-              * <b>시스템 관리자</b>: 전 메뉴 | <b>PM</b>: 기준정보·사용자·전체 데이터 | <b>총괄리더(LEAD)</b>: 전체 서브시스템 데이터 수정 | <b>일반(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+              * <b>시스템 관리자</b>: 전 메뉴 | <b>PM</b>: 기준정보·사용자·전체 데이터 | <b>총괄리더(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>일반(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
             </span>
           </div>
           <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
@@ -2671,7 +2731,6 @@
         <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 양식</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
         <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🗄️ 저장소·DB 연동</button>
-        <button class="master-subtab-btn" data-subtab="backup" data-click="SubTabs.show" data-click-args='["config", "backup"]'>💾 백업·복원·초기화</button>
         <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 소통 채널</button>
       </div>
 
@@ -2722,30 +2781,7 @@
           <div class="pm-hint">프로젝트마다 WBS·요구사항·VOC·산출물·회의·주간보고·공지·기준정보를 따로 관리합니다. [➕ 새 프로젝트 등록]으로 프로젝트를 추가하고, [🗂️ 프로젝트 관리 열기]에서 이름 변경·참여자 지정·보관·삭제를 합니다. 사용자별 역할·담당 서브시스템은 [기준정보 &gt; d. 사용자 정보]에서 프로젝트별로 지정합니다.</div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
-        <!-- [v3.9.2] 프로젝트 파일 내려받기 · 올리기 (모든 프로젝트 / 특정 프로젝트, 엑셀 / JSON) -->
-        <div class="card" style="border-left:4px solid #0d9488; margin-top:16px;">
-          <div class="card-title"><span>📦 프로젝트 파일 내려받기 · 올리기 (엑셀 / JSON)</span><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 시스템관리자</span></div>
-          <div class="grid-2" style="gap:14px;">
-            <div class="proj-box proj-box-blue">
-              <div class="proj-box-title">📥 내려받기</div>
-              <p>모든 프로젝트 또는 특정 프로젝트를 파일로 내려받습니다. 엑셀은 프로젝트마다 파일 1개(기준정보 · 업무 · 사용자 · 주간보고 · 회의록 · 공지 · 소통 시트), JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
-              <div class="proj-box-btns">
-                <select id="ptDownTarget" style="min-width:220px;"></select>
-                <button class="btn btn-sm" data-btn="excel-down" data-click="ProjectTransfer.download" data-click-args='["EXCEL"]'>📥 엑셀</button>
-                <button class="btn btn-sm" data-btn="json-down" data-click="ProjectTransfer.download" data-click-args='["JSON"]'>📥 JSON</button>
-              </div>
-            </div>
-            <div class="proj-box proj-box-amber">
-              <div class="proj-box-title">📤 올리기 — 새 프로젝트 추가 · 프로젝트 바꾸기</div>
-              <p>프로젝트 엑셀 · 프로젝트 백업 JSON · 모든 프로젝트 JSON 을 올려 <b>새 프로젝트로 추가</b>하거나, 고른 프로젝트를 파일 내용으로 바꿉니다. 같은 이름의 프로젝트가 이미 있으면 새 이름을 물어봅니다. 파일의 사용자는 그 프로젝트 참여자로 추가됩니다. (새 계정의 초기 비밀번호 1234)</p>
-              <div class="proj-box-btns">
-                <select id="ptUpTarget" style="min-width:240px;"></select>
-                <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
-                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 올리기 (엑셀 / JSON)</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="pm-hint" style="margin-top:12px;">📦 프로젝트를 파일로 내려받기 · 올리기(새 프로젝트 추가)는 [🔀 스마트 병합 &gt; 💾 백업 · 복원]에서 합니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 이동</button></div>
       </div>
 
       <div class="master-subpane active" data-group="config" data-subpane="screen">
@@ -3146,105 +3182,8 @@
       </div>
 
       <div class="master-subpane" data-group="config" data-subpane="backup">
-        <div style="display:flex; flex-direction:column; gap:16px;">
-        <div class="card" style=" border-left: 4px solid #dc2626;">
-          <div class="card-title">
-            <div>
-              <span>1. 시스템 전체 설정 및 Task 데이터 통합 백업 · 복원 · 초기화 센터</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
-                * 모든 시스템 환경설정, 프로젝트 기준정보, 사용자 목록 및 전체 Task 데이터를 한곳에서 백업·복원하거나 초기화합니다.
-              </span>
-            </div>
-            <span id="storageUsageText" style="font-size:var(--fs-xs, 11px); font-weight:bold; color:var(--primary);">계산 중...</span>
-          </div>
-
-          <div class="grid-2" style="gap: 14px; margin-bottom: 14px;">
-            <!-- 좌측: 통합 백업 및 복원 -->
-            <div style="padding: 12px; background: rgba(59, 130, 246, 0.04); border: 1px solid #bfdbfe; border-radius: 8px;">
-              <div style="font-weight: bold; font-size: calc(12.5px * var(--fs-scale, 1)); color: var(--primary); margin-bottom: 6px;">
-                💾 [통합 백업 및 복원] 모든 환경설정 + 기준정보 + 전체 Task 데이터 백업/복원
-              </div>
-              <p style="font-size: calc(11.5px * var(--fs-scale, 1)); color: var(--text-sub); margin-bottom: 10px; line-height: 1.5;">
-                시스템 설정(보안정책, DB설정), 기준정보(분야, SDLC, 서브시스템, 사용자, 공휴일, 표준산출물) 및 Task 데이터(WBS, 요구사항, 산출물, VOC)를 단일 통합 백업 파일(.json)로 보관하거나 복원합니다.
-              </p>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-primary btn-sm" style="padding: 8px 14px;" data-click="StorageManager.exportFullSystemBackup">
-                  📥 JSON 내려받기 (전체 백업)
-                </button>
-                <input type="file" id="fullSystemRestoreInput" style="display:none;" accept=".json" data-change="StorageManager.importFullSystemBackup" data-change-args='["$event"]'>
-                <button class="btn btn-success btn-sm" style="padding: 8px 14px;" data-click="UiH.clickEl" data-click-args='["fullSystemRestoreInput"]'>
-                  📤 JSON 올리기 (전체 백업 복원)
-                </button>
-                <button class="btn btn-secondary btn-sm" style="padding: 8px 12px;" data-click="StorageManager.saveAll" data-click-args='[true]'>
-                  💾 저장소 즉시 저장
-                </button>
-              </div>
-            </div>
-
-            <!-- 우측: 시스템 초기화 (2가지 명확한 모드) -->
-            <div style="padding: 12px; background: rgba(239, 68, 68, 0.04); border: 1px solid #fecaca; border-radius: 8px;">
-              <div style="font-weight: bold; font-size: calc(12.5px * var(--fs-scale, 1)); color: #dc2626; margin-bottom: 6px;">
-                🔄 [시스템 초기화] 초기 샘플데이터로 복원 vs 완전 초기화 (설정까지 모두 초기화)
-              </div>
-              <p style="font-size: calc(11.5px * var(--fs-scale, 1)); color: var(--text-sub); margin-bottom: 10px; line-height: 1.5;">
-                • <b>제조 샘플 복원:</b> 지금 프로젝트를 <b>[2027_제조_스마트공장_샘플_4레벨.xlsx]</b>와 같은 2027년 제조 분야 샘플(PMO 1 · 폭포수 표준형 2(MES · QMS) · 개선과제형 1(OEE), 레벨 4 WBS 126건, 요구사항 19 · VOC 8 · 산출물 17 · 회의 6 · 주간보고 10건)로 바꿉니다. 사용자 계정은 지우지 않고 샘플 담당자만 추가합니다.<br>
-                • <b>완전 초기화:</b> 모든 Task 데이터(0건)와 함께 프로젝트 설정·서브시스템·권한 설정까지 초기 빈 상태로 완전히 초기화합니다.
-              </p>
-              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-warning btn-sm" style="padding: 8px 14px; font-weight:bold;" data-click="StorageManager.resetToSampleData" title="2027 제조 분야 샘플 (Sample/2027_제조_스마트공장_샘플_4레벨.xlsx 와 같은 내용)">
-                  🔄 제조 샘플 복원
-                </button>
-                <button class="btn btn-danger btn-sm" style="padding: 8px 14px; font-weight:bold;" data-click="StorageManager.resetToFactoryBlank">
-                  ⚠️ 전체 초기화
-                </button>
-                <button class="btn btn-secondary btn-sm" style="padding: 8px 14px; font-weight:bold; border-color:#94a3b8;" data-click="RealtimeChatManager.clearAllChat" title="채팅 기록만 삭제하여 브라우저 및 서버 저장 용량 확보 (과업 데이터는 보존)">
-                  💬 채팅기록 전체 초기화
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- [v3.8.0] Task 정보 초기화 (기본정보 · 기준정보 유지) -->
-          <div class="proj-box proj-box-amber" style="margin-bottom:14px;">
-            <div class="proj-box-title">🧹 [Task 정보 초기화] 프로젝트 기본정보 · 기준정보는 유지하고 Task 정보만 지우기</div>
-            <p>지우는 것: WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의관리 · 공지 · 업무 소통(채팅 포함) — 유지: 프로젝트 기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) · 사용자 · 시스템 설정.
-               DB 서버 방식은 지우기 전 자료를 서버 <code>data/backups</code> 폴더에 저장하고 첨부파일은 휴지통으로 옮깁니다.</p>
-            <div class="proj-box-btns">
-              <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">대상 프로젝트:</label>
-              <select id="cfgClearTarget" style="min-width:240px;"></select>
-              <button class="btn btn-sm" data-btn="warn" data-click="ProjectData.clearFromConfig">🧹 Task 정보 초기화</button>
-            </div>
-          </div>
-          <!-- 하단: 자동/수동 백업 스냅샷 이력 및 시점 복원 테이블 -->
-          <div style="border-top: 1px solid var(--border-color); padding-top: 10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--text-main);">
-                🕒 자동/수동 생성 백업 스냅샷 이력 및 원클릭 시점 복원 (최근 12개 보관)
-              </span>
-              <button class="btn btn-secondary btn-sm" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["시스템설정수동백업", "ALL", true]'>
-                + 스냅샷 백업
-              </button>
-            </div>
-            <div class="table-container" style="max-height: 200px;">
-              <table id="backupHistoryTable">
-                <thead>
-                  <tr>
-                    <th style="width:155px;">백업 생성 일시</th>
-                    <th style="width:140px;">백업 구분</th>
-                    <th style="width:160px;">프로젝트</th>
-                    <th style="width:260px;">백업 파일명</th>
-                    <th>보존 설정 및 데이터 건수 요약</th>
-                    <th style="width:210px; text-align:center;">파일 다운로드 / 즉시 복원</th>
-                  </tr>
-                </thead>
-                <tbody id="backupHistoryTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        </div>
+        <div class="pm-hint">💾 백업 · 복원 · 초기화는 [🔀 스마트 병합 &gt; 💾 백업 · 복원]으로 옮겼습니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 백업 · 복원으로 이동</button></div>
       </div>
-
       <div class="master-subpane" data-group="config" data-subpane="channel">
         <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="card" style="border: 1.5px solid #0284c7;">
@@ -3468,6 +3407,22 @@
     </div>
   </div>
 
+  <!-- [v4.0.0] 같은 이름의 프로젝트가 있을 때 (백업 · 복원 > 파일 올리기) -->
+  <div class="modal-overlay" id="dupProjectModal">
+    <div class="modal" style="width:520px; max-width:94vw;">
+      <div class="card-title"><span>⚠️ 같은 이름의 프로젝트가 있습니다</span></div>
+      <p style="font-size:var(--fs-sm, 12px); margin:4px 0 10px;">올리는 파일의 프로젝트 <b id="dupProjectName"></b> 와(과) 이름이 같은 프로젝트가 이미 있습니다. 어떻게 할까요?</p>
+      <label class="ua-check"><input type="radio" name="dupAction" value="new" checked> <b>새 이름으로 추가</b></label>
+      <input type="text" id="dupNewName" maxlength="100" style="width:100%; margin:2px 0 8px;">
+      <label class="ua-check"><input type="radio" name="dupAction" value="overwrite"> <b>그 프로젝트에 덮어쓰기</b> — 기존 프로젝트의 자료를 파일 내용으로 바꿈 (이름 유지, 바꾸기 전 Task 정보는 서버 백업 / 복원 지점에 남김)</label>
+      <div id="dupErr" style="color:#dc2626; font-size:var(--fs-xs, 11px); min-height:1em;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
+        <button class="btn btn-secondary btn-sm" data-click="ProjectTransfer.dupDone" data-click-args='[false]'>건너뛰기</button>
+        <button class="btn btn-primary btn-sm" id="dupOkBtn" data-click="ProjectTransfer.dupDone" data-click-args='[true]'>확인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- [v3.7.0] 사용자 추가 · 편집 창 (시스템 설정 > 전체 사용자) -->
   <div class="modal-overlay" id="userAdminModal">
     <div class="modal" style="width: 720px; max-width: 94vw; max-height: 90vh; overflow-y: auto;">
@@ -3681,6 +3636,7 @@
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
   <script src="static/js/core/project-transfer.js"></script>
+  <script src="static/js/core/system-backup.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>

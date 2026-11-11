@@ -230,8 +230,8 @@ var Permission = {
     return (typeof AuthManager !== "undefined" && AuthManager.normalizeRole) ? AuthManager.normalizeRole(u.role) : "SYS_ADMIN";
   },
   isManager() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM"; },
-  // 전체 서브시스템 데이터 수정 가능 여부 (관리자·PM·총괄리더)
-  canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || r === "LEAD"; },
+  // 전체 서브시스템 데이터 수정 가능 여부 — 시스템관리자 · PM, 총괄리더는 담당이 ALL 일 때만 ([v4.0.0] 리더 · 사용자는 담당 서브시스템)
+  canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || (r === "LEAD" && this.ownSubsystem() === "ALL"); },
   ownSubsystem() { return String(this.user().subsystem || "ALL"); },
 
   canWriteSubsystem(sys) {

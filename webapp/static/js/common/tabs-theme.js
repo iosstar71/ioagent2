@@ -47,6 +47,9 @@ function activateTab(tabId) {
       break;
     case "tab-merge": {
       if (typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.syncAutoDownloadBox) BackupHistoryManager.syncAutoDownloadBox();
+      if (typeof BackupPane !== "undefined") BackupPane.syncTab();
+      { const cb = document.getElementById("consolidateBox"); if (cb) cb.style.display = SyncManager.isLocal() ? "" : "none"; }
+      SubTabs.restore("merge", "merge");
       const dSel = document.getElementById("workDataDomainSelect");
       if (dSel && (!dSel.options || dSel.options.length === 0)) updateAllSubsystemFilterDropdowns();
       onDomainFilterChanged("workDataDomainSelect", "workDataSubsysSelect");

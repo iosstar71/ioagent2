@@ -163,7 +163,7 @@ def can_write(user, key, part, row):
     if scope == "subsystem":
         return role in ALL_SUBSYSTEM_ROLES or own == "ALL" or own == str(part)
     if scope == "weekly":
-        if role in ALL_SUBSYSTEM_ROLES:
+        if role in ALL_SUBSYSTEM_ROLES or (role == "LEAD" and own == "ALL"):
             return True
         r = row or {}
         return r.get("scope") == "SYS" and (own == "ALL" or own == str(r.get("scopeValue", "")))

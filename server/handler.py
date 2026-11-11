@@ -26,7 +26,7 @@ from .settings import (
 from .common import AuthError, MANAGER_ROLES, SecurityError, now_str
 from .security import verify_pwd
 from .permission import can_access_project, effective_user, is_sys_admin, membership
-from . import file_api, project_reset, user_admin
+from . import backup, file_api, project_reset, snapshots, user_admin
 from .files import FileStore
 from .logger import write_server_log
 from .store import Store
@@ -122,6 +122,9 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             if path == "/api/files/download":
                 file_api.download(self)
                 return
+            if path == "/api/admin/backup/download":
+                backup.download(self)
+                return
             if path == "/api/chat/messages":
                 info = self._require_user()
                 channel = urllib.parse.parse_qs(parsed.query).get("channel", ["전체"])[0]
@@ -170,6 +173,9 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0) or 0)
         if urllib.parse.urlparse(self.path).path == "/api/files/upload":
             file_api.upload(self)  # 파일 내용 그대로 받는 요청 (JSON 아님, 크기 제한은 첨부파일 정책)
+            return
+        if urllib.parse.urlparse(self.path).path == "/api/admin/backup/upload":
+            backup.upload(self)  # 시스템 백업 zip 그대로 받는 요청
             return
         if length > MAX_BODY_BYTES:
             self._send_json(413, {"ok": False, "message": "요청 데이터 크기가 허용 한도(15MB)를 초과했습니다."})
@@ -410,6 +416,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         **file_api.ROUTES,
         **user_admin.ROUTES,
         **project_reset.ROUTES,
+        **backup.ROUTES,
+        **snapshots.ROUTES,
         "/api/projects/list": api_projects_list,
         "/api/projects/create": api_projects_create,
         "/api/projects/update": api_projects_update,

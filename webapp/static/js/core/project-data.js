@@ -108,8 +108,8 @@ var ProjectData = {
     });
   },
   goBackup() {
-    if (typeof GShell !== "undefined") GShell.go("tab-master"); else switchTab("tab-master");
-    MasterSubTabs.show("backup");
+    if (typeof GShell !== "undefined") GShell.go("tab-merge"); else switchTab("tab-merge");
+    SubTabs.show("merge", "backup");
   },
 
   // ---- Task 정보 초기화 (기본정보 · 기준정보 유지) ----
@@ -170,8 +170,10 @@ var ProjectData = {
     const sel = document.getElementById("cfgClearTarget");
     if (!sel) return;
     const keep = sel.value;
-    sel.innerHTML = this.projects().map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("") +
-      `<option value="__ALL__">모든 프로젝트 일괄</option>`;
+    // [v4.0.0] PM 은 지금 프로젝트만, 시스템관리자는 모든 프로젝트
+    const list = this.isAdmin() ? this.projects() : this.projects().filter(p => p.id === ProjectContext.current);
+    sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("") +
+      (this.isAdmin() ? `<option value="__ALL__">모든 프로젝트 일괄</option>` : "");
     sel.value = [...sel.options].some(o => o.value === keep) ? keep : ProjectContext.current;
   },
 
@@ -199,12 +201,7 @@ var ProjectData = {
     });
   },
 
-  renderMasterPane() {
-    document.querySelectorAll(".lbl-project-scope").forEach(el => { el.textContent = this.currentName(); });
-    const can = this.canManage();
-    document.querySelectorAll("#masterSub-backup [data-need-manager]").forEach(b => { b.disabled = !can; });
-    BackupHistoryManager.renderBackupHistoryTable();
-  }
+  renderMasterPane() { if (typeof BackupPane !== "undefined") BackupPane.render(); }
 };
 window.ProjectData = ProjectData;
 

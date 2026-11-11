@@ -100,6 +100,16 @@ const BackupHistoryManager = {
     }
 
     // [v3.9.1] 올리기 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 사용자가 켠 경우에만
+    // [v4.0.0] DB 서버 방식: PM · 시스템관리자의 복원 지점은 서버에도 보관 (다른 PC 에서도 복원)
+    if (this._serverMode()) {
+      const counts = {}; ["weeklyReportsData", "meetingsData", "noticesData", "communicationsData"].forEach(k => { counts[k] = (payload[k] || []).length; });
+      const meta = { id: snapEntry.id, filename, createdAt: displayTime, actionType, targetSubsystem, projectId: pid, projectName: pname,
+        wbsCount: snapEntry.wbsCount, delivCount: snapEntry.delivCount, reqCount: snapEntry.reqCount, vocCount: snapEntry.vocCount, counts };
+      ServerBackend.request("/api/snapshots/save", { projectId: pid, meta, payload }, "POST", 30000).then(res => {
+        if (!res.ok) showToast("⚠️ 복원 지점을 서버에 저장하지 못했습니다 (이 브라우저에는 저장됨): " + (res.message || ""));
+        this.renderBackupHistoryTable();
+      });
+    }
     const shouldDownload = triggerFileDownload && this.autoDownload();
     if (shouldDownload && typeof ExcelSync !== "undefined") {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
@@ -125,17 +135,40 @@ const BackupHistoryManager = {
 
   downloadSnapshotByIndex(idx) {
     const item = this.snapshots[idx];
-    if (!item || !item.payload) return;
+    if (item && item.payload) this._download(item);
+  },
+
+  _serverMode() {
+    return typeof SyncManager !== "undefined" && !SyncManager.isLocal() && typeof ProjectData !== "undefined" && ProjectData.canManage() && typeof ServerBackend !== "undefined" && !!ServerBackend.token;
+  },
+  async _serverItem(pid, id) {
+    const res = await ServerBackend.request("/api/snapshots/get", { projectId: pid, id }, "POST", 30000);
+    if (!res.ok) { showToast("⚠️ 복원 지점을 읽지 못했습니다: " + (res.message || "")); return null; }
+    return Object.assign({}, res.meta, { payload: res.payload });
+  },
+  async downloadServer(pid, id) {
+    const item = await this._serverItem(pid, id);
+    if (item) this._download(item);
+  },
+  async restoreServer(pid, id) {
+    const item = await this._serverItem(pid, id);
+    if (item) openConfirmDialog(`[${item.projectName || pid}] ${item.createdAt} 시점으로 되돌릴까요? 지금 상태는 복원 지점으로 먼저 남깁니다.`, () => {
+      this.createBackupSnapshot("시점복원직전백업", "ALL", false);
+      this._restore(item);
+    });
+  },
+  _download(item) {
     const blob = new Blob([JSON.stringify(item.payload, null, 2)], { type: "application/json;charset=utf-8" });
     ExcelSync._triggerDownload(blob, item.filename);
-    if (typeof showToast === "function") {
-      showToast(`[백업 JSON 내려받기] ${item.filename} (${item.createdAt}) 파일이 다운로드되었습니다.`);
-    }
+    showToast(`[백업 JSON 내려받기] ${item.filename} (${item.createdAt})`);
   },
 
   restoreSnapshotByIndex(idx) {
     const item = this.snapshots[idx];
     if (!item || !item.payload) return;
+    this._restore(item);
+  },
+  _restore(item) {
     if (item.projectId && typeof ProjectContext !== "undefined" && item.projectId !== ProjectContext.current) {
       showToast(`⚠️ [${item.projectName || item.projectId}] 프로젝트의 백업입니다. 그 프로젝트로 들어가서 복원하세요.`);
       return;
@@ -155,35 +188,46 @@ const BackupHistoryManager = {
     }
   },
 
-  // [v3.8.0] 시스템 설정: 모든 프로젝트의 스냅샷 / 기준정보 > 백업·초기화: 지금 프로젝트 스냅샷만
-  renderBackupHistoryTable() {
+  // [v4.0.0] 복원 지점 목록 — 시스템관리자: 모든 프로젝트 / PM: 지금 프로젝트 (DB 서버 방식은 서버에 보관된 목록)
+  async renderBackupHistoryTable() {
+    const tbody = document.getElementById("backupHistoryTableBody");
+    if (!tbody) return;
     const cur = typeof ProjectContext !== "undefined" ? ProjectContext.current : "DEFAULT";
-    [["backupHistoryTableBody", false], ["projectBackupHistoryBody", true]].forEach(([id, onlyCur]) => {
-      const tbody = document.getElementById(id);
-      if (!tbody) return;
-      const rows = (this.snapshots || []).map((s, idx) => ({ s, idx })).filter(({ s }) => !onlyCur || (s.projectId || "DEFAULT") === cur);
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 만든 백업 스냅샷이 없습니다. (엑셀 · JSON 올리기, 복원 · 초기화 직전에 자동으로 만들어지고, [+ 스냅샷 백업]으로 직접 만들 수 있습니다)</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = rows.map(({ s, idx }) => {
-        const other = s.projectId && s.projectId !== cur;
-        const n = k => (s.payload && Array.isArray(s.payload[k])) ? s.payload[k].length : null;
-        const extra = [["weeklyReportsData", "주간보고"], ["meetingsData", "회의"], ["noticesData", "공지"], ["communicationsData", "소통"]]
-          .filter(([k]) => n(k) !== null).map(([k, l]) => ` · ${l} ${n(k)}건`).join("");
-        return `<tr>
-          <td style="font-weight:bold; color:var(--primary);">${escapeHtml(s.createdAt)}</td>
-          <td><span class="status-badge-chip chip-progress">${escapeHtml(s.actionType)}</span></td>
-          <td><b>${escapeHtml(s.projectName || s.projectId || "(이전 버전)")}</b>${s.targetSubsystem && s.targetSubsystem !== "ALL" ? " · " + escapeHtml(s.targetSubsystem) : ""}</td>
-          <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(s.filename)}</td>
-          <td style="font-size:var(--fs-xs, 11px);">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건${extra}</td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="btn btn-primary btn-sm" data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">📥 JSON 내려받기</button>
-            <button class="btn btn-warning btn-sm" ${other ? "disabled title=\"다른 프로젝트의 백업입니다. 그 프로젝트에서 복원하세요.\"" : ""} data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">⏪ 이 시점으로 복원</button>
-          </td>
-        </tr>`;
-      }).join("");
-    });
+    const admin = typeof ProjectData !== "undefined" && ProjectData.isAdmin();
+    const where = document.getElementById("bkSnapWhere");
+    let rows;
+    if (this._serverMode()) {
+      const res = await ServerBackend.request("/api/snapshots/list", admin ? { all: true } : { projectId: cur });
+      rows = (res.ok ? res.snapshots : []).map(m => ({ s: m, server: true }));
+      if (where) where.textContent = `서버 보관 (data/snapshots, 프로젝트마다 최근 30개)${admin ? " · 모든 프로젝트" : " · 지금 프로젝트"}`;
+    } else {
+      rows = (this.snapshots || []).map((s, idx) => ({ s, idx })).filter(({ s }) => admin || (s.projectId || "DEFAULT") === cur);
+      if (where) where.textContent = `이 브라우저에 최근 12개${admin ? " · 모든 프로젝트" : " · 지금 프로젝트"}`;
+    }
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 만든 복원 지점이 없습니다. (올리기 · 복원 · 초기화 직전에 자동으로 만들어지고, [+ 지금 복원 지점 만들기]로 직접 만들 수 있습니다)</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(({ s, idx, server }) => {
+      const other = s.projectId && s.projectId !== cur;
+      const c = s.counts || {};
+      const n = k => server ? c[k] : ((s.payload && Array.isArray(s.payload[k])) ? s.payload[k].length : undefined);
+      const extra = [["weeklyReportsData", "주간보고"], ["meetingsData", "회의"], ["noticesData", "공지"], ["communicationsData", "소통"]]
+        .filter(([k]) => n(k) !== undefined && n(k) !== null).map(([k, l]) => ` · ${l} ${n(k)}건`).join("");
+      const dl = server ? `data-click="BackupHistoryManager.downloadServer" data-click-args="${UiEvents.args(s.projectId, s.id)}"` : `data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}"`;
+      const rs = server ? `data-click="BackupHistoryManager.restoreServer" data-click-args="${UiEvents.args(s.projectId, s.id)}"` : `data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}"`;
+      return `<tr>
+        <td style="font-weight:bold; color:var(--primary);">${escapeHtml(s.createdAt || "")}</td>
+        <td><span class="status-badge-chip chip-progress">${escapeHtml(s.actionType || "")}</span></td>
+        <td><b>${escapeHtml(s.projectName || s.projectId || "(이전 버전)")}</b>${s.targetSubsystem && s.targetSubsystem !== "ALL" ? " · " + escapeHtml(s.targetSubsystem) : ""}</td>
+        <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(s.filename || "")}</td>
+        <td style="font-size:var(--fs-xs, 11px);">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건${extra}</td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn btn-primary btn-sm" ${dl}>📥 JSON 내려받기</button>
+          <button class="btn btn-warning btn-sm" ${other ? "disabled title=\"다른 프로젝트의 복원 지점입니다. 그 프로젝트로 들어가서 복원하세요.\"" : ""} ${rs}>⏪ 이 시점으로 복원</button>
+        </td>
+      </tr>`;
+    }).join("");
   }
 };
 
