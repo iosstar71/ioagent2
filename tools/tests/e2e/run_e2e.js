@@ -302,14 +302,17 @@ async function localMain() {
   // 7) 협업 데이터 JSON 왕복
   await page.evaluate(() => activateTab("tab-merge")); await page.waitForTimeout(300);
   const dl0 = page.downloads.length;
-  await page.evaluate(() => { document.getElementById("workDataSubsysSelect").value = "ALL"; SmartMergeCenter.downloadCollabData("JSON"); });
+  await page.evaluate(() => { SubTabs.show("merge", "merge"); document.getElementById("workDataSubsysSelect").value = "ALL"; SmartMergeCenter.updateCountBadges();
+    document.querySelectorAll("#mtBody .mt-chk").forEach(c => { c.checked = ["notices", "comms"].includes(c.value); }); MergeTable.download("JSON"); });
   await page.waitForTimeout(1000);
   const d = page.downloads[dl0];
   const tmp = path.join(os.tmpdir(), `axpmys_collab_${Date.now()}.json`);
   await d.saveAs(tmp);
   const j = JSON.parse(fs.readFileSync(tmp, "utf8")); j.noticesData[0].title = "E2E-ROUNDTRIP"; fs.writeFileSync(tmp, JSON.stringify(j));
-  await page.setInputFiles("#collabJsonInput", tmp); await page.waitForTimeout(800);
-  check("Collaboration data (JSON) export -> import", await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP");
+  await page.setInputFiles("#mtUpInput", tmp); await page.waitForTimeout(800);
+  const pv = await page.evaluate(() => ({ shown: getComputedStyle(document.getElementById("mergePreviewModal")).display, rows: [...document.querySelectorAll("#mpBody tr")].map(tr => tr.innerText.replace(/\s+/g, " ")) }));
+  await page.click("#mpOkBtn"); await page.waitForTimeout(500);
+  check("v4.1: Smart merge list table — notices/posts JSON export -> upload shows the preview, [반영] applies", pv.shown === "flex" && pv.rows.length === 2 && await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP", JSON.stringify(pv));
   fs.unlinkSync(tmp);
 
   // 7-2) 여러 프로젝트 (로컬): 만들기 → 전환 → 데이터 분리 → 프로젝트별 역할 → 기본 프로젝트 복귀
@@ -708,7 +711,8 @@ async function localMain() {
     const before = reqMasterData.filter(r => r.system === "W1").length, others = reqMasterData.filter(r => r.system !== "W1").length;
     await DataIO.upload("req", new File([blob], "req.xlsx"));
     await new Promise(r => setTimeout(r, 200));
-    document.getElementById("confirmDialogOkBtn").click(); await new Promise(r => setTimeout(r, 400));
+    out.preview = [...document.querySelectorAll("#mpBody tr")].map(tr => tr.innerText.replace(/\s+/g, " ")).join("|");
+    document.getElementById("mpOkBtn").click(); await new Promise(r => setTimeout(r, 400));
     out.up = { before, after: reqMasterData.filter(r => r.system === "W1").length, others, othersAfter: reqMasterData.filter(r => r.system !== "W1").length };
     document.getElementById("reqSubsystemFilter").value = "ALL"; renderReqMasterTable();
     out.oldWords = /엑셀 다운로드|엑셀 업로드/.test(document.body.innerText);
@@ -788,9 +792,15 @@ async function localMain() {
     rows: document.querySelectorAll("#backupHistoryTableBody tr").length, other: BackupHistoryManager.snapshots.filter(s => s.projectId === "P001").length }));
   const backupBlob = await page.evaluate(async () => { const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
     ProjectData.exportProject(); ExcelSync._triggerDownload = o; return got ? { name: got.name, text: await got.blob.text() } : null; });
-  await page.selectOption("#cfgClearTarget", "DEFAULT");
-  await page.click('#mergeBackupPane [data-click="ProjectData.clearFromConfig"]'); await page.waitForTimeout(300);
-  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(900);
+  const bkNoReset = await page.evaluate(() => !document.querySelector('#mergeBackupPane [data-click="ProjectData.clearFromConfig"], #mergeBackupPane #cfgClearTarget') && !!document.getElementById("bkAutoStatus"));
+  await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await page.waitForTimeout(700);
+  await page.selectOption("#cfgClearTarget", "DEFAULT"); await page.waitForTimeout(200);
+  await page.click('#daActions [data-click="DataAdmin.run"][data-click-args*="tasks"]'); await page.waitForTimeout(300);
+  const daOk0 = await page.evaluate(() => document.getElementById("daConfirmOk").disabled);
+  await page.fill("#daConfirmInput", await page.evaluate(() => document.getElementById("daConfirmExpect").textContent));
+  await page.click("#daConfirmOk"); await page.waitForTimeout(900);
+  check("v4.1: reset moved to System settings > Data management (typed project-name confirmation); Backup · Restore keeps only an auto-backup status line", bkNoReset && daOk0);
+  await page.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await page.waitForTimeout(600);
   const cleared = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, del: deliverablesData.length, mtg: meetingsData.length, notice: noticesData.length, comm: communicationsData.length,
     wr: weeklyReportsData.length, voc: vocData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, std: standardDeliverablesMeta.length }));
   check("v3.8: Task reset of this project (Master > Backup): WBS · REQ · deliverables · weekly · VOC · meetings · notices · posts cleared; basic and master data kept",
@@ -826,12 +836,44 @@ async function localMain() {
   await page.evaluate(() => { GShell.go("tab-merge"); SmartMergeCenter.refreshMergeUiPermissions(); }); await page.waitForTimeout(500);
   const sm39 = await page.evaluate(() => { document.getElementById("workDataSubsysSelect").value = "W1"; SmartMergeCenter.updateCountBadges();
     const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
-    SmartMergeCenter.toggleWorkCheckboxes(true); SmartMergeCenter.downloadSelectedWorkData("JSON"); ExcelSync._triggerDownload = o;
+    SubTabs.show("merge", "merge"); MergeTable.selectUnit("sys"); MergeTable.download("JSON"); ExcelSync._triggerDownload = o;
     return got.blob.text().then(t => { const j = JSON.parse(t); return { keys: Object.keys(j).filter(k => /Data$/.test(k)), wr: (j.weeklyReportsData || []).every(r => r.scope === "SYS" && r.scopeValue === "W1"),
       mt: (j.meetingsData || []).every(m => m.system === "W1" || m.system === "ALL"), mtN: (j.meetingsData || []).length, badge: document.getElementById("cntBadge_meetings").textContent,
       collabBoxes: ["weekly", "meetings"].filter(k => document.getElementById("chkCollab_" + k)).length }; }); });
   check("v3.9: Smart merge per-subsystem download includes weekly reports and meeting minutes of that subsystem only",
     ["wbsData", "reqMasterData", "deliverablesData", "vocData", "weeklyReportsData", "meetingsData"].every(k => sm39.keys.includes(k)) && sm39.wr && sm39.mt && sm39.mtN > 0 && sm39.badge === String(sm39.mtN) && sm39.collabBoxes === 0, JSON.stringify(sm39));
+  // [v4.1.0] 공통 미리 보기: 범위 밖 행은 제외, [취소]는 아무것도 바꾸지 않음
+  const mp41 = await page.evaluate(async () => {
+    document.getElementById("workDataSubsysSelect").value = "ALL"; SmartMergeCenter.updateCountBadges(); MergeTable.selectUnit("sys");
+    const o = ExcelSync._triggerDownload; let blob = null; ExcelSync._triggerDownload = b => { blob = b; }; MergeTable.download("EXCEL"); ExcelSync._triggerDownload = o;
+    const before = wbsData.length;
+    await MergeTable.previewFile(new File([blob], "all.xlsx"), { scope: "W1" });
+    const row = [...document.querySelectorAll("#mpBody tr")].find(tr => tr.innerText.includes("WBS"));
+    const cells = [...row.children].map(td => td.innerText.trim());
+    MergeTable.close();
+    return { before, after: wbsData.length, file: +cells[2], apply: +cells[3], ign: parseInt(cells[4], 10), w1: wbsData.filter(t => t.system === "W1").length,
+      closed: getComputedStyle(document.getElementById("mergePreviewModal")).display, lockPrj: MergeTable.canUpload("users", "W1").ok };
+  });
+  check("v4.1: upload preview — rows outside the chosen subsystem are listed as excluded, [취소] changes nothing",
+    mp41.file === mp41.before && mp41.apply === mp41.w1 && mp41.ign === mp41.file - mp41.w1 && mp41.after === mp41.before && mp41.closed === "none" && mp41.lockPrj, JSON.stringify(mp41));
+  // [v4.1.0] 데이터 관리: 다른 프로젝트(지금 프로젝트 아님)를 제조 샘플로 → 전체 초기화 (로컬)
+  const da41 = await page.evaluate(async () => {
+    GShell.go("tab-config"); SubTabs.show("config", "data"); await new Promise(r => setTimeout(r, 500));
+    document.getElementById("cfgClearTarget").value = "P001"; DataAdmin.renderActions();
+    const factoryLocked = !document.querySelector('#daActions [data-click-args*="factory"]');
+    const name = DataAdmin.target().name;
+    DataAdmin.run("sample"); document.getElementById("daConfirmInput").value = name; DataAdmin.closeAsk(true);
+    await new Promise(r => setTimeout(r, 800));
+    const s1 = LocalBackend._read("P001");
+    const a = { wbs: s1.wbsData.length, subs: s1.subsystemsMeta.length, name: s1.projectConfig.projectName };
+    DataAdmin.run("project"); document.getElementById("daConfirmInput").value = name; DataAdmin.closeAsk(true);
+    await new Promise(r => setTimeout(r, 800));
+    const s2 = LocalBackend._read("P001");
+    return { name, factoryLocked, a, b: { wbs: s2.wbsData.length, subs: s2.subsystemsMeta.length, name: s2.projectConfig.projectName }, cur: ProjectContext.current, curWbs: wbsData.length,
+      snap: BackupHistoryManager.snapshots.filter(x => x.projectId === "P001").length };
+  });
+  check("v4.1: Data management resets another project (sample restore → full reset) without touching the current one; factory reset only for the current project",
+    da41.factoryLocked && da41.a.wbs === 126 && da41.a.subs === 4 && da41.a.name === da41.name && da41.b.wbs === 0 && da41.b.subs === 0 && da41.b.name === da41.name && da41.cur === "DEFAULT" && da41.curWbs > 0 && da41.snap >= 2, JSON.stringify(da41));
   // [v3.9.0] 2027 제조 샘플 엑셀(전체 일괄)을 빈 프로젝트에 올리기
   await page.evaluate(() => ProjectManager.switchTo("P001")); await page.waitForTimeout(1200); await waitApp(page, "P001");
   const xb64 = fs.readFileSync(path.join(ROOT, "Sample", "2027_제조_스마트공장_샘플_4레벨.xlsx")).toString("base64");
@@ -1015,15 +1057,29 @@ async function serverScenarios() {
     check("Attachment on meeting minutes: file listed, badge shown, minutes draft not marked as changed", mt.rows === 1 && mt.title.includes("[회의]") && mt.badge === "1" && !mt.dirty, JSON.stringify(mt));
 
     // [v3.8.0] 시스템 설정 > 백업·복원·초기화: 고른 프로젝트의 Task 정보만 초기화 (서버)
-    await a.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await a.waitForTimeout(900);
+    await a.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await a.waitForTimeout(900);
     const tgt = await a.evaluate(() => [...document.querySelectorAll("#cfgClearTarget option")].map(o => o.value));
-    await a.selectOption("#cfgClearTarget", "P001");
-    await a.click('[data-click="ProjectData.clearFromConfig"]'); await a.waitForTimeout(300);
-    await a.click("#confirmDialogOkBtn"); await a.waitForTimeout(1500);
+    await a.selectOption("#cfgClearTarget", "P001"); await a.waitForTimeout(200);
+    await a.click('#daActions [data-click="DataAdmin.run"][data-click-args*="tasks"]'); await a.waitForTimeout(300);
+    await a.fill("#daConfirmInput", await a.evaluate(() => document.getElementById("daConfirmExpect").textContent));
+    await a.click("#daConfirmOk"); await a.waitForTimeout(1500);
     const clr = await a.evaluate(async () => { const p1 = await ServerBackend.request("/api/db/load", { keys: ["wbsData", "subsystemsMeta", "projectConfig"], projectId: "P001" });
       return { p1wbs: (p1.data.wbsData || []).length, p1cfg: !!(p1.data.projectConfig || {}).projectName, cur: ProjectContext.current, curWbs: wbsData.length }; });
     check("v3.8 server: System settings Task reset of a chosen project clears only its tasks (project info kept, current project untouched)",
       tgt.includes("P001") && tgt.includes("__ALL__") && clr.p1wbs === 0 && clr.p1cfg && clr.cur === "DEFAULT" && clr.curWbs > 0, JSON.stringify({ tgt, clr }));
+
+    // [v4.1.0] 데이터 관리 (서버): 다른 프로젝트를 제조 샘플로 → 전체 초기화 — 바꿀 때 파일에 없는 기존 서브시스템도 지움
+    const da41s = await a.evaluate(async () => {
+      document.getElementById("cfgClearTarget").value = "P001"; DataAdmin.renderActions();
+      const name = DataAdmin.target().name;
+      const load = async () => { const r = await ServerBackend.request("/api/db/load", { keys: ["wbsData", "subsystemsMeta", "projectConfig"], projectId: "P001" }); return { wbs: (r.data.wbsData || []).length, subs: (r.data.subsystemsMeta || []).length, name: (r.data.projectConfig || {}).projectName }; };
+      await DataAdmin._do("sample", DataAdmin.target()); const s1 = await load();
+      await DataAdmin._do("project", DataAdmin.target()); const s2 = await load();
+      const chat = await ServerBackend.request("/api/chat/clear", { projectId: "P001" });
+      return { name, s1, s2, chat: chat.ok, cur: ProjectContext.current };
+    });
+    check("v4.1 server: Data management sample restore → full reset of another project (old subsystems removed, name kept, chat clear by project)",
+      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT", JSON.stringify(da41s));
 
     // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
     await a.evaluate(async () => {
@@ -1069,10 +1125,10 @@ async function serverScenarios() {
     // PM: 같은 화면, 지금 프로젝트만 · 시스템 전체 부분 비활성
     const pmv = await b.evaluate(async () => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); await new Promise(r => setTimeout(r, 900));
       return { tab: getComputedStyle(document.getElementById("mergeBackupTabBtn")).display, down: [...document.querySelectorAll("#ptDownTarget option")].map(o => o.value), up: [...document.querySelectorAll("#ptUpTarget option")].map(o => o.value),
-        clear: [...document.querySelectorAll("#cfgClearTarget option")].map(o => o.value), locked: [...document.querySelectorAll("#mergeBackupPane .bk-locked")].length,
-        createDisabled: document.querySelector('[data-click="SystemBackup.create"]').disabled, factoryDisabled: document.querySelector('[data-click="StorageManager.resetToFactoryBlank"]').disabled }; });
-    check("v4.0 server: PM sees Backup · Restore for the current project only; system-wide parts are disabled", pmv.tab !== "none" && pmv.down.join() === "DEFAULT" && pmv.up.join() === "DEFAULT" && pmv.clear.join() === "DEFAULT"
-      && pmv.locked >= 2 && pmv.createDisabled && pmv.factoryDisabled, JSON.stringify(pmv));
+        noReset: !document.querySelector('#mergeBackupPane [data-click*="reset"], #mergeBackupPane [data-click*="clear"]'), locked: [...document.querySelectorAll("#mergeBackupPane .bk-locked")].length,
+        createDisabled: document.querySelector('[data-click="SystemBackup.create"]').disabled, denied: (ProjectData.clearTasks(["DEFAULT"]), getComputedStyle(document.getElementById("confirmDialogModal")).display === "none") }; });
+    check("v4.0 server: PM sees Backup · Restore for the current project only; system-wide parts are disabled", pmv.tab !== "none" && pmv.down.join() === "DEFAULT" && pmv.up.join() === "DEFAULT" && pmv.noReset
+      && pmv.locked >= 1 && pmv.createDisabled && pmv.denied, JSON.stringify(pmv));
     check("v3.9.2 server: download a project (Excel) / all projects (JSON), and upload a file as a new project (duplicate name renamed)",
       pt.files.length === 2 && pt.bundleN >= 2 && pt.bundleSchema === "IOSTAR_PROJECTS_BUNDLE_v1" && !!pt.pid && pt.wbs === pt.cur && pt.mtg > 0 && pt.subs > 0 && pt.name === "서버 복사 프로젝트" && pt.members > 0 && pt.curPid === "DEFAULT", JSON.stringify(pt));
 

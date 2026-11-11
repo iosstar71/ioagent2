@@ -117,12 +117,12 @@ var SubTabs = {
     if (group === "merge" && name === "backup" && typeof BackupPane !== "undefined") BackupPane.render();
     if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
     if (group === "config" && name === "process" && typeof ProcessLib !== "undefined") ProcessLib.renderAdmin();
+    if (group === "config" && name === "data" && typeof DataAdmin !== "undefined") DataAdmin.render();
     if (group === "master" && name === "phase") {
       document.querySelectorAll('#masterSub-phase [data-admin-only]').forEach(b => { b.style.display = typeof ProcessLib !== "undefined" && ProcessLib.isAdmin() ? "" : "none"; });
       if (typeof renderCustomSdlcCards === "function") renderCustomSdlcCards();
       if (typeof ReqPhaseManager !== "undefined") ReqPhaseManager.renderTable();
     }
-    if (group === "config" && name === "backup" && typeof ProjectData !== "undefined") { ProjectData.renderConfigTarget(); BackupHistoryManager.renderBackupHistoryTable(); }
   },
   restore(group, def) {
     let name = def;

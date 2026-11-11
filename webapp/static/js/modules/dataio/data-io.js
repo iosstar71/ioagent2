@@ -7,7 +7,7 @@
 //   - 올리기  : 같은 양식의 엑셀(.xlsx · .xls · .csv)을 그 화면의 조회 범위에 반영
 //               서브시스템을 고른 상태 → 그 서브시스템 행만 교체 (다른 서브시스템은 그대로)
 //               [전체]를 고른 상태 → 전체 교체 (시스템관리자 · PM, 담당이 ALL 인 총괄리더)
-//               반영 전에 건수 · 범위를 확인하고, 자동 백업을 만든 뒤 반영
+//               [v4.1.0] 스마트 병합과 같은 미리 보기 창에서 건수 · 범위를 확인하고, 복원 지점을 만든 뒤 반영
 //   - 버튼 문구 · 색: 📥 엑셀 내려받기 / 📤 엑셀 올리기 (data-btn="excel-down" / "excel-up")
 // =============================================================================
 var DataIO = {
@@ -61,42 +61,10 @@ var DataIO = {
     input.click();
   },
 
+  // [v4.1.0] 스마트 병합과 같은 올리기 미리 보기 창 (파일 행 · 반영 · 제외 · 방법 → [반영] / [취소])
   async upload(kind, file) {
     const d = this.KINDS[kind];
-    const scope = this.scope(kind);
-    let rows = [];
-    try {
-      const sheets = await ExcelSync._parseUploadedFile(file);
-      rows = SmartMergeCenter._extractRowsFromSheets(sheets, kind);
-    } catch (e) {
-      showToast(`⚠️ [${d.label}] 엑셀 파일을 읽지 못했습니다: ${e.message}`);
-      return;
-    }
-    const inScope = scope === "ALL" ? rows : rows.filter(r => String(r.system || "").trim() === scope);
-    if (!inScope.length) {
-      showToast(scope === "ALL"
-        ? `⚠️ [${d.label}] 파일에서 올릴 데이터 행을 찾지 못했습니다. [📥 엑셀 내려받기]로 받은 양식을 쓰세요.`
-        : `⚠️ [${d.label}] 파일에 ${scope} 서브시스템 행이 없습니다. (전체 ${rows.length}행)`);
-      return;
-    }
-    const skipped = rows.length - inScope.length;
-    const msg = scope === "ALL"
-      ? `[${d.label}] 엑셀 ${inScope.length}행으로 전체 ${d.label} 데이터를 교체합니다. 반영 전에 자동 백업을 만듭니다. 계속할까요?`
-      : `[${d.label}] ${scope} 서브시스템 데이터를 엑셀 ${inScope.length}행으로 교체합니다.${skipped ? ` (다른 서브시스템 ${skipped}행은 무시)` : ""} 다른 서브시스템은 그대로이며, 반영 전에 자동 백업을 만듭니다. 계속할까요?`;
-    openConfirmDialog(msg, () => {
-      try {
-        const backup = BackupHistoryManager.createBackupSnapshot(`엑셀올리기(${d.label}:${scope})`, scope, true);
-        const fileKeys = kind === "deliverables" && typeof AttachManager !== "undefined" ? AttachManager.rememberKeys() : null;
-        SmartMergeCenter._mergeWorkArrayData(kind, inScope, scope);
-        if (fileKeys) AttachManager.reapplyKeys(fileKeys);  // 첨부파일 연결 유지
-        ExcelSync._ensureWbsAndSubsystemsIntegrity();
-        if (typeof syncSubsystemWeights === "function") syncSubsystemWeights();
-        rebuildAll(true);
-        showToast(`✅ [${d.label}] 엑셀 ${inScope.length}행을 ${scope === "ALL" ? "전체" : scope} 범위에 반영했습니다. (자동 백업: ${backup})`);
-      } catch (e) {
-        showToast(`⚠️ [${d.label}] 엑셀 올리기 오류: ${e.message}`);
-      }
-    });
+    await MergeTable.previewFile(file, { keys: [kind], scope: this.scope(kind), title: `📤 ${d.label} 엑셀 올리기` });
   }
 };
 window.DataIO = DataIO;

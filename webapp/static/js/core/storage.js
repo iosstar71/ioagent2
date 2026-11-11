@@ -151,7 +151,12 @@ var StorageManager = {
   resetToSampleData() {
     openConfirmDialog(
       "🔄 [2027 제조 샘플 복원]\n지금 프로젝트의 자료를 '2027 스마트공장 제조혁신 (샘플)'로 바꿉니다.\n· PMO 1 · 폭포수 표준형 2(MES · QMS) · 개선과제형 1(OEE), 레벨 4 WBS 126건\n· 요구사항 · VOC · 산출물 · 회의록 · 주간보고 · 공지 · 소통 포함\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?",
-      () => {
+      () => this._applySample()
+    );
+  },
+  // [v4.1.0] 확인 없이 바로 (시스템 설정 > 데이터 관리에서 이름 입력 확인 뒤 부름)
+  _applySample() {
+      {
         BackupHistoryManager.createBackupSnapshot("제조샘플복원직전백업", "ALL", false);
         const c = DataRegistry.clone(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT);
         DataRegistry.apply(c, ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "wbsData", "deliverablesData", "reqMasterData", "vocData",
@@ -166,7 +171,6 @@ var StorageManager = {
         DataRegistry.set("projectUsers", users);
         this._afterBulkReplace("✅ [2027 제조 샘플 복원 완료] PMO · MES · QMS(폭포수) · OEE(개선과제) 샘플로 바꿨습니다. (같은 내용의 엑셀: Sample/2027_제조_스마트공장_샘플_4레벨.xlsx)");
       }
-    );
   },
 
   resetToRate2027Data() {
@@ -183,7 +187,11 @@ var StorageManager = {
   resetToFactoryBlank() {
     openConfirmDialog(
       "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (사용자는 admin / pm 2개 계정, 비밀번호 1234로 초기화)",
-      () => {
+      () => this._factoryBlank()
+    );
+  },
+  _factoryBlank() {
+      {
         BackupHistoryManager.createBackupSnapshot("완전초기화직전백업", "ALL", false);
         const curYear = new Date().getFullYear();
         projectConfig = {
@@ -228,7 +236,6 @@ var StorageManager = {
         DataRegistry.set("theme", defaultTheme());
         this._afterBulkReplace("✅ [완전 초기화 완료] 모든 설정, 기준정보 및 업무 데이터가 초기 상태로 초기화되었습니다.");
       }
-    );
   }
 };
 

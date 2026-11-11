@@ -289,10 +289,13 @@ var ProjectTransfer = {
         const r = await ServerBackend.request("/api/projects/clear-tasks", { ids: [pid] }, "POST", 60000);
         if (!r.ok) throw new Error(r.message || "기존 자료를 비우지 못했습니다.");
       }
+      // [v4.1.0] 바꾸기(replace): 파일에 없는 기존 행(서브시스템 · 표준 산출물 등)은 지움
+      const prev = replace ? (await this.load(pid)).data : {};
       const changes = {};
       this.keys().forEach(k => {
         if (data[k] === undefined) return;
         const parts = {};
+        if (replace && prev[k] !== undefined) Partition.split(k, prev[k]).forEach((v, p) => { parts[p] = null; });
         Partition.split(k, data[k]).forEach((v, p) => { parts[p] = v; });
         changes[k] = { parts, base: {} };
       });

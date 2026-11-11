@@ -3129,3 +3129,24 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 .bk-auto { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; border: 1px dashed var(--border-color, #cbd5e1); border-radius: 8px; font-size: var(--fs-sm, 12px); }
 .bk-locked { position: relative; opacity: 0.55; }
 .bk-sec.bk-locked::after { content: "🔒 시스템관리자 전용"; position: absolute; top: 10px; right: 14px; font-size: var(--fs-xs, 11px); font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 8px; border-radius: 10px; }
+
+/* [v4.1.0] 스마트 병합 목록표 · 올리기 미리 보기 · 데이터 관리 */
+.mt-card { padding: 14px 16px; }
+.mt-scope { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; margin-bottom: 10px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 8px; background: rgba(59,130,246,0.05); }
+.mt-scope select { padding: 6px 10px; font-weight: 700; }
+.mt-step { display: inline-block; padding: 2px 9px; border-radius: 10px; background: var(--primary, #2563eb); color: #fff; font-size: var(--fs-xs, 11px); font-weight: 800; }
+.mt-hint { font-size: var(--fs-xs, 11px); color: var(--text-sub, #64748b); }
+.mt-auto { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-sm, 12px); font-weight: 700; color: var(--primary, #2563eb); cursor: pointer; }
+.mt-table td { vertical-align: middle; }
+.mt-table tr.mt-group td { background: rgba(100,116,139,0.10); font-weight: 800; font-size: var(--fs-sm, 12px); }
+.mt-desc { font-size: var(--fs-xs, 11px); color: var(--text-sub, #64748b); font-weight: normal; }
+.mt-ok { color: #059669; font-weight: 700; font-size: var(--fs-sm, 12px); }
+.mt-lock { color: #b45309; font-weight: 700; font-size: var(--fs-xs, 11px); }
+.mt-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 8px; background: rgba(0,0,0,0.02); }
+.mt-btns, .mt-quick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mt-pkg-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.mp-off { opacity: 0.55; }
+.mp-ign { color: #b45309; font-weight: 800; }
+.mp-apply { color: #059669; }
+.da-target { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.da-expect { font-weight: 800; color: #dc2626; }

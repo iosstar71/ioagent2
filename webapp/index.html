@@ -1622,278 +1622,82 @@
     <div id="tab-merge" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🔀 데이터 가져오기·내보내기</span>
-          <span class="neo-ph-desc">엑셀 / JSON 파일로 데이터를 내려받거나, 파일을 올려 현재 데이터에 합치기</span>
-          <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress">🔑 다운로드: 모든 사용자 | 업무 데이터 전체(ALL) 업로드: 관리자·PM (총괄리더는 담당이 ALL 일 때) | 기준정보 업로드: 관리자·PM</span>
+          <span class="sub-title">🔀 스마트 병합</span>
+          <span class="neo-ph-desc">엑셀 일괄 작업 · 여러 사람 자료 합치기 (자료 내려받기 · 올리기) / 비상 대비 백업 · 복원</span>
+          <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <label style="display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm, 12px); font-weight:bold; color:var(--primary); cursor:pointer; background:rgba(59,130,246,0.08); padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe;">
-            <input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'>
-            💾 올리기 전 자동 백업을 JSON 파일로도 내려받기 (끄면 브라우저 스냅샷만)
-          </label>
         </div>
       </div>
 
       <!-- [v4.0.0] 서브 탭: 스마트 병합(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 시스템관리자 · PM) -->
       <div class="master-subtab-bar" data-group="merge">
-        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>🔀 스마트 병합</button>
+        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 내려받기·올리기</button>
         <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
-      <!-- [위젯 1: 가장 많이 사용하는 실무 Task 데이터 다중선택 스마트 병합] -->
-      <div class="config-group-banner" style="background: linear-gradient(90deg, #0f766e, #0d9488);">
-        <span>📊 ① 서브시스템별 업무 데이터 (WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록)</span>
-        <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.95;">서브시스템을 고르고 항목을 체크한 뒤 내려받거나 올립니다. 올린 파일은 선택한 서브시스템 범위만 현재 데이터에 합쳐집니다. (전체(ALL) 올리기: 관리자·PM·총괄리더)</span>
-      </div>
-
-      <div class="card" style="border-left: 4px solid #0d9488; margin-bottom: 16px;">
-        <!-- Step 1: 대상 서브시스템 범위 지정 -->
-        <div style="padding: 12px 14px; background: rgba(16,185,129,0.05); border: 1px solid #86efac; border-radius: 8px; margin-bottom: 14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <span class="badge" style="background:#0f766e; color:#fff; font-weight:bold;">STEP 1</span>
-              <span style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">대상 범위 선택 (분야 → 서브시스템):</span>
-              <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]' style="padding:6px 10px; font-weight:bold;"></select>
-              <select id="workDataSubsysSelect" class="merge-scope-select" style="padding:6px 12px; font-weight:bold; min-width:240px;"></select>
+        <!-- [v4.1.0] 📋 자료 내려받기·올리기 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
+        <div class="card mt-card">
+          <div class="mt-scope">
+            <span class="mt-step">1 범위</span>
+            <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]'></select>
+            <select id="workDataSubsysSelect" class="merge-scope-select" style="min-width:240px;"></select>
+            <span class="mt-hint">서브시스템 단위 자료는 이 범위만 내려받고, 올릴 때도 이 범위만 합칩니다.</span>
+            <label class="mt-auto"><input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'> 💾 올리기 전 백업 파일도 받기</label>
+          </div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table mt-table">
+              <thead><tr>
+                <th style="width:44px; text-align:center;"><input type="checkbox" id="mtAll" title="전체 선택 / 해제" data-change="MergeTable.toggleAll" data-change-args='["$checked"]'></th>
+                <th>자료</th><th style="width:150px;">범위</th><th style="width:80px; text-align:right;">건수</th><th style="width:300px;">올리기 권한</th>
+              </tr></thead>
+              <tbody id="mtBody"></tbody>
+            </table>
+          </div>
+          <div class="mt-actions">
+            <div class="mt-btns">
+              <span class="mt-step">2 체크한 자료</span>
+              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 내려받기</button>
+              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 내려받기</button>
+              <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick">📤 파일 올리기 → 미리 보기</button>
             </div>
-            <div id="workDataPermissionHint" style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#0f766e; font-weight:600;">
-              * 여러 서브시스템이 들어 있는 파일을 올려도 선택한 서브시스템 데이터만 골라서 합칩니다. 주간보고는 그 서브시스템 보고서만, 회의록은 그 서브시스템 회의(+ 통합 회의)만. ([전체(ALL)] 올리기는 시스템관리자 · PM, 담당이 ALL 인 총괄리더)
+            <div class="mt-quick">
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["sys"]'>서브시스템 단위만</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["prj"]'>프로젝트 단위만</button>
+            </div>
+          </div>
+          <div class="pm-hint" style="margin:8px 0 0;">올린 파일은 바로 반영하지 않고 <b>미리 보기</b>에서 자료마다 파일 행 · 반영할 행 · 제외할 행(범위 밖 · 권한 없음)을 보여 줍니다. [반영]을 누르면 복원 지점을 먼저 만듭니다. 각 업무 화면의 📤 엑셀 올리기도 같은 미리 보기를 씁니다.</div>
+        </div>
+
+        <!-- 종합본: 프로젝트 전체 한 파일 (모든 사용자 내려받기 · 로컬 저장소 방식은 가져오기) -->
+        <div class="card mt-card mt-pkg">
+          <div class="mt-pkg-row">
+            <div><b>📦 종합본</b> — 기준정보 · 업무 · 사용자 · 협업 자료 전체를 한 파일로 <span class="mt-desc">(프로젝트 복원 · 새 프로젝트 추가는 💾 백업 · 복원)</span></div>
+            <div class="mt-btns">
+              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>📥 엑셀 (전체)</button>
+              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>📥 JSON (전체)</button>
+              <span id="consolidateBox" style="display:none;">
+                <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
+                <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]' title="로컬 저장소 방식: PM 이 나눠 준 종합본을 내 브라우저에 반영 (내 담당 서브시스템 자료는 그대로)">📥 종합본 가져오기</button>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Task 데이터 다중선택 체크박스 그리드 -->
-        <div style="margin-bottom: 14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="badge" style="background:#0d9488; color:#fff; font-weight:bold;">STEP 2</span>
-              <span style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:var(--text-main);">내려받거나 올릴 항목 선택 (여러 개 선택 가능):</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              <button type="button" class="btn btn-secondary btn-sm" data-click="SmartMergeCenter.toggleWorkCheckboxes" data-click-args='[true]'>✅ 전체 선택</button>
-              <button type="button" class="btn btn-secondary btn-sm" data-click="SmartMergeCenter.toggleWorkCheckboxes" data-click-args='[false]'>⬜ 선택 해제</button>
-            </div>
-          </div>
-
-          <div class="grid-3" style="gap: 10px;">
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(13,148,136,0.04); border:1.5px solid #99f6e4; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_wbs" value="wbs" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">📋 1. WBS 공정표</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">계층 공정, 가중치, 계획/실적 일정 및 진척률 (<b id="cntBadge_wbs">0</b>건)</div>
-              </div>
-            </label>
-
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(13,148,136,0.04); border:1.5px solid #99f6e4; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_req" value="req" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">📌 2. 요구사항(REQ)</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">과제·추가 요구사항, 유형(기능/비기능 등), 상태 (<b id="cntBadge_req">0</b>건)</div>
-              </div>
-            </label>
-
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(13,148,136,0.04); border:1.5px solid #99f6e4; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_deliverables" value="deliverables" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">📑 3. 산출물 목록</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">1~4회차 단계별 산출물 계획/실적 및 검수 상태 (<b id="cntBadge_deliverables">0</b>건)</div>
-              </div>
-            </label>
-
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(13,148,136,0.04); border:1.5px solid #99f6e4; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_voc" value="voc" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">📣 4. 추가 VOC / 이슈</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">현업 추가 요청사항, 우선순위, 목표일 및 조치내역 (<b id="cntBadge_voc">0</b>건)</div>
-              </div>
-            </label>
-
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(124,58,237,0.04); border:1.5px solid #ddd6fe; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_weekly" value="weekly" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#6d28d9;">📝 5. 주간보고</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">서브시스템 주간보고 (전체 범위면 통합 보고서 포함) (<b id="cntBadge_weekly">0</b>건)</div>
-              </div>
-            </label>
-
-            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(124,58,237,0.04); border:1.5px solid #ddd6fe; border-radius:8px; cursor:pointer;">
-              <input type="checkbox" id="chkWork_meetings" value="meetings" checked style="margin-top:3px; transform:scale(1.2);">
-              <div>
-                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#6d28d9;">📅 6. 회의록 · Action Item</div>
-                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">서브시스템 회의(+ 통합 회의) 일정 · 안건 · Action Item (<b id="cntBadge_meetings">0</b>건)</div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Step 3: 선택된 Task 데이터 일괄 다운로드 / 업로드 액션 바 -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 14px; background:rgba(0,0,0,0.025); border:1px solid var(--border-color); border-radius:8px;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span class="badge" style="background:#0f766e; color:#fff; font-weight:bold;">STEP 3 · 내려받기</span>
-            <button type="button" class="btn btn-secondary btn-sm" style="padding:8px 14px; font-weight:bold;" data-click="SmartMergeCenter.downloadSelectedWorkData" data-click-args='["JSON"]'>
-              📥 JSON 내려받기
-            </button>
-            <button type="button" class="btn btn-success btn-sm" style="padding:8px 14px; font-weight:bold;" data-click="SmartMergeCenter.downloadSelectedWorkData" data-click-args='["EXCEL"]'>
-              📥 엑셀 내려받기
-            </button>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span class="badge" style="background:#d97706; color:#fff; font-weight:bold;">STEP 3 · 올려서 합치기</span>
-            <input type="file" id="multiWorkJsonInput" style="display:none;" accept=".json" data-change="SmartMergeCenter.uploadSelectedWorkData" data-change-args='["$event", "JSON"]'>
-            <button type="button" class="btn btn-primary btn-sm" style="padding:8px 14px; font-weight:bold;" data-click="UiH.clickEl" data-click-args='["multiWorkJsonInput"]'>
-              📤 JSON 올리기
-            </button>
-            <input type="file" id="multiWorkExcelInput" style="display:none;" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadSelectedWorkData" data-change-args='["$event", "EXCEL"]'>
-            <button type="button" class="btn btn-warning btn-sm" style="padding:8px 14px; font-weight:bold;" data-click="UiH.clickEl" data-click-args='["multiWorkExcelInput"]'>
-              📤 엑셀 올리기
-            </button>
-          </div>
+        <!-- 레거시 호환용 히든 요소 -->
+        <div style="display:none;">
+          <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
+          <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
+          <select id="masterPkgDomainSelect"></select>
+          <select id="masterPkgSubsysSelect"><option value="ALL" selected>ALL</option></select>
+          <select id="excelSubsysExportSelect"></select>
+          <select id="excelSubsysImportSelect"></select>
+          <span id="fileSyncDetailStatus"></span>
+          <button id="btnFileHandleSync"></button>
         </div>
       </div>
 
-      <!-- [v1.0.7] ② 협업 데이터 (주간보고 · 회의록 · 공지사항 · 소통 피드) — 채팅 제외 -->
-      <div class="card" style="border-left: 4px solid #7c3aed; margin-bottom: 16px;">
-        <div class="card-title">
-          <div>
-            <span>🤝 ② 프로젝트 공통 — 공지사항 · 소통 피드 (프로젝트 전체 단위 · 올리기는 시스템관리자 · PM)</span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:6px; display:none;">* 위 ①의 대상 범위(서브시스템)를 함께 사용합니다. 같은 ID의 항목은 올린 파일 내용으로 갱신되고, 새 항목은 추가됩니다. (채팅 내역 제외)</span>
-          </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-sm" data-btn="neutral" data-click="SmartMergeCenter.toggleCollabCheckboxes" data-click-args='[true]'>✅ 전체 선택</button>
-            <button class="btn btn-sm" data-btn="neutral" data-click="SmartMergeCenter.toggleCollabCheckboxes" data-click-args='[false]'>⬜ 선택 해제</button>
-          </div>
-        </div>
-        <div class="pm-hint" style="margin:0 0 8px;">같은 ID 의 항목은 올린 파일 내용으로 갱신되고, 새 항목은 추가됩니다. (주간보고 · 회의록은 위 ①에서 서브시스템별로 주고받습니다)</div>
-        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:12px;">
-          <label class="merge-collab-item"><input type="checkbox" id="chkCollab_notices" checked> <b>📢 공지사항</b> <span>(<b id="cntBadge_notices">0</b>건)</span></label>
-          <label class="merge-collab-item"><input type="checkbox" id="chkCollab_comms" checked> <b>💬 소통 피드</b> <span>(<b id="cntBadge_comms">0</b>건)</span></label>
-        </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-          <button class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadCollabData" data-click-args='["EXCEL"]'>📥 엑셀 내려받기</button>
-          <button class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadCollabData" data-click-args='["JSON"]'>📥 JSON 내려받기</button>
-          <input type="file" id="collabExcelInput" style="display:none;" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadCollabData" data-change-args='["$event", "EXCEL"]'>
-          <input type="file" id="collabJsonInput" style="display:none;" accept=".json" data-change="SmartMergeCenter.uploadCollabData" data-change-args='["$event", "JSON"]'>
-          <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["collabExcelInput"]'>📤 엑셀 올리기</button>
-          <button class="btn btn-sm" data-btn="json-up" data-click="UiH.clickEl" data-click-args='["collabJsonInput"]'>📤 JSON 올리기</button>
-        </div>
-      </div>
-
-      <!-- [위젯 2 & 3: 좌측 기준정보 다중선택 입출력 / 우측 관리자·PM 전용 전체 마스터 일괄 입출력] -->
-      <div class="grid-2">
-        <!-- 위젯 2: 기준정보 다중선택 업/다운로드 (프로젝트 기준정보 / 서브시스템 정보 / 사용자 목록) -->
-        <div class="card" style="border-left: 4px solid #1e3a8a; margin-bottom:0;">
-          <div class="card-title">
-            <div>
-              <span>🗂️ ③ 기준정보 (프로젝트 기준정보 · 서브시스템 · 사용자)</span>
-            </div>
-            <span class="status-badge-chip chip-delayed" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">올리기: 관리자·PM</span>
-          </div>
-          <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:10px; line-height:1.45;">
-            <b>프로젝트 기준정보</b>, <b>서브시스템 기준정보</b>, <b>사용자(투입인력) 목록</b> 중 필요한 항목을 골라 엑셀(.xlsx) 또는 JSON 파일로 내려받거나 올립니다.
-          </p>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#1e3a8a;">🎯 내려받거나 올릴 기준정보 항목 선택:</span>
-            <div style="display:flex; gap:6px;">
-              <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:var(--fs-xs, 11px);" data-click="SmartMergeCenter.toggleMasterCheckboxes" data-click-args='[true]'>전체 선택</button>
-              <button type="button" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:var(--fs-xs, 11px);" data-click="SmartMergeCenter.toggleMasterCheckboxes" data-click-args='[false]'>선택 해제</button>
-            </div>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
-            <label style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:rgba(30,58,138,0.04); border:1px solid #bfdbfe; border-radius:6px; cursor:pointer;">
-              <input type="checkbox" id="chkMaster_config" value="config" checked style="transform:scale(1.15);">
-              <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#1e3a8a;">1. 프로젝트 기준정보</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-left:auto;">프로젝트 기본정보 · 상위분야 · SDLC · 공휴일 · 표준산출물</span>
-            </label>
-
-            <label style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:rgba(30,58,138,0.04); border:1px solid #bfdbfe; border-radius:6px; cursor:pointer;">
-              <input type="checkbox" id="chkMaster_subsystems" value="subsystems" checked style="transform:scale(1.15);">
-              <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#1e3a8a;">2. 서브시스템 기준정보</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-left:auto;">분야 · 서브시스템 코드/명 · SDLC모델 · 가중치 · 담당 PL (<b id="cntBadge_subsystems">0</b>개)</span>
-            </label>
-
-            <label style="display:flex; align-items:center; gap:8px; padding:9px 12px; background:rgba(30,58,138,0.04); border:1px solid #bfdbfe; border-radius:6px; cursor:pointer;">
-              <input type="checkbox" id="chkMaster_users" value="users" checked style="transform:scale(1.15);">
-              <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#1e3a8a;">3. 사용자(투입인력) 목록</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-left:auto;">사번 · 성명 · 권한레벨(관리자/PM/일반) · 담당 서브시스템 (<b id="cntBadge_users">0</b>명)</span>
-            </label>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap; padding:10px; background:rgba(0,0,0,0.025); border:1px solid var(--border-color); border-radius:6px;">
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <button type="button" class="btn btn-secondary btn-sm" data-click="SmartMergeCenter.downloadSelectedMasterData" data-click-args='["JSON"]'>📥 JSON 내려받기</button>
-              <button type="button" class="btn btn-success btn-sm" data-click="SmartMergeCenter.downloadSelectedMasterData" data-click-args='["EXCEL"]'>📥 엑셀 내려받기</button>
-            </div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <input type="file" id="multiMasterJsonInput" style="display:none;" accept=".json" data-change="SmartMergeCenter.uploadSelectedMasterData" data-change-args='["$event", "JSON"]'>
-              <button type="button" class="btn btn-primary btn-sm btn-admin-pm-only" data-click="UiH.clickEl" data-click-args='["multiMasterJsonInput"]'>📤 JSON 올리기</button>
-              <input type="file" id="multiMasterExcelInput" style="display:none;" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadSelectedMasterData" data-change-args='["$event", "EXCEL"]'>
-              <button type="button" class="btn btn-warning btn-sm btn-admin-pm-only" data-click="UiH.clickEl" data-click-args='["multiMasterExcelInput"]'>📤 엑셀 올리기</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 위젯 3: 프로젝트 마스터 전체(ALL) 원클릭 통합 입출력 (관리자/PM 전용 전체 업로드 유지) -->
-        <div class="card" style="border-left: 4px solid #0284c7; margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
-          <div>
-            <div class="card-title">
-              <span>📦 ④ 전체 일괄 내려받기 (기준정보 + 업무 데이터 + 사용자 + 협업 데이터 한 파일)</span>
-              <span class="status-badge-chip chip-delayed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">올리기(복원)는 기준정보 &gt; 백업·초기화</span>
-            </div>
-            <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
-              프로젝트 기준정보, 서브시스템 정보, 사용자 목록과 전 서브시스템의 Task 데이터(WBS, 요구사항, 산출물, VOC)를 <b>한 개의 파일(엑셀 또는 JSON)로 한 번에 내려받거나 올려서 전체를 반영</b>합니다.
-            </p>
-
-            <div style="padding:12px; background:rgba(2,132,199,0.04); border:1px solid #bae6fd; border-radius:8px; margin-bottom:12px;">
-              <div style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#0369a1; margin-bottom:6px;">📋 전체 파일(.xlsx / .json)에 포함되는 시트:</div>
-              <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); line-height:1.6;">
-                • <b>기준정보 시트:</b> <code>0_프로젝트기준정보</code> · <code>2_서브시스템기준정보</code> · <code>6_사용자목록</code><br>
-                • <b>Task데이터 시트:</b> <code>1_WBS공정표</code> · <code>3_산출물관리</code> · <code>4_요구사항REQ</code> · <code>5_VOC이슈관리</code><br>
-                • <b>협업 데이터 시트:</b> <code>7_주간보고</code> · <code>8_회의록</code> · <code>9_공지사항</code> · <code>10_소통피드</code>
-              </div>
-            </div>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:8px; padding:12px; background:rgba(0,0,0,0.025); border:1px solid var(--border-color); border-radius:8px;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" class="btn btn-secondary btn-sm" style="flex:1; justify-content:center; padding:9px;" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>
-                📥 JSON 내려받기 (전체)
-              </button>
-              <button type="button" class="btn btn-success btn-sm" style="flex:1; justify-content:center; padding:9px;" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>
-                📥 엑셀 내려받기 (전체)
-              </button>
-            </div>
-            <div id="consolidateBox" class="proj-box proj-box-blue" style="display:none;">
-              <div class="proj-box-title">📥 종합본 가져오기 (로컬 저장소 방식 · 모든 사용자)</div>
-              <p>PM 이 합쳐서 나눠 준 종합본(④ 엑셀 / JSON)을 내 브라우저에 반영해 전체 진행 상황을 봅니다. <b>내 담당 서브시스템 자료는 내 것을 그대로 둡니다.</b></p>
-              <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
-              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]'>📥 종합본 가져오기</button>
-            </div>
-            <div class="pm-hint" style="margin:0;">📤 <b>프로젝트 전체 복원 · 새 프로젝트 추가</b>는 [💾 백업 · 복원] 탭에서 합니다. (시스템관리자 · PM)
-              <button type="button" class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup" style="margin-left:6px;">➡️ 백업 · 복원으로 이동</button></div>
-            <div style="display:none;">
-              <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
-              <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 레거시 호환용 히든 요소 -->
-      <div style="display:none;">
-        <select id="masterPkgDomainSelect"></select>
-        <select id="masterPkgSubsysSelect"><option value="ALL" selected>ALL</option></select>
-        <select id="excelSubsysExportSelect"></select>
-        <select id="excelSubsysImportSelect"></select>
-        <span id="fileSyncDetailStatus"></span>
-        <button id="btnFileHandleSync"></button>
-      </div>
-          </div>
-
-      <!-- [v4.0.0] 💾 백업 · 복원 (비상 대응) — 시스템관리자 · PM 만, 권한 없는 기능은 비활성 -->
+      <!-- [v4.0.0] 💾 백업 · 복원 (비상 대응) — 시스템관리자 · PM 만, 권한 없는 기능은 비활성 / [v4.1.0] 3영역 (프로젝트 · 시스템 · 복원 지점), 초기화 · 자동 백업 설정은 시스템 설정 > 데이터 관리 -->
       <div class="master-subpane" data-group="merge" data-subpane="backup" id="mergeBackupPane">
         <div class="bk-role" id="bkRoleNote"></div>
 
@@ -1911,7 +1715,7 @@
             </div>
             <div class="proj-box proj-box-amber">
               <div class="proj-box-title">📤 복원 · 새 프로젝트 추가</div>
-              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 복원 지점을 자동으로 만듭니다.</p>
+              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 일부 자료만 합칠 때는 [📋 자료 내려받기·올리기]를 씁니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 복원 지점을 자동으로 만듭니다.</p>
               <div class="proj-box-btns">
                 <select id="ptUpTarget" style="min-width:250px;"></select>
                 <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
@@ -1921,23 +1725,8 @@
           </div>
         </div>
 
-        <div class="card bk-sec" data-need="manager" style="border-left:4px solid #d97706;">
-          <div class="card-title"><span>🔄 ② 초기화</span><span class="bk-who">지우기 전에 복원 지점을 자동으로 만듭니다</span></div>
-          <div class="proj-box-btns" style="margin-bottom:10px;">
-            <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">Task 정보 초기화 대상:</label>
-            <select id="cfgClearTarget" style="min-width:240px;"></select>
-            <button class="btn btn-sm" data-btn="warn" data-click="ProjectData.clearFromConfig" title="기본정보 · 기준정보는 두고 WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 소통(채팅 포함)만 지움">🧹 Task 정보 초기화</button>
-          </div>
-          <div class="proj-box-btns">
-            <button class="btn btn-sm" data-btn="danger" data-click="ProjectData.resetProject" title="지금 프로젝트: 이름 · 기간만 두고 기준정보 · Task 정보를 빈 상태로">⚠️ 지금 프로젝트 전체 초기화</button>
-            <button class="btn btn-sm" data-btn="warn" data-click="StorageManager.resetToSampleData" title="지금 프로젝트를 2027 제조 샘플로">🔄 제조 샘플 복원</button>
-            <button class="btn btn-sm" data-btn="neutral" data-click="RealtimeChatManager.clearAllChat" title="지금 프로젝트의 채팅 기록만 삭제 (과업 데이터는 그대로)">💬 채팅 기록 초기화</button>
-            <button class="btn btn-sm" data-btn="danger" data-need="admin" data-click="StorageManager.resetToFactoryBlank" title="지금 프로젝트와 사용자 목록을 처음 상태로 (시스템관리자)">⚠️ 완전 초기화 (사용자 포함)</button>
-          </div>
-        </div>
-
         <div class="card bk-sec" data-need="admin" style="border-left:4px solid #dc2626;">
-          <div class="card-title"><span>🖥️ ③ 시스템 전체 백업 · 복원</span><span class="bk-who">시스템관리자 전용 — 모든 프로젝트 · 사용자 계정 · 공정 유형 · 시스템 설정</span></div>
+          <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">시스템관리자 전용 — 모든 프로젝트 · 사용자 계정 · 공정 유형 · 시스템 설정</span></div>
           <div id="bkServerBox">
             <div class="proj-box-btns" style="margin-bottom:10px;">
               <label class="bk-check"><input type="checkbox" id="bkWithFiles"> 첨부파일 포함</label>
@@ -1946,15 +1735,7 @@
               <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 PC 의 백업 파일(zip) 올리기</button>
               <span class="bk-hint" id="bkFolder"></span>
             </div>
-            <div class="bk-auto">
-              <b>⏱ 자동 백업 (선택)</b>
-              <label class="bk-check"><input type="checkbox" id="bkAutoOn"> 사용</label>
-              <label>간격 <input type="number" id="bkAutoHours" min="1" max="720" value="24" style="width:64px;"> 시간</label>
-              <label>보관 <input type="number" id="bkAutoKeep" min="1" max="365" value="14" style="width:64px;"> 개</label>
-              <label class="bk-check"><input type="checkbox" id="bkAutoFiles"> 첨부파일 포함</label>
-              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.saveAuto">저장</button>
-              <span class="bk-hint" id="bkAutoLast"></span>
-            </div>
+            <div class="bk-auto" id="bkAutoStatus"></div>
             <div class="table-container" style="max-height:260px; margin-top:10px;">
               <table class="m-table">
                 <thead><tr><th style="width:150px;">만든 때</th><th style="width:110px;">구분</th><th style="width:80px;">첨부</th><th style="width:90px;">크기</th><th>파일 이름</th><th style="width:220px; text-align:center;">관리</th></tr></thead>
@@ -1974,7 +1755,7 @@
         </div>
 
         <div class="card bk-sec" data-need="manager" style="border-left:4px solid #7c3aed;">
-          <div class="card-title"><span>🕒 ④ 복원 지점 (자동 · 수동 스냅샷)</span>
+          <div class="card-title"><span>🕒 ③ 복원 지점 (자동 · 수동 스냅샷)</span>
             <span style="display:flex; gap:6px; align-items:center;"><span class="bk-who" id="bkSnapWhere"></span>
             <button class="btn btn-secondary btn-sm" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["수동백업", "ALL", false]'>+ 지금 복원 지점 만들기</button></span></div>
           <div class="table-container" style="max-height: 280px;">
@@ -2706,7 +2487,7 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">⚙️ 시스템 설정</span>
-          <span class="neo-ph-desc">화면 · 프로젝트 · 보고서 · 보안 · DB · 백업 · 소통 채널</span>
+          <span class="neo-ph-desc">화면 · 프로젝트 · 사용자 · 보고서 · 보안 · DB · 데이터 관리 · 소통 채널</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 시스템 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -2730,7 +2511,8 @@
         <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 공정 유형</button>
         <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 양식</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
-        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🗄️ 저장소·DB 연동</button>
+        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
+        <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
         <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 소통 채널</button>
       </div>
 
@@ -3181,8 +2963,47 @@
         </div>
       </div>
 
+      <!-- [v4.1.0] 🗄️ 데이터 관리 (시스템관리자) — 자동 백업 설정 · 프로젝트 초기화 · 첨부파일 휴지통 -->
+      <div class="master-subpane" data-group="config" data-subpane="data" id="dataAdminPane">
+        <div class="card" style="border-left:4px solid #0284c7;">
+          <div class="card-title"><span>⏱ 자동 백업 설정 (선택)</span><span class="bk-who">시스템 전체 백업(zip)을 정해진 간격으로 서버에 만듭니다 — 목록 · 복원은 스마트 병합 &gt; 💾 백업 · 복원</span></div>
+          <div id="daAutoServer">
+            <div class="bk-auto">
+              <label class="bk-check"><input type="checkbox" id="bkAutoOn"> 사용</label>
+              <label>간격 <input type="number" id="bkAutoHours" min="1" max="720" value="24" style="width:64px;"> 시간</label>
+              <label>보관 <input type="number" id="bkAutoKeep" min="1" max="365" value="14" style="width:64px;"> 개</label>
+              <label class="bk-check"><input type="checkbox" id="bkAutoFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.saveAuto">저장</button>
+              <span class="bk-hint" id="bkAutoLast"></span>
+            </div>
+            <div class="bk-hint" id="bkFolder2" style="margin-top:6px;"></div>
+          </div>
+          <div id="daAutoLocal" class="pm-hint" style="display:none; margin:0;">로컬 저장소 방식에는 자동 백업이 없습니다. 올리기 · 초기화 전에 만들어지는 <b>복원 지점</b>과, 스마트 병합 &gt; 💾 백업 · 복원의 <b>시스템 전체 백업 (JSON)</b>을 쓰세요.</div>
+        </div>
+
+        <div class="card" style="border-left:4px solid #dc2626;">
+          <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">시스템관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 복원 지점을 남깁니다</span></div>
+          <div class="da-target">
+            <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">대상 프로젝트:</label>
+            <select id="cfgClearTarget" style="min-width:260px;" data-change="DataAdmin.renderActions"></select>
+          </div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table">
+              <thead><tr><th style="width:210px;">기능</th><th>지우거나 바꾸는 것</th><th style="width:220px;">그대로 두는 것</th><th style="width:200px; text-align:center;">실행</th></tr></thead>
+              <tbody id="daActions"></tbody>
+            </table>
+          </div>
+          <div class="pm-hint" style="margin:8px 0 0;">PM 은 초기화 대신 스마트 병합 &gt; 💾 백업 · 복원의 <b>복원 지점</b>으로 되돌립니다.</div>
+        </div>
+
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🗑 첨부파일 휴지통</span></div>
+          <div id="daTrash" class="proj-box-btns"></div>
+        </div>
+      </div>
+
       <div class="master-subpane" data-group="config" data-subpane="backup">
-        <div class="pm-hint">💾 백업 · 복원 · 초기화는 [🔀 스마트 병합 &gt; 💾 백업 · 복원]으로 옮겼습니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 백업 · 복원으로 이동</button></div>
+        <div class="pm-hint">💾 백업 · 복원은 [🔀 스마트 병합 &gt; 💾 백업 · 복원], 초기화 · 자동 백업 설정은 [⚙️ 시스템 설정 &gt; 🗄️ 데이터 관리]에 있습니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 백업 · 복원으로 이동</button></div>
       </div>
       <div class="master-subpane" data-group="config" data-subpane="channel">
         <div style="display:flex; flex-direction:column; gap:16px;">
@@ -3423,6 +3244,39 @@
     </div>
   </div>
 
+  <!-- [v4.1.0] 올리기 미리 보기 (스마트 병합 · 각 화면 📤 공통) -->
+  <div class="modal-overlay" id="mergePreviewModal">
+    <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
+      <div class="card-title"><span id="mpTitle">📤 올리기 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeTable.close">닫기</button></div>
+      <div class="bk-hint" id="mpFile" style="margin-bottom:8px;"></div>
+      <div class="table-container" style="max-height:none;">
+        <table class="m-table">
+          <thead><tr><th style="width:44px; text-align:center;">반영</th><th>자료</th><th style="width:80px; text-align:right;">파일 행</th><th style="width:90px; text-align:right;">반영할 행</th><th style="width:150px; text-align:right;">제외할 행</th><th style="width:300px;">반영 방법</th></tr></thead>
+          <tbody id="mpBody"></tbody>
+        </table>
+      </div>
+      <div class="pm-hint" id="mpNote" style="margin:10px 0 0;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" data-click="MergeTable.close">취소</button>
+        <button class="btn btn-primary btn-sm" id="mpOkBtn" data-click="MergeTable.confirm">✅ 반영</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [v4.1.0] 초기화 확인 (대상 이름 입력) -->
+  <div class="modal-overlay" id="daConfirmModal">
+    <div class="modal" style="width:560px; max-width:94vw;">
+      <div class="card-title"><span id="daConfirmTitle">⚠️ 초기화 확인</span></div>
+      <pre id="daConfirmMsg" style="white-space:pre-wrap; font-family:inherit; font-size:var(--fs-sm, 12px); margin:4px 0 10px;"></pre>
+      <div style="font-size:var(--fs-sm, 12px); margin-bottom:4px;">입력할 이름: <span class="da-expect" id="daConfirmExpect"></span></div>
+      <input type="text" id="daConfirmInput" style="width:100%;" autocomplete="off" data-input="DataAdmin.checkInput">
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" data-click="DataAdmin.closeAsk" data-click-args='[false]'>취소</button>
+        <button class="btn btn-danger btn-sm" id="daConfirmOk" data-click="DataAdmin.closeAsk" data-click-args='[true]' disabled>실행</button>
+      </div>
+    </div>
+  </div>
+
   <!-- [v3.7.0] 사용자 추가 · 편집 창 (시스템 설정 > 전체 사용자) -->
   <div class="modal-overlay" id="userAdminModal">
     <div class="modal" style="width: 720px; max-width: 94vw; max-height: 90vh; overflow-y: auto;">
@@ -3632,11 +3486,13 @@
   <script src="static/js/modules/weekly/weekly-report.js"></script>
   <script src="static/js/modules/home/home.js"></script>
   <script src="static/js/core/data-store.js"></script>
+  <script src="static/js/modules/dataio/merge-table.js"></script>
   <script src="static/js/modules/dataio/data-io.js"></script>
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
   <script src="static/js/core/project-transfer.js"></script>
   <script src="static/js/core/system-backup.js"></script>
+  <script src="static/js/core/data-admin.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>

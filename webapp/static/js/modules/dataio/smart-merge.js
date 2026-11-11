@@ -30,10 +30,10 @@ const SmartMergeCenter = {
       const who = `${escapeHtml(curUser.name || curUser.empNo)} (${AuthManager.roleLabel(normRole)})`;
       badge.className = "status-badge-chip " + (isPrivileged ? "chip-completed" : bulk ? "chip-progress" : "chip-ready");
       badge.innerHTML = isPrivileged
-        ? `👑 ${who} — 모든 데이터 내려받기 · 올리기 가능 (기준정보 포함)`
+        ? `👑 ${who} — 모든 자료 올리기 가능`
         : bulk
-          ? `⭐ ${who} — 모든 데이터 내려받기 · 업무/협업 데이터 전체(ALL) 올리기 가능 (기준정보 올리기 제외)`
-          : `👤 ${who} — 모든 데이터 내려받기 · 담당 서브시스템 데이터만 올리기 가능`;
+          ? `⭐ ${who} — 서브시스템 단위 자료 전체 올리기 (프로젝트 단위 자료는 내려받기만)`
+          : `👤 ${who} — 담당 서브시스템(${escapeHtml(Permission.ownSubsystem())}) 자료만 올리기`;
     }
 
     // 분야 드롭다운 갱신
@@ -350,103 +350,6 @@ const SmartMergeCenter = {
     showToast(`[${itemType.toUpperCase()} 엑셀 내려받기 완료] ${filename}`);
   },
 
-  // 2) 항목별 업로드 (권한 검증 + 서브시스템 필터링)
-  async uploadItem(e, itemType, format) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-
-    const isPrivileged = this.isAdminOrPm();
-
-    // 권한 체크 1: 기준정보(config) 및 서브시스템 정보(subsystems)는 관리자나 PM만 업로드 가능
-    if ((itemType === "config" || itemType === "subsystems") && !isPrivileged) {
-      showToast("🚫 [권한 제한] 프로젝트 기준정보 및 서브시스템 기준정보 업로드는 시스템 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다.");
-      return;
-    }
-
-    const scopeSel = document.getElementById("workDataSubsysSelect");
-    const targetScope = (itemType === "config" || itemType === "subsystems")
-      ? "ALL"
-      : (scopeSel ? scopeSel.value : "ALL");
-
-    // 권한 체크 2: WBS/REQ/VOC/산출물의 전체(ALL) 업로드는 관리자나 PM만 가능
-    if (targetScope === "ALL" && !isPrivileged) {
-      showToast("🚫 [권한 제한] 일반 사용자는 [전체 서브시스템(ALL)] 일괄 업로드를 수행할 수 없습니다. 상단 드롭다운에서 담당 서브시스템을 선택한 뒤 업로드해주세요.");
-      return;
-    }
-
-    try {
-      // 업로드 직전 타임스탬프 백업 생성
-      const backupName = BackupHistoryManager.createBackupSnapshot(`${itemType.toUpperCase()}_${format}업로드(${targetScope})`, targetScope, true);
-
-      if (format === "JSON") {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        if (itemType === "config") {
-          if (data.projectConfig) projectConfig = Object.assign({}, projectConfig, data.projectConfig);
-          if (Array.isArray(data.standardDeliverablesMeta)) standardDeliverablesMeta = data.standardDeliverablesMeta;
-        } else if (itemType === "subsystems") {
-          const arr = Array.isArray(data.subsystemsMeta) ? data.subsystemsMeta : (Array.isArray(data) ? data : []);
-          if (arr.length === 0) throw new Error("유효한 서브시스템 기준정보가 없습니다.");
-          subsystemsMeta = arr;
-          normalizeAndDeduplicateSubsystems();
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.cleanObsoleteChannelData === "function") {
-        NoticeCommManager.cleanObsoleteChannelData();
-      }
-        } else {
-          this._mergeWorkArrayData(itemType, data, targetScope);
-        }
-      } else {
-        // EXCEL 파싱
-        const sheets = await ExcelSync._parseUploadedFile(file);
-        if (itemType === "config") {
-          const cfgRows = [];
-          sheets.forEach(sh => {
-            sh.rows.slice(1).forEach(cells => {
-              if (cells.length >= 2 && cells[0] && cells[1]) {
-                cfgRows.push({
-                  category: cells[0],
-                  key: cells[1],
-                  value: cells[2] || "",
-                  extra1: cells[3] || "",
-                  extra2: cells[4] || "",
-                  extra3: cells[5] || ""
-                });
-              }
-            });
-          });
-          if (!this.applyConfigRows(cfgRows)) {
-            throw new Error("엑셀 파일에서 프로젝트 기준정보 행을 찾지 못했습니다.");
-          }
-        } else {
-          const parsedRows = this._extractRowsFromSheets(sheets, itemType);
-          if (parsedRows.length === 0) {
-            throw new Error(`엑셀 파일에서 [${itemType.toUpperCase()}] 데이터를 찾지 못했습니다.`);
-          }
-          if (itemType === "subsystems") {
-            subsystemsMeta = parsedRows;
-            normalizeAndDeduplicateSubsystems();
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.cleanObsoleteChannelData === "function") {
-        NoticeCommManager.cleanObsoleteChannelData();
-      }
-          } else {
-            this._mergeWorkArrayData(itemType, parsedRows, targetScope);
-          }
-        }
-      }
-
-      ExcelSync._ensureWbsAndSubsystemsIntegrity();
-      syncSubsystemWeights();
-      this.syncConfigInputs();
-      rebuildAll(true);
-      this.refreshMergeUiPermissions();
-      showToast(`[${itemType.toUpperCase()} (${targetScope}) 업로드 반영 완료]\n• 자동 백업 파일: ${backupName}`);
-    } catch (err) {
-      console.error("SmartMerge upload error:", err);
-      showToast("업로드 처리 중 오류가 발생했습니다: " + err.message);
-    }
-  },
-
   _extractRowsFromSheets(sheets, targetTabKey) {
     const results = [];
     sheets.forEach(sheet => {
@@ -690,18 +593,6 @@ const SmartMergeCenter = {
   },
   COLLAB_JSON_COL: "원본데이터(JSON)",
 
-  toggleCollabCheckboxes(checked) {
-    Object.keys(this.COLLAB_DEFS).forEach(k => {
-      const el = document.getElementById(`chkCollab_${k}`);
-      if (el) el.checked = checked;
-    });
-  },
-  getSelectedCollabKeys() {
-    return Object.keys(this.COLLAB_DEFS).filter(k => {
-      const el = document.getElementById(`chkCollab_${k}`);
-      return el && el.checked;
-    });
-  },
   // [v3.9.0] ② 공지사항 · 소통 피드는 프로젝트 전체 단위 (서브시스템을 고르지 않음)
   _collabScope() { return "ALL"; },
   _collabRecords(k, scope) {
@@ -717,29 +608,6 @@ const SmartMergeCenter = {
       rows.push({ cells: def.cols.map(c => ExcelSync.sanitizeFormulaInjection(r[c[0]] === undefined ? "" : String(r[c[0]]))).concat(json.length > 32000 ? "" : json), styleId: 2, height: 20 });
     });
     return { name: def.sheet, colWidths: def.cols.map(() => 18).concat(40), rows };
-  },
-
-  downloadCollabData(format) {
-    const keys = this.getSelectedCollabKeys();
-    if (!keys.length) {
-      showToast("⚠️ 내려받을 협업 데이터 항목을 1개 이상 선택하세요.");
-      return;
-    }
-    const scope = this._collabScope();
-    const repDate = projectConfig.reportDate || "";
-    if (format === "JSON") {
-      const payload = { schemaVersion: `AX_PMYS_${APP_VERSION.version}_COLLAB`, exportCategory: "COLLAB", targetScope: scope, exportedAt: new Date().toISOString() };
-      keys.forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("협업데이터", [scope], "json");
-      ExcelSync._triggerDownload(blob, filename);
-      showToast(`📥 [협업 데이터 JSON 내려받기] ${filename}`);
-      return;
-    }
-    const blob = ExcelSync._buildXlsxBlob(keys.map(k => this._collabSheet(k, scope)));
-    const filename = ExcelSync.stdName("협업데이터", [scope], "xlsx");
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`📥 [협업 데이터 엑셀 내려받기] ${filename}`);
   },
 
   // 같은 ID 는 갱신, 새 ID 는 추가 (범위 밖 항목은 제외)
@@ -771,68 +639,40 @@ const SmartMergeCenter = {
     return applied;
   },
 
+  // [v4.1.0] 협업 시트 → 레코드 (반영하지 않음 — 올리기 미리 보기용)
+  _collabRecordsFromSheets(k, sheets) {
+    const def = this.COLLAB_DEFS[k];
+    const hasHdr = sh => (sh.rows || []).some(cells => (cells || []).map(c => String(c || "").trim()).includes(def.cols[0][1]));
+    const sheet = (sheets || []).find(sh => String(sh.name || "").replace(/\s/g, "") === def.sheet || String(sh.name || "").includes(def.label)) || (sheets || []).find(hasHdr);
+    if (!sheet || !sheet.rows || !sheet.rows.length) return null;
+    const hdrIdx = sheet.rows.findIndex(cells => (cells || []).map(c => String(c || "").trim()).includes(def.cols[0][1]));
+    if (hdrIdx < 0) return null;
+    const hdr = sheet.rows[hdrIdx].map(c => String(c || "").trim());
+    const jsonCol = hdr.indexOf(this.COLLAB_JSON_COL);
+    return sheet.rows.slice(hdrIdx + 1).map(cells => {
+      let rec = {};
+      if (jsonCol >= 0 && cells[jsonCol]) {
+        try { rec = JSON.parse(cells[jsonCol]); } catch (e) { rec = {}; }
+      }
+      def.cols.forEach(([key, label]) => {
+        const ci = hdr.indexOf(label);
+        if (ci >= 0 && cells[ci] !== undefined && cells[ci] !== "") rec[key] = key === "isPinned" ? String(cells[ci]) === "true" : cells[ci];
+      });
+      return rec.id || rec.title || rec.name ? rec : null;
+    }).filter(Boolean);
+  },
+
   _applyCollabSheets(sheets, scope, onlyKeys) {
     const applied = [];
     Object.keys(this.COLLAB_DEFS).filter(k => !onlyKeys || onlyKeys.includes(k)).forEach(k => {
       const def = this.COLLAB_DEFS[k];
       const sheet = (sheets || []).find(sh => String(sh.name || "").replace(/\s/g, "") === def.sheet || String(sh.name || "").includes(def.label));
-      if (!sheet || !sheet.rows || !sheet.rows.length) return;
-      const hdrIdx = sheet.rows.findIndex(cells => (cells || []).map(c => String(c || "").trim()).includes(def.cols[0][1]));
-      if (hdrIdx < 0) return;
-      const hdr = sheet.rows[hdrIdx].map(c => String(c || "").trim());
-      const jsonCol = hdr.indexOf(this.COLLAB_JSON_COL);
-      const records = sheet.rows.slice(hdrIdx + 1).map(cells => {
-        let rec = {};
-        if (jsonCol >= 0 && cells[jsonCol]) {
-          try { rec = JSON.parse(cells[jsonCol]); } catch (e) { rec = {}; }
-        }
-        def.cols.forEach(([key, label]) => {
-          const ci = hdr.indexOf(label);
-          if (ci >= 0 && cells[ci] !== undefined && cells[ci] !== "") rec[key] = key === "isPinned" ? String(cells[ci]) === "true" : cells[ci];
-        });
-        return rec.id || rec.title || rec.name ? rec : null;
-      }).filter(Boolean);
+      const records = sheet ? this._collabRecordsFromSheets(k, [sheet]) : null;
+      if (!records) return;
       const r = this._upsertCollab(k, records, scope);
       if (r) applied.push(r);
     });
     return applied;
-  },
-
-  async uploadCollabData(e, format) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-    const keys = this.getSelectedCollabKeys();
-    if (!keys.length) {
-      showToast("⚠️ 올릴 협업 데이터 항목을 1개 이상 선택하세요.");
-      return;
-    }
-    const scope = this._collabScope();
-    if (!this.isAdminOrPm()) {
-      showToast("🚫 [권한 제한] 공지사항 · 소통 피드 올리기는 시스템관리자 · PM만 할 수 있습니다.");
-      return;
-    }
-    try {
-      const backupName = BackupHistoryManager.createBackupSnapshot(`협업데이터업로드(${scope})`, scope, true);
-      let applied;
-      if (format === "JSON") {
-        const data = JSON.parse(await file.text());
-        const filtered = {};
-        keys.forEach(k => { const dk = this.COLLAB_DEFS[k].dataKey; if (data[dk]) filtered[dk] = data[dk]; });
-        applied = this._applyCollabPayload(filtered, scope);
-      } else {
-        applied = this._applyCollabSheets(await ExcelSync._parseUploadedFile(file), scope, keys);
-      }
-      if (!applied.length) throw new Error("파일에서 선택한 협업 데이터 항목을 찾지 못했습니다.");
-      rebuildAll(true);
-      NoticeCommManager.renderAll();
-      MeetingManager.onDataReloaded();
-      WeeklyReportManager.onDataReloaded();
-      this.updateCountBadges();
-      showToast(`✅ [협업 데이터 반영 완료] ${applied.join(", ")} · 백업: ${backupName}`);
-    } catch (err) {
-      showToast("협업 데이터 업로드 오류: " + err.message);
-    }
   },
 
   // ---- 다중선택(Multi-select) 기준정보 & Task데이터 입출력 ----
@@ -851,35 +691,8 @@ const SmartMergeCenter = {
     users: "6_사용자목록"
   },
 
-  toggleWorkCheckboxes(checked) {
-    this.WORK_KEYS.forEach(k => {
-      const el = document.getElementById(`chkWork_${k}`);
-      if (el) el.checked = checked;
-    });
-  },
-
-  toggleMasterCheckboxes(checked) {
-    this.MASTER_KEYS.forEach(k => {
-      const el = document.getElementById(`chkMaster_${k}`);
-      if (el) el.checked = checked;
-    });
-  },
-
-  getSelectedWorkKeys() {
-    return this.WORK_KEYS.filter(k => {
-      const el = document.getElementById(`chkWork_${k}`);
-      return el && el.checked;
-    });
-  },
-
-  getSelectedMasterKeys() {
-    return this.MASTER_KEYS.filter(k => {
-      const el = document.getElementById(`chkMaster_${k}`);
-      return el && el.checked;
-    });
-  },
-
   updateCountBadges() {
+    if (typeof MergeTable !== "undefined") MergeTable.render();
     const scopeSel = document.getElementById("workDataSubsysSelect");
     const scope = scopeSel ? scopeSel.value : "ALL";
     const isAll = !scope || scope === "ALL";
@@ -979,165 +792,6 @@ const SmartMergeCenter = {
     });
   },
 
-  // 기준정보 다중선택 다운로드 (프로젝트 기준정보, 서브시스템 정보, 사용자 목록)
-  downloadSelectedMasterData(format, overrideKeys = null) {
-    const selected = overrideKeys || this.getSelectedMasterKeys();
-    if (selected.length === 0) {
-      showToast("⚠️ 다운로드할 기준정보 항목을 최소 1개 이상 선택해주세요.");
-      return;
-    }
-    const repDate = projectConfig.reportDate || "2027-06-01";
-    const labelStr = selected.join("_").toUpperCase();
-
-    if (format === "JSON") {
-      const payload = {
-        schemaVersion: "2026_v1.3.5",
-        exportCategory: "MASTER_MULTI",
-        selectedItems: selected,
-        exportedAt: new Date().toISOString()
-      };
-      if (selected.includes("config")) {
-        payload.projectConfig = projectConfig;
-        payload.standardDeliverablesMeta = standardDeliverablesMeta;
-      }
-      if (selected.includes("subsystems")) {
-        payload.subsystemsMeta = subsystemsMeta;
-      }
-      if (selected.includes("users")) {
-        payload.projectUsers = projectUsers;
-      }
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("기준정보", [labelStr], "json");
-      ExcelSync._triggerDownload(blob, filename);
-      showToast(`[기준정보(${selected.length}종) JSON 내려받기 완료]\n${filename}`);
-      return;
-    }
-
-    // EXCEL 다중 시트 생성
-    const sheets = [];
-    selected.forEach(k => {
-      if (this.WORK_COLLAB.includes(k)) { sheets.push(this._collabSheet(k, scope)); return; }
-      const schema = ExcelSync.TAB_SCHEMAS[k];
-      if (!schema) return;
-      let records = [];
-      if (k === "config") records = this.buildConfigRows();
-      else if (k === "subsystems") records = subsystemsMeta;
-      else if (k === "users") records = this._projectUserRows(true);
-
-      const rows = [{ cells: schema.map(c => c.label), styleId: 1, height: 25 }];
-      records.forEach(r => {
-        const rowCells = schema.map(c => {
-          if (k === "subsystems" && c.key === "weight") {
-            const num = parseFloat(r[c.key]);
-            return isNaN(num) ? 0 : num;
-          }
-          return ExcelSync.formatExportCell(k, c.key, r[c.key]);
-        });
-        rows.push({ cells: rowCells, styleId: 2, height: 20 });
-      });
-      sheets.push({
-        name: this.SHEET_NAMES[k] || k.toUpperCase(),
-        colWidths: schema.map(c => c.width || 18),
-        rows
-      });
-    });
-
-    const blob = ExcelSync._buildXlsxBlob(sheets);
-    const filename = ExcelSync.stdName("기준정보", [labelStr], "xlsx");
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`[기준정보(${selected.length}종) 엑셀 내려받기 완료]\n${filename}`);
-  },
-
-  // 기준정보 다중선택 업로드 (관리자/PM 전용)
-  async uploadSelectedMasterData(e, format) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-
-    if (!this.isAdminOrPm()) {
-      showToast("🚫 [권한 제한] 기준정보(프로젝트 설정·서브시스템·사용자 목록) 업로드는 시스템 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다.");
-      return;
-    }
-
-    const selected = this.getSelectedMasterKeys();
-    if (selected.length === 0) {
-      showToast("⚠️ 업로드하여 반영할 기준정보 항목을 최소 1개 이상 체크해주세요.");
-      return;
-    }
-
-    try {
-      const backupName = BackupHistoryManager.createBackupSnapshot(`기준정보업로드(${selected.join("+")})`, "ALL", true);
-      const applied = [];
-
-      if (format === "JSON") {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        if (selected.includes("config") && (data.projectConfig || data.standardDeliverablesMeta)) {
-          if (data.projectConfig) projectConfig = Object.assign({}, projectConfig, data.projectConfig);
-          if (Array.isArray(data.standardDeliverablesMeta)) standardDeliverablesMeta = data.standardDeliverablesMeta;
-          applied.push("프로젝트 기준정보");
-        }
-        if (selected.includes("subsystems")) {
-          const arr = Array.isArray(data.subsystemsMeta) ? data.subsystemsMeta : (Array.isArray(data) ? data : []);
-          if (arr.length > 0) {
-            subsystemsMeta = arr;
-            normalizeAndDeduplicateSubsystems();
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.cleanObsoleteChannelData === "function") {
-        NoticeCommManager.cleanObsoleteChannelData();
-      }
-            applied.push(`서브시스템(${subsystemsMeta.length}개)`);
-          }
-        }
-        if (selected.includes("users")) {
-          const uArr = Array.isArray(data.projectUsers) ? data.projectUsers : [];
-          if (uArr.length > 0) {
-            this._mergeUsersList(uArr);
-            applied.push(`사용자(${projectUsers.length}명)`);
-          }
-        }
-      } else {
-        const sheets = await ExcelSync._parseUploadedFile(file);
-        if (selected.includes("config")) {
-          const cfgRows = this._extractMasterSheetRows(sheets, "config");
-          if (cfgRows.length > 0 && this.applyConfigRows(cfgRows)) {
-            applied.push("프로젝트 기준정보");
-          }
-        }
-        if (selected.includes("subsystems")) {
-          const subRows = this._extractMasterSheetRows(sheets, "subsystems");
-          if (subRows.length > 0) {
-            subsystemsMeta = subRows;
-            normalizeAndDeduplicateSubsystems();
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.cleanObsoleteChannelData === "function") {
-        NoticeCommManager.cleanObsoleteChannelData();
-      }
-            applied.push(`서브시스템(${subsystemsMeta.length}개)`);
-          }
-        }
-        if (selected.includes("users")) {
-          const userRows = this._extractMasterSheetRows(sheets, "users");
-          if (userRows.length > 0) {
-            this._mergeUsersList(userRows);
-            applied.push(`사용자(${projectUsers.length}명)`);
-          }
-        }
-      }
-
-      if (applied.length === 0) {
-        throw new Error("업로드한 파일에서 체크된 기준정보 항목에 해당하는 유효 데이터를 찾지 못했습니다.");
-      }
-
-      ExcelSync._ensureWbsAndSubsystemsIntegrity();
-      syncSubsystemWeights();
-      this.syncConfigInputs();
-      rebuildAll(true);
-      this.refreshMergeUiPermissions();
-      showToast(`✅ [기준정보 다중선택 업로드 완료]\n• 반영 항목: ${applied.join(", ")}\n• 자동 백업: ${backupName}`);
-    } catch (err) {
-      showToast("기준정보 업로드 오류: " + err.message);
-    }
-  },
-
   // [v3.0.0] 사용자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 사용자는 그대로 둠)
   _mergeUsersList(incomingUsers) {
     if (!Array.isArray(incomingUsers) || incomingUsers.length === 0) return;
@@ -1200,143 +854,5 @@ const SmartMergeCenter = {
       });
     });
     return results;
-  },
-
-  // [8] Task 데이터(WBS, 요구사항, 산출물, VOC) 다중선택 다운로드
-  downloadSelectedWorkData(format) {
-    const selected = this.getSelectedWorkKeys();
-    if (selected.length === 0) {
-      showToast("⚠️ 내려받을 항목(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록)을 1개 이상 선택하세요.");
-      return;
-    }
-    const scopeSel = document.getElementById("workDataSubsysSelect");
-    const scope = scopeSel ? scopeSel.value : "ALL";
-    const isAll = scope === "ALL";
-    const repDate = projectConfig.reportDate || "2027-06-01";
-    const labelStr = selected.join("_").toUpperCase();
-
-    if (format === "JSON") {
-      const payload = {
-        schemaVersion: "2026_v1.3.5",
-        exportCategory: "WORK_MULTI",
-        targetScope: scope,
-        selectedItems: selected,
-        exportedAt: new Date().toISOString()
-      };
-      if (selected.includes("wbs")) payload.wbsData = isAll ? wbsData : wbsData.filter(d => d.system === scope);
-      if (selected.includes("req")) payload.reqMasterData = isAll ? reqMasterData : reqMasterData.filter(r => r.system === scope);
-      if (selected.includes("deliverables")) payload.deliverablesData = isAll ? deliverablesData : deliverablesData.filter(d => d.system === scope);
-      if (selected.includes("voc")) payload.vocData = isAll ? vocData : vocData.filter(v => v.system === scope);
-      this.WORK_COLLAB.filter(k => selected.includes(k)).forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
-
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("업무데이터", [scope, labelStr], "json");
-      ExcelSync._triggerDownload(blob, filename);
-      showToast(`[Task데이터(${selected.length}종 · ${scope}) JSON 내려받기 완료]\n${filename}`);
-      return;
-    }
-
-    // EXCEL 다중 시트 다운로드
-    const sheets = [];
-    selected.forEach(k => {
-      const schema = ExcelSync.TAB_SCHEMAS[k];
-      if (!schema) return;
-      let records = [];
-      if (k === "wbs") records = isAll ? wbsData : wbsData.filter(d => d.system === scope);
-      else if (k === "req") records = isAll ? reqMasterData : reqMasterData.filter(r => r.system === scope);
-      else if (k === "deliverables") records = isAll ? deliverablesData : deliverablesData.filter(d => d.system === scope);
-      else if (k === "voc") records = isAll ? vocData : vocData.filter(v => v.system === scope);
-
-      const rows = [{ cells: schema.map(c => c.label), styleId: 1, height: 25 }];
-      records.forEach(r => {
-        const rowCells = schema.map(c => {
-          if (k === "wbs" && ["level", "weight", "pProg", "aProg"].includes(c.key)) {
-            const num = parseFloat(r[c.key]);
-            return isNaN(num) ? 0 : num;
-          }
-          return ExcelSync.formatExportCell(k, c.key, r[c.key]);
-        });
-        rows.push({ cells: rowCells, styleId: 2, height: 20 });
-      });
-      sheets.push({
-        name: this.SHEET_NAMES[k] || k.toUpperCase(),
-        colWidths: schema.map(c => c.width || 16),
-        rows
-      });
-    });
-
-    const blob = ExcelSync._buildXlsxBlob(sheets);
-    const filename = ExcelSync.stdName("업무데이터", [scope, labelStr], "xlsx");
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`[Task데이터(${selected.length}종 · ${scope}) 엑셀 내려받기 완료]\n${filename}`);
-  },
-
-  // [8] Task 데이터(WBS, 요구사항, 산출물, VOC) 다중선택 업로드 병합
-  async uploadSelectedWorkData(e, format) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-
-    const selected = this.getSelectedWorkKeys();
-    if (selected.length === 0) {
-      showToast("⚠️ 업로드하여 병합할 Task 데이터 항목을 최소 1개 이상 체크해주세요.");
-      return;
-    }
-
-    const scopeSel = document.getElementById("workDataSubsysSelect");
-    const targetScope = scopeSel ? scopeSel.value : "ALL";
-
-    // 권한 체크: 전체(ALL) 업로드는 관리자·PM·총괄리더
-    if (targetScope === "ALL" && !this.canBulkWork()) {
-      showToast("🚫 [권한 제한] 일반 사용자는 [전체 서브시스템(ALL)] 일괄 업로드를 수행할 수 없습니다. STEP 1에서 담당 서브시스템을 선택한 뒤 업로드해주세요.");
-      return;
-    }
-
-    try {
-      const backupName = BackupHistoryManager.createBackupSnapshot(`Task데이터업로드(${targetScope}:${selected.join("+")})`, targetScope, true);
-      const applied = [];
-
-      if (format === "JSON") {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        selected.filter(k => this.WORK_COLLAB.includes(k)).forEach(k => {
-          const r = this._upsertCollab(k, data[this.COLLAB_DEFS[k].dataKey], targetScope);
-          if (r) applied.push(r);
-        });
-        selected.filter(k => !this.WORK_COLLAB.includes(k)).forEach(k => {
-          const keyMap = { wbs: "wbsData", req: "reqMasterData", deliverables: "deliverablesData", voc: "vocData" };
-          const arr = Array.isArray(data[keyMap[k]]) ? data[keyMap[k]] : (selected.length === 1 && Array.isArray(data) ? data : []);
-          if (arr.length > 0) {
-            this._mergeWorkArrayData(k, arr, targetScope);
-            applied.push(`${k.toUpperCase()}(${arr.length}건)`);
-          }
-        });
-      } else {
-        const sheets = await ExcelSync._parseUploadedFile(file);
-        const coll = selected.filter(k => this.WORK_COLLAB.includes(k));
-        if (coll.length) applied.push(...this._applyCollabSheets(sheets, targetScope, coll));
-        selected.filter(k => !this.WORK_COLLAB.includes(k)).forEach(k => {
-          const rows = this._extractRowsFromSheets(sheets, k);
-          if (rows.length > 0) {
-            this._mergeWorkArrayData(k, rows, targetScope);
-            applied.push(`${k.toUpperCase()}(${rows.length}건)`);
-          }
-        });
-      }
-
-      if (applied.length === 0) {
-        throw new Error("업로드한 파일에서 선택한 Task 데이터 항목에 해당하는 유효 데이터를 찾지 못했습니다.");
-      }
-
-      ExcelSync._ensureWbsAndSubsystemsIntegrity();
-      syncSubsystemWeights();
-      rebuildAll(true);
-      if (selected.includes("meetings") && typeof MeetingManager !== "undefined") MeetingManager.onDataReloaded();
-      if (selected.includes("weekly") && typeof WeeklyReportManager !== "undefined") WeeklyReportManager.onDataReloaded();
-      this.refreshMergeUiPermissions();
-      showToast(`✅ [Task데이터 다중선택 병합 완료 (범위: ${targetScope})]\n• 반영 항목: ${applied.join(", ")}\n• 자동 백업: ${backupName}`);
-    } catch (err) {
-      showToast("Task데이터 업로드 오류: " + err.message);
-    }
   }
 };

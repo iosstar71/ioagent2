@@ -117,7 +117,7 @@ var ProjectData = {
     ids = (ids || []).filter(Boolean);
     if (!ids.length) return;
     const many = ids.length > 1;
-    if (many ? !this.isAdmin() : !this.canManage()) return showToast(`🚫 ${many ? "여러 프로젝트 초기화는 시스템관리자만" : "Task 정보 초기화는 PM · 시스템관리자만"} 할 수 있습니다.`);
+    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 시스템관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
     const names = ids.map(id => (this.projects().find(p => p.id === id) || { name: id }).name);
     const cur = ids.indexOf(ProjectContext.current) !== -1;
     const dirty = cur && SyncManager.dirtyCount ? SyncManager.dirtyCount() : 0;
@@ -170,35 +170,42 @@ var ProjectData = {
     const sel = document.getElementById("cfgClearTarget");
     if (!sel) return;
     const keep = sel.value;
-    // [v4.0.0] PM 은 지금 프로젝트만, 시스템관리자는 모든 프로젝트
-    const list = this.isAdmin() ? this.projects() : this.projects().filter(p => p.id === ProjectContext.current);
+    // [v4.1.0] 초기화는 시스템관리자만 — 모든 프로젝트
+    const list = this.projects();
     sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("") +
-      (this.isAdmin() ? `<option value="__ALL__">모든 프로젝트 일괄</option>` : "");
+      `<option value="__ALL__">모든 프로젝트 일괄 (Task 정보 초기화만)</option>`;
     sel.value = [...sel.options].some(o => o.value === keep) ? keep : ProjectContext.current;
   },
 
   // ---- 프로젝트 전체 초기화 (기준정보 포함, 이름 · 기간은 유지) ----
+  // [v4.1.0] 초기화는 시스템관리자만 (시스템 설정 > 🗄️ 데이터 관리)
   resetProject() {
-    if (!this.canManage()) return showToast("🚫 프로젝트 초기화는 PM · 시스템관리자만 할 수 있습니다.");
+    if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 시스템관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
     openConfirmDialog(`⚠️ [프로젝트 전체 초기화] [${this.currentName()}]\n기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤)와 모든 Task 정보를 빈 상태로 되돌립니다.\n` +
-      `· 그대로: 프로젝트 이름 · 기간 · 사용자 계정 · 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => {
+      `· 그대로: 프로젝트 이름 · 기간 · 사용자 계정 · 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => this._resetCurrent());
+  },
+  // 이름 · 기간 · 파일 약칭만 두고 기준정보를 빈 상태로
+  blankConfig(c) {
+    c = c || {};
+    const keep = { projectName: c.projectName, projectStartDate: c.projectStartDate, projectEndDate: c.projectEndDate, reportDate: c.reportDate || c.projectStartDate,
+      fileCode: c.fileCode, uiTheme: c.uiTheme, systemTitle: c.systemTitle };
+    Object.keys(keep).forEach(k => { if (keep[k] === undefined) delete keep[k]; });
+    return Object.assign({
+      domains: ["기본분야"],
+      customSdlcTypes: [DataRegistry.clone(WBSEngine.DEFAULT_SDLC_PRESETS.COMPACT), DataRegistry.clone(WBSEngine.DEFAULT_SDLC_PRESETS.DETAILED)],
+      maxDeliverableRounds: 2, weekStartDay: 1, progressBasis: "CALENDAR", holidays: [], milestones: [], channels: ["전체"],
+      idPrefixConfig: { wbsPrefix: "WBS", wbsUseSubCode: true, reqPrefix: "REQ", reqUseSubCode: true, vocPrefix: "VOC", vocUseSubCode: true }
+    }, keep);
+  },
+  _resetCurrent() {
       BackupHistoryManager.createBackupSnapshot("프로젝트초기화직전백업", "ALL", false);
-      const c = projectConfig;
-      const keep = { projectName: c.projectName, projectStartDate: c.projectStartDate, projectEndDate: c.projectEndDate, reportDate: c.reportDate || c.projectStartDate,
-        fileCode: c.fileCode, uiTheme: c.uiTheme, systemTitle: c.systemTitle };
-      projectConfig = Object.assign({
-        domains: ["기본분야"],
-        customSdlcTypes: [DataRegistry.clone(WBSEngine.DEFAULT_SDLC_PRESETS.COMPACT), DataRegistry.clone(WBSEngine.DEFAULT_SDLC_PRESETS.DETAILED)],
-        maxDeliverableRounds: 2, weekStartDay: 1, progressBasis: "CALENDAR", holidays: [], milestones: [], channels: ["전체"],
-        idPrefixConfig: { wbsPrefix: "WBS", wbsUseSubCode: true, reqPrefix: "REQ", reqUseSubCode: true, vocPrefix: "VOC", vocUseSubCode: true }
-      }, keep);
+      projectConfig = this.blankConfig(projectConfig);
       subsystemsMeta = [];
       standardDeliverablesMeta = [];
       this.TASK_KEYS.forEach(k => DataRegistry.set(k, []));
       if (typeof NoticeCommManager !== "undefined") NoticeCommManager.activeChannel = "전체";
       if (this.isServer()) ServerBackend.request("/api/chat/clear", {});
       StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 사용자는 그대로)`);
-    });
   },
 
   renderMasterPane() { if (typeof BackupPane !== "undefined") BackupPane.render(); }

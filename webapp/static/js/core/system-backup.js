@@ -3,6 +3,7 @@
 // -----------------------------------------------------------------------------
 //  목적: 시스템 운영 정보와 작업 정보를 비상시에 대비해 보관하고 되돌림 (스마트 병합은 일괄 작업 · 통합용)
 //  권한: 시스템관리자 = 모든 기능 · 모든 프로젝트 / PM = 지금 프로젝트 기능 (시스템 전체 기능은 비활성) / 그 밖 = 탭 숨김
+//  [v4.1.0] ① 프로젝트 백업 · 복원 ② 시스템 전체 백업 · 복원 ③ 복원 지점 — 초기화 · 자동 백업 설정은 시스템 설정 > 🗄️ 데이터 관리 (DataAdmin)
 //  시스템 전체 백업: DB 서버 방식 = 서버가 zip(DB + 첨부파일 선택)을 data/backups 에 만들고 목록 · 내려받기 · 복원 · 자동 백업(선택)
 //                    로컬 저장소 방식 = 이 브라우저의 모든 프로젝트 · 사용자 · 설정을 JSON 1개로
 // =============================================================================
@@ -25,7 +26,7 @@ var BackupPane = {
     const note = document.getElementById("bkRoleNote");
     if (note) note.innerHTML = admin
       ? "👑 <b>시스템관리자</b> — 모든 프로젝트와 시스템 전체 백업 · 복원을 쓸 수 있습니다."
-      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원 · 초기화만 쓸 수 있습니다. (시스템 전체 기능은 시스템관리자 전용)`;
+      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 복원 지점을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 시스템관리자 전용)`;
     // 권한 없는 부분은 비활성 (data-need="admin")
     document.querySelectorAll('#mergeBackupPane [data-need="admin"]').forEach(el => {
       el.classList.toggle("bk-locked", !admin);
@@ -33,7 +34,6 @@ var BackupPane = {
       if (el.tagName === "BUTTON") { el.disabled = !admin; if (!admin) el.title = "시스템관리자 전용"; }
     });
     await ProjectTransfer.render();
-    ProjectData.renderConfigTarget();
     const server = !SyncManager.isLocal();
     document.getElementById("bkServerBox").style.display = server ? "" : "none";
     document.getElementById("bkLocalBox").style.display = server ? "none" : "";
@@ -71,6 +71,13 @@ var SystemBackup = {
     set("bkAutoHours", "value", a.hours || 24); set("bkAutoKeep", "value", a.keep || 14);
     set("bkAutoLast", "textContent", a.enabled ? `마지막 자동 백업: ${a.last || "아직 없음 (켜면 5분 안에 첫 백업)"}` : "자동 백업 꺼짐");
     set("bkFolder", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
+    set("bkFolder2", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
+    // [v4.1.0] 백업 · 복원 탭에는 자동 백업 상태만 (설정은 시스템 설정 > 데이터 관리)
+    const st = document.getElementById("bkAutoStatus");
+    if (st) st.innerHTML = `<b>⏱ 자동 백업</b> ${a.enabled
+      ? `<span class="status-badge-chip chip-completed">켜짐</span> ${a.hours || 24}시간마다 · 최근 ${a.keep || 14}개 보관${a.withFiles ? " · 첨부파일 포함" : ""} · 마지막: ${escapeHtml(a.last || "아직 없음")}`
+      : `<span class="status-badge-chip chip-ready">꺼짐</span>`}
+      <button class="btn btn-sm" data-btn="nav" data-click="DataAdmin.go">⚙️ 설정: 시스템 설정 &gt; 데이터 관리</button>`;
   },
   async refresh() { this._apply(await ServerBackend.request("/api/admin/backup/list", {})); },
   async create() {
