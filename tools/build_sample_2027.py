@@ -324,6 +324,17 @@ def meetings():
     ]
 
 
+WEEKLY_NOTES = {
+    "PMO": ["1단계 분석설계 감리 수검 완료(조건부 적합, 지적 3건)", "감리 시정조치 완료 확인 및 개발 단계 진척 점검", "감리 지적 3건 6/11까지 조치 필요"],
+    "MES": ["설계 단계 완료, 작업지시 · 실적 모듈 개발 진행", "ERP 연계 인터페이스정의서 보완 및 작업지시 모듈 개발", "ERP 인터페이스정의서 보완(작업장 코드 매핑) 지연"],
+    "QMS": ["DB 설계 · 인터페이스 정의 완료, 검사 기준 관리 모듈 개발", "SPC 관리도 화면 설계 확정 및 검사 실적 모듈 개발 착수", "SPC 화면 설계 지연(70%) — 6/9 확정 목표, 인력 1명 추가"],
+    "OEE": ["PLC 태그 매핑 · 수집 드라이버 개발 진행", "수집 버퍼 증설 · 재전송 로직 보완, 가동률 산출 엔진 착수", "CNC 2호기 수집 데이터 간헐 누락 — 버퍼 증설 조치 중"],
+}
+WEEKLY_ALL = ["MES · QMS 설계 단계 마무리, OEE 데이터 수집 연계 진행 / 1단계 감리 조건부 적합",
+              "감리 시정조치 완료, 개발 단계 본격 착수 및 지연 Task(QMS SPC 설계) 만회",
+              "QMS SPC 화면 설계 지연, OEE CNC 2호기 수집 누락 — 각 담당 조치 중"]
+
+
 def build():
     wbs = build_wbs()
     cfg = {
@@ -352,7 +363,10 @@ def build():
     }
     users = [{"empNo": e, "name": n, "role": r, "subsystem": s, "dept": d, "pwdHash": "", "lang": "ko"} for e, n, r, s, d in USERS]
     data = {
-        "_meta": {"title": "2027 제조 분야 샘플 (PMO 1 · 폭포수 2 · 개선과제 1, 레벨 4 WBS)", "reportDate": iso(REPORT_DATE)},
+        "_meta": {"title": "2027 제조 분야 샘플 (PMO 1 · 폭포수 2 · 개선과제 1, 레벨 4 WBS)", "reportDate": iso(REPORT_DATE),
+                  # tools/finish_sample_2027.js 가 쓰는 마무리 설정
+                  "xlsx": "2027_제조_스마트공장_샘플_4레벨.xlsx", "snapshot": True, "sdlc": ["SDLC_PMO", "SDLC_WATERFALL"], "req": "REQ_EQUIPMENT",
+                  "leads": LEAD, "notes": WEEKLY_NOTES, "allNotes": WEEKLY_ALL},
         "projectConfig": cfg,
         "subsystemsMeta": SUBS,
         "standardDeliverablesMeta": [{"phase": p, "name": n, "round1": r1, "round2": r2, "round3": False, "round4": False,

@@ -5,6 +5,8 @@
 //   3) Sample/2027_제조_스마트공장_샘플_4레벨.xlsx (스마트병합 전체 일괄 양식) 와
 //      webapp/static/js/core/sample-snapshot.js ([제조 샘플 복원] 자료) 를 만듦
 //   사용: python tools/build_sample_2027.py sample.json && node tools/finish_sample_2027.js sample.json
+//         python tools/build_sample_erp.py erp.json && node tools/finish_sample_2027.js erp.json   (ERP 샘플 — 엑셀만)
+//   샘플 JSON 의 _meta: xlsx(파일 이름) · snapshot(제조 샘플 복원 자료로도 쓸지) · sdlc · req · leads · notes · allNotes
 // =============================================================================
 const { chromium } = require("playwright");
 const fs = require("fs");
@@ -28,11 +30,11 @@ const ROOT = path.resolve(__dirname, "..");
     const cfg = Object.assign({}, base, s.projectConfig);
     delete cfg.uiTheme;
     cfg.systemTitle = APP_VERSION.title;
-    cfg.customSdlcTypes = ["SDLC_PMO", "SDLC_WATERFALL"].map(c => ProcessLib._stripDates(ProcessLib.findSdlc(c)));
+    cfg.customSdlcTypes = s._meta.sdlc.map(c => ProcessLib._stripDates(ProcessLib.findSdlc(c)));
     cfg.customReqPresets = {};
     cfg.holidays = getKoreanNationalHolidays(2027, 2027).filter(h => h.date >= "2027-01-01" && h.date <= "2027-12-31");
     projectConfig = cfg;
-    ProcessLib.applyReqToProject("REQ_EQUIPMENT");
+    ProcessLib.applyReqToProject(s._meta.req || "REQ_STANDARD");
     subsystemsMeta = s.subsystemsMeta;
     standardDeliverablesMeta = s.standardDeliverablesMeta;
     ["wbsData", "reqMasterData", "vocData", "deliverablesData", "meetingsData", "noticesData", "communicationsData"].forEach(k => DataRegistry.set(k, s[k]));
@@ -45,13 +47,8 @@ const ROOT = path.resolve(__dirname, "..");
   await p.waitForTimeout(1500);
   await p.evaluate(() => rebuildAll(true)); await p.waitForTimeout(800);
 
-  // 주간보고: 기준일 주와 그 전 주, 서브시스템 4개 + 통합
-  const NOTES = {
-    PMO: ["1단계 분석설계 감리 수검 완료(조건부 적합, 지적 3건)", "감리 시정조치 완료 확인 및 개발 단계 진척 점검", "감리 지적 3건 6/11까지 조치 필요"],
-    MES: ["설계 단계 완료, 작업지시 · 실적 모듈 개발 진행", "ERP 연계 인터페이스정의서 보완 및 작업지시 모듈 개발", "ERP 인터페이스정의서 보완(작업장 코드 매핑) 지연"],
-    QMS: ["DB 설계 · 인터페이스 정의 완료, 검사 기준 관리 모듈 개발", "SPC 관리도 화면 설계 확정 및 검사 실적 모듈 개발 착수", "SPC 화면 설계 지연(70%) — 6/9 확정 목표, 인력 1명 추가"],
-    OEE: ["PLC 태그 매핑 · 수집 드라이버 개발 진행", "수집 버퍼 증설 · 재전송 로직 보완, 가동률 산출 엔진 착수", "CNC 2호기 수집 데이터 간헐 누락 — 버퍼 증설 조치 중"]
-  };
+  // 주간보고: 기준일 주와 그 전 주, 서브시스템별 + 통합
+  const NOTES = { notes: sample._meta.notes, leads: sample._meta.leads, all: sample._meta.allNotes };
   const done = await p.evaluate(async (NOTES) => {
     GShell.go("tab-weekly-report");
     await new Promise(r => setTimeout(r, 400));
@@ -62,16 +59,14 @@ const ROOT = path.resolve(__dirname, "..");
     const cur = W.findWeekForDate(projectConfig.reportDate).weekNum;
     let n = 0;
     for (const wk of [cur - 1, cur]) {
-      for (const sys of ["PMO", "MES", "QMS", "OEE"]) {
+      for (const sys of Object.keys(NOTES.notes)) {
         W.openUnit(wk, "SYS", sys); await new Promise(r => setTimeout(r, 150));
-        const t = NOTES[sys];
-        setText(t[0], t[1], t[2], { PMO: "김총괄 수석PM", MES: "이생산 책임", QMS: "박품질 책임", OEE: "최설비 책임" }[sys]);
+        const t = NOTES.notes[sys];
+        setText(t[0], t[1], t[2], NOTES.leads[sys]);
         await W.completeReport(false); n++;
       }
       W.openUnit(wk, "ALL", ""); await new Promise(r => setTimeout(r, 200));
-      setText("MES · QMS 설계 단계 마무리, OEE 데이터 수집 연계 진행 / 1단계 감리 조건부 적합",
-        "감리 시정조치 완료, 개발 단계 본격 착수 및 지연 Task(QMS SPC 설계) 만회",
-        "QMS SPC 화면 설계 지연, OEE CNC 2호기 수집 누락 — 각 담당 조치 중", "김총괄 수석PM");
+      setText(NOTES.all[0], NOTES.all[1], NOTES.all[2], NOTES.leads.PMO);
       await W.completeReport(false); n++;
     }
     return n;
@@ -90,7 +85,7 @@ const ROOT = path.resolve(__dirname, "..");
     let s = ""; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
     return btoa(s);
   });
-  const xlsxPath = path.join(ROOT, "Sample", "2027_제조_스마트공장_샘플_4레벨.xlsx");
+  const xlsxPath = path.join(ROOT, "Sample", sample._meta.xlsx);
   fs.writeFileSync(xlsxPath, Buffer.from(xlsx, "base64"));
   const snap = await p.evaluate(() => {
     const all = DataRegistry.collect();
@@ -108,7 +103,7 @@ const ROOT = path.resolve(__dirname, "..");
     "//  자동 생성: python tools/build_sample_2027.py → node tools/finish_sample_2027.js (직접 수정 금지)\n" +
     "//  같은 내용의 엑셀: Sample/2027_제조_스마트공장_샘플_4레벨.xlsx (스마트병합 [④ 전체 일괄] 올리기로 반영)\n" +
     "var WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT = " + JSON.stringify(snap) + ";\n";
-  fs.writeFileSync(path.join(ROOT, "webapp", "static", "js", "core", "sample-snapshot.js"), js);
+  if (sample._meta.snapshot) fs.writeFileSync(path.join(ROOT, "webapp", "static", "js", "core", "sample-snapshot.js"), js);
   const counts = await p.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, voc: vocData.length, deliv: deliverablesData.length, mtg: meetingsData.length, wr: weeklyReportsData.length, notice: noticesData.length, comm: communicationsData.length }));
   console.log("[OK]", xlsxPath, Math.round(fs.statSync(xlsxPath).size / 1024) + "KB", JSON.stringify(counts), "weekly completed:", done, "errors:", errs);
   await b.close();
