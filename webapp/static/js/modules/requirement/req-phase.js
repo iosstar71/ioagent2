@@ -62,6 +62,15 @@ var ReqPhaseManager = {
   },
 
   applyPreset(presetCode) {
+    // [v3.9.0] 개선과제 유형은 시스템 설정의 공정 유형 라이브러리에서 고름 (계획 일정은 단계 이름이 같으면 유지)
+    if (typeof ProcessLib !== "undefined" && ProcessLib.findReq(presetCode)) {
+      if (!ProcessLib.canManageProject()) return showToast("🚫 PM · 시스템관리자만 바꿀 수 있습니다.");
+      ProcessLib.applyReqToProject(presetCode);
+      const t = ProcessLib.findReq(presetCode);
+      this.renderTable();
+      if (typeof MasterSyncEngine !== "undefined") MasterSyncEngine.syncAll(true, "req-preset"); else rebuildAll(true);
+      return showToast(`개선과제 단계를 [${t.name}] 유형으로 적용했습니다.`);
+    }
     const preset = this.PRESETS[presetCode] || this.PRESETS.REQ_MFG_2027;
     projectConfig.reqSdlcPhases = JSON.parse(JSON.stringify(preset.phases));
     projectConfig.activeReqPreset = presetCode;
@@ -80,17 +89,19 @@ var ReqPhaseManager = {
     const phases = this.getPhases();
     tbody.innerHTML = "";
 
+    const canEdit = typeof ProcessLib === "undefined" || ProcessLib.canManageProject();
+    const dis = canEdit ? "" : " disabled";
     phases.forEach((p, idx) => {
       const tr = document.createElement("tr");
+      // [v3.9.0] 단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 > 공정 유형]에서, 여기서는 계획 일정만
       tr.innerHTML = `
         <td style="text-align:center;"><b>${idx + 1}</b></td>
-        <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;color:#0f766e;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
-        <td><input type="number" value="${p.weight}" style="width:70px;text-align:right;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
-        <td><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pStart", "$value")}"></td>
-        <td><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pEnd", "$value")}"></td>
-        <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "output", "$value")}"></td>
-        <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:var(--fs-xs, 11px);" placeholder="쉼표로 구분" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "keywords", "$split")}"></td>
-        <td style="text-align:center;"><button class="btn btn-danger btn-sm" data-click="ReqPhaseManager.deletePhase" data-click-args="${UiEvents.args(idx)}">×</button></td>
+        <td style="font-weight:bold;color:#0f766e;">${escapeHtml(p.name)}</td>
+        <td style="text-align:right;">${p.weight}</td>
+        <td><input type="date"${dis} value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pStart", "$value")}"></td>
+        <td><input type="date"${dis} value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pEnd", "$value")}"></td>
+        <td>${escapeHtml(p.output || "")}</td>
+        <td style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml((p.keywords || []).join(", "))}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -104,6 +115,8 @@ var ReqPhaseManager = {
 
     this.populatePresetSelector(projectConfig.activeReqPreset || "REQ_MFG_2027");
   },
+
+  refreshFromLib() { this.applyPreset(projectConfig.activeReqPreset); },
 
   updatePhase(idx, field, val) {
     if (!projectConfig.reqSdlcPhases) projectConfig.reqSdlcPhases = this.getPhases();
@@ -156,6 +169,16 @@ var ReqPhaseManager = {
   populatePresetSelector(selectedKey) {
     const sel = document.getElementById("reqPresetSelector");
     if (!sel) return;
+    if (typeof ProcessLib !== "undefined") {
+      const list = ProcessLib.reqTypes();
+      const cur = selectedKey || projectConfig.activeReqPreset || (list[0] || {}).code;
+      sel.innerHTML = list.map(t => `<option value="${escapeAttr(t.code)}" ${t.code === cur ? "selected" : ""}>${escapeHtml(t.name)}</option>`).join("") +
+        (list.some(t => t.code === cur) ? "" : `<option value="${escapeAttr(cur || "")}" selected>${escapeHtml(cur || "")} (이 프로젝트 전용)</option>`);
+      sel.disabled = !ProcessLib.canManageProject();
+      const btn = document.getElementById("reqRefreshBtn");
+      if (btn) btn.style.display = ProcessLib.canManageProject() && ProcessLib.reqDiffers() ? "" : "none";
+      return;
+    }
     const currentActive = selectedKey || projectConfig.activeReqPreset || Object.keys(this.PRESETS)[0];
     sel.innerHTML = Object.keys(this.PRESETS).map(k => {
       const p = this.PRESETS[k];

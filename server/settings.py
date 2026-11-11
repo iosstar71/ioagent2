@@ -129,10 +129,11 @@ DATASETS = {
     "weeklyReportsData":        {"part": "id",     "scope": "weekly"},
     "todosData":                {"part": "id",     "scope": "personal"},  # [v2.4.0] 사용자별 할 일 (본인만)
     "theme":                    {"part": None,     "scope": "pref"},
+    "processTypes":             {"part": None,     "scope": "system"},  # [v3.9.0] 공정 유형 라이브러리 (시스템관리자)
 }
 # [v1.0.10] 여러 프로젝트: 사용자 계정·화면 테마는 모든 프로젝트 공통, 그 밖의 데이터는 프로젝트별 저장
 DEFAULT_PROJECT = "DEFAULT"
-GLOBAL_KEYS = {"projectUsers", "theme"}
+GLOBAL_KEYS = {"projectUsers", "theme", "processTypes"}
 PROJECT_ID_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
 MIRROR_SCHEMA_VERSION = "2"
 

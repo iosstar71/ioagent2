@@ -150,9 +150,11 @@ var WbsTemplate = {
   // [v3.7.0] 서브시스템의 기본 담당자: 그 서브시스템 총괄리더(여럿이면 먼저 조회된 사람)
   //   → 없으면 그 서브시스템 담당 사용자 → 전체 담당 총괄리더 순
   leadOf(sys) {
+    // 이 프로젝트에서의 역할 · 담당 서브시스템 (사용자 정보는 프로젝트별 — projectRoles)
     const users = (typeof projectUsers !== "undefined" ? projectUsers : []).filter(u => u && u.name);
-    const role = u => (typeof AuthManager !== "undefined" ? AuthManager.normalizeRole(u.role) : String(u.role || ""));
-    const of = u => String(u.subsystem || "").trim();
+    const eff = u => (typeof ProjectContext !== "undefined" && ProjectContext.effective ? ProjectContext.effective(u) : u);
+    const role = u => (typeof AuthManager !== "undefined" ? AuthManager.normalizeRole(eff(u).role) : String(eff(u).role || ""));
+    const of = u => String(eff(u).subsystem || "").trim();
     const hit = users.find(u => role(u) === "LEAD" && of(u) === sys)
       || users.find(u => of(u) === sys && role(u) !== "SYS_ADMIN")
       || users.find(u => role(u) === "LEAD" && (of(u) === "ALL" || of(u) === ""));

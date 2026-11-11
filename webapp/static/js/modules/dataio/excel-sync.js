@@ -1593,6 +1593,25 @@ const ExcelSync = {
         voc: []
       };
 
+      // [v3.9.0] 전체 일괄 파일의 프로젝트 기준정보 · 사용자 시트 (서브시스템 시트로 잘못 읽지 않게 따로 처리)
+      const configRows = [], userRows = [];
+      const sheetRowsOf = (sheet, tabKey) => {
+        const out = [];
+        let colMap = null;
+        sheet.rows.forEach(cells => {
+          const labels = (this.TAB_SCHEMAS[tabKey] || []).map(c => c.label);
+          if (!colMap && cells.some(c => labels.includes(String(c || "").trim()))) {
+            colMap = {};
+            (this.TAB_SCHEMAS[tabKey] || []).forEach(c => { const i = cells.findIndex(x => String(x || "").trim() === c.label); if (i >= 0) colMap[c.key] = i; });
+            return;
+          }
+          if (!colMap) return;
+          const raw = this._extractRowObject(tabKey, cells, colMap);
+          if (raw) out.push(raw);
+        });
+        return out;
+      };
+
       // 시트별로 파싱: 통합 마스터 시트가 있으면 우선 파싱하고, 비어있는 섹션은 개별 시트에서 보충
       sheets.forEach((sheet, sIdx) => {
         let currentSection = null;
@@ -1600,6 +1619,9 @@ const ExcelSync = {
 
         // 시트 이름으로 기본 섹션 추정
         const sName = (sheet.name || "").toLowerCase();
+        if (sName.includes("프로젝트기준정보")) { configRows.push(...sheetRowsOf(sheet, "config")); return; }
+        if (sName.includes("사용자")) { userRows.push(...sheetRowsOf(sheet, "users")); return; }
+        if (/주간보고|회의록|공지|소통/.test(sName)) return;  // 협업 데이터 시트는 SmartMergeCenter._applyCollabSheets 가 처리
         if (sName.includes("wbs") || sName.includes("공정")) currentSection = "wbs";
         else if (sName.includes("서브시스템") || sName.includes("기준정보") || sName.includes("subsystem")) currentSection = "subsystems";
         else if (sName.includes("산출물") || sName.includes("deliverable")) currentSection = "deliverables";
@@ -1658,6 +1680,10 @@ const ExcelSync = {
 
       if (typeof BackupHistoryManager !== "undefined") {
         BackupHistoryManager.createBackupSnapshot("전체엑셀통합로드", "ALL", true);
+      }
+      if (configRows.length && typeof SmartMergeCenter !== "undefined") SmartMergeCenter.applyConfigRows(configRows);
+      if (userRows.length && typeof SmartMergeCenter !== "undefined") {
+        SmartMergeCenter._mergeUsersList(userRows.map((r, i) => this._normalizeRowData("users", r, i)).filter(Boolean));
       }
       if (bucket.subsystems.length > 0) subsystemsMeta = bucket.subsystems;
       if (bucket.wbs.length > 0) wbsData = bucket.wbs;

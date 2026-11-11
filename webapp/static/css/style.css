@@ -3109,3 +3109,13 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 .proj-box-amber { background: rgba(245, 158, 11, 0.07); border-color: #fde68a; } .proj-box-amber .proj-box-title { color: #b45309; }
 .proj-scope-note { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; font-size: var(--fs-sm, 12px); background: color-mix(in srgb, var(--primary, #1e40af) 8%, var(--bg-card, #fff)); border: 1px solid color-mix(in srgb, var(--primary, #1e40af) 25%, transparent); color: var(--text-main); }
 [data-theme="dark"] .proj-box-title { filter: brightness(1.4); }
+
+/* ---------- [v3.9.0] 공정 유형 라이브러리 / 프로젝트 단계 일정 창 ---------- */
+#customSdlcModal.pl-lib .col-date { display: none; }
+#customSdlcModal.pl-dates .col-del, #customSdlcModal.pl-dates .col-add { display: none; }
+#customSdlcModal.pl-dates input[readonly], #customSdlcModal.pl-dates input:disabled { background: var(--bg-main, #f1f5f9); color: var(--text-sub); }
+.pl-head { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 8px; font-size: var(--fs-md, 13px); }
+.pl-card { padding: 10px 12px; }
+.pl-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.pl-card p { font-size: var(--fs-xs, 11px); color: var(--text-sub); margin: 0 0 6px; }
+.pl-phases { font-size: var(--fs-xs, 11px); color: var(--text-sub); line-height: 1.5; background: rgba(0,0,0,0.02); padding: 6px 8px; border-radius: 6px; }

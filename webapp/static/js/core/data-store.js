@@ -33,7 +33,9 @@ var DataRegistry = {
     weeklyReportsData:        { part: "id",     scope: "weekly",    label: "주간보고" },
     // [v2.4.0] 사용자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
     todosData:                { part: "id",     scope: "personal",  label: "내 할 일" },
-    theme:                    { part: null,     scope: "pref",      label: "화면 테마" }
+    theme:                    { part: null,     scope: "pref",      label: "화면 테마" },
+    // [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 시스템관리자가 관리, 모든 프로젝트 공통
+    processTypes:             { part: null,     scope: "system",    label: "공정 유형" }
   },
 
   get KEYS() { return Object.keys(this.DEFS); },
@@ -53,6 +55,7 @@ var DataRegistry = {
       case "meetingsData": return typeof meetingsData !== "undefined" ? meetingsData : [];
       case "weeklyReportsData": return typeof weeklyReportsData !== "undefined" ? weeklyReportsData : [];
       case "todosData": return typeof todosData !== "undefined" && Array.isArray(todosData) ? todosData : [];
+      case "processTypes": return typeof ProcessLib !== "undefined" ? ProcessLib.raw : null;
       case "theme":  // [v3.8.0] 시스템 기본 테마 (프로젝트 테마는 projectConfig.uiTheme)
         if (typeof ThemeScope !== "undefined") {
           if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "electric";
@@ -92,6 +95,7 @@ var DataRegistry = {
       case "meetingsData": if (Array.isArray(val)) meetingsData = val; break;
       case "weeklyReportsData": if (Array.isArray(val)) weeklyReportsData = val; break;
       case "todosData": if (Array.isArray(val)) todosData = val; break;
+      case "processTypes": if (typeof ProcessLib !== "undefined" && typeof val === "object") ProcessLib.raw = val; break;
       case "theme":
         if (typeof val === "string" && val) {
           if (typeof normalizeTheme === "function") val = normalizeTheme(val);
@@ -244,6 +248,7 @@ var Permission = {
     switch (def.scope) {
       case "master": return role === "SYS_ADMIN" || role === "PM";
       case "pref": return role === "SYS_ADMIN" || role === "PM";
+      case "system": return role === "SYS_ADMIN";
       case "users":
         if (role === "SYS_ADMIN" || role === "PM") return true;
         return String(part).toLowerCase() === String(this.user().empNo || "").toLowerCase();
@@ -276,7 +281,7 @@ var ProjectContext = {
   DEFAULT: "DEFAULT",
   KEY: "AX_PMYS_CURRENT_PROJECT",
   REG_KEY: "AX_PMYS_PROJECTS",
-  GLOBAL_KEYS: ["projectUsers", "theme"],
+  GLOBAL_KEYS: ["projectUsers", "theme", "processTypes"],
   current: "DEFAULT",
   projects: [],
 
@@ -632,7 +637,7 @@ var SyncManager = {
     "tab-merge": ["wbsData", "deliverablesData", "reqMasterData", "vocData", "subsystemsMeta", "projectConfig", "projectUsers"],
     "tab-notices": ["noticesData", "communicationsData"],
     "tab-master": ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "projectUsers"],
-    "tab-config": ["projectConfig", "theme"]
+    "tab-config": ["projectConfig", "theme", "processTypes"]
   },
 
   backend() {

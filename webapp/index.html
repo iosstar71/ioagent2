@@ -1637,7 +1637,7 @@
 
       <!-- [위젯 1: 가장 많이 사용하는 실무 Task 데이터 다중선택 스마트 병합] -->
       <div class="config-group-banner" style="background: linear-gradient(90deg, #0f766e, #0d9488);">
-        <span>📊 ① 업무 데이터 (WBS · 요구사항 · 산출물 · VOC)</span>
+        <span>📊 ① 서브시스템별 업무 데이터 (WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록)</span>
         <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.95;">서브시스템을 고르고 항목을 체크한 뒤 내려받거나 올립니다. 올린 파일은 선택한 서브시스템 범위만 현재 데이터에 합쳐집니다. (전체(ALL) 올리기: 관리자·PM·총괄리더)</span>
       </div>
 
@@ -1652,7 +1652,7 @@
               <select id="workDataSubsysSelect" class="merge-scope-select" style="padding:6px 12px; font-weight:bold; min-width:240px;"></select>
             </div>
             <div id="workDataPermissionHint" style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#0f766e; font-weight:600;">
-              * 여러 서브시스템이 들어 있는 파일을 올려도 선택한 서브시스템 데이터만 골라서 합칩니다. ([전체(ALL)] 올리기는 관리자·PM·총괄리더)
+              * 여러 서브시스템이 들어 있는 파일을 올려도 선택한 서브시스템 데이터만 골라서 합칩니다. 주간보고는 그 서브시스템 보고서만, 회의록은 그 서브시스템 회의(+ 통합 회의)만. ([전체(ALL)] 올리기는 관리자·PM·총괄리더)
             </div>
           </div>
         </div>
@@ -1670,7 +1670,7 @@
             </div>
           </div>
 
-          <div class="grid-4" style="gap: 10px;">
+          <div class="grid-3" style="gap: 10px;">
             <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(13,148,136,0.04); border:1.5px solid #99f6e4; border-radius:8px; cursor:pointer;">
               <input type="checkbox" id="chkWork_wbs" value="wbs" checked style="margin-top:3px; transform:scale(1.2);">
               <div>
@@ -1700,6 +1700,22 @@
               <div>
                 <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#0f766e;">📣 4. 추가 VOC / 이슈</div>
                 <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">현업 추가 요청사항, 우선순위, 목표일 및 조치내역 (<b id="cntBadge_voc">0</b>건)</div>
+              </div>
+            </label>
+
+            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(124,58,237,0.04); border:1.5px solid #ddd6fe; border-radius:8px; cursor:pointer;">
+              <input type="checkbox" id="chkWork_weekly" value="weekly" checked style="margin-top:3px; transform:scale(1.2);">
+              <div>
+                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#6d28d9;">📝 5. 주간보고</div>
+                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">서브시스템 주간보고 (전체 범위면 통합 보고서 포함) (<b id="cntBadge_weekly">0</b>건)</div>
+              </div>
+            </label>
+
+            <label style="display:flex; align-items:flex-start; gap:8px; padding:12px; background:rgba(124,58,237,0.04); border:1.5px solid #ddd6fe; border-radius:8px; cursor:pointer;">
+              <input type="checkbox" id="chkWork_meetings" value="meetings" checked style="margin-top:3px; transform:scale(1.2);">
+              <div>
+                <div style="font-weight:bold; font-size:calc(12.5px * var(--fs-scale, 1)); color:#6d28d9;">📅 6. 회의록 · Action Item</div>
+                <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:2px;">서브시스템 회의(+ 통합 회의) 일정 · 안건 · Action Item (<b id="cntBadge_meetings">0</b>건)</div>
               </div>
             </label>
           </div>
@@ -1735,17 +1751,16 @@
       <div class="card" style="border-left: 4px solid #7c3aed; margin-bottom: 16px;">
         <div class="card-title">
           <div>
-            <span>🤝 ② 협업 데이터 (주간보고 · 회의록 · 공지사항 · 소통 피드)</span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:6px;">* 위 ①의 대상 범위(서브시스템)를 함께 사용합니다. 같은 ID의 항목은 올린 파일 내용으로 갱신되고, 새 항목은 추가됩니다. (채팅 내역 제외)</span>
+            <span>🤝 ② 프로젝트 공통 — 공지사항 · 소통 피드 (프로젝트 전체 단위 · 올리기는 시스템관리자 · PM)</span>
+            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:6px; display:none;">* 위 ①의 대상 범위(서브시스템)를 함께 사용합니다. 같은 ID의 항목은 올린 파일 내용으로 갱신되고, 새 항목은 추가됩니다. (채팅 내역 제외)</span>
           </div>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-sm" data-btn="neutral" data-click="SmartMergeCenter.toggleCollabCheckboxes" data-click-args='[true]'>✅ 전체 선택</button>
             <button class="btn btn-sm" data-btn="neutral" data-click="SmartMergeCenter.toggleCollabCheckboxes" data-click-args='[false]'>⬜ 선택 해제</button>
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:12px;">
-          <label class="merge-collab-item"><input type="checkbox" id="chkCollab_weekly" checked> <b>📝 주간보고</b> <span>(<b id="cntBadge_weekly">0</b>건)</span></label>
-          <label class="merge-collab-item"><input type="checkbox" id="chkCollab_meetings" checked> <b>📅 회의록·Action Item</b> <span>(<b id="cntBadge_meetings">0</b>건)</span></label>
+        <div class="pm-hint" style="margin:0 0 8px;">같은 ID 의 항목은 올린 파일 내용으로 갱신되고, 새 항목은 추가됩니다. (주간보고 · 회의록은 위 ①에서 서브시스템별로 주고받습니다)</div>
+        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:12px;">
           <label class="merge-collab-item"><input type="checkbox" id="chkCollab_notices" checked> <b>📢 공지사항</b> <span>(<b id="cntBadge_notices">0</b>건)</span></label>
           <label class="merge-collab-item"><input type="checkbox" id="chkCollab_comms" checked> <b>💬 소통 피드</b> <span>(<b id="cntBadge_comms">0</b>건)</span></label>
         </div>
@@ -1820,7 +1835,7 @@
           <div>
             <div class="card-title">
               <span>📦 ④ 전체 일괄 (기준정보 + 업무 데이터 + 협업 데이터 한 파일)</span>
-              <span class="status-badge-chip chip-delayed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">전체 올리기: 관리자·PM (총괄리더는 업무·협업 데이터만)</span>
+              <span class="status-badge-chip chip-delayed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">전체 올리기: 시스템관리자 · PM</span>
             </div>
             <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
               프로젝트 기준정보, 서브시스템 정보, 사용자 목록과 전 서브시스템의 Task 데이터(WBS, 요구사항, 산출물, VOC)를 <b>한 개의 파일(엑셀 또는 JSON)로 한 번에 내려받거나 올려서 전체를 반영</b>합니다.
@@ -2367,12 +2382,11 @@
         <div class="card" style="border-left: 4px solid #3b82f6;">
           <div class="card-title">
             <div>
-              <strong>SDLC 생명주기 공정 기준정보 (마스터 8종 풀 &amp; 프로젝트 활성 SDLC)</strong>
+              <strong>SDLC 공정 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
               <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 프로젝트 표준 개발 공정 단계를 관리합니다. (마스터 풀 최대 8개 / 프로젝트당 최대 4개 활성화)</span>
             </div>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-secondary btn-sm" data-click="resetSdlcPresetsToDefault">🔄 기본 복원</button>
-              <button class="btn btn-primary btn-sm" data-click="openNewSdlcModal">+ SDLC 추가</button>
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 시스템관리자가 [시스템 설정 > 공정 유형]에서 합니다">⚙ 공정 유형 관리 (시스템 설정)</button>
             </div>
           </div>
           <div id="customSdlcCardsContainer" class="grid-2" style="gap:12px;"></div>
@@ -2383,26 +2397,18 @@
           <div class="card-title">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:var(--fs-lg, 16px);">🔄</span>
-              <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#0f766e;">개선과제형(REQ) 공정 단계 기준정보 (개선 파이프라인 관리)</strong>
+              <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#0f766e;">개선과제(REQ) 공정 유형 — 이 프로젝트에서 쓸 유형 선택 · 단계별 계획 일정</strong>
             </div>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <span id="reqPhasesWeightSum" style="font-size:var(--fs-sm, 12px); font-weight:bold; margin-right:8px; color:#10b981;">가중치 합계: 100%</span>
-              <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; color:#0f766e; margin-left:4px;">개선타입 프리셋:</label>
-              <select id="reqPresetSelector" style="padding:4px 8px; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; border:1px solid #0f766e; border-radius:4px; background:#f0fdfa;" data-change="ReqPhaseManager.applyPreset" data-change-args='["$value"]'>
-                <option value="REQ_MFG_2027" selected>🏭 27년 가동률 시스템 개선 표준형 (4단계)</option>
-                <option value="REQ_STANDARD">📋 일반 요구사항 개선형 (4단계)</option>
-                <option value="REQ_VOC_FAST">⚡ 현장 VOC 긴급대응형 (3단계)</option>
-                <option value="REQ_EQUIPMENT">🔌 설비/센서 텔레메트리 연계형 (4단계)</option>
-              </select>
-              <button class="btn btn-primary btn-sm" style="font-weight:bold;" data-click="ReqPhaseManager.openNewPresetModal" title="새로운 개선과제형 타입을 등록합니다">➕ 신규 타입 등록</button>
-              <button class="btn btn-outline btn-sm" style="color:var(--danger, #dc2626); border-color:var(--danger, #dc2626); background:#fff; font-weight:bold;" data-click="ReqPhaseManager.deleteCurrentPreset" title="현재 선택된 개선과제형 타입 프리셋을 삭제합니다">🗑️ 타입 삭제</button>
-              <button class="btn btn-secondary btn-sm" data-click="ReqPhaseManager.resetDefaults">🔄 기본 복원</button>
-              <button class="btn btn-primary btn-sm" data-click="ReqPhaseManager.addPhase">+ 개선단계 추가</button>
-              <button class="btn btn-success btn-sm" style="font-weight:bold;" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 실시간 적용</button>
+              <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; color:#0f766e; margin-left:4px;">사용할 개선과제 유형:</label>
+              <select id="reqPresetSelector" style="padding:4px 8px; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; border:1px solid #0f766e; border-radius:4px; background:#f0fdfa;" data-change="ReqPhaseManager.applyPreset" data-change-args='["$value"]'></select>
+              <button class="btn btn-warning btn-sm" id="reqRefreshBtn" style="display:none;" data-click="ReqPhaseManager.refreshFromLib" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin">⚙ 공정 유형 관리 (시스템 설정)</button>
             </div>
           </div>
           <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:10px;">
-            서브시스템 관리유형이 <strong>개선타입(REQ)</strong>으로 지정된 과제의 표준 공정 단계, 단계별 가중치, 표준 산출물 및 과업 매핑 키워드를 관리합니다. 단계별 진척 현황 및 공정 통제에 즉시 연동됩니다.
+            서브시스템 관리유형이 <strong>개선타입(REQ)</strong>인 과제에 쓸 유형을 고르고, 단계별 계획 일정을 정합니다. (단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 &gt; 공정 유형]에서 관리) 단계별 진척 현황 및 공정 통제에 즉시 연동됩니다.
           </p>
           <div class="table-container" style="max-height: 240px;">
             <table class="m-table">
@@ -2414,8 +2420,7 @@
                   <th style="width: 128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
                   <th style="width: 128px;">계획 종료</th>
                   <th style="width: 180px;">표준 산출물명</th>
-                  <th>WBS 과업 매핑 키워드 (쉼표 구분)</th>
-                  <th style="width: 45px; text-align: center;">삭제</th>
+                  <th>WBS 과업 매핑 키워드</th>
                 </tr>
               </thead>
               <tbody id="reqPhasesTableBody"></tbody>
@@ -2664,11 +2669,30 @@
         <button class="master-subtab-btn active" data-subtab="screen" data-click="SubTabs.show" data-click-args='["config", "screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 사용자</button>
+        <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 공정 유형</button>
         <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 양식</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
         <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🗄️ 저장소·DB 연동</button>
         <button class="master-subtab-btn" data-subtab="backup" data-click="SubTabs.show" data-click-args='["config", "backup"]'>💾 백업·복원·초기화</button>
         <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 소통 채널</button>
+      </div>
+
+      <!-- [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 시스템관리자 -->
+      <div class="master-subpane" data-group="config" data-subpane="process">
+        <div class="card" style="border-left:4px solid #3b82f6;">
+          <div class="card-title">
+            <span>🔄 공정 유형 라이브러리 — SDLC 유형 · 개선과제(REQ) 유형</span>
+            <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              <span id="plStatus" style="font-size:var(--fs-xs, 11px); color:var(--text-muted);"></span>
+              <button class="btn btn-secondary btn-sm" data-click="ProcessLib.resetDefaults">🔄 기본 유형으로</button>
+            </span>
+          </div>
+          <div class="pm-hint">모든 프로젝트가 함께 쓰는 공정 유형(단계 · 가중치 · 대표 산출물 · WBS 매칭 키워드)을 관리합니다. 각 프로젝트는 [기준정보 &gt; 공정단계정보]에서 쓸 유형을 활성화하고 단계별 계획 일정만 정합니다. 이미 쓰고 있는 프로젝트에는 그 프로젝트에서 [🔄 최신 반영]을 눌러야 바뀐 내용이 들어갑니다.</div>
+          <div class="pl-head"><b>SDLC 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["sdlc"]'>+ SDLC 유형</button></div>
+          <div id="plSdlcCards" class="grid-2" style="gap:10px;"></div>
+          <div class="pl-head" style="margin-top:16px;"><b>개선과제(REQ) 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["req"]'>+ 개선과제 유형</button></div>
+          <div id="plReqCards" class="grid-2" style="gap:10px;"></div>
+        </div>
       </div>
 
       <!-- [v3.7.0] 전체 사용자 통합 관리 (시스템관리자) -->
@@ -3141,11 +3165,11 @@
                 🔄 [시스템 초기화] 초기 샘플데이터로 복원 vs 완전 초기화 (설정까지 모두 초기화)
               </div>
               <p style="font-size: calc(11.5px * var(--fs-scale, 1)); color: var(--text-sub); margin-bottom: 10px; line-height: 1.5;">
-                • <b>초기 샘플데이터로 복원:</b> 내장된 <b>[제조_시스템_샘플_과제_4레벨.xlsx]</b> ('제조 시스템 샘플 과제' — SDLC_WATERFALL 4레벨 공정, MES·QMS 2개 분야/서브시스템, 54개 WBS, 산출물 2회차, 요구사항 6건, VOC 5건) 표준 샘플데이터와 기준정보 상태로 즉시 복원합니다.<br>
+                • <b>제조 샘플 복원:</b> 지금 프로젝트를 <b>[2027_제조_스마트공장_샘플_4레벨.xlsx]</b>와 같은 2027년 제조 분야 샘플(PMO 1 · 폭포수 표준형 2(MES · QMS) · 개선과제형 1(OEE), 레벨 4 WBS 126건, 요구사항 19 · VOC 8 · 산출물 17 · 회의 6 · 주간보고 10건)로 바꿉니다. 사용자 계정은 지우지 않고 샘플 담당자만 추가합니다.<br>
                 • <b>완전 초기화:</b> 모든 Task 데이터(0건)와 함께 프로젝트 설정·서브시스템·권한 설정까지 초기 빈 상태로 완전히 초기화합니다.
               </p>
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button class="btn btn-warning btn-sm" style="padding: 8px 14px; font-weight:bold;" data-click="StorageManager.resetToSampleData" title="제조_시스템_샘플_과제_4레벨.xlsx 데이터로 복원">
+                <button class="btn btn-warning btn-sm" style="padding: 8px 14px; font-weight:bold;" data-click="StorageManager.resetToSampleData" title="2027 제조 분야 샘플 (Sample/2027_제조_스마트공장_샘플_4레벨.xlsx 와 같은 내용)">
                   🔄 제조 샘플 복원
                 </button>
                 <button class="btn btn-danger btn-sm" style="padding: 8px 14px; font-weight:bold;" data-click="StorageManager.resetToFactoryBlank">
@@ -3540,7 +3564,7 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <label style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--primary);">📋 커스텀 공정 단계 목록:</label>
-        <button class="btn btn-primary btn-sm" data-click="addPhaseToEditSdlc">+ 단계 추가</button>
+        <button class="btn btn-primary btn-sm col-add" data-click="addPhaseToEditSdlc">+ 단계 추가</button>
       </div>
       <div class="table-container" style="max-height: 280px; margin-bottom: 14px;">
         <table id="editSdlcPhasesTable">
@@ -3549,11 +3573,11 @@
               <th style="width:50px;">순번</th>
               <th style="width:140px;">단계명</th>
               <th style="width:80px;">가중치(%)</th>
-              <th style="width:128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
-              <th style="width:128px;">계획 종료</th>
+              <th class="col-date" style="width:128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
+              <th class="col-date" style="width:128px;">계획 종료</th>
               <th style="width:140px;">대표 산출물</th>
               <th>매칭 키워드 (쉼표 구분)</th>
-              <th style="width:45px;">삭제</th>
+              <th class="col-del" style="width:45px;">삭제</th>
             </tr>
           </thead>
           <tbody id="editSdlcPhasesBody"></tbody>
@@ -3561,7 +3585,7 @@
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn btn-secondary btn-sm" data-click="closeCustomSdlcModal">취소</button>
-        <button class="btn btn-primary btn-sm" data-click="saveCustomSdlcFromModal">💾 SDLC 설정 저장</button>
+        <button class="btn btn-primary btn-sm" data-click="saveCustomSdlcFromModal">💾 저장</button>
       </div>
     </div>
   </div>
@@ -3611,6 +3635,7 @@
   <script src="static/js/modules/master/holidays.js"></script>
   <script src="static/js/core/app-boot.js"></script>
   <script src="static/js/modules/master/sdlc.js"></script>
+  <script src="static/js/modules/master/process-lib.js"></script>
   <script src="static/js/core/app-refresh.js"></script>
   <script src="static/js/modules/wbs/wbs-table.js"></script>
   <script src="static/js/modules/progress/phase-matrix.js"></script>

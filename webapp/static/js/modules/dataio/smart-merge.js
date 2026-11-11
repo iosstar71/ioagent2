@@ -109,7 +109,9 @@ const SmartMergeCenter = {
       rows.push({ category: "DOMAIN", key: `DOMAIN_${idx + 1}`, value: d, extra1: String(idx + 1), extra2: "상위 분야", extra3: "" });
     });
 
-    (projectConfig.customSdlcTypes || []).forEach(sdlc => {
+    // [v3.9.0] 이 프로젝트에서 활성화한 SDLC 유형만 + 개선과제(REQ) 단계
+    const activeCodes = typeof WBSEngine !== "undefined" ? WBSEngine.getActiveSdlcList().map(s => s.code) : [];
+    (projectConfig.customSdlcTypes || []).filter(s => !activeCodes.length || activeCodes.includes(s.code)).forEach(sdlc => {
       (sdlc.phases || []).forEach(ph => {
         rows.push({
           category: "SDLC_PHASE",
@@ -120,6 +122,12 @@ const SmartMergeCenter = {
           extra3: (ph.keywords || []).join(",")
         });
       });
+    });
+
+    const reqCode = projectConfig.activeReqPreset || "REQ_CUSTOM";
+    const reqName = (typeof ProcessLib !== "undefined" && ProcessLib.findReq(reqCode) || {}).name || reqCode;
+    (typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager.getPhases() : []).forEach(ph => {
+      rows.push({ category: "REQ_PHASE", key: `${reqCode}|${reqName}`, value: ph.name, extra1: String(ph.weight || 0), extra2: ph.output || "", extra3: (ph.keywords || []).join(",") });
     });
 
     (projectConfig.holidays || []).forEach(h => {
@@ -168,6 +176,8 @@ const SmartMergeCenter = {
     const sdlcMap = new Map();
     const holidays = [];
     const stdDelivs = [];
+    const reqPhases = [];
+    let reqCode = "";
 
     rows.forEach(r => {
       const cat = String(r.category || "").trim().toUpperCase();
@@ -201,6 +211,10 @@ const SmartMergeCenter = {
           output: ex2,
           keywords: ex3 ? ex3.split(",").map(s => s.trim()).filter(Boolean) : [val]
         });
+      } else if (cat === "REQ_PHASE" && k && val) {
+        reqCode = (k.split("|")[0] || "").trim();
+        reqPhases.push({ key: `r${reqPhases.length + 1}`, name: val, weight: parseFloat(ex1) || 25, output: ex2,
+          keywords: ex3 ? ex3.split(",").map(s => s.trim()).filter(Boolean) : [val] });
       } else if (cat === "HOLIDAY" && val && ex1) {
         holidays.push({
           type: k === "CUSTOM" ? "CUSTOM" : "NATIONAL",
@@ -224,10 +238,16 @@ const SmartMergeCenter = {
 
     if (domains.length > 0) projectConfig.domains = domains;
     if (sdlcMap.size > 0) {
-      projectConfig.customSdlcTypes = Array.from(sdlcMap.values()).slice(0, 2).map(s => {
-        s.desc = s.phases.map(p => p.name).join(" ➔ ");
+      projectConfig.customSdlcTypes = Array.from(sdlcMap.values()).slice(0, 4).map(s => {
+        const lib = typeof ProcessLib !== "undefined" ? ProcessLib.findSdlc(s.code) : null;
+        s.desc = (lib && lib.desc) || s.phases.map(p => p.name).join(" ➔ ");
         return s;
       });
+      projectConfig.activeSdlcCodes = projectConfig.customSdlcTypes.map(s => s.code);
+    }
+    if (reqPhases.length > 0) {
+      projectConfig.reqSdlcPhases = reqPhases;
+      if (reqCode) projectConfig.activeReqPreset = reqCode;
     }
     if (holidays.length > 0) projectConfig.holidays = holidays;
     const milestones = rows.filter(r => r.category === "MILESTONE" && r.value).map((r, i) => ({
@@ -573,6 +593,10 @@ const SmartMergeCenter = {
       sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
     });
 
+    // [v3.9.0] 이 프로젝트 참여자 (시스템관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
+    const uSchema = ExcelSync.TAB_SCHEMAS.users;
+    sheets.push({ name: this.SHEET_NAMES.users, colWidths: uSchema.map(c => c.width || 18),
+      rows: [{ cells: uSchema.map(c => c.label), styleId: 1, height: 25 }].concat(this._projectUserRows(false).map(r => ({ cells: uSchema.map(c => ExcelSync.formatExportCell("users", c.key, r[c.key])), styleId: 2, height: 20 }))) });
     Object.keys(this.COLLAB_DEFS).forEach(k => sheets.push(this._collabSheet(k, "ALL")));
     const blob = ExcelSync._buildXlsxBlob(sheets);
     const filename = ExcelSync.stdName("전체데이터", [], "xlsx");
@@ -590,7 +614,7 @@ const SmartMergeCenter = {
     const targetScope = sel ? sel.value : "ALL";
     const isPrivileged = this.isAdminOrPm(); // 기준정보 반영 권한
 
-    if (targetScope === "ALL" && !this.canBulkWork()) {
+    if (targetScope === "ALL" && !isPrivileged) {
       showToast("🚫 [권한 제한] 전체(ALL) 통합 업로드는 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다. 개별 서브시스템을 선택해주세요.");
       return;
     }
@@ -709,10 +733,8 @@ const SmartMergeCenter = {
       return el && el.checked;
     });
   },
-  _collabScope() {
-    const sel = document.getElementById("workDataSubsysSelect");
-    return sel && sel.value ? sel.value : "ALL";
-  },
+  // [v3.9.0] ② 공지사항 · 소통 피드는 프로젝트 전체 단위 (서브시스템을 고르지 않음)
+  _collabScope() { return "ALL"; },
   _collabRecords(k, scope) {
     const def = this.COLLAB_DEFS[k];
     const all = DataRegistry.get(def.dataKey) || [];
@@ -817,8 +839,8 @@ const SmartMergeCenter = {
       return;
     }
     const scope = this._collabScope();
-    if (scope === "ALL" && !this.canBulkWork()) {
-      showToast("🚫 [권한 제한] 일반 사용자는 전체(ALL) 범위로 올릴 수 없습니다. ①에서 담당 서브시스템을 선택하세요.");
+    if (!this.isAdminOrPm()) {
+      showToast("🚫 [권한 제한] 공지사항 · 소통 피드 올리기는 시스템관리자 · PM만 할 수 있습니다.");
       return;
     }
     try {
@@ -846,7 +868,9 @@ const SmartMergeCenter = {
 
   // ---- 다중선택(Multi-select) 기준정보 & Task데이터 입출력 ----
   MASTER_KEYS: ["config", "subsystems", "users"],
-  WORK_KEYS: ["wbs", "req", "deliverables", "voc"],
+  // [v3.9.0] 서브시스템별 내려받기 · 올리기에 주간보고 · 회의록 포함 (공지 · 소통 · 기준정보는 프로젝트 전체 단위, 올리기는 PM 이상)
+  WORK_KEYS: ["wbs", "req", "deliverables", "voc", "weekly", "meetings"],
+  WORK_COLLAB: ["weekly", "meetings"],
 
   SHEET_NAMES: {
     config: "0_프로젝트기준정보",
@@ -903,7 +927,16 @@ const SmartMergeCenter = {
     setTxt("cntBadge_voc", vCnt);
     setTxt("cntBadge_subsystems", subsystemsMeta.length);
     setTxt("cntBadge_users", projectUsers.length);
-    Object.keys(this.COLLAB_DEFS).forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, scope).length));
+    this.WORK_COLLAB.forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, scope).length));
+    ["notices", "comms"].forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, "ALL").length));
+  },
+
+  // [v3.9.0] 사용자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (사용자 정보는 프로젝트별)
+  _projectUserRows(withAdmins) {
+    return (projectUsers || []).filter(u => withAdmins || !ProjectContext.isAdminUser(u)).map(u => {
+      const e = ProjectContext.effective ? ProjectContext.effective(u) : u;
+      return { empNo: u.empNo, name: u.name, role: e.role, subsystem: e.subsystem || "ALL", dept: e.dept || u.dept || "", lang: u.lang || "ko" };
+    });
   },
 
   // 기준정보 다중선택 다운로드 (프로젝트 기준정보, 서브시스템 정보, 사용자 목록)
@@ -943,12 +976,13 @@ const SmartMergeCenter = {
     // EXCEL 다중 시트 생성
     const sheets = [];
     selected.forEach(k => {
+      if (this.WORK_COLLAB.includes(k)) { sheets.push(this._collabSheet(k, scope)); return; }
       const schema = ExcelSync.TAB_SCHEMAS[k];
       if (!schema) return;
       let records = [];
       if (k === "config") records = this.buildConfigRows();
       else if (k === "subsystems") records = subsystemsMeta;
-      else if (k === "users") records = projectUsers;
+      else if (k === "users") records = this._projectUserRows(true);
 
       const rows = [{ cells: schema.map(c => c.label), styleId: 1, height: 25 }];
       records.forEach(r => {
@@ -1132,7 +1166,7 @@ const SmartMergeCenter = {
   downloadSelectedWorkData(format) {
     const selected = this.getSelectedWorkKeys();
     if (selected.length === 0) {
-      showToast("⚠️ 다운로드할 Task 데이터 항목(WBS, 요구사항, 산출물, VOC)을 최소 1개 이상 선택해주세요.");
+      showToast("⚠️ 내려받을 항목(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록)을 1개 이상 선택하세요.");
       return;
     }
     const scopeSel = document.getElementById("workDataSubsysSelect");
@@ -1153,6 +1187,7 @@ const SmartMergeCenter = {
       if (selected.includes("req")) payload.reqMasterData = isAll ? reqMasterData : reqMasterData.filter(r => r.system === scope);
       if (selected.includes("deliverables")) payload.deliverablesData = isAll ? deliverablesData : deliverablesData.filter(d => d.system === scope);
       if (selected.includes("voc")) payload.vocData = isAll ? vocData : vocData.filter(v => v.system === scope);
+      this.WORK_COLLAB.filter(k => selected.includes(k)).forEach(k => { payload[this.COLLAB_DEFS[k].dataKey] = this._collabRecords(k, scope); });
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = ExcelSync.stdName("업무데이터", [scope, labelStr], "json");
@@ -1224,7 +1259,11 @@ const SmartMergeCenter = {
       if (format === "JSON") {
         const text = await file.text();
         const data = JSON.parse(text);
-        selected.forEach(k => {
+        selected.filter(k => this.WORK_COLLAB.includes(k)).forEach(k => {
+          const r = this._upsertCollab(k, data[this.COLLAB_DEFS[k].dataKey], targetScope);
+          if (r) applied.push(r);
+        });
+        selected.filter(k => !this.WORK_COLLAB.includes(k)).forEach(k => {
           const keyMap = { wbs: "wbsData", req: "reqMasterData", deliverables: "deliverablesData", voc: "vocData" };
           const arr = Array.isArray(data[keyMap[k]]) ? data[keyMap[k]] : (selected.length === 1 && Array.isArray(data) ? data : []);
           if (arr.length > 0) {
@@ -1234,7 +1273,9 @@ const SmartMergeCenter = {
         });
       } else {
         const sheets = await ExcelSync._parseUploadedFile(file);
-        selected.forEach(k => {
+        const coll = selected.filter(k => this.WORK_COLLAB.includes(k));
+        if (coll.length) applied.push(...this._applyCollabSheets(sheets, targetScope, coll));
+        selected.filter(k => !this.WORK_COLLAB.includes(k)).forEach(k => {
           const rows = this._extractRowsFromSheets(sheets, k);
           if (rows.length > 0) {
             this._mergeWorkArrayData(k, rows, targetScope);
@@ -1250,6 +1291,8 @@ const SmartMergeCenter = {
       ExcelSync._ensureWbsAndSubsystemsIntegrity();
       syncSubsystemWeights();
       rebuildAll(true);
+      if (selected.includes("meetings") && typeof MeetingManager !== "undefined") MeetingManager.onDataReloaded();
+      if (selected.includes("weekly") && typeof WeeklyReportManager !== "undefined") WeeklyReportManager.onDataReloaded();
       this.refreshMergeUiPermissions();
       showToast(`✅ [Task데이터 다중선택 병합 완료 (범위: ${targetScope})]\n• 반영 항목: ${applied.join(", ")}\n• 자동 백업: ${backupName}`);
     } catch (err) {

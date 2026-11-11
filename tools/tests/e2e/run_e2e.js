@@ -801,6 +801,52 @@ async function localMain() {
     rows: document.querySelectorAll("#projectBackupHistoryBody tr").length, p1rows: [...document.querySelectorAll("#projectBackupHistoryBody tr")].some(tr => tr.textContent.includes("P001")) }));
   check("v3.8: project backup JSON → restore brings this project back (other projects' snapshots not listed here)", backupBlob.name.includes("프로젝트백업") && restored.wbs === before38.wbs && restored.req === before38.req
     && restored.mtg === before38.mtg && restored.notice === before38.notice && restored.name === before38.name && before38.other >= 1 && !restored.p1rows, JSON.stringify({ before38, restored, file: backupBlob.name }));
+  // [v3.9.0] 공정 유형: 시스템 설정에서 관리, 프로젝트는 활성화 · 계획 일정만
+  await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "process"); }); await page.waitForTimeout(500);
+  const pl1 = await page.evaluate(() => ({ sdlc: document.querySelectorAll("#plSdlcCards .pl-card").length, req: document.querySelectorAll("#plReqCards .pl-card").length }));
+  await page.evaluate(() => ProcessLib.openNew("sdlc")); await page.waitForTimeout(300);
+  await page.fill("#editSdlcCode", "SDLC_E2E"); await page.fill("#editSdlcName", "E2E 시험 유형");
+  const libModal = await page.evaluate(() => getComputedStyle(document.querySelector("#customSdlcModal td.col-date")).display);
+  await page.click('#customSdlcModal [data-click="saveCustomSdlcFromModal"]'); await page.waitForTimeout(400);
+  await page.evaluate(() => { GShell.go("tab-master"); MasterSubTabs.show("phase"); }); await page.waitForTimeout(500);
+  const pl2 = await page.evaluate(() => ({ card: [...document.querySelectorAll("#customSdlcCardsContainer .step-card")].some(c => c.textContent.includes("E2E 시험 유형")),
+    editBtn: !!document.querySelector('#customSdlcCardsContainer [data-click="openEditSdlcModal"]'), reqInputs: document.querySelectorAll("#reqPhasesTableBody input[type=text]").length,
+    reqDates: document.querySelectorAll("#reqPhasesTableBody input[type=date]").length, saved: !!(ProcessLib.raw && ProcessLib.raw.sdlc.some(t => t.code === "SDLC_E2E")) }));
+  const act39 = await page.evaluate(() => { const before = getProjectActiveSdlcCodes().slice(); if (before.length >= 4) toggleSdlcActiveState(before[before.length - 1]);
+    toggleSdlcActiveState("SDLC_E2E"); return { active: getProjectActiveSdlcCodes().includes("SDLC_E2E"), copied: !!(projectConfig.customSdlcTypes || []).find(t => t.code === "SDLC_E2E") }; });
+  await page.evaluate(() => ProcessLib.openDates("SDLC_E2E")); await page.waitForTimeout(300);
+  const dm = await page.evaluate(() => ({ nameDisabled: document.querySelector("#editSdlcPhasesBody input[type=text]").disabled, dateOn: !document.querySelector("#editSdlcPhasesBody input[type=date]").disabled }));
+  await page.evaluate(() => { _editingSdlcPhasesTemp[0].pStart = "2027-02-01"; _editingSdlcPhasesTemp[0].pEnd = "2027-02-26"; saveCustomSdlcFromModal(); }); await page.waitForTimeout(300);
+  const pd = await page.evaluate(() => { const t = projectConfig.customSdlcTypes.find(x => x.code === "SDLC_E2E"); return [t.phases[0].pStart, t.phases[0].pEnd].join(); });
+  check("v3.9: process types managed in System settings (library); project only activates them and sets phase plan dates",
+    pl1.sdlc >= 6 && pl1.req >= 4 && libModal === "none" && pl2.card && !pl2.editBtn && pl2.reqInputs === 0 && pl2.reqDates > 0 && pl2.saved && act39.active && act39.copied && dm.nameDisabled && dm.dateOn && pd === "2027-02-01,2027-02-26",
+    JSON.stringify({ pl1, libModal, pl2, act39, dm, pd }));
+  // [v3.9.0] 스마트병합: 서브시스템별 내려받기에 주간보고 · 회의록 포함
+  await page.evaluate(() => { GShell.go("tab-merge"); SmartMergeCenter.refreshMergeUiPermissions(); }); await page.waitForTimeout(500);
+  const sm39 = await page.evaluate(() => { document.getElementById("workDataSubsysSelect").value = "W1"; SmartMergeCenter.updateCountBadges();
+    const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
+    SmartMergeCenter.toggleWorkCheckboxes(true); SmartMergeCenter.downloadSelectedWorkData("JSON"); ExcelSync._triggerDownload = o;
+    return got.blob.text().then(t => { const j = JSON.parse(t); return { keys: Object.keys(j).filter(k => /Data$/.test(k)), wr: (j.weeklyReportsData || []).every(r => r.scope === "SYS" && r.scopeValue === "W1"),
+      mt: (j.meetingsData || []).every(m => m.system === "W1" || m.system === "ALL"), mtN: (j.meetingsData || []).length, badge: document.getElementById("cntBadge_meetings").textContent,
+      collabBoxes: ["weekly", "meetings"].filter(k => document.getElementById("chkCollab_" + k)).length }; }); });
+  check("v3.9: Smart merge per-subsystem download includes weekly reports and meeting minutes of that subsystem only",
+    ["wbsData", "reqMasterData", "deliverablesData", "vocData", "weeklyReportsData", "meetingsData"].every(k => sm39.keys.includes(k)) && sm39.wr && sm39.mt && sm39.mtN > 0 && sm39.badge === String(sm39.mtN) && sm39.collabBoxes === 0, JSON.stringify(sm39));
+  // [v3.9.0] 2027 제조 샘플 엑셀(전체 일괄)을 빈 프로젝트에 올리기
+  await page.evaluate(() => ProjectManager.switchTo("P001")); await page.waitForTimeout(1200); await waitApp(page, "P001");
+  const xb64 = fs.readFileSync(path.join(ROOT, "Sample", "2027_제조_스마트공장_샘플_4레벨.xlsx")).toString("base64");
+  const up39 = await page.evaluate(async (b64) => {
+    GShell.go("tab-merge"); SmartMergeCenter.refreshMergeUiPermissions();
+    document.getElementById("masterPkgSubsysSelect").value = "ALL";
+    const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    await SmartMergeCenter.uploadMasterPackage({ target: { files: [new File([u], "sample.xlsx")], value: "" } }, "EXCEL");
+    await new Promise(r => setTimeout(r, 800));
+    return { name: projectConfig.projectName, wbs: wbsData.length, l4: wbsData.filter(t => t.level === 4).length, req: reqMasterData.length, voc: vocData.length, deliv: deliverablesData.length,
+      mtg: meetingsData.length, wr: weeklyReportsData.length, subs: subsystemsMeta.map(m => m.code + ":" + (m.type === "REQ" ? "REQ" : m.sdlcCode)).join(","),
+      sdlc: WBSEngine.getActiveSdlcList().map(s => s.code).join(","), req0: (ReqPhaseManager.getPhases()[0] || {}).name, lead: WbsTemplate.leadOf("QMS") };
+  }, xb64);
+  check("v3.9: 2027 manufacturing sample Excel (PMO 1 · waterfall 2 · improvement 1, 4-level WBS) uploads into an empty project",
+    up39.name.includes("2027") && up39.wbs === 126 && up39.l4 === 72 && up39.req === 19 && up39.voc === 8 && up39.deliv === 17 && up39.mtg === 6 && up39.wr === 10
+    && up39.subs === "PMO:SDLC_PMO,MES:SDLC_WATERFALL,QMS:SDLC_WATERFALL,OEE:REQ" && up39.sdlc === "SDLC_PMO,SDLC_WATERFALL" && up39.req0 === "설비통신 인터페이스설계" && up39.lead === "박품질 책임", JSON.stringify(up39));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }

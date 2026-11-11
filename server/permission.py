@@ -156,6 +156,8 @@ def can_write(user, key, part, row):
     own = str(user.get("subsystem") or "ALL")
     if scope in ("master", "pref"):
         return role in MANAGER_ROLES
+    if scope == "system":
+        return role == "SYS_ADMIN"
     if scope == "users":
         return role in MANAGER_ROLES or str(part).lower() == str(user["empNo"]).lower()
     if scope == "subsystem":

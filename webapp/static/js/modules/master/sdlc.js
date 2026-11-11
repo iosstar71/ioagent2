@@ -57,6 +57,8 @@ function toggleSdlcActiveState(sdlcCode) {
       showToast("⚠️ 프로젝트에서는 SDLC 타입을 최대 4개까지만 선택하여 활성화할 수 있습니다. 기존 활성 타입을 비활성화한 후 선택해주세요.", "warning");
       return;
     }
+    // [v3.9.0] 시스템 설정의 공정 유형 정의를 이 프로젝트에 복사 (계획 일정은 이 프로젝트에서 따로)
+    if (typeof ProcessLib !== "undefined") ProcessLib.applySdlcToProject(sdlcCode);
     projectConfig.activeSdlcCodes.push(sdlcCode);
     renderCustomSdlcCards();
     rebuildAll(true);
@@ -70,9 +72,12 @@ function renderCustomSdlcCards() {
   if (!container) return;
   container.innerHTML = "";
 
-  const masterList = (typeof projectConfig !== "undefined" && Array.isArray(projectConfig.customSdlcTypes))
-    ? projectConfig.customSdlcTypes
-    : [WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_WATERFALL];
+  // [v3.9.0] 고를 수 있는 유형 = 시스템 설정의 공정 유형 라이브러리 (+ 이 프로젝트에만 남아 있는 이전 유형)
+  const projList = Array.isArray(projectConfig.customSdlcTypes) ? projectConfig.customSdlcTypes : [];
+  const libList = typeof ProcessLib !== "undefined" ? ProcessLib.sdlcTypes() : projList;
+  const masterList = libList.map(t => projList.find(x => x.code === t.code) || t)
+    .concat(projList.filter(t => !libList.some(x => x.code === t.code)).map(t => Object.assign({}, t, { _projectOnly: true })));
+  const canEdit = typeof ProcessLib === "undefined" || ProcessLib.canManageProject();
 
   const activeCodes = getProjectActiveSdlcCodes();
 
@@ -89,10 +94,10 @@ function renderCustomSdlcCards() {
   summaryDiv.style.alignItems = "center";
   summaryDiv.innerHTML = `
     <span style="font-size:var(--fs-sm, 12px); color:#166534; font-weight:bold;">
-      📋 SDLC 마스터 등록 풀: <b>${masterList.length}/8개</b> | 프로젝트 선택 활성화: <b>${activeCodes.length}/4개</b>
+      📋 시스템 공정 유형: <b>${masterList.length}개</b> | 이 프로젝트 활성화: <b>${activeCodes.length}/4개</b>
     </span>
     <span style="font-size:var(--fs-xs, 11px); color:#15803d;">
-      (프로젝트 활성으로 선택된 SDLC만 서브시스템 배정 및 단계별 진척 현황 매트릭스에 렌더링됩니다)
+      (유형 추가 · 단계 수정은 [시스템 설정 &gt; 🔄 공정 유형] · 이 화면에서는 활성화와 단계별 계획 일정만)
     </span>
   `;
   container.appendChild(summaryDiv);
@@ -106,24 +111,25 @@ function renderCustomSdlcCards() {
     card.style.position = "relative";
 
     const assignedCount = subsystemsMeta.filter(s => s.type !== "REQ" && s.sdlcCode === sdlc.code).length;
-    const phaseNames = (sdlc.phases || []).map((p, pIdx) => `${pIdx + 1}.${p.name}(${p.weight}%)`).join(" ➔ ");
+    const phaseNames = (sdlc.phases || []).map((p, pIdx) => `${pIdx + 1}.${p.name}(${p.weight}%${p.pStart && p.pEnd ? ` · ${p.pStart.slice(5)}~${p.pEnd.slice(5)}` : ""})`).join(" ➔ ");
 
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:6px;">
           <span class="badge" style="background:${isActive ? "#059669" : "#64748b"}; color:#fff; font-size:var(--fs-2xs, 10px);">
-            ${isActive ? "✅ 프로젝트 활성" : "비활성 (보관)"}
+            ${isActive ? "✅ 프로젝트 활성" : "사용 안 함"}
           </span>
           ${sdlc.isRecommended ? '<span class="badge" style="background:#0284c7; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">⭐ 추천타입</span>' : ''}
           <strong style="font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sdlc.name)}</strong>
           <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
         </div>
-        <div style="display:flex; gap:6px; align-items:center;">
-          <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+          ${sdlc._projectOnly ? '<span class="badge" style="background:#b45309; color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 공정 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
+          ${isActive && canEdit && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(sdlc.code) ? `<button class="btn btn-warning btn-sm" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(String(sdlc.code))}" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
+          ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 일정</button>` : ""}
+          ${canEdit ? `<button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
             ${isActive ? '선택 해제' : '선택 활성화 (프로젝트 사용)'}
-          </button>
-          <button class="btn btn-secondary btn-sm" data-click="openEditSdlcModal" data-click-args="${UiEvents.args(idx)}">✏️ 단계 편집</button>
-          ${masterList.length > 1 ? `<button class="btn btn-danger btn-sm" data-click="deleteCustomSdlcType" data-click-args="${UiEvents.args(idx)}">삭제</button>` : ""}
+          </button>` : ""}
         </div>
       </div>
       <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
@@ -209,6 +215,7 @@ function openEditSdlcModal(idx) {
 function closeCustomSdlcModal() {
   const modal = document.getElementById("customSdlcModal");
   if (modal) modal.style.display = "none";
+  _editingSdlcMode = null;
 }
 
 function renderEditSdlcPhasesTable() {
@@ -216,17 +223,18 @@ function renderEditSdlcPhasesTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
+  const ro = _editingSdlcMode && _editingSdlcMode.target === "dates" ? " disabled" : "";  // [v3.9.0] 프로젝트에서는 계획 일정만
   _editingSdlcPhasesTemp.forEach((p, pIdx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td style="text-align:center;"><b>${pIdx + 1}</b></td>
-      <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
-      <td><input type="number" value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
-      <td><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pStart", "$value")}"></td>
-      <td><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pEnd", "$value")}"></td>
-      <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
-      <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:var(--fs-xs, 11px);" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
-      <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "renderEditSdlcPhasesTable")}">×</button></td>
+      <td><input type="text"${ro} value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
+      <td><input type="number"${ro} value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
+      <td class="col-date"><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pStart", "$value")}"></td>
+      <td class="col-date"><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pEnd", "$value")}"></td>
+      <td><input type="text"${ro} value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
+      <td><input type="text"${ro} value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:var(--fs-xs, 11px);" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
+      <td class="col-del"><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "renderEditSdlcPhasesTable")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -248,6 +256,8 @@ function saveCustomSdlcFromModal() {
   const codeVal = document.getElementById("editSdlcCode").value.trim();
   const nameVal = document.getElementById("editSdlcName").value.trim();
   const descVal = document.getElementById("editSdlcDesc").value.trim();
+  // [v3.9.0] 시스템 설정의 공정 유형 편집 / 프로젝트 단계 일정 편집
+  if (_editingSdlcMode && typeof ProcessLib !== "undefined") return ProcessLib.saveModal(_editingSdlcMode, codeVal, nameVal, descVal);
 
   if (!codeVal || !nameVal) {
     showToast("SDLC 타입 코드와 명칭을 모두 입력해주세요.");

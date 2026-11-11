@@ -309,10 +309,9 @@ var MeetingManager = {
   },
 
 
+  // [v3.9.0] 회의가 없는 프로젝트(새 프로젝트 · Task 정보 초기화 뒤)에 예전 예시 회의를 넣지 않음
   ensureInitialData() {
-    if (!Array.isArray(meetingsData) || meetingsData.length === 0) {
-      meetingsData = this.getDefaultMeetings();
-    }
+    if (!Array.isArray(meetingsData)) meetingsData = [];
   },
 
   getDefaultMeetings() {

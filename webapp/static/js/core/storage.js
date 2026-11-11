@@ -146,13 +146,25 @@ var StorageManager = {
       : MeetingManager.getDefaultMeetings().filter(meetingFilter || (() => true));
   },
 
+  // [v3.9.0] 2027 제조 분야 샘플 (PMO 1 · 폭포수 표준형 2 · 개선과제형 1, 레벨 4 WBS, 주간보고 · 회의록 포함)
+  //  지금 프로젝트의 자료만 바꾸고, 샘플 담당자 계정은 없으면 이 프로젝트 참여자로 추가 (다른 사용자 · 프로젝트는 그대로)
   resetToSampleData() {
     openConfirmDialog(
-      "🔄 [제조_시스템_샘플_과제_4레벨 복원]\n현재 데이터를 지우고 표준 샘플데이터('제조 시스템 샘플 과제' — SDLC_WATERFALL 4레벨, MES·QMS)로 복원하시겠습니까?",
+      "🔄 [2027 제조 샘플 복원]\n지금 프로젝트의 자료를 '2027 스마트공장 제조혁신 (샘플)'로 바꿉니다.\n· PMO 1 · 폭포수 표준형 2(MES · QMS) · 개선과제형 1(OEE), 레벨 4 WBS 126건\n· 요구사항 · VOC · 산출물 · 회의록 · 주간보고 · 공지 · 소통 포함\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?",
       () => {
         BackupHistoryManager.createBackupSnapshot("제조샘플복원직전백업", "ALL", false);
-        this._applySnapshot(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT, m => m.system === "MES" || m.system === "QMS" || m.system === "ALL");
-        this._afterBulkReplace("✅ [제조 샘플 복원 완료] '제조_시스템_샘플_과제_4레벨.xlsx' 데이터로 복원되었습니다.");
+        const c = DataRegistry.clone(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT);
+        DataRegistry.apply(c, ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "wbsData", "deliverablesData", "reqMasterData", "vocData",
+          "noticesData", "communicationsData", "meetingsData", "weeklyReportsData"]);
+        const users = DataRegistry.clone(ProjectContext.allUsers && ProjectContext.allUsers.length ? ProjectContext.allUsers : DataRegistry.get("projectUsers"));
+        (c.projectUsers || []).forEach(su => {
+          const u = users.find(x => String(x.empNo).toLowerCase() === String(su.empNo).toLowerCase());
+          const a = { role: su.role, subsystem: su.subsystem, dept: su.dept };
+          if (u) { if (!ProjectContext.isAdminUser(u)) u.projectRoles = Object.assign({}, u.projectRoles, { [ProjectContext.current]: a }); }
+          else users.push(Object.assign({}, su, { projectRoles: { [ProjectContext.current]: a } }));
+        });
+        DataRegistry.set("projectUsers", users);
+        this._afterBulkReplace("✅ [2027 제조 샘플 복원 완료] PMO · MES · QMS(폭포수) · OEE(개선과제) 샘플로 바꿨습니다. (같은 내용의 엑셀: Sample/2027_제조_스마트공장_샘플_4레벨.xlsx)");
       }
     );
   },
