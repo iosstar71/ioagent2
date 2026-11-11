@@ -407,6 +407,17 @@ var LocalBackend = {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
         if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
+        // [v3.7.0] 시스템관리자 계정 하나 더 (admin2 / 초기 비밀번호 1234) — 없을 때 한 번만 추가
+        if (localStorage.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
+          localStorage.setItem("IOSTAR_SECOND_ADMIN", "1");
+          if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
+            const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
+            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "시스템관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
+            const rv = this._readRevs(ProjectContext.DEFAULT);
+            if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
+            this._write(ProjectContext.DEFAULT, st, rv);
+          }
+        }
       } else {
         localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
       }
@@ -735,7 +746,7 @@ var SyncManager = {
     // [v1.0.10] 보관된 프로젝트는 시스템관리자 외에는 읽기 전용
     const proj = ProjectContext.info();
     if (proj && proj.status === "ARCHIVED" && Permission.user().baseRole !== "SYS_ADMIN") {
-      if (opts.notify || !this._archivedNotified) showToast("📦 보관된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");
+      if (opts.notify || !this._archivedNotified) showToast("📦 사용 중지(보관)된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");
       this._archivedNotified = true;
       return { ok: false, archived: true };
     }

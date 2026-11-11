@@ -83,7 +83,15 @@ FILE_DEFAULT_EXTENSIONS = ("pdf hwp hwpx doc docx xls xlsx ppt pptx txt csv md "
                            "png jpg jpeg gif bmp webp zip 7z")
 FILE_ALLOWED_EXTENSIONS = frozenset(
     e.strip().lstrip(".").lower() for e in re.split(r"[\s,]+", APP_CONFIG.get("allowed_extensions") or FILE_DEFAULT_EXTENSIONS) if e.strip())
-FILE_OWNER_TYPES = {"deliverable": "deliverablesData"}  # 첨부 대상 → 권한을 따르는 데이터셋
+FILE_MAX_PER_POST = _cfg_int("max_files_per_post", 5, 1, 50)  # 공지 · 게시물 · 회의록 1건에 붙일 수 있는 파일 수
+# 첨부 대상 → 권한을 따르는 데이터셋 / 한 건에 붙일 수 있는 파일 수(0 = 제한 없음) / 올리기 · 삭제 규칙
+#   subsystem: 그 서브시스템을 저장할 수 있는 사람   author: 글쓴이와 PM · 시스템관리자   member: 프로젝트 참여자 (삭제는 올린 사람과 PM · 시스템관리자)
+FILE_OWNER_TYPES = {
+    "deliverable": {"dataset": "deliverablesData", "max": 0, "rule": "subsystem"},
+    "notice": {"dataset": "noticesData", "max": FILE_MAX_PER_POST, "rule": "author"},
+    "post": {"dataset": "communicationsData", "max": FILE_MAX_PER_POST, "rule": "author"},
+    "meeting": {"dataset": "meetingsData", "max": FILE_MAX_PER_POST, "rule": "member"},
+}
 BLOCKED_URL_PREFIXES = ("/server", "/data", "/logs", "/tools", "/certs", "/python", "/.")
 BLOCKED_URL_EXTENSIONS = {".py", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env", ".log", ".pem", ".key", ".crt", ".pfx"}
 

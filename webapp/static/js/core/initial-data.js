@@ -982,6 +982,14 @@ window.AX_INITIAL_DATA = {
    "pwdHash": ""
   },
   {
+   "empNo": "admin2",
+   "name": "시스템관리자2",
+   "role": "SYS_ADMIN",
+   "subsystem": "ALL",
+   "dept": "전사 IT품질팀 / 시스템 총괄 및 기준정보·스마트병합 제어",
+   "pwdHash": ""
+  },
+  {
    "empNo": "pmo_kim",
    "name": "김총괄 수석PM",
    "role": "PM",

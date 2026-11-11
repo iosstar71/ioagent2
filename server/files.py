@@ -58,7 +58,8 @@ class FileStore:
     @staticmethod
     def policy():
         return {"maxBytes": FILE_MAX_BYTES, "quotaBytes": FILE_PROJECT_QUOTA_BYTES, "trashDays": FILE_TRASH_DAYS,
-                "keepVersions": FILE_KEEP_VERSIONS, "extensions": sorted(FILE_ALLOWED_EXTENSIONS)}
+                "keepVersions": FILE_KEEP_VERSIONS, "extensions": sorted(FILE_ALLOWED_EXTENSIONS),
+                "maxCount": {t: c["max"] for t, c in FILE_OWNER_TYPES.items()}}
 
     @classmethod
     def init_schema(cls):
@@ -87,22 +88,31 @@ class FileStore:
 
     # ---- 권한 ----
     @staticmethod
-    def owner_system(pid, owner_type, owner_id, fallback=""):
-        """첨부 대상 행(서버에 저장된 것)의 서브시스템 — 아직 저장 전인 새 행이면 화면이 보낸 값"""
-        key = FILE_OWNER_TYPES[owner_type]
+    def owner_row(pid, owner_type, owner_id):
+        """첨부 대상 행(서버에 저장된 것) — 아직 저장 전인 새 행이면 None"""
+        key = FILE_OWNER_TYPES[owner_type]["dataset"]
         data, _ = Store.load([key], pid)
-        for row in data.get(key) or []:
-            if str(row.get("fileKey") or "") == owner_id:
-                return str(row.get("system") or "")
-        return str(fallback or "")
+        return next((row for row in data.get(key) or [] if isinstance(row, dict) and str(row.get("fileKey") or "") == owner_id), None)
 
     @classmethod
-    def require_write(cls, user, owner_type, owner_id, fallback=""):
+    def require_write(cls, user, owner_type, owner_id, fallback="", file=None):
+        """올리기(file=None) · 삭제(file=지울 파일) 권한 확인 → 대상의 서브시스템"""
         if user.get("projectStatus") == "ARCHIVED" and user.get("baseRole") != "SYS_ADMIN":
-            raise AuthError("보관된 프로젝트에는 파일을 올리거나 지울 수 없습니다.", 403)
-        system = cls.owner_system(user["projectId"], owner_type, owner_id, fallback)
-        if not system or not can_write(user, FILE_OWNER_TYPES[owner_type], system, None):
-            raise AuthError(f"담당 서브시스템이 아니어서 첨부파일을 바꿀 수 없습니다. ({system or '서브시스템 없음'})", 403)
+            raise AuthError("사용 중지(보관)된 프로젝트에는 파일을 올리거나 지울 수 없습니다.", 403)
+        cfg = FILE_OWNER_TYPES[owner_type]
+        row = cls.owner_row(user["projectId"], owner_type, owner_id)
+        system = str((row or {}).get("system") or fallback or "")
+        manager = user["role"] in MANAGER_ROLES
+        me = str(user["empNo"]).lower()
+        if cfg["rule"] == "subsystem":
+            if not system or not can_write(user, cfg["dataset"], system, None):
+                raise AuthError(f"담당 서브시스템이 아니어서 첨부파일을 바꿀 수 없습니다. ({system or '서브시스템 없음'})", 403)
+        elif cfg["rule"] == "author":
+            author = str((row or {}).get("authorEmpNo") or "").lower()
+            if row is not None and not manager and author and author != me:
+                raise AuthError("글쓴이와 PM · 시스템관리자만 첨부파일을 바꿀 수 있습니다.", 403)
+        if file is not None and cfg["rule"] != "subsystem" and not manager and str(file.get("uploadedBy") or "").lower() != me:
+            raise AuthError("올린 사람과 PM · 시스템관리자만 첨부파일을 지울 수 있습니다.", 403)
         return system
 
     @staticmethod
@@ -159,6 +169,11 @@ class FileStore:
             raise AuthError("빈 파일은 올릴 수 없습니다.", 400)
         if length > FILE_MAX_BYTES:
             raise AuthError(f"파일이 너무 큽니다. (파일 1개 최대 {FILE_MAX_BYTES // 1024 // 1024}MB)", 413, "FILE_TOO_LARGE")
+        limit = FILE_OWNER_TYPES[owner_type]["max"]
+        if limit:
+            names = {f["name"].lower() for f in cls.list(pid, owner_type, owner_id)}
+            if name.lower() not in names and len(names) >= limit:
+                raise AuthError(f"파일은 한 건에 {limit}개까지 붙일 수 있습니다. 필요 없는 파일을 지운 뒤 올리세요.", 400, "FILE_COUNT")
         if cls.summary(pid)["usedBytes"] + length > FILE_PROJECT_QUOTA_BYTES:
             raise AuthError(f"프로젝트 첨부파일 저장 한도({FILE_PROJECT_QUOTA_BYTES // 1024 // 1024}MB)를 넘습니다. 휴지통을 비우거나 필요 없는 파일을 지우세요.", 413, "FILE_QUOTA")
         file_id = secrets.token_hex(16)

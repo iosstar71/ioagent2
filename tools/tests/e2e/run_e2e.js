@@ -330,7 +330,7 @@ async function localMain() {
   check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify({ pcount, np }));
   // [v3.0.0] 새 프로젝트: 사용자는 시스템관리자만, 소통 채널은 이 프로젝트의 서브시스템으로
   const fresh = await page.evaluate(() => ({ users: projectUsers.map(u => u.empNo), ch: (projectConfig.channels || []).join(","), subs: ["전체"].concat(subsystemsMeta.map(m => m.code || m.name)).join(",") }));
-  check("v3: new project starts with admin only; communication channels are per project (its subsystems)", fresh.users.join(",") === "admin" && fresh.ch === fresh.subs, JSON.stringify(fresh));
+  check("v3: new project starts with the system admins only; communication channels are per project (its subsystems)", fresh.users.join(",") === "admin,admin2" && fresh.ch === fresh.subs, JSON.stringify(fresh));
   // 다른 프로젝트에서 사용자 복사 (기준정보 > 사용자 > [📥 다른 프로젝트에서 복사])
   await page.evaluate(() => { GShell.go("tab-master"); SubTabs.show("master", "users"); }); await page.waitForTimeout(400);
   await page.click("#btnCopyUsers"); await page.waitForTimeout(700);
@@ -501,7 +501,7 @@ async function localMain() {
     const w1 = await page.evaluate(() => ({ n: wbsData.filter(t => t.system === "W1").length, l1: wbsData.filter(t => t.system === "W1" && t.level === 1).length, shown: !document.getElementById("tplExisting").hidden, rows: document.querySelectorAll("#tplPreviewBody tr").length }));
     await page.click("#tplApplyBtn"); await page.waitForTimeout(800);
     const w1b = await page.evaluate(() => ({ n: wbsData.filter(t => t.system === "W1").length, l1: wbsData.filter(t => t.system === "W1" && t.level === 1).length,
-      ok: wbsData.filter(t => t.system === "W1").slice(-4).every(t => t.level === 2 && t.pStart >= projectConfig.projectStartDate && t.pEnd <= projectConfig.projectEndDate && !WBSEngine.isHoliday(t.pStart, projectConfig.holidays) && !WBSEngine.isHoliday(t.pEnd, projectConfig.holidays) && /^\d+\.\d+$/.test(t.id)) }));
+      ok: wbsData.filter(t => t.system === "W1").slice(-4).every(t => (t.level === 2 || t.level === 3) && t.pStart >= projectConfig.projectStartDate && t.pEnd <= projectConfig.projectEndDate && !WBSEngine.isHoliday(t.pStart, projectConfig.holidays) && !WBSEngine.isHoliday(t.pEnd, projectConfig.holidays) && /^\d+(\.\d+){1,2}$/.test(t.id)) }));
     check("Template append: existing WBS kept, phase tasks added under the same L1 (business-day dates, renumbered)", w1.shown && w1.rows >= 2 && w1b.l1 === 1 && w1b.n === w1.n + w1.rows && w1b.ok, JSON.stringify({ w1, w1b }));
     await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
     await page.selectOption("#tplSystemSelect", "PMO"); await page.waitForTimeout(200);
@@ -511,6 +511,62 @@ async function localMain() {
     await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(800);
     const pmo = await page.evaluate(() => { const r = wbsData.filter(t => t.system === "PMO"); return { n: r.length, l1: r.filter(t => t.level === 1).length, names: r.map(t => t.name).slice(1), others: wbsData.filter(t => t.system === "W2").length }; });
     check("Template replace (after confirm): old PMO tasks removed, rebuilt from template; other subsystems untouched", pmo.n === pre && pmo.l1 === 1 && pmo.others > 0 && pmo.names.indexOf("착수단계") !== -1, JSON.stringify(pmo));
+
+    // [v3.7.0] 템플릿: 단계(L2)마다 세부 과업(L3) 2개 · 담당자 = 서브시스템 총괄리더 · 산출물 비움 · 기준정보의 단계 계획 일정 반영 / 다른 서브시스템 WBS 복사
+    const tpl37 = await page.evaluate(() => {
+      const r = wbsData.filter(t => t.system === "PMO");
+      const l2 = r.filter(t => t.level === 2), l3 = r.filter(t => t.level === 3);
+      const pair = r.findIndex(t => t.level === 2);
+      return { l2: l2.length, l3: l3.length, same: r[pair + 1].level === 3 && r[pair + 2].level === 3 && r[pair + 1].pStart === r[pair].pStart && r[pair + 2].pEnd === r[pair].pEnd,
+        owner: [...new Set(r.map(t => t.owner))], lead: WbsTemplate.leadOf("PMO"), out: r.every(t => !t.output) };
+    });
+    check("Template v3.7: two L3 tasks under each L2 with the same plan dates, owner = subsystem lead, deliverable left empty", tpl37.l3 === tpl37.l2 * 2 && tpl37.same && tpl37.owner.length === 1 && tpl37.owner[0] === tpl37.lead && !!tpl37.lead && tpl37.out, JSON.stringify(tpl37));
+    const tplDate = await page.evaluate(() => {
+      projectConfig.reqSdlcPhases = ReqPhaseManager.getPhases();
+      projectConfig.reqSdlcPhases[0].pStart = "2027-02-01"; projectConfig.reqSdlcPhases[0].pEnd = "2027-02-26";
+      const rows = WbsTemplate.build("W2", "REQ", true);
+      const lead2 = projectUsers.filter(u => AuthManager.normalizeRole(u.role) === "LEAD" && u.subsystem === "W2").map(u => u.name)[0] || projectUsers.filter(u => u.subsystem === "W2").map(u => u.name)[0];
+      delete projectConfig.reqSdlcPhases[0].pStart; delete projectConfig.reqSdlcPhases[0].pEnd;
+      return { l2: [rows[1].pStart, rows[1].pEnd], l3: [rows[2].pStart, rows[3].pEnd], owner: rows[1].owner, lead2,
+        heads: [...document.querySelectorAll("#editSdlcPhasesTable th")].map(th => th.textContent).join("|") };
+    });
+    check("Master phase plan dates (SDLC / REQ) flow into the template L2 and L3 tasks", tplDate.l2.join() === "2027-02-01,2027-02-26" && tplDate.l3.join() === "2027-02-01,2027-02-26" && tplDate.owner === tplDate.lead2 && tplDate.heads.includes("계획 시작") && tplDate.heads.includes("계획 종료"), JSON.stringify(tplDate));
+    await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(300);
+    await page.selectOption("#tplSystemSelect", "A1"); await page.waitForTimeout(200);
+    await page.selectOption("#tplTypeSelect", "COPY:W2"); await page.waitForTimeout(200);
+    await page.check('input[name="tplMode"][value="replace"]'); await page.waitForTimeout(200);
+    const cpBtn = await page.evaluate(() => ({ btn: document.getElementById("tplApplyBtn").textContent, shown: !document.getElementById("tplExisting").hidden }));
+    await page.click("#tplApplyBtn"); await page.waitForTimeout(300);
+    await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(800);
+    const cp = await page.evaluate(() => { const a = wbsData.filter(t => t.system === "A1"), w = wbsData.filter(t => t.system === "W2");
+      return { n: a.length, w: w.length, lv: a.map(t => t.level).join("") === w.map(t => t.level).join(""), dates: a.every((t, i) => t.pStart === w[i].pStart && t.pEnd === w[i].pEnd),
+        clean: a.every(t => !t.aStart && !t.aEnd && !(parseFloat(t.aProg) > 0)), owner: [...new Set(a.map(t => t.owner))], lead: WbsTemplate.leadOf("A1") }; });
+    check("WBS copy from another subsystem (replace chosen): same structure and plan dates, actuals cleared, owner = target subsystem lead", cpBtn.shown && cp.n === cp.w && cp.lv && cp.dates && cp.clean && cp.owner.length === 1 && cp.owner[0] === cp.lead, JSON.stringify({ cpBtn, cp }));
+
+    // [v3.7.0] 기준정보 표준 산출물: 단계 순 표시 / 서브 탭 줄 고정 / 전체 사용자 통합 관리 / admin2 / 프로젝트 사용 중지 표시
+    await page.evaluate(() => { GShell.go("tab-master"); MasterSubTabs.show("phase"); }); await page.waitForTimeout(500);
+    const stdSort = await page.evaluate(() => { const order = ["요구사항정의단계", "분석설계단계", "구현단계", "통합테스트단계", "시험검증단계", "이행단계", "안정화단계", "이행안정화단계", "구축단계"];
+      const ph = [...document.querySelectorAll("#standardDeliverablesBody tr td:nth-child(2) select")].map(el => order.indexOf(el.value));
+      return { n: ph.length, sorted: ph.every((v, i) => i === 0 || ph[i - 1] <= v), dirty: SyncManager.dirtyCount() }; });
+    check("Master: standard deliverables are listed in phase order (viewing does not mark data as changed)", stdSort.n > 3 && stdSort.sorted, JSON.stringify(stdSort));
+    await page.evaluate(() => window.scrollTo(0, 900)); await page.waitForTimeout(300);
+    const stick = await page.evaluate(() => ({ bar: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().top), nav: Math.round(document.querySelector(".g-nav").getBoundingClientRect().bottom), y: window.scrollY }));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    check("Sub-tab bar stays fixed under the menu while scrolling", stick.y > 300 && Math.abs(stick.bar - stick.nav) <= 1, JSON.stringify(stick));
+    await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "users"); }); await page.waitForTimeout(600);
+    const ua1 = await page.evaluate(() => ({ rows: document.querySelectorAll("#uaBody tr").length, all: UserAdmin.users.length, admin2: UserAdmin.users.some(u => u.empNo === "admin2" && u.sysAdmin),
+      chip: (document.querySelector("#uaBody .ua-chip:not(.ua-admin)") || {}).textContent || "", sum: document.getElementById("uaSummary").textContent }));
+    await page.evaluate(() => UserAdmin.openNew()); await page.waitForTimeout(300);
+    await page.fill("#uaEmpNo", "ua_e2e"); await page.fill("#uaName", "통합 사용자"); await page.fill("#uaDept", "시험팀");
+    await page.evaluate(() => { const tr = document.querySelector("#uaProjectRows tr"); tr.querySelector(".ua-join").checked = true; UserAdmin.syncEditRows(); tr.querySelector(".ua-role").value = "LEAD"; tr.querySelector(".ua-sub").value = "W1"; });
+    await page.click('#userAdminModal [data-click="UserAdmin.saveEdit"]'); await page.waitForTimeout(900);
+    const ua2 = await page.evaluate(() => { const u = UserAdmin.users.find(x => x.empNo === "ua_e2e"); const v = projectUsers.find(x => x.empNo === "ua_e2e");
+      return { saved: !!u && u.projectRoles[ProjectContext.current].role === "LEAD" && u.projectRoles[ProjectContext.current].subsystem === "W1", inProject: !!v, lead: WbsTemplate.leadOf("W1") }; });
+    await page.evaluate(() => UserAdmin.remove("ua_e2e")); await page.waitForTimeout(300);
+    await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(900);
+    const ua3 = await page.evaluate(() => ({ gone: !UserAdmin.users.some(x => x.empNo === "ua_e2e") && !projectUsers.some(x => x.empNo === "ua_e2e") }));
+    check("System settings > All users: every user with project roles in one table (admin2 present)", ua1.rows === ua1.all && ua1.all >= 9 && ua1.admin2 && ua1.chip.includes("·") && ua1.sum.includes("시스템관리자 2명"), JSON.stringify(ua1));
+    check("All users: add a user with a project role (LEAD of W1 becomes the template owner), then delete", ua2.saved && ua2.inProject && ua2.lead === "통합 사용자" && ua3.gone, JSON.stringify({ ua2, ua3 }));
 
     const heads = await page.evaluate(() => [...document.querySelectorAll(".tab-pane")].map(p => { const h = p.querySelector(":scope > .sub-header-bar.neo-ph"); return [p.id, !!h && !!h.querySelector(".neo-ph-main .sub-title") && !!h.querySelector(".neo-ph-desc"), p.querySelectorAll(".sync-toolbar-state").length <= 1 && (!p.querySelector(".sync-toolbar-state") || !!h.querySelector(".sync-toolbar-state"))]; }).filter(x => !(x[1] && x[2])));
     check("Neo: every screen has the unified header (title + description + save status on the right)", heads.length === 0, JSON.stringify(heads));
@@ -695,7 +751,7 @@ async function localMain() {
   const locked = await page.evaluate(() => ({ pid: ProjectContext.current, role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display, badge: document.getElementById("headerProjectNameBadge").textContent, users: projectUsers.map(u => u.empNo).sort().join(",") }));
   await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200);
   const stay = await page.evaluate(() => ProjectContext.current);
-  check("v3: PM logs into the chosen project only (role from that project, no project switch, users of that project only)", locked.pid === "P001" && locked.role === "PM" && locked.sel === "none" && locked.badge === "E2E 신규 프로젝트" && stay === "P001" && locked.users === "admin,lead_lee,pmo_kim", JSON.stringify({ locked, stay }));
+  check("v3: PM logs into the chosen project only (role from that project, no project switch, users of that project only)", locked.pid === "P001" && locked.role === "PM" && locked.sel === "none" && locked.badge === "E2E 신규 프로젝트" && stay === "P001" && locked.users === "admin,admin2,lead_lee,pmo_kim", JSON.stringify({ locked, stay }));
   await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
   await login(page, "admin", LOCAL_PWD, ""); await waitApp(page);
   const adm = await page.evaluate(() => ({ role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }));
@@ -812,6 +868,23 @@ async function serverScenarios() {
     const at5 = await a.evaluate(() => AttachManager.trashCount);
     check("Attachment: delete -> trash (previous version shown), manager restores from trash", at3.ver === "v1" && at3.trash === 1 && at4.rows === 1 && at4.title.includes("휴지통") && at5 === 0, JSON.stringify({ at3, at4, at5 }));
     await a.evaluate(() => AttachManager.close());
+    // [v3.7.0] 공지 · 회의록 첨부: 한 건에 5개까지
+    await a.evaluate(() => { GShell.go("tab-notices"); NoticeCommManager.switchSubTab("NOTICES"); }); await a.waitForTimeout(600);
+    await a.click('#noticesListContainer .attach-btn[data-atype="notice"]'); await a.waitForTimeout(600);
+    const mk = n => ({ name: `공지첨부${n}.pdf`, mimeType: "application/pdf", buffer: pdf });
+    await a.setInputFiles("#attachFileInput", [1, 2, 3, 4, 5].map(mk)); await a.waitForTimeout(2500);
+    await a.setInputFiles("#attachFileInput", [mk(6)]); await a.waitForTimeout(800);
+    const nt = await a.evaluate(() => ({ rows: document.querySelectorAll("#attachListBody tr").length, policy: document.getElementById("attachPolicy").textContent, title: document.getElementById("attachTarget").textContent,
+      badge: (document.querySelector('#noticesListContainer .attach-btn[data-atype="notice"] b') || {}).textContent, toast: document.body.innerText.includes("5개까지 붙일 수 있습니다") }));
+    await a.evaluate(() => AttachManager.close());
+    await a.evaluate(() => { GShell.go("tab-meeting"); MeetingManager.switchSubTab("minutes"); }); await a.waitForTimeout(700);
+    await a.click('#minutesEditorContainer .attach-btn[data-atype="meeting"]'); await a.waitForTimeout(600);
+    await a.setInputFiles("#attachFileInput", [{ name: "회의자료.pdf", mimeType: "application/pdf", buffer: pdf }]); await a.waitForTimeout(1500);
+    const mt = await a.evaluate(() => ({ rows: document.querySelectorAll("#attachListBody tr").length, title: document.getElementById("attachTarget").textContent, dirty: MeetingManager.isDraftDirty(),
+      badge: (document.querySelector('#minutesEditorContainer .attach-btn[data-atype="meeting"] b') || {}).textContent }));
+    await a.evaluate(() => AttachManager.close());
+    check("Attachment on a notice: up to 5 files per item (6th rejected), count badge on the notice card", nt.rows === 5 && nt.policy.includes("파일 5개까지") && nt.title.includes("[공지]") && nt.badge === "5" && nt.toast, JSON.stringify(nt));
+    check("Attachment on meeting minutes: file listed, badge shown, minutes draft not marked as changed", mt.rows === 1 && mt.title.includes("[회의]") && mt.badge === "1" && !mt.dirty, JSON.stringify(mt));
 
     // 서버 중지 → 연결 끊김 표시
     srv.kill();

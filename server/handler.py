@@ -26,7 +26,7 @@ from .settings import (
 from .common import AuthError, MANAGER_ROLES, SecurityError, now_str
 from .security import verify_pwd
 from .permission import can_access_project, effective_user, is_sys_admin, membership
-from . import file_api
+from . import file_api, user_admin
 from .files import FileStore
 from .logger import write_server_log
 from .store import Store
@@ -408,6 +408,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
 
     ROUTES = {
         **file_api.ROUTES,
+        **user_admin.ROUTES,
         "/api/projects/list": api_projects_list,
         "/api/projects/create": api_projects_create,
         "/api/projects/update": api_projects_update,

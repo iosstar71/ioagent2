@@ -63,7 +63,7 @@ var ProjectManager = {
     const sel = document.getElementById("headerProjectSelect");
     if (!sel) return;
     const list = ProjectContext.projects.length ? ProjectContext.projects : [{ id: ProjectContext.current, name: projectConfig.projectName || ProjectContext.current, status: "ACTIVE" }];
-    sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (보관)" : ""}</option>`).join("");
+    sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("");
     // [v3.0.0] 프로젝트 전환은 시스템관리자만 — 그 밖의 사용자는 프로젝트 이름만 표시
     const badge = document.getElementById("headerProjectNameBadge");
     const admin = this.isAdmin();
@@ -213,7 +213,7 @@ var ProjectManager = {
             <tbody>${list.map(p => `<tr class="${p.id === ProjectContext.current ? "pm-current" : ""}">
               <td><code>${escapeHtml(p.id)}</code></td>
               <td><b>${escapeHtml(p.name || p.id)}</b>${p.id === ProjectContext.current ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
-              <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
+              <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="로그인 화면의 프로젝트 목록에 나오지 않고, 시스템관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
               <td>사용자 ${this.memberCount(p)}명</td>
               <td>${p.id === ProjectContext.current ? "" : `<button class="btn btn-xs" data-btn="nav" data-click="ProjectManager.switchTo" data-click-args="${UiEvents.args(p.id)}">열기</button>`}</td>
             </tr>`).join("")}</tbody>
@@ -222,7 +222,7 @@ var ProjectManager = {
       box.innerHTML = `
         <div class="pm-summary">
           <div class="pm-summary-item"><span>현재 프로젝트</span><b>${escapeHtml(cur ? (cur.name || cur.id) : "-")}</b><code>${escapeHtml(cur ? cur.id : "")}</code></div>
-          <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small>사용 중 ${active} · 보관 ${list.length - active}</small></div>
+          <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small>사용 중 ${active} · 사용 중지 ${list.length - active}</small></div>
           <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
           <div class="pm-summary-actions">
             ${canManage ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 열기</button>' : ""}
@@ -250,13 +250,13 @@ var ProjectManager = {
       return `<tr class="${cur ? "pm-current" : ""}">
         <td><code>${escapeHtml(p.id)}</code></td>
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
-        <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready">보관</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
+        <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="로그인 화면의 프로젝트 목록에 나오지 않고, 시스템관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
         <td>사용자 ${this.memberCount(p)}명</td>
         <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(p.createdAt || "-")}</td>
         <td style="display:flex; gap:4px; flex-wrap:wrap;">
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}
           ${manage ? btn("이름 변경", "rename", "neutral", [p.id]) : ""}
-          ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn(p.status === "ARCHIVED" ? "복원" : "보관", "toggleArchive", "warn", [p.id]) : ""}
+          ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn(p.status === "ARCHIVED" ? "다시 사용" : "사용 중지", "toggleArchive", "warn", [p.id]) : ""}
           ${this.isAdmin() && p.id !== ProjectContext.DEFAULT && !cur ? btn("삭제", "remove", "danger", [p.id]) : ""}
         </td>
       </tr>`;
@@ -380,7 +380,7 @@ var ProjectManager = {
     if (!p) return;
     const next = p.status === "ARCHIVED" ? "ACTIVE" : "ARCHIVED";
     openConfirmDialog(next === "ARCHIVED"
-      ? `[${p.name}] 프로젝트를 보관하시겠습니까? 보관된 프로젝트는 시스템관리자 외에는 읽기 전용입니다.`
+      ? `[${p.name}] 프로젝트를 사용 중지(보관)하시겠습니까?\n사용 중지한 프로젝트는 로그인 화면의 프로젝트 목록에 나오지 않고, 시스템관리자 외에는 읽기 전용이 됩니다. (자료는 그대로 남고 [다시 사용]으로 되돌릴 수 있습니다)`
       : `[${p.name}] 프로젝트를 다시 사용 중으로 바꾸시겠습니까?`, () => this._update(pid, { status: next }));
   },
 

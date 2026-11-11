@@ -716,3 +716,29 @@ var WbsFold = {
     }
   }
 };
+
+// =============================================================================
+// [v3.7.0] 고정 줄 위치: 위쪽에 고정된 머리글 · 메뉴 줄의 높이를 --sticky-top 으로 알려 줌
+//  (서브 탭 줄이 그 바로 아래에 붙어 고정되도록 — 글자 크기 · 메뉴 위치가 바뀌어도 다시 계산)
+// =============================================================================
+var StickyTop = {
+  apply() {
+    let top = 0;
+    [document.querySelector("header"), document.querySelector(".g-nav")].forEach(el => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (getComputedStyle(el).position === "sticky" && r.width > window.innerWidth * 0.6) top += r.height;
+    });
+    document.documentElement.style.setProperty("--sticky-top", Math.round(top) + "px");
+  },
+  init() {
+    this.apply();
+    window.addEventListener("resize", () => this.apply());
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(() => this.apply());
+      [document.querySelector("header"), document.querySelector(".g-nav")].forEach(el => { if (el) ro.observe(el); });
+    }
+  }
+};
+window.StickyTop = StickyTop;
+window.addEventListener("DOMContentLoaded", () => StickyTop.init());

@@ -86,6 +86,8 @@ var ReqPhaseManager = {
         <td style="text-align:center;"><b>${idx + 1}</b></td>
         <td><input type="text" value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;color:#0f766e;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
         <td><input type="number" value="${p.weight}" style="width:70px;text-align:right;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
+        <td><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pStart", "$value")}"></td>
+        <td><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pEnd", "$value")}"></td>
         <td><input type="text" value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "output", "$value")}"></td>
         <td><input type="text" value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%;font-size:var(--fs-xs, 11px);" placeholder="쉼표로 구분" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "keywords", "$split")}"></td>
         <td style="text-align:center;"><button class="btn btn-danger btn-sm" data-click="ReqPhaseManager.deletePhase" data-click-args="${UiEvents.args(idx)}">×</button></td>

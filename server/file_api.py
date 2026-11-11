@@ -86,7 +86,7 @@ def api_list(h, req):
 def api_delete(h, req):
     user = h._require_user(req=req)
     f = _file_of(h, user, req)
-    FileStore.require_write(user, f["ownerType"], f["ownerId"], f["system"])
+    FileStore.require_write(user, f["ownerType"], f["ownerId"], f["system"], file=f)
     FileStore.trash(user, f)
     h._send_json(200, {"ok": True})
 

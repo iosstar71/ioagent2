@@ -112,6 +112,7 @@ var SubTabs = {
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
     if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
+    if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
   },
   restore(group, def) {
     let name = def;

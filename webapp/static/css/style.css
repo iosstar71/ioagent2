@@ -3046,3 +3046,24 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 .attach-old td { opacity: 0.65; }
 .attach-empty { text-align: center; color: var(--text-muted, #64748b); padding: 22px 8px !important; }
 [data-theme="dark"] .attach-readonly { color: #fcd34d; }
+
+/* ---------- [v3.7.0] 서브 탭이 있는 화면: 스크롤해도 서브 탭 줄까지 고정 ---------- */
+body.ui-neo .master-subtab-bar,
+body.ui-neo .sub-tab-nav,
+body.ui-neo #tab-meeting > .sub-header-bar {
+  position: sticky; top: var(--sticky-top, 45px); z-index: 45;
+  background: var(--bg-main, #f1f5f9); box-shadow: 0 8px 8px -8px rgba(15, 23, 42, 0.28);
+}
+body.ui-neo .master-subtab-bar, body.ui-neo .sub-tab-nav { padding-top: 8px; margin-top: -4px; }
+body.ui-neo #tab-meeting > .sub-header-bar { background: var(--bg-card, #fff); }
+
+/* ---------- [v3.7.0] 전체 사용자 통합 관리 ---------- */
+.ua-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 12px; font-size: var(--fs-xs, 11px); background: rgba(37,99,235,0.10); color: var(--text-main, #1e293b); border: 1px solid rgba(37,99,235,0.25); white-space: nowrap; }
+.ua-chip.ua-admin { background: rgba(124,58,237,0.12); border-color: rgba(124,58,237,0.35); font-weight: 700; }
+.ua-chip.ua-none { background: rgba(148,163,184,0.15); border-color: rgba(148,163,184,0.4); color: var(--text-muted, #64748b); }
+.ua-field { display: block; font-size: var(--fs-sm, 12px); font-weight: 700; }
+.ua-field > span { display: block; margin-bottom: 4px; }
+.ua-check { display: block; margin: 6px 0; font-size: var(--fs-sm, 12px); cursor: pointer; }
+.ua-sub-title { margin: 14px 0 6px; font-weight: 700; font-size: var(--fs-md, 13px); }
+#uaProjectRows tr.ua-off td { opacity: 0.55; }
+#uaProjectRows select { width: 100%; }

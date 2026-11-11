@@ -434,8 +434,8 @@ class ServerApiTest(unittest.TestCase):
         self.assertTrue(any(m["message"] == "only-in-project" for m in d["messages"]))
 
     # ---------------------------------------------------------------- 첨부파일
-    def upload(self, token, name, body, system="W1", owner="Ftest0001", length=None):
-        q = urllib.parse.urlencode({"ownerType": "deliverable", "ownerId": owner, "system": system, "name": name})
+    def upload(self, token, name, body, system="W1", owner="Ftest0001", length=None, kind="deliverable"):
+        q = urllib.parse.urlencode({"ownerType": kind, "ownerId": owner, "system": system, "name": name})
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         try:
             conn.putrequest("POST", "/api/files/upload?" + q)
@@ -508,6 +508,59 @@ class ServerApiTest(unittest.TestCase):
         # 다른 프로젝트에서는 보이지 않음
         s, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, self.admin, project=self.pid)
         self.assertEqual((s, d["files"]), (200, []))
+
+    def test_51_post_attachments_limit(self):
+        """[v3.7.0] 공지 · 게시물 · 회의록 첨부: 한 건에 5개까지, 같은 이름은 새 버전, 삭제는 올린 사람과 PM · 시스템관리자"""
+        lee, park = self.ready("lead_lee"), self.ready("lead_park")
+        for kind in ("notice", "post", "meeting"):
+            owner = "Fpost" + kind
+            for i in range(5):
+                s, d = self.upload(lee, f"첨부{i}.pdf", b"%PDF-1.4 x", kind=kind, owner=owner)
+                self.assertEqual(s, 200, (kind, i, d))
+            s, d = self.upload(lee, "첨부5.pdf", b"%PDF-1.4 x", kind=kind, owner=owner)
+            self.assertEqual((s, d.get("code")), (400, "FILE_COUNT"), kind)
+            s, d = self.upload(lee, "첨부0.pdf", b"%PDF-1.4 y", kind=kind, owner=owner)  # 같은 이름 = 새 버전 (개수에 넣지 않음)
+            self.assertEqual((s, d["file"]["version"]), (200, 2), kind)
+            fid = d["file"]["id"]
+            self.assertEqual(self.call("/api/files/delete", {"id": fid}, park)[0], 403, kind)  # 올린 사람이 아님
+            self.assertEqual(self.call("/api/files/delete", {"id": fid}, lee)[0], 200, kind)
+        s, d = self.call("/api/files/summary", {}, park)
+        self.assertEqual((d["counts"]["notice"]["Fpostnotice"], d["policy"]["maxCount"]["notice"], d["policy"]["maxCount"]["deliverable"]), (5, 5, 0))
+        self.assertEqual(self.upload(lee, "a.pdf", b"%PDF", kind="wbs", owner="Fx")[0], 400)
+
+    def test_52_admin_users(self):
+        """[v3.7.0] 전체 사용자 통합 관리(시스템관리자 전용) + 두 번째 시스템관리자 admin2"""
+        self.assertEqual(self.call("/api/admin/users/list", {}, self.ready("lead_lee"))[0], 403)
+        s, d = self.call("/api/admin/users/list", {}, self.admin)
+        self.assertEqual(s, 200, d)
+        by = {u["empNo"]: u for u in d["users"]}
+        self.assertTrue(by["admin2"]["sysAdmin"] and by["admin"]["sysAdmin"])
+        self.assertNotIn("pwdHash", by["admin"])
+        self.assertIn("DEFAULT", by["lead_lee"]["projectRoles"])
+        self.assertTrue(any(p["id"] == "DEFAULT" and "W1" in p["subsystems"] for p in d["projects"]))
+        admin2 = self.ready("admin2", project="")  # 시스템관리자는 프로젝트를 고르지 않아도 로그인
+        self.assertEqual(self.call("/api/admin/users/list", {}, admin2)[0], 200)
+        # 새 사용자 등록 + 두 프로젝트에 서로 다른 역할
+        req = {"isNew": True, "empNo": "ua_new", "name": "통합관리 시험", "dept": "QA", "sysAdmin": False,
+               "projectRoles": {"DEFAULT": {"role": "LEAD", "subsystem": "W2"}, self.pid: {"role": "PM", "subsystem": "ALL"}, "NOPE": {"role": "PM"}}}
+        s, d = self.call("/api/admin/users/save", req, self.admin)
+        self.assertEqual(s, 200, d)
+        row = next(u for u in d["users"] if u["empNo"] == "ua_new")
+        self.assertEqual((sorted(row["projectRoles"]), row["projectRoles"]["DEFAULT"]["role"], row["pwdDefault"]), (sorted(["DEFAULT", self.pid]), "LEAD", True))
+        self.assertEqual(self.call("/api/admin/users/save", req, self.admin)[0], 409)  # 같은 사번으로 다시 등록
+        s, d = self.login("ua_new", "1234", self.pid)
+        self.assertEqual((s, d["user"]["role"]), (200, "PM"))
+        # 권한 바꾸기 · 지킬 규칙 · 삭제
+        req.update({"isNew": False, "projectRoles": {"DEFAULT": {"role": "MEMBER", "subsystem": "W1"}}})
+        s, d = self.call("/api/admin/users/save", req, self.admin)
+        self.assertEqual(sorted(next(u for u in d["users"] if u["empNo"] == "ua_new")["projectRoles"]), ["DEFAULT"])
+        self.assertEqual(self.login("ua_new", "1234", self.pid)[0], 403)
+        s, d = self.call("/api/admin/users/save", {"empNo": "admin", "name": "시스템관리자", "sysAdmin": False}, admin2)
+        self.assertTrue(s == 200 and next(u for u in d["users"] if u["empNo"] == "admin")["sysAdmin"])  # admin 은 항상 시스템관리자
+        self.assertEqual(self.call("/api/admin/users/save", {"empNo": "admin2", "name": "시스템관리자2", "sysAdmin": False}, admin2)[0], 400)  # 자기 권한 해제 불가
+        self.assertEqual(self.call("/api/admin/users/delete", {"empNo": "admin"}, self.admin)[0], 400)
+        s, d = self.call("/api/admin/users/delete", {"empNo": "ua_new"}, self.admin)
+        self.assertEqual((s, any(u["empNo"] == "ua_new" for u in d["users"])), (200, False))
 
     # ---------------------------------------------------------------- 채팅
     def test_30_chat(self):

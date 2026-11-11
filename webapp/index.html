@@ -867,7 +867,7 @@
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
           <!-- [요건 5] 서브시스템별 템플릿 추가 버튼 WBS 탭으로 이동 -->
-          <button class="btn btn-primary btn-sm" data-click="WbsTemplate.open">📋 서브시스템별 템플릿 추가</button>
+          <button class="btn btn-primary btn-sm" data-click="WbsTemplate.open">📋 서브시스템별 템플릿 추가 · 복사</button>
           
           <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["wbs"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 내려받습니다">📥 엑셀 내려받기 (WBS)</button>
           <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["wbs"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 올리기 (WBS)</button>
@@ -2391,7 +2391,9 @@
                   <th style="width: 50px; text-align: center;">No</th>
                   <th style="width: 200px;">개선 단계명</th>
                   <th style="width: 80px; text-align: right;">가중치(%)</th>
-                  <th style="width: 220px;">표준 산출물명</th>
+                  <th style="width: 128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
+                  <th style="width: 128px;">계획 종료</th>
+                  <th style="width: 180px;">표준 산출물명</th>
                   <th>WBS 과업 매핑 키워드 (쉼표 구분)</th>
                   <th style="width: 45px; text-align: center;">삭제</th>
                 </tr>
@@ -2594,11 +2596,35 @@
       <div class="master-subtab-bar" data-group="config">
         <button class="master-subtab-btn active" data-subtab="screen" data-click="SubTabs.show" data-click-args='["config", "screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
+        <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 사용자</button>
         <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 양식</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
         <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🗄️ 저장소·DB 연동</button>
         <button class="master-subtab-btn" data-subtab="backup" data-click="SubTabs.show" data-click-args='["config", "backup"]'>💾 백업·복원·초기화</button>
         <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 소통 채널</button>
+      </div>
+
+      <!-- [v3.7.0] 전체 사용자 통합 관리 (시스템관리자) -->
+      <div class="master-subpane" data-group="config" data-subpane="users" id="uaPane">
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div class="card-title">
+            <span>👥 전체 사용자 · 프로젝트별 권한 통합 관리</span>
+            <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              <input type="text" id="uaSearch" placeholder="사번 · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
+              <select id="uaProjectFilter" data-change="UserAdmin.render"><option value="ALL">전체 프로젝트</option></select>
+              <button class="btn btn-secondary btn-sm" data-click="UserAdmin.load">🔄 새로고침</button>
+              <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 사용자 추가</button>
+            </span>
+          </div>
+          <div class="pm-hint">등록된 모든 사용자와, 사용자마다 참여하는 프로젝트 · 역할 · 담당 서브시스템을 한곳에서 관리합니다. 계정(사번 · 이름 · 비밀번호)은 하나이고 프로젝트마다 권한을 따로 줍니다. 시스템관리자는 모든 프로젝트에 들어갑니다.</div>
+          <div id="uaSummary" style="font-size:var(--fs-sm, 12px); font-weight:700; margin:6px 0;"></div>
+          <div class="table-container" style="max-height: 560px;">
+            <table class="m-table ua-table">
+              <thead><tr><th style="width:110px;">사번</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">비밀번호</th><th style="width:120px;">관리</th></tr></thead>
+              <tbody id="uaBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div class="master-subpane" data-group="config" data-subpane="project">
@@ -3278,18 +3304,18 @@
   <div class="modal-overlay" id="templateModal">
     <div class="modal tpl-modal">
       <div class="card-title">
-        <span>📋 서브시스템별 WBS 템플릿 추가</span>
+        <span>📋 서브시스템별 WBS 템플릿 추가 · 복사</span>
         <button class="btn btn-secondary btn-sm" data-btn="cancel" data-click="WbsTemplate.close">닫기</button>
       </div>
       <p class="tpl-hint">
-        [기준정보]에 등록된 서브시스템만 선택할 수 있습니다. 서브시스템 유형(SDLC 단계 / 개선 REQ 단계)에 맞는 표준 단계 과업을
-        프로젝트 기간에 맞춰 만들고 자동 재채번합니다.
+        [기준정보]에 등록된 서브시스템만 선택할 수 있습니다. 표준 단계 템플릿(단계마다 세부 과업 2개, 기준정보의 단계 계획 일정 반영)을 만들거나
+        다른 서브시스템의 WBS 를 복사합니다. 담당자는 대상 서브시스템의 총괄리더로 넣고, 자동 재채번합니다.
       </p>
       <div class="tpl-grid">
         <label class="tpl-field"><span>대상 서브시스템</span>
           <select id="tplSystemSelect" data-change="WbsTemplate.render"></select>
         </label>
-        <label class="tpl-field"><span>적용할 템플릿</span>
+        <label class="tpl-field"><span>적용할 템플릿 · 복사할 WBS</span>
           <select id="tplTypeSelect" data-change="WbsTemplate.renderPreview"></select>
         </label>
       </div>
@@ -3314,6 +3340,35 @@
       <div class="tpl-actions">
         <button class="btn btn-sm" data-btn="cancel" data-click="WbsTemplate.close">취소</button>
         <button class="btn btn-sm" data-btn="add" id="tplApplyBtn" data-click="WbsTemplate.apply">➕ 템플릿 추가</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [v3.7.0] 사용자 추가 · 편집 창 (시스템 설정 > 전체 사용자) -->
+  <div class="modal-overlay" id="userAdminModal">
+    <div class="modal" style="width: 720px; max-width: 94vw; max-height: 90vh; overflow-y: auto;">
+      <div class="card-title">
+        <span id="uaEditTitle">👤 사용자 편집</span>
+        <button class="btn btn-secondary btn-sm" data-click="UserAdmin.closeEdit">닫기</button>
+      </div>
+      <div class="grid-2" style="gap:10px; margin-bottom:10px;">
+        <label class="ua-field"><span>사번 (로그인 ID)</span><input type="text" id="uaEmpNo" maxlength="30" style="width:100%;"></label>
+        <label class="ua-field"><span>이름</span><input type="text" id="uaName" maxlength="50" style="width:100%;"></label>
+      </div>
+      <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
+      <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>시스템관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 비밀번호를 초기값(1234)으로 되돌림 — 다음 로그인 때 새 비밀번호로 바꿔야 함</label>
+      <div class="ua-sub-title">프로젝트별 권한</div>
+      <div class="pm-hint" id="uaAdminNote" style="display:none;">시스템관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
+      <div class="table-container" style="max-height: 300px;">
+        <table class="m-table">
+          <thead><tr><th style="width:56px;">참여</th><th>프로젝트</th><th style="width:170px;">역할</th><th style="width:170px;">담당 서브시스템</th></tr></thead>
+          <tbody id="uaProjectRows"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:12px;">
+        <button class="btn btn-secondary btn-sm" data-click="UserAdmin.closeEdit">취소</button>
+        <button class="btn btn-primary btn-sm" data-click="UserAdmin.saveEdit">💾 저장</button>
       </div>
     </div>
   </div>
@@ -3382,7 +3437,7 @@
 
   <!-- [ver1.0.4 신규] SDLC 단계 임의 커스터마이징 편집 모달 -->
   <div class="modal-overlay" id="customSdlcModal">
-    <div class="modal" style="width: 740px; max-width: 95vw; max-height: 88vh; overflow-y: auto;">
+    <div class="modal" style="width: 980px; max-width: 95vw; max-height: 88vh; overflow-y: auto;">
       <div class="card-title">
         <span id="customSdlcModalTitle">🛠️ SDLC 타입 및 단계 커스터마이징</span>
         <button class="btn btn-secondary btn-sm" data-click="closeCustomSdlcModal">닫기</button>
@@ -3416,6 +3471,8 @@
               <th style="width:50px;">순번</th>
               <th style="width:140px;">단계명</th>
               <th style="width:80px;">가중치(%)</th>
+              <th style="width:128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
+              <th style="width:128px;">계획 종료</th>
               <th style="width:140px;">대표 산출물</th>
               <th>매칭 키워드 (쉼표 구분)</th>
               <th style="width:45px;">삭제</th>
@@ -3497,6 +3554,7 @@
   <script src="static/js/core/data-store.js"></script>
   <script src="static/js/modules/dataio/data-io.js"></script>
   <script src="static/js/core/project-manager.js"></script>
+  <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>
   <script src="static/js/common/g-shell.js"></script>

@@ -391,7 +391,11 @@ function renderStandardDeliverablesMetaTable() {
 
   const phaseOptions = ["요구사항정의단계", "분석설계단계", "구현단계", "통합테스트단계", "시험검증단계", "이행단계", "안정화단계", "이행안정화단계", "구축단계"];
 
-  standardDeliverablesMeta.forEach((item, idx) => {
+  // [v3.7.0] 표준 공정단계 순으로 표시 (같은 단계 안에서는 등록 순서)
+  const phaseRank = p => { const i = phaseOptions.indexOf(p); return i === -1 ? phaseOptions.length : i; };
+  const order = standardDeliverablesMeta.map((item, idx) => idx).sort((a, b) => phaseRank(standardDeliverablesMeta[a].phase) - phaseRank(standardDeliverablesMeta[b].phase) || a - b);
+  order.forEach((idx, no) => {
+    const item = standardDeliverablesMeta[idx];
     // 자동 초기화: maxR 초과 회차는 무조건 false로 동기화
     for (let r = maxR + 1; r <= 4; r++) {
       item[`round${r}`] = false;
@@ -426,9 +430,9 @@ function renderStandardDeliverablesMetaTable() {
     };
 
     tr.innerHTML = `
-      <td style="text-align:center;"><b>${idx + 1}</b></td>
+      <td style="text-align:center;"><b>${no + 1}</b></td>
       <td>
-        <select style="width:130px;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "phase", "$value", "persistChanges")}">
+        <select style="width:130px;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "phase", "$value", "renderStandardDeliverablesMetaTable", "persistChanges")}">
           ${phaseSelectHtml}
         </select>
       </td>
