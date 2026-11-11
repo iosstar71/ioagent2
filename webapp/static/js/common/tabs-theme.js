@@ -46,6 +46,7 @@ function activateTab(tabId) {
       NoticeCommManager.renderAll();
       break;
     case "tab-merge": {
+      if (typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.syncAutoDownloadBox) BackupHistoryManager.syncAutoDownloadBox();
       const dSel = document.getElementById("workDataDomainSelect");
       if (dSel && (!dSel.options || dSel.options.length === 0)) updateAllSubsystemFilterDropdowns();
       onDomainFilterChanged("workDataDomainSelect", "workDataSubsysSelect");

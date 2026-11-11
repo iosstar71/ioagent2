@@ -564,41 +564,7 @@ const SmartMergeCenter = {
       ExcelSync.exportSubsystemWorkbook(scope);
       return;
     }
-    const cfgSchema = ExcelSync.TAB_SCHEMAS.config;
-    const cfgRows = [
-      { cells: cfgSchema.map(c => c.label), styleId: 1, height: 25 },
-      ...this.buildConfigRows().map(r => ({
-        cells: cfgSchema.map(c => r[c.key] || ""),
-        styleId: 2,
-        height: 20
-      }))
-    ];
-    const sheets = [
-      { name: "0_프로젝트기준정보", colWidths: cfgSchema.map(c => c.width || 20), rows: cfgRows }
-    ];
-    ExcelSync.SECTION_META.forEach(sec => {
-      const schema = ExcelSync.TAB_SCHEMAS[sec.key];
-      const data = ExcelSync.getTabData(sec.key);
-      const sRows = [{ cells: schema.map(c => c.label), styleId: 1, height: 25 }];
-      data.forEach(r => {
-        const rowCells = schema.map(c => {
-          if ((sec.key === "wbs" && ["level", "weight", "pProg", "aProg"].includes(c.key)) || (sec.key === "subsystems" && c.key === "weight")) {
-            const num = parseFloat(r[c.key]);
-            return isNaN(num) ? 0 : num;
-          }
-          return ExcelSync.formatExportCell(sec.key, c.key, r[c.key]);
-        });
-        sRows.push({ cells: rowCells, styleId: 2, height: 20 });
-      });
-      sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
-    });
-
-    // [v3.9.0] 이 프로젝트 참여자 (시스템관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
-    const uSchema = ExcelSync.TAB_SCHEMAS.users;
-    sheets.push({ name: this.SHEET_NAMES.users, colWidths: uSchema.map(c => c.width || 18),
-      rows: [{ cells: uSchema.map(c => c.label), styleId: 1, height: 25 }].concat(this._projectUserRows(false).map(r => ({ cells: uSchema.map(c => ExcelSync.formatExportCell("users", c.key, r[c.key])), styleId: 2, height: 20 }))) });
-    Object.keys(this.COLLAB_DEFS).forEach(k => sheets.push(this._collabSheet(k, "ALL")));
-    const blob = ExcelSync._buildXlsxBlob(sheets);
+    const blob = ExcelSync._buildXlsxBlob(this.buildPackageSheets());
     const filename = ExcelSync.stdName("전체데이터", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
     showToast(`[전체 통합 엑셀 내려받기 완료] ${filename}`);
@@ -929,6 +895,45 @@ const SmartMergeCenter = {
     setTxt("cntBadge_users", projectUsers.length);
     this.WORK_COLLAB.forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, scope).length));
     ["notices", "comms"].forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, "ALL").length));
+  },
+
+  // [v3.9.1] 프로젝트 전체 엑셀(기준정보 · 업무 · 사용자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용
+  buildPackageSheets() {
+    const cfgSchema = ExcelSync.TAB_SCHEMAS.config;
+    const cfgRows = [
+      { cells: cfgSchema.map(c => c.label), styleId: 1, height: 25 },
+      ...this.buildConfigRows().map(r => ({
+        cells: cfgSchema.map(c => r[c.key] || ""),
+        styleId: 2,
+        height: 20
+      }))
+    ];
+    const sheets = [
+      { name: "0_프로젝트기준정보", colWidths: cfgSchema.map(c => c.width || 20), rows: cfgRows }
+    ];
+    ExcelSync.SECTION_META.forEach(sec => {
+      const schema = ExcelSync.TAB_SCHEMAS[sec.key];
+      const data = ExcelSync.getTabData(sec.key);
+      const sRows = [{ cells: schema.map(c => c.label), styleId: 1, height: 25 }];
+      data.forEach(r => {
+        const rowCells = schema.map(c => {
+          if ((sec.key === "wbs" && ["level", "weight", "pProg", "aProg"].includes(c.key)) || (sec.key === "subsystems" && c.key === "weight")) {
+            const num = parseFloat(r[c.key]);
+            return isNaN(num) ? 0 : num;
+          }
+          return ExcelSync.formatExportCell(sec.key, c.key, r[c.key]);
+        });
+        sRows.push({ cells: rowCells, styleId: 2, height: 20 });
+      });
+      sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
+    });
+
+    // [v3.9.0] 이 프로젝트 참여자 (시스템관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
+    const uSchema = ExcelSync.TAB_SCHEMAS.users;
+    sheets.push({ name: this.SHEET_NAMES.users, colWidths: uSchema.map(c => c.width || 18),
+      rows: [{ cells: uSchema.map(c => c.label), styleId: 1, height: 25 }].concat(this._projectUserRows(false).map(r => ({ cells: uSchema.map(c => ExcelSync.formatExportCell("users", c.key, r[c.key])), styleId: 2, height: 20 }))) });
+    Object.keys(this.COLLAB_DEFS).forEach(k => sheets.push(this._collabSheet(k, "ALL")));
+    return sheets;
   },
 
   // [v3.9.0] 사용자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (사용자 정보는 프로젝트별)

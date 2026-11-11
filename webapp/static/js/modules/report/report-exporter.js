@@ -99,8 +99,8 @@ const BackupHistoryManager = {
       } catch (_) {}
     }
 
-    const chkAutoDl = document.getElementById("chkAutoDownloadBackupJson");
-    const shouldDownload = triggerFileDownload && (!chkAutoDl || chkAutoDl.checked);
+    // [v3.9.1] 올리기 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 사용자가 켠 경우에만
+    const shouldDownload = triggerFileDownload && this.autoDownload();
     if (shouldDownload && typeof ExcelSync !== "undefined") {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       ExcelSync._triggerDownload(blob, filename);
@@ -108,6 +108,19 @@ const BackupHistoryManager = {
 
     this.renderBackupHistoryTable();
     return filename;
+  },
+
+  AUTO_DL_KEY: "IOSTAR_BACKUP_AUTO_DOWNLOAD",
+  autoDownload() {
+    try { return localStorage.getItem(this.AUTO_DL_KEY) === "1"; } catch (e) { return false; }
+  },
+  setAutoDownload(on) {
+    try { localStorage.setItem(this.AUTO_DL_KEY, on ? "1" : "0"); } catch (e) {}
+    showToast(on ? "💾 올리기 전 자동 백업을 JSON 파일로도 내려받습니다." : "💾 올리기 전 자동 백업은 브라우저 스냅샷으로만 남깁니다. (파일 내려받기 안 함)");
+  },
+  syncAutoDownloadBox() {
+    const el = document.getElementById("chkAutoDownloadBackupJson");
+    if (el) el.checked = this.autoDownload();
   },
 
   downloadSnapshotByIndex(idx) {

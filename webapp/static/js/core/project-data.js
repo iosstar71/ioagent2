@@ -38,8 +38,14 @@ var ProjectData = {
     this.BASE_KEYS.concat(this.TASK_KEYS).forEach(k => { data[k] = DataRegistry.clone(all[k] !== undefined ? all[k] : []); });
     return data;
   },
-  exportProject() {
+  exportProject(format) {
     if (!this.canManage()) return showToast("🚫 프로젝트 백업은 PM · 시스템관리자만 할 수 있습니다.");
+    // [v3.9.1] 엑셀 백업 = 스마트병합 [④ 전체 일괄] 엑셀과 같은 양식 (기준정보 · 업무 · 사용자 · 협업 시트)
+    if (format === "EXCEL") {
+      const blob = ExcelSync._buildXlsxBlob(SmartMergeCenter.buildPackageSheets());
+      ExcelSync._triggerDownload(blob, ExcelSync.stdName("프로젝트백업", [], "xlsx", this._stamp()));
+      return showToast(`💾 [${this.currentName()}] 프로젝트를 엑셀로 백업했습니다. (${this.countText(this.collect())})`);
+    }
     const data = this.collect();
     const payload = { schemaVersion: this.SCHEMA, appVersion: APP_VERSION.version, projectId: ProjectContext.current, projectName: this.currentName(),
       exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo, data };
@@ -61,6 +67,7 @@ var ProjectData = {
     if (e && e.target) e.target.value = "";
     if (!file) return;
     if (!this.canManage()) return showToast("🚫 프로젝트 복원은 PM · 시스템관리자만 할 수 있습니다.");
+    if (/\.(xlsx|xls)$/i.test(file.name)) return this._importExcel(file);
     let json;
     try { json = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다: " + err.message); }
     const data = this._pick(json);
@@ -76,6 +83,33 @@ var ProjectData = {
       projectConfig.projectName = keepName;
       StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 [${file.name}] 백업으로 복원했습니다.`);
     });
+  },
+
+  // [v3.9.1] 엑셀 백업(전체 일괄 양식)으로 복원: 이 프로젝트의 업무 · 협업 자료를 비우고 파일 내용으로 바꿈
+  async _importExcel(file) {
+    let sheets;
+    try { sheets = await ExcelSync._parseUploadedFile(file); } catch (err) { return showToast("⚠️ 엑셀 파일을 읽지 못했습니다: " + err.message); }
+    const names = sheets.map(sh => String(sh.name || ""));
+    const rows = key => { const sh = sheets.find(x => String(x.name || "").includes(key)); return sh ? Math.max(0, sh.rows.filter(r => r.some(c => String(c || "").trim())).length - 1) : 0; };
+    if (!names.some(n => n.includes("WBS")) || !names.some(n => n.includes("프로젝트기준정보") || n.includes("서브시스템"))) {
+      return showToast("⚠️ 프로젝트 백업 엑셀이 아닙니다. ([기준정보 > 백업·초기화] 또는 스마트병합 [④ 전체 일괄]에서 내려받은 엑셀을 쓰세요)");
+    }
+    const summary = `WBS ${rows("WBS")} · 요구사항 ${rows("요구사항")} · 산출물 ${rows("산출물")} · VOC ${rows("VOC")} · 주간보고 ${rows("주간보고")} · 회의 ${rows("회의록")} · 공지 ${rows("공지")} · 소통 ${rows("소통")}`;
+    openConfirmDialog(`[${this.currentName()}] 프로젝트를 엑셀 백업 [${file.name}] 의 내용으로 바꿉니다.\n` +
+      `· 바뀌는 것: 기준정보 + ${summary}\n· 그대로: 프로젝트 이름, 다른 프로젝트 (엑셀의 사용자는 이 프로젝트 참여자로 추가 · 갱신)\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, async () => {
+      BackupHistoryManager.createBackupSnapshot("프로젝트복원직전백업", "ALL", false);
+      const keepName = projectConfig.projectName;
+      this.TASK_KEYS.forEach(k => DataRegistry.set(k, []));
+      subsystemsMeta = [];
+      SmartMergeCenter._applyCollabSheets(sheets, "ALL");
+      await ExcelSync.importMasterWorkbook(file, { silent: true });
+      projectConfig.projectName = keepName;
+      StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 엑셀 백업 [${file.name}] 으로 복원했습니다. (${this.countText(this.collect())})`);
+    });
+  },
+  goBackup() {
+    if (typeof GShell !== "undefined") GShell.go("tab-master"); else switchTab("tab-master");
+    MasterSubTabs.show("backup");
   },
 
   // ---- Task 정보 초기화 (기본정보 · 기준정보 유지) ----

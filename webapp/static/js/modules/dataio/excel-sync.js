@@ -1578,7 +1578,7 @@ const ExcelSync = {
     }
   },
 
-  async importMasterWorkbook(e) {
+  async importMasterWorkbook(e, opts = {}) {
     const file = e && e.target && e.target.files ? e.target.files[0] : e instanceof File ? e : null;
     if (e && e.target) e.target.value = "";
     if (!file) return;
@@ -1678,7 +1678,7 @@ const ExcelSync = {
         return;
       }
 
-      if (typeof BackupHistoryManager !== "undefined") {
+      if (typeof BackupHistoryManager !== "undefined" && !opts.silent) {
         BackupHistoryManager.createBackupSnapshot("전체엑셀통합로드", "ALL", true);
       }
       if (configRows.length && typeof SmartMergeCenter !== "undefined") SmartMergeCenter.applyConfigRows(configRows);
@@ -1695,7 +1695,7 @@ const ExcelSync = {
       if (typeof syncSubsystemWeights === "function") syncSubsystemWeights();
       if (typeof rebuildAll === "function") rebuildAll();
 
-      showToast(
+      if (!opts.silent) showToast(
         `엑셀 파일로부터 성공적으로 데이터를 로드했습니다.\n(WBS: ${bucket.wbs.length}건, 서브시스템: ${bucket.subsystems.length}건, 산출물: ${bucket.deliverables.length}건, REQ: ${bucket.req.length}건, VOC: ${bucket.voc.length}건)`
       );
     } catch (err) {

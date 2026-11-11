@@ -1629,8 +1629,8 @@
         </div>
         <div style="display:flex; align-items:center; gap:10px;">
           <label style="display:inline-flex; align-items:center; gap:5px; font-size:var(--fs-sm, 12px); font-weight:bold; color:var(--primary); cursor:pointer; background:rgba(59,130,246,0.08); padding:5px 10px; border-radius:6px; border:1px solid #bfdbfe;">
-            <input type="checkbox" id="chkAutoDownloadBackupJson" checked>
-            💾 업로드 전 현재 데이터를 백업 파일(JSON)로 자동 저장
+            <input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'>
+            💾 올리기 전 자동 백업을 JSON 파일로도 내려받기 (끄면 브라우저 스냅샷만)
           </label>
         </div>
       </div>
@@ -1834,8 +1834,8 @@
         <div class="card" style="border-left: 4px solid #0284c7; margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
           <div>
             <div class="card-title">
-              <span>📦 ④ 전체 일괄 (기준정보 + 업무 데이터 + 협업 데이터 한 파일)</span>
-              <span class="status-badge-chip chip-delayed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">전체 올리기: 시스템관리자 · PM</span>
+              <span>📦 ④ 전체 일괄 내려받기 (기준정보 + 업무 데이터 + 사용자 + 협업 데이터 한 파일)</span>
+              <span class="status-badge-chip chip-delayed" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">올리기(복원)는 기준정보 &gt; 백업·초기화</span>
             </div>
             <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:12px; line-height:1.5;">
               프로젝트 기준정보, 서브시스템 정보, 사용자 목록과 전 서브시스템의 Task 데이터(WBS, 요구사항, 산출물, VOC)를 <b>한 개의 파일(엑셀 또는 JSON)로 한 번에 내려받거나 올려서 전체를 반영</b>합니다.
@@ -1860,15 +1860,11 @@
                 📥 엑셀 내려받기 (전체)
               </button>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <input type="file" id="masterPkgJsonInput" style="display:none;" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
-              <button type="button" class="btn btn-primary btn-sm btn-admin-pm-only" style="flex:1; justify-content:center; padding:9px;" data-click="UiH.clickEl" data-click-args='["masterPkgJsonInput"]'>
-                📤 JSON 올리기 (전체)
-              </button>
-              <input type="file" id="masterPkgExcelInput" style="display:none;" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
-              <button type="button" class="btn btn-warning btn-sm btn-admin-pm-only" style="flex:1; justify-content:center; padding:9px; background:#d97706; color:#fff;" data-click="UiH.clickEl" data-click-args='["masterPkgExcelInput"]'>
-                📤 엑셀 올리기 (전체)
-              </button>
+            <div class="pm-hint" style="margin:0;">📤 <b>프로젝트 전체 올리기(복원)</b>는 [기준정보 &gt; 💾 백업·초기화]에서 합니다. (엑셀 / JSON, 시스템관리자 · PM) — 서브시스템별 · 항목별 올리기는 위 ① · ② · ③을 쓰세요.
+              <button type="button" class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup" style="margin-left:6px;">➡️ 백업·초기화로 이동</button></div>
+            <div style="display:none;">
+              <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
+              <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
             </div>
           </div>
         </div>
@@ -2526,11 +2522,13 @@
           <div class="grid-2" style="gap:14px; margin-bottom:14px;">
             <div class="proj-box proj-box-blue">
               <div class="proj-box-title">💾 프로젝트 백업 · 복원</div>
-              <p>기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물)와 Task 정보(WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통)를 JSON 파일 1개로 보관하거나, 그 파일로 이 프로젝트를 되돌립니다. 복원해도 프로젝트 이름은 그대로입니다.</p>
+              <p>기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물)와 Task 정보(WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통)를 <b>엑셀 또는 JSON 파일 1개</b>로 보관하거나, 그 파일로 이 프로젝트를 바꿉니다. 복원해도 프로젝트 이름은 그대로입니다.
+                 엑셀은 스마트병합 [④ 전체 일괄]과 같은 양식이라, 다른 프로젝트에서 내려받은 엑셀이나 샘플 엑셀(<code>Sample/2027_제조_스마트공장_샘플_4레벨.xlsx</code>)로 새 프로젝트를 채울 때 씁니다.</p>
               <div class="proj-box-btns">
-                <button class="btn btn-sm" data-btn="json-down" data-need-manager="1" data-click="ProjectData.exportProject">📥 프로젝트 백업 내려받기</button>
-                <input type="file" id="projectRestoreInput" style="display:none;" accept=".json" data-change="ProjectData.importProject" data-change-args='["$event"]'>
-                <button class="btn btn-sm" data-btn="json-up" data-need-manager="1" data-click="UiH.clickEl" data-click-args='["projectRestoreInput"]'>📤 프로젝트 백업 올리기 (복원)</button>
+                <button class="btn btn-sm" data-btn="excel-down" data-need-manager="1" data-click="ProjectData.exportProject" data-click-args='["EXCEL"]'>📥 엑셀 백업 내려받기</button>
+                <button class="btn btn-sm" data-btn="json-down" data-need-manager="1" data-click="ProjectData.exportProject" data-click-args='["JSON"]'>📥 JSON 백업 내려받기</button>
+                <input type="file" id="projectRestoreInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectData.importProject" data-change-args='["$event"]'>
+                <button class="btn btn-sm" data-btn="excel-up" data-need-manager="1" data-click="UiH.clickEl" data-click-args='["projectRestoreInput"]'>📤 백업 올리기 · 복원 (엑셀 / JSON)</button>
               </div>
             </div>
             <div class="proj-box proj-box-red">

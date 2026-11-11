@@ -847,6 +847,25 @@ async function localMain() {
   check("v3.9: 2027 manufacturing sample Excel (PMO 1 · waterfall 2 · improvement 1, 4-level WBS) uploads into an empty project",
     up39.name.includes("2027") && up39.wbs === 126 && up39.l4 === 72 && up39.req === 19 && up39.voc === 8 && up39.deliv === 17 && up39.mtg === 6 && up39.wr === 10
     && up39.subs === "PMO:SDLC_PMO,MES:SDLC_WATERFALL,QMS:SDLC_WATERFALL,OEE:REQ" && up39.sdlc === "SDLC_PMO,SDLC_WATERFALL" && up39.req0 === "설비통신 인터페이스설계" && up39.lead === "박품질 책임", JSON.stringify(up39));
+  // [v3.9.1] 올리기 때 자동 백업 파일을 내려받지 않음 (기본) / 기준정보 > 백업·초기화 엑셀 백업 → 복원
+  const dlBefore = page.downloads.length;
+  const xr = await page.evaluate(async () => {
+    const o = ExcelSync._triggerDownload; let blob = null, name = "";
+    ExcelSync._triggerDownload = (b, n) => { blob = b; name = n; };
+    ProjectData.exportProject("EXCEL"); ExcelSync._triggerDownload = o;
+    const before = { wbs: wbsData.length, wr: weeklyReportsData.length, mtg: meetingsData.length, notice: noticesData.length, subs: subsystemsMeta.length, users: projectUsers.length };
+    ProjectData.TASK_KEYS.forEach(k => DataRegistry.set(k, [])); rebuildAll(true);
+    await ProjectData.importProject({ target: { files: [new File([blob], name)], value: "" } });
+    return { name, before };
+  });
+  await page.waitForTimeout(400);
+  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(2000);
+  const xr2 = await page.evaluate(() => ({ wbs: wbsData.length, wr: weeklyReportsData.length, mtg: meetingsData.length, notice: noticesData.length, subs: subsystemsMeta.length, users: projectUsers.length,
+    auto: BackupHistoryManager.autoDownload(), pkgUploadBtn: !!document.querySelector('#tab-merge button[data-click-args*="masterPkgExcelInput"]') }));
+  await page.waitForTimeout(300);
+  check("v3.9.1: project backup as Excel → restore brings the whole project back; uploads no longer download an automatic backup file by default",
+    /프로젝트백업.*\.xlsx$/.test(xr.name) && xr2.wbs === xr.before.wbs && xr2.wr === xr.before.wr && xr2.mtg === xr.before.mtg && xr2.notice === xr.before.notice && xr2.subs === xr.before.subs
+    && !xr2.auto && page.downloads.length === dlBefore && !xr2.pkgUploadBtn, JSON.stringify({ xr, xr2, dl: page.downloads.length - dlBefore }));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
