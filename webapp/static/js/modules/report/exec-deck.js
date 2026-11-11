@@ -167,7 +167,7 @@ var ExecDeck = {
       [0, 25, 50, 75, 100].forEach(v => els.push(T(gx + gw * v / 100 - 0.3, 1.1, 0.6, 0.3, [p(`${v}%`, 9, { color: "64748B", align: "ctr" })])));
       ch.forEach((r, i) => {
         const y = top + i * rowH, h = rowH - 0.1, pl = num(r[6]), ac = num(r[7]);
-        const rr = pl > 0 ? Math.round(ac / pl * 100) : (ac > 0 ? 100 : 0);
+        const rr = pl > 0 ? Math.round(ac / pl * 100) : 100;
         const col = rr >= 90 ? C : rr >= 70 ? "D97706" : "DC2626";
         els.push(T(0.45, y, 1.35, h, [p(r[1], 12, { bold: true, align: "r" })], { anchor: "ctr" }));
         els.push(R(gx, y, gw * pl * 0.7 / 100, h, "FEE2E2"));

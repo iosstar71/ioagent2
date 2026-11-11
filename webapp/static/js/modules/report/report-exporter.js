@@ -161,7 +161,7 @@ const ReportExporter = {
     const totalWeight = rootItems.reduce((acc, d) => acc + (parseFloat(d.weight) || 1), 0) || 1;
     const totalPlan = Math.round(rootItems.reduce((acc, d) => acc + ((d.pProg || 0) * (parseFloat(d.weight) || 1)), 0) / totalWeight);
     const totalActual = Math.round(rootItems.reduce((acc, d) => acc + ((d.aProg || 0) * (parseFloat(d.weight) || 1)), 0) / totalWeight);
-    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : (totalActual > 0 ? "100.0" : "0.0");
+    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
 
     let cntTotal = wbsData.length, cntComp = 0, cntProg = 0, cntDel = 0, cntReady = 0;
     wbsData.forEach(t => {
@@ -183,7 +183,7 @@ const ReportExporter = {
       const leafTasks = wbsData.filter(d => d.system === sys && d.isLeaf);
       const pVal = root ? root.pProg : 0;
       const aVal = root ? root.aProg : 0;
-      const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : (aVal > 0 ? 100 : 0);
+      const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : 100;
       const delCnt = leafTasks.filter(t => WBSEngine.getTaskStatus(t, repDate).code === "delayed").length;
       const sdlcSpec = WBSEngine.getSubsystemSdlcSpec(sys);
       const typeLabel = meta.type === "REQ" ? "개선타입(REQ)" : (sdlcSpec ? sdlcSpec.name : "표준SDLC");
@@ -210,7 +210,7 @@ const ReportExporter = {
             pAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.pProg * (parseFloat(t.weight) || 1)), 0) / wSum);
             aAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.aProg * (parseFloat(t.weight) || 1)), 0) / wSum);
           }
-          const r = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : (aAvg > 0 ? 100 : 0);
+          const r = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
           row.push(`${pAvg}% / ${aAvg}% (${r}%)`);
         });
         const root = wbsData.find(d => d.system === sys && d.level === 1);

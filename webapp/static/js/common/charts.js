@@ -7,7 +7,7 @@
 // =============================================================================
 var BulletChart = {
   RISK: 0.7, WARN: 0.9,
-  rate(r) { return r.plan > 0 ? Math.round(r.actual / r.plan * 100) : (r.actual > 0 ? 100 : 0); },
+  rate(r) { return r.plan > 0 ? Math.round(r.actual / r.plan * 100) : 100; },
   level(r) { const q = this.rate(r) / 100; return q >= this.WARN ? "ok" : q >= this.RISK ? "warn" : "bad"; },
   // 화면용 SVG (가로 폭에 맞춰 늘어남)
   svg(rows, opts = {}) {

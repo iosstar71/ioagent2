@@ -137,6 +137,9 @@ async function localMain() {
   //   계정 전환·프로젝트 전환처럼 화면을 다시 불러오는 검사는 http:// 에서 수행)
   page = await newPage({ init: () => { try { localStorage.setItem("AX_PMYS_LAST_LANG", "en"); } catch (e) {} } });
   await page.goto(STATIC_URL); await page.waitForTimeout(900);
+  const loginBox = await page.evaluate(() => { const m = document.querySelector(".security-lock-modal").getBoundingClientRect(), bt = document.getElementById("btnLockSubmit").getBoundingClientRect();
+    return { h: Math.round(m.height), w: Math.round(m.width), btnBottom: Math.round(bt.bottom), vh: innerHeight, lang: !!document.getElementById("inputLoginLang"), proj: !!document.getElementById("inputLoginProject") }; });
+  check("Login box is a compact two-column layout (login button visible without scrolling)", loginBox.h <= 500 && loginBox.w > loginBox.h && loginBox.btnBottom < loginBox.vh && loginBox.lang && loginBox.proj, JSON.stringify(loginBox));
   check("Login screen starts in Korean with the default theme (app.ini default_lang=ko, default_theme=electric)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.body.dataset.theme === APP_CONFIG.defaultTheme && document.getElementById("headerVersionBadge").textContent === (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
@@ -550,9 +553,14 @@ async function localMain() {
       return { n: ph.length, sorted: ph.every((v, i) => i === 0 || ph[i - 1] <= v), dirty: SyncManager.dirtyCount() }; });
     check("Master: standard deliverables are listed in phase order (viewing does not mark data as changed)", stdSort.n > 3 && stdSort.sorted, JSON.stringify(stdSort));
     await page.evaluate(() => window.scrollTo(0, 900)); await page.waitForTimeout(300);
-    const stick = await page.evaluate(() => ({ bar: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().top), nav: Math.round(document.querySelector(".g-nav").getBoundingClientRect().bottom), y: window.scrollY }));
+    const stick = await page.evaluate(() => ({ bar: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().top), nav: Math.round(document.querySelector(".g-nav").getBoundingClientRect().bottom), y: window.scrollY,
+      hdr: Math.round(document.querySelector("header").getBoundingClientRect().top), hdrB: Math.round(document.querySelector("header").getBoundingClientRect().bottom), navT: Math.round(document.querySelector(".g-nav").getBoundingClientRect().top),
+      barB: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().bottom) }));
     await page.evaluate(() => window.scrollTo(0, 0));
-    check("Sub-tab bar stays fixed under the menu while scrolling", stick.y > 300 && Math.abs(stick.bar - stick.nav) <= 1, JSON.stringify(stick));
+    check("Header, menu row and sub-tab bar all stay fixed while scrolling (fixed area under 160px)", stick.y > 300 && stick.hdr === 0 && Math.abs(stick.navT - stick.hdrB) <= 1 && Math.abs(stick.bar - stick.nav) <= 1 && stick.barB <= 160, JSON.stringify(stick));
+    // [v3.7.1] 계획 0 · 실적 0 은 지연이 아님 (달성률 100% 로 보고 정상 표시)
+    const zero = await page.evaluate(() => ({ rate: BulletChart.rate({ plan: 0, actual: 0 }), lv: BulletChart.level({ plan: 0, actual: 0 }), late: BulletChart.level({ plan: 50, actual: 10 }) }));
+    check("Plan 0 / actual 0 is not shown as delayed (rate treated as on track)", zero.rate === 100 && zero.lv === "ok" && zero.late === "bad", JSON.stringify(zero));
     await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "users"); }); await page.waitForTimeout(600);
     const ua1 = await page.evaluate(() => ({ rows: document.querySelectorAll("#uaBody tr").length, all: UserAdmin.users.length, admin2: UserAdmin.users.some(u => u.empNo === "admin2" && u.sysAdmin),
       chip: (document.querySelector("#uaBody .ua-chip:not(.ua-admin)") || {}).textContent || "", sum: document.getElementById("uaSummary").textContent }));

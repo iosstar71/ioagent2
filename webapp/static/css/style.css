@@ -3067,3 +3067,34 @@ body.ui-neo #tab-meeting > .sub-header-bar { background: var(--bg-card, #fff); }
 .ua-sub-title { margin: 14px 0 6px; font-weight: 700; font-size: var(--fs-md, 13px); }
 #uaProjectRows tr.ua-off td { opacity: 0.55; }
 #uaProjectRows select { width: 100%; }
+
+/* ---------- [v3.7.1] 로그인 창: 가로 2단 (왼쪽 안내 · 오른쪽 입력) — 낮은 화면에서도 [로그인] 단추가 보이도록 ---------- */
+.security-lock-modal.login-2col { width: 780px; max-width: 94vw; padding: 0; display: grid; grid-template-columns: 300px 1fr; overflow: hidden; text-align: left; }
+.login-2col .login-side { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 26px 20px 16px; background: color-mix(in srgb, var(--primary, #1e40af) 7%, var(--bg-card, #fff)); border-right: 1px solid var(--border-color, #e2e8f0); }
+.login-2col .login-side-foot { margin-top: auto; padding-top: 12px; }
+.login-2col .login-main { padding: 22px 24px 18px; min-width: 0; }
+.login-2col #lockModalDesc { margin-bottom: 10px !important; }
+.login-2col #lockServerInfo { width: 100%; }
+.login-row2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; }
+.login-row2.even { grid-template-columns: 1fr 1fr; }
+.login-row2 > div { min-width: 0; }
+.login-2col .login-hint { margin: 0 0 6px; }
+.login-2col #registerLinkRow { line-height: 1.9; }
+@media (max-width: 720px) {
+  .security-lock-modal.login-2col { grid-template-columns: 1fr; }
+  .login-2col .login-side { border-right: 0; border-bottom: 1px solid var(--border-color, #e2e8f0); padding: 14px 16px 10px; }
+  .login-2col .login-brand-full, .login-2col .login-side-foot { display: none; }
+  .login-2col .login-main { padding: 14px 16px; }
+}
+@media (max-height: 560px) {
+  .login-2col .login-side { padding-top: 14px; }
+  .login-2col .login-brand-full { display: none; }
+  .login-2col .login-main { padding-top: 12px; padding-bottom: 12px; }
+}
+
+/* ---------- [v3.7.1] 머리글 · 메뉴 줄 · 서브 탭 줄을 함께 고정 (스크롤해도 지금 메뉴 확인 · 다른 메뉴로 이동) ---------- */
+body.ui-neo header.g-header { position: sticky; top: 0; }
+body.ui-neo:not([data-layout="sidebar-left"]) .g-nav { top: var(--hdr-h, 52px); }
+body.ui-neo .master-subtab-bar, body.ui-neo .sub-tab-nav { padding-top: 5px; padding-bottom: 4px; margin-bottom: 8px; }
+body.ui-neo .neo-wr-split > #wrListCard { top: calc(var(--sticky-top, 97px) + 12px); max-height: calc(100vh - var(--sticky-top, 97px) - 96px); }
+html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }

@@ -63,7 +63,7 @@ function renderPhaseMatrix() {
     const sysRoot = wbsData.find(d => d.system === sys && d.level === 1);
     const wP = sysRoot ? sysRoot.pProg : 0;
     const wA = sysRoot ? sysRoot.aProg : 0;
-    const wRate = wP > 0 ? Math.round((wA / wP) * 100) : (wA > 0 ? 100 : 0);
+    const wRate = wP > 0 ? Math.round((wA / wP) * 100) : 100;
     sumWP += wP; sumWA += wA; sumWCount++;
 
     const sReqs = reqMasterData.filter(r => r.system === sys && r.status !== "삭제");
@@ -127,7 +127,7 @@ function renderPhaseMatrix() {
 
   const avgWP = sumWCount > 0 ? Math.round(sumWP / sumWCount) : 0;
   const avgWA = sumWCount > 0 ? Math.round(sumWA / sumWCount) : 0;
-  const avgWRate = avgWP > 0 ? Math.round((avgWA / avgWP) * 100) : (avgWA > 0 ? 100 : 0);
+  const avgWRate = avgWP > 0 ? Math.round((avgWA / avgWP) * 100) : 100;
   const totRRate = sumReqTot > 0 ? Math.round((sumReqCmp / sumReqTot) * 100) : 0;
   const totDRate = sumDAllTot > 0 ? Math.round((sumDAllCmp / sumDAllTot) * 100) : 0;
   const totVRate = sumVocTot > 0 ? Math.round((sumVocDone / sumVocTot) * 100) : 0;
@@ -208,7 +208,7 @@ function renderPhaseMatrix() {
             totalStats[ph.key].a += aAvg * wSum;
             totalStats[ph.key].w += wSum;
           }
-          const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : (aAvg > 0 ? 100 : 0);
+          const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
           phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "#15803d" : (rate >= 70 ? "#b45309" : "#b91c1c")}">${rate}%</td>`;
           sysTotalP += pAvg * wSum;
           sysTotalA += aAvg * wSum;
@@ -355,7 +355,7 @@ function renderSubsystemCards(systems) {
     const leafTasks = wbsData.filter(d => d.system === sys && d.isLeaf);
     const pVal = sysRoot ? sysRoot.pProg : 0;
     const aVal = sysRoot ? sysRoot.aProg : 0;
-    const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : (aVal > 0 ? 100 : 0);
+    const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : 100;
 
     const card = document.createElement("div");
     card.className = "card";

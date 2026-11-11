@@ -12,30 +12,45 @@
 <body data-theme="electric" data-layout="top-nav" data-density="standard">
   <!-- [v1.0.6] 로그인 / 신규 사용자 등록 / 권한 메뉴 인증 오버레이 -->
   <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
-    <div class="security-lock-modal" style="width:440px;">
+    <div class="security-lock-modal login-2col">
+      <div class="login-side">
       <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">IOSTAR-PM <span>by Iostar</span></div><div class="login-brand-full">In-situ Operations &amp; Smart Tasks for Accurate Resources — Project Manager</div></div>
       <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: var(--fs-xl, 18px); color: var(--text-main);">시스템 로그인</h2>
       <p id="lockModalDesc" style="font-size: var(--fs-sm, 12px); color: var(--text-sub); margin-bottom: 14px;"></p>
       <div id="lockServerInfo" style="display:none; font-size:var(--fs-xs, 11px); margin-bottom:10px; padding:5px 8px; border-radius:6px; background:rgba(59,130,246,0.08);"></div>
 
+      <div class="login-side-foot">
+      <div class="login-legal-links">
+        <a href="#" data-click="LegalNotice.open" data-click-args='["license"]'>사용권 계약</a> ·
+        <a href="#" data-click="LegalNotice.open" data-click-args='["privacy"]'>개인정보 처리 안내</a> ·
+        <a href="#" data-click="LegalNotice.open" data-click-args='["notices"]'>오픈소스 고지</a>
+      </div>
+      <div class="login-credit">Developed &amp; Designed by Iostar</div>
+      </div>
+      </div>
+      <div class="login-main">
       <!-- 로그인 폼 -->
       <div id="loginFormPane" style="text-align: left;">
-        <div id="loginProjectRow">
-          <label class="login-label" for="inputLoginProject">프로젝트:</label>
-          <select id="inputLoginProject" class="login-input"></select>
-          <div class="login-hint">시스템관리자는 프로젝트를 선택하지 않아도 로그인할 수 있습니다.</div>
+        <div class="login-row2">
+          <div id="loginProjectRow">
+            <label class="login-label" for="inputLoginProject">프로젝트:</label>
+            <select id="inputLoginProject" class="login-input"></select>
+          </div>
+          <div>
+            <label class="login-label" for="inputLoginLang">언어 / Language:</label>
+            <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
         </div>
+        <div class="login-hint" id="loginProjectHint">시스템관리자는 프로젝트를 선택하지 않아도 로그인할 수 있습니다.</div>
         <label class="login-label">사번 (사용자 ID):</label>
         <input type="text" id="inputSecurityEmpNo" value="" placeholder="사번 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
                data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
         <label class="login-label">비밀번호:</label>
         <input type="password" id="inputSecurityPassword" placeholder="비밀번호 입력 (초기: 1234)" autocomplete="off" class="login-input"
                data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
-        <label class="login-label">언어 / Language:</label>
-        <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
-          <option value="ko">한국어 (Korean)</option>
-          <option value="en">English</option>
-        </select>
         <div id="lockErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-top: 2px; display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 14px;">
           <button id="btnLockCancel" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: var(--fs-base, 13px); justify-content: center;" data-click="AuthManager.cancelUnlock">취소</button>
@@ -49,12 +64,6 @@
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
           <a href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="font-weight:bold; color:#b91c1c;" title="입력한 사번의 비밀번호를 1234로 초기화 (테스트 버전 기능)">🔄 비밀번호 초기화</a>
         </div>
-        <div class="login-legal-links">
-          <a href="#" data-click="LegalNotice.open" data-click-args='["license"]'>사용권 계약</a> ·
-          <a href="#" data-click="LegalNotice.open" data-click-args='["privacy"]'>개인정보 처리 안내</a> ·
-          <a href="#" data-click="LegalNotice.open" data-click-args='["notices"]'>오픈소스 고지</a>
-        </div>
-        <div class="login-credit">Developed &amp; Designed by Iostar</div>
       </div>
 
       <!-- [v1.0.7] 로그인 화면 비밀번호 변경 폼 -->
@@ -78,29 +87,36 @@
       <!-- 신규 사용자 등록 폼 (등록 시 기본 권한: 일반 사용자) -->
       <div id="registerFormPane" style="display:none; text-align:left;">
         <div class="login-hint" id="regProjectInfo"></div>
-        <label class="login-label">사번 (로그인 ID) *:</label>
-        <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 사번">
-        <label class="login-label">성명 *:</label>
-        <input type="text" id="regName" class="login-input" autocomplete="off">
-        <label class="login-label">담당 서브시스템 *:</label>
-        <select id="regSubsystem" class="login-input"></select>
+        <div class="login-row2 even">
+          <div><label class="login-label">사번 (로그인 ID) *:</label>
+            <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 사번"></div>
+          <div><label class="login-label">성명 *:</label>
+            <input type="text" id="regName" class="login-input" autocomplete="off"></div>
+        </div>
+        <div class="login-row2 even">
+          <div><label class="login-label">담당 서브시스템 *:</label>
+            <select id="regSubsystem" class="login-input"></select></div>
+          <div><label class="login-label">언어 / Language:</label>
+            <select id="regLang" class="login-input">
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select></div>
+        </div>
         <label class="login-label">소속 부서 / 담당 역할:</label>
         <input type="text" id="regDept" class="login-input" autocomplete="off">
-        <label class="login-label">비밀번호 * (8자 이상, 영문+숫자):</label>
-        <input type="password" id="regPwd" class="login-input" autocomplete="new-password">
-        <label class="login-label">비밀번호 확인 *:</label>
-        <input type="password" id="regPwd2" class="login-input" autocomplete="new-password">
-        <label class="login-label">언어 / Language:</label>
-        <select id="regLang" class="login-input">
-          <option value="ko">한국어 (Korean)</option>
-          <option value="en">English</option>
-        </select>
+        <div class="login-row2 even">
+          <div><label class="login-label">비밀번호 * (8자 이상, 영문+숫자):</label>
+            <input type="password" id="regPwd" class="login-input" autocomplete="new-password"></div>
+          <div><label class="login-label">비밀번호 확인 *:</label>
+            <input type="password" id="regPwd2" class="login-input" autocomplete="new-password"></div>
+        </div>
         <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin:4px 0;">* 신규 등록 계정은 <b>일반 사용자</b> 권한으로 생성되며, 권한 변경은 관리자/PM이 [기준정보 &gt; 사용자 정보]에서 설정합니다.</div>
         <div id="regErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
           <button class="btn btn-secondary" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showRegister" data-click-args='[false]'>← 로그인으로</button>
           <button class="btn btn-success" style="flex: 1.4; padding: 10px; justify-content: center;" data-click="AuthManager.register">✅ 등록하기</button>
         </div>
+      </div>
       </div>
     </div>
   </div>

@@ -104,7 +104,7 @@ const DashboardChart = {
         const ratio = (idx + 1) / Math.max(1, pastWeeks.length);
         const actVal = Math.min(currentActual, Math.round(currentActual * Math.pow(ratio, 1.1)));
         actualCurve.push(actVal);
-        const rate = weekPlan > 0 ? Math.min(150, Math.round((actVal / weekPlan) * 100)) : (actVal > 0 ? 100 : 0);
+        const rate = weekPlan > 0 ? Math.min(150, Math.round((actVal / weekPlan) * 100)) : 100;
         achieveRates.push(rate);
       } else {
         actualCurve.push(null);

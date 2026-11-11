@@ -724,12 +724,14 @@ var WbsFold = {
 var StickyTop = {
   apply() {
     let top = 0;
-    [document.querySelector("header"), document.querySelector(".g-nav")].forEach(el => {
+    const root = document.documentElement.style;
+    [document.querySelector("header"), document.querySelector(".g-nav")].forEach((el, i) => {
       if (!el) return;
       const r = el.getBoundingClientRect();
       if (getComputedStyle(el).position === "sticky" && r.width > window.innerWidth * 0.6) top += r.height;
+      if (i === 0) root.setProperty("--hdr-h", Math.round(top) + "px");  // 메뉴 줄은 머리글 바로 아래에 고정
     });
-    document.documentElement.style.setProperty("--sticky-top", Math.round(top) + "px");
+    root.setProperty("--sticky-top", Math.round(top) + "px");
   },
   init() {
     this.apply();

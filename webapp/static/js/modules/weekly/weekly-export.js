@@ -149,7 +149,7 @@ var WeeklyExport = {
     const projName = d.projectName || projectConfig.projectName || "";
     const scopeLabel = W.scopeLabel(sc.scope, sc.value);
     const pct = v => `${String(v === undefined || v === null ? 0 : v).replace(/%+$/, "")}%`;
-    const rate = (p, a) => { p = parseFloat(p) || 0; a = parseFloat(a) || 0; return p > 0 ? Math.round(a / p * 100) : (a > 0 ? 100 : 0); };
+    const rate = (p, a) => { p = parseFloat(p) || 0; a = parseFloat(a) || 0; return p > 0 ? Math.round(a / p * 100) : 100; };
     const basis = d.live ? `현재 자료 기준 (${d.reportDate || "-"})` : `작성 완료 시점 자료 (${d.takenAt})`;
     const T = (title, headers, widths, rows, line, empty) => ({ title, headers, widths, rows, line, empty: empty || "해당 항목 없음" });
 

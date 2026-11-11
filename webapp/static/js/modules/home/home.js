@@ -235,7 +235,7 @@ var HomeScreenManager = {
     const totalPlan = Math.round(rootItems.reduce((acc, d) => acc + (d.pProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
     const totalActual = Math.round(rootItems.reduce((acc, d) => acc + (d.aProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
     const gap = totalActual - totalPlan;
-    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : (totalActual > 0 ? "100.0" : "0.0");
+    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
     const achieveNum = parseFloat(achieveRate);
 
     // Hero Banner DOM
@@ -330,7 +330,7 @@ var HomeScreenManager = {
         const root = (wbsData || []).find(d => d.system === sys && d.level === 1);
         const pProg = root ? root.pProg : 0;
         const aProg = root ? root.aProg : 0;
-        const rate = pProg > 0 ? ((aProg / pProg) * 100).toFixed(1) : (aProg > 0 ? "100.0" : "0.0");
+        const rate = pProg > 0 ? ((aProg / pProg) * 100).toFixed(1) : "100.0";
         const rateNum = parseFloat(rate);
 
         const meta = (subsystemsMeta || []).find(s => s.name === sys) || {};
@@ -408,7 +408,7 @@ var HomeScreenManager = {
         const dWeight = dRoots.reduce((acc, t) => acc + (parseFloat(t.weight) || 1), 0);
         const dPlan = dWeight > 0 ? Math.round(dRoots.reduce((acc, t) => acc + (t.pProg * (parseFloat(t.weight) || 1)), 0) / dWeight) : 0;
         const dActual = dWeight > 0 ? Math.round(dRoots.reduce((acc, t) => acc + (t.aProg * (parseFloat(t.weight) || 1)), 0) / dWeight) : 0;
-        const dRate = dPlan > 0 ? Math.round((dActual / dPlan) * 100) : (dActual > 0 ? 100 : 0);
+        const dRate = dPlan > 0 ? Math.round((dActual / dPlan) * 100) : 100;
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
