@@ -3098,3 +3098,14 @@ body.ui-neo:not([data-layout="sidebar-left"]) .g-nav { top: var(--hdr-h, 52px); 
 body.ui-neo .master-subtab-bar, body.ui-neo .sub-tab-nav { padding-top: 5px; padding-bottom: 4px; margin-bottom: 8px; }
 body.ui-neo .neo-wr-split > #wrListCard { top: calc(var(--sticky-top, 97px) + 12px); max-height: calc(100vh - var(--sticky-top, 97px) - 96px); }
 html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
+
+/* ---------- [v3.8.0] 프로젝트 단위 백업 · 초기화 / 프로젝트별 설정 안내 ---------- */
+.proj-box { padding: 12px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); }
+.proj-box p { font-size: calc(11.5px * var(--fs-scale, 1)); color: var(--text-sub); margin: 0 0 10px; line-height: 1.6; }
+.proj-box-title { font-weight: bold; font-size: calc(12.5px * var(--fs-scale, 1)); margin-bottom: 6px; }
+.proj-box-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.proj-box-blue { background: rgba(59, 130, 246, 0.05); border-color: #bfdbfe; } .proj-box-blue .proj-box-title { color: var(--primary, #1e40af); }
+.proj-box-red { background: rgba(239, 68, 68, 0.05); border-color: #fecaca; } .proj-box-red .proj-box-title { color: #dc2626; }
+.proj-box-amber { background: rgba(245, 158, 11, 0.07); border-color: #fde68a; } .proj-box-amber .proj-box-title { color: #b45309; }
+.proj-scope-note { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; font-size: var(--fs-sm, 12px); background: color-mix(in srgb, var(--primary, #1e40af) 8%, var(--bg-card, #fff)); border: 1px solid color-mix(in srgb, var(--primary, #1e40af) 25%, transparent); color: var(--text-main); }
+[data-theme="dark"] .proj-box-title { filter: brightness(1.4); }

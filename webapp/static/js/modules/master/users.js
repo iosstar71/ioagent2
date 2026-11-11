@@ -102,6 +102,7 @@ function applyBulkUserLanguage() {
 var SubTabs = {
   KEY: "AX_PMYS_SUBTAB_",
   show(group, name) {
+    if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // [v3.8.0] 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
     document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
@@ -109,10 +110,12 @@ var SubTabs = {
       if (name === "holiday") ProgressBasisManager.render();
       if (name === "users") renderProjectUsersTable();
       if (name === "basic") { MilestoneManager.render(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
+      if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
     if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
     if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
+    if (group === "config" && name === "backup" && typeof ProjectData !== "undefined") { ProjectData.renderConfigTarget(); BackupHistoryManager.renderBackupHistoryTable(); }
   },
   restore(group, def) {
     let name = def;

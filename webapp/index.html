@@ -2180,6 +2180,10 @@
         <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 공정단계정보</button>
         <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>📅 휴일정보</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 사용자 정보</button>
+        <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
+        <button class="master-subtab-btn" data-subtab="ui-report" data-click="MasterSubTabs.show" data-click-args='["ui-report"]'>📊 보고서 양식</button>
+        <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 소통 채널</button>
+        <button class="master-subtab-btn" data-subtab="backup" data-click="MasterSubTabs.show" data-click-args='["backup"]'>💾 백업·초기화</button>
       </div>
 
       <div class="master-subpane" data-group="master" id="masterSub-basic" data-subpane="basic">
@@ -2500,6 +2504,53 @@
             </table>
           </div>
         </div>
+        </div>
+      </div>
+
+      <!-- [v3.8.0] 프로젝트별 설정: 시스템 설정의 화면·테마 / 보고서 양식 / 소통 채널을 여기서도 엶 (SharedPanes 가 화면을 옮겨 옴) -->
+      <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
+      <div class="master-subpane" data-group="master" id="masterSub-ui-report" data-subpane="ui-report"></div>
+      <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
+      <!-- [v3.8.0] 프로젝트 단위 백업 · 복원 · 초기화 -->
+      <div class="master-subpane" data-group="master" id="masterSub-backup" data-subpane="backup">
+        <div class="card" style="border-left:4px solid #dc2626;">
+          <div class="card-title">
+            <span>💾 프로젝트 백업 · 복원 · 초기화 — <b class="lbl-project-scope"></b></span>
+            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">* 지금 프로젝트만 대상입니다. 사용자 계정 · 다른 프로젝트 · 시스템 설정은 바뀌지 않습니다. (PM · 시스템관리자)</span>
+          </div>
+          <div class="grid-2" style="gap:14px; margin-bottom:14px;">
+            <div class="proj-box proj-box-blue">
+              <div class="proj-box-title">💾 프로젝트 백업 · 복원</div>
+              <p>기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물)와 Task 정보(WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통)를 JSON 파일 1개로 보관하거나, 그 파일로 이 프로젝트를 되돌립니다. 복원해도 프로젝트 이름은 그대로입니다.</p>
+              <div class="proj-box-btns">
+                <button class="btn btn-sm" data-btn="json-down" data-need-manager="1" data-click="ProjectData.exportProject">📥 프로젝트 백업 내려받기</button>
+                <input type="file" id="projectRestoreInput" style="display:none;" accept=".json" data-change="ProjectData.importProject" data-change-args='["$event"]'>
+                <button class="btn btn-sm" data-btn="json-up" data-need-manager="1" data-click="UiH.clickEl" data-click-args='["projectRestoreInput"]'>📤 프로젝트 백업 올리기 (복원)</button>
+              </div>
+            </div>
+            <div class="proj-box proj-box-red">
+              <div class="proj-box-title">🔄 프로젝트 초기화</div>
+              <p>• <b>Task 정보 초기화</b>: 기본정보 · 기준정보는 그대로 두고 WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)만 지웁니다.<br>
+                 • <b>프로젝트 전체 초기화</b>: 프로젝트 이름 · 기간만 두고 기준정보와 Task 정보를 모두 빈 상태로 되돌립니다.<br>
+                 두 경우 모두 지우기 전에 자동 백업을 만듭니다.</p>
+              <div class="proj-box-btns">
+                <button class="btn btn-sm" data-btn="warn" data-need-manager="1" data-click="ProjectData.clearCurrentTasks">🧹 Task 정보 초기화</button>
+                <button class="btn btn-sm" data-btn="danger" data-need-manager="1" data-click="ProjectData.resetProject">⚠️ 프로젝트 전체 초기화</button>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border-color); padding-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-weight:bold; font-size:var(--fs-sm, 12px);">🕒 이 프로젝트의 백업 스냅샷 (이 브라우저에 최근 12개 보관 · 시점 복원)</span>
+              <button class="btn btn-secondary btn-sm" data-need-manager="1" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["프로젝트수동백업", "ALL", false]'>+ 스냅샷 백업</button>
+            </div>
+            <div class="table-container" style="max-height: 260px;">
+              <table>
+                <thead><tr><th style="width:155px;">백업 일시</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th style="width:240px; text-align:center;">내려받기 / 복원</th></tr></thead>
+                <tbody id="projectBackupHistoryBody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3107,6 +3158,17 @@
             </div>
           </div>
 
+          <!-- [v3.8.0] Task 정보 초기화 (기본정보 · 기준정보 유지) -->
+          <div class="proj-box proj-box-amber" style="margin-bottom:14px;">
+            <div class="proj-box-title">🧹 [Task 정보 초기화] 프로젝트 기본정보 · 기준정보는 유지하고 Task 정보만 지우기</div>
+            <p>지우는 것: WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의관리 · 공지 · 업무 소통(채팅 포함) — 유지: 프로젝트 기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) · 사용자 · 시스템 설정.
+               DB 서버 방식은 지우기 전 자료를 서버 <code>data/backups</code> 폴더에 저장하고 첨부파일은 휴지통으로 옮깁니다.</p>
+            <div class="proj-box-btns">
+              <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">대상 프로젝트:</label>
+              <select id="cfgClearTarget" style="min-width:240px;"></select>
+              <button class="btn btn-sm" data-btn="warn" data-click="ProjectData.clearFromConfig">🧹 Task 정보 초기화</button>
+            </div>
+          </div>
           <!-- 하단: 자동/수동 백업 스냅샷 이력 및 시점 복원 테이블 -->
           <div style="border-top: 1px solid var(--border-color); padding-top: 10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -3123,7 +3185,7 @@
                   <tr>
                     <th style="width:155px;">백업 생성 일시</th>
                     <th style="width:140px;">백업 구분</th>
-                    <th style="width:140px;">대상 범위</th>
+                    <th style="width:160px;">프로젝트</th>
                     <th style="width:260px;">백업 파일명</th>
                     <th>보존 설정 및 데이터 건수 요약</th>
                     <th style="width:210px; text-align:center;">파일 다운로드 / 즉시 복원</th>
@@ -3570,6 +3632,7 @@
   <script src="static/js/core/data-store.js"></script>
   <script src="static/js/modules/dataio/data-io.js"></script>
   <script src="static/js/core/project-manager.js"></script>
+  <script src="static/js/core/project-data.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>

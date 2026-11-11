@@ -35,7 +35,8 @@ const BackupHistoryManager = {
     };
   },
 
-  createBackupSnapshot(actionType = "데이터업로드", targetSubsystem = "ALL", triggerFileDownload = true) {
+  // [v3.8.0] 스냅샷은 프로젝트별 (projectId) — opts.source 를 주면 그 저장 자료로 (다른 프로젝트 Task 초기화 전 등)
+  createBackupSnapshot(actionType = "데이터업로드", targetSubsystem = "ALL", triggerFileDownload = true, opts = {}) {
     const now = new Date();
     const { fileStamp, displayTime } = this._formatTimestamp(now);
     const subCode = targetSubsystem === "ALL"
@@ -44,25 +45,37 @@ const BackupHistoryManager = {
     const safeCode = String(subCode || "SUB").replace(/[^a-zA-Z0-9가-힣_-]/g, "_");
     const filename = ExcelSync.stdName("백업", [safeCode], "json", String(fileStamp).replace(/[^0-9]/g, ""));
 
+    const pid = opts.projectId || (typeof ProjectContext !== "undefined" ? ProjectContext.current : "DEFAULT");
+    const pname = opts.projectName || (typeof ProjectData !== "undefined" && pid === ProjectContext.current ? ProjectData.currentName() : pid);
+    const src = opts.source || (typeof DataRegistry !== "undefined" ? DataRegistry.collect() : {});
+    const cp = v => JSON.parse(JSON.stringify(v === undefined ? [] : v));
     const payload = {
       schemaVersion: "2026_v1.2.4",
       backupCreatedAt: displayTime,
       backupReason: actionType,
       targetSubsystem: targetSubsystem,
+      projectId: pid,
+      projectName: pname,
       exportedBy: AuthManager.getCurrentUser().empNo,
-      projectConfig: JSON.parse(JSON.stringify(projectConfig || {})),
-      subsystemsMeta: JSON.parse(JSON.stringify(subsystemsMeta || [])),
-      standardDeliverablesMeta: JSON.parse(JSON.stringify(standardDeliverablesMeta || [])),
-      projectUsers: (typeof projectUsers !== "undefined") ? JSON.parse(JSON.stringify(projectUsers)) : [],
-      wbsData: JSON.parse(JSON.stringify(wbsData || [])),
-      deliverablesData: JSON.parse(JSON.stringify(deliverablesData || [])),
-      reqMasterData: JSON.parse(JSON.stringify(reqMasterData || [])),
-      vocData: JSON.parse(JSON.stringify(vocData || []))
+      projectConfig: cp(src.projectConfig || {}),
+      subsystemsMeta: cp(src.subsystemsMeta),
+      standardDeliverablesMeta: cp(src.standardDeliverablesMeta),
+      projectUsers: opts.source ? [] : cp(typeof projectUsers !== "undefined" ? projectUsers : []),
+      wbsData: cp(src.wbsData),
+      deliverablesData: cp(src.deliverablesData),
+      reqMasterData: cp(src.reqMasterData),
+      vocData: cp(src.vocData),
+      weeklyReportsData: cp(src.weeklyReportsData),
+      meetingsData: cp(src.meetingsData),
+      noticesData: cp(src.noticesData),
+      communicationsData: cp(src.communicationsData)
     };
 
     const snapEntry = {
-      id: `BKP-${fileStamp}`,
+      id: `BKP-${fileStamp}-${Math.random().toString(36).slice(2, 6)}`,
       filename,
+      projectId: pid,
+      projectName: pname,
       createdAt: displayTime,
       actionType,
       targetSubsystem,
@@ -110,8 +123,13 @@ const BackupHistoryManager = {
   restoreSnapshotByIndex(idx) {
     const item = this.snapshots[idx];
     if (!item || !item.payload) return;
+    if (item.projectId && typeof ProjectContext !== "undefined" && item.projectId !== ProjectContext.current) {
+      showToast(`⚠️ [${item.projectName || item.projectId}] 프로젝트의 백업입니다. 그 프로젝트로 들어가서 복원하세요.`);
+      return;
+    }
     const p = item.payload;
     if (p.projectConfig) Object.assign(projectConfig, p.projectConfig);
+    ["weeklyReportsData", "meetingsData", "noticesData", "communicationsData"].forEach(k => { if (Array.isArray(p[k])) DataRegistry.set(k, JSON.parse(JSON.stringify(p[k]))); });
     if (Array.isArray(p.subsystemsMeta)) subsystemsMeta = JSON.parse(JSON.stringify(p.subsystemsMeta));
     if (Array.isArray(p.standardDeliverablesMeta)) standardDeliverablesMeta = JSON.parse(JSON.stringify(p.standardDeliverablesMeta));
     if (Array.isArray(p.wbsData)) wbsData = JSON.parse(JSON.stringify(p.wbsData));
@@ -124,28 +142,34 @@ const BackupHistoryManager = {
     }
   },
 
+  // [v3.8.0] 시스템 설정: 모든 프로젝트의 스냅샷 / 기준정보 > 백업·초기화: 지금 프로젝트 스냅샷만
   renderBackupHistoryTable() {
-    const tbody = document.getElementById("backupHistoryTableBody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
-    if (!this.snapshots || this.snapshots.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 생성된 업데이트 백업 JSON 이력이 없습니다. (JSON 병합 또는 엑셀 올리기 시 업데이트 날짜·시간으로 자동 생성됩니다)</td></tr>`;
-      return;
-    }
-    this.snapshots.forEach((s, idx) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-weight:bold; color:var(--primary);">${escapeHtml(s.createdAt)}</td>
-        <td><span class="status-badge-chip chip-progress">${escapeHtml(s.actionType)}</span></td>
-        <td><b>${escapeHtml(s.targetSubsystem)}</b></td>
-        <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(s.filename)}</td>
-        <td style="font-size:var(--fs-xs, 11px);">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건</td>
-        <td style="text-align:center;">
-          <button class="btn btn-primary btn-sm" data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">📥 JSON 다운</button>
-          <button class="btn btn-warning btn-sm" data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">⏪ 이 시점으로 복원</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
+    const cur = typeof ProjectContext !== "undefined" ? ProjectContext.current : "DEFAULT";
+    [["backupHistoryTableBody", false], ["projectBackupHistoryBody", true]].forEach(([id, onlyCur]) => {
+      const tbody = document.getElementById(id);
+      if (!tbody) return;
+      const rows = (this.snapshots || []).map((s, idx) => ({ s, idx })).filter(({ s }) => !onlyCur || (s.projectId || "DEFAULT") === cur);
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 만든 백업 스냅샷이 없습니다. (엑셀 · JSON 올리기, 복원 · 초기화 직전에 자동으로 만들어지고, [+ 스냅샷 백업]으로 직접 만들 수 있습니다)</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(({ s, idx }) => {
+        const other = s.projectId && s.projectId !== cur;
+        const n = k => (s.payload && Array.isArray(s.payload[k])) ? s.payload[k].length : null;
+        const extra = [["weeklyReportsData", "주간보고"], ["meetingsData", "회의"], ["noticesData", "공지"], ["communicationsData", "소통"]]
+          .filter(([k]) => n(k) !== null).map(([k, l]) => ` · ${l} ${n(k)}건`).join("");
+        return `<tr>
+          <td style="font-weight:bold; color:var(--primary);">${escapeHtml(s.createdAt)}</td>
+          <td><span class="status-badge-chip chip-progress">${escapeHtml(s.actionType)}</span></td>
+          <td><b>${escapeHtml(s.projectName || s.projectId || "(이전 버전)")}</b>${s.targetSubsystem && s.targetSubsystem !== "ALL" ? " · " + escapeHtml(s.targetSubsystem) : ""}</td>
+          <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(s.filename)}</td>
+          <td style="font-size:var(--fs-xs, 11px);">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건${extra}</td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="btn btn-primary btn-sm" data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">📥 JSON 내려받기</button>
+            <button class="btn btn-warning btn-sm" ${other ? "disabled title=\"다른 프로젝트의 백업입니다. 그 프로젝트에서 복원하세요.\"" : ""} data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}">⏪ 이 시점으로 복원</button>
+          </td>
+        </tr>`;
+      }).join("");
     });
   }
 };

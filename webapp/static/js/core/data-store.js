@@ -53,7 +53,12 @@ var DataRegistry = {
       case "meetingsData": return typeof meetingsData !== "undefined" ? meetingsData : [];
       case "weeklyReportsData": return typeof weeklyReportsData !== "undefined" ? weeklyReportsData : [];
       case "todosData": return typeof todosData !== "undefined" && Array.isArray(todosData) ? todosData : [];
-      case "theme": return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "electric");
+      case "theme":  // [v3.8.0] 시스템 기본 테마 (프로젝트 테마는 projectConfig.uiTheme)
+        if (typeof ThemeScope !== "undefined") {
+          if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "electric";
+          return ThemeScope.global;
+        }
+        return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "electric");
     }
     return undefined;
   },
@@ -61,7 +66,13 @@ var DataRegistry = {
   set(key, val) {
     if (val === undefined || val === null) return;
     switch (key) {
-      case "projectConfig": if (typeof val === "object") projectConfig = Object.assign({}, projectConfig, val); break;
+      case "projectConfig":
+        if (typeof val === "object") {
+          projectConfig = Object.assign({}, projectConfig, val);
+          if (!val.uiTheme) delete projectConfig.uiTheme;  // 다른 프로젝트의 테마가 남지 않게
+          if (typeof ThemeScope !== "undefined") ThemeScope.apply();
+        }
+        break;
       case "subsystemsMeta": if (Array.isArray(val)) subsystemsMeta = val; break;
       case "standardDeliverablesMeta": if (Array.isArray(val)) standardDeliverablesMeta = val; break;
       case "projectUsers":
@@ -84,6 +95,7 @@ var DataRegistry = {
       case "theme":
         if (typeof val === "string" && val) {
           if (typeof normalizeTheme === "function") val = normalizeTheme(val);
+          if (typeof ThemeScope !== "undefined") { ThemeScope.global = val; ThemeScope.apply(); break; }
           document.body.setAttribute("data-theme", val);
           const sel = document.getElementById("themeSelector");
           if (sel) sel.value = val;

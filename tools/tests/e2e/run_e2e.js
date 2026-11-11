@@ -764,6 +764,43 @@ async function localMain() {
   await login(page, "admin", LOCAL_PWD, ""); await waitApp(page);
   const adm = await page.evaluate(() => ({ role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }));
   check("v3: admin can log in without choosing a project and can switch projects", adm.role === "SYS_ADMIN" && adm.sel !== "none", JSON.stringify(adm));
+  // [v3.8.0] 화면 테마는 프로젝트별 / 프로젝트 단위 백업 · 복원 · Task 정보 초기화
+  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200); await waitApp(page, "DEFAULT");
+  await page.evaluate(() => changeTheme("brown")); await page.waitForTimeout(300);
+  await page.evaluate(() => SyncManager.save(null, { notify: false })); await page.waitForTimeout(300);
+  await page.evaluate(() => ProjectManager.switchTo("P001")); await page.waitForTimeout(1200); await waitApp(page, "P001");
+  const thP = await page.evaluate(() => document.body.dataset.theme);
+  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200); await waitApp(page, "DEFAULT");
+  const thD = await page.evaluate(() => ({ t: document.body.dataset.theme, pc: projectConfig.uiTheme }));
+  check("v3.8: screen theme is per project (Brown in this project, other project keeps the system default)", thD.t === "brown" && thD.pc === "brown" && thP !== "brown", JSON.stringify({ thP, thD }));
+  await page.evaluate(() => { GShell.go("tab-master"); MasterSubTabs.show("ui-report"); }); await page.waitForTimeout(400);
+  const shared = await page.evaluate(() => ({ rep: !!document.querySelector("#masterSub-ui-report #shared-report #cfgExportThemeSelect, #masterSub-ui-report #shared-report select"),
+    note: (document.querySelector("#masterSub-ui-report .proj-scope-note") || {}).textContent || "" }));
+  await page.evaluate(() => MasterSubTabs.show("ui-channel")); await page.waitForTimeout(300);
+  const sharedCh = await page.evaluate(() => !!document.querySelector("#masterSub-ui-channel #shared-channel"));
+  check("v3.8: Master data has Screen/Theme, Report form and Channel sub-tabs (same project settings as System settings)", shared.rep && shared.note.includes("프로젝트별 설정") && sharedCh, JSON.stringify({ shared, sharedCh }));
+  const p1Before = await page.evaluate(() => { const st = LocalBackend._read("P001") || {}; return { wbs: (st.wbsData || []).length, subs: (st.subsystemsMeta || []).length }; });
+  await page.evaluate(() => ProjectData._clear(["P001"], ["P001"])); await page.waitForTimeout(500);
+  const p1After = await page.evaluate(() => { const st = LocalBackend._read("P001") || {}; return { wbs: (st.wbsData || []).length, subs: (st.subsystemsMeta || []).length, cfg: !!st.projectConfig, snap: BackupHistoryManager.snapshots[0].projectId }; });
+  check("v3.8: Task reset of another project (local): its tasks cleared, master data kept, snapshot tagged with that project", p1After.wbs === 0 && p1After.subs === p1Before.subs && p1After.cfg && p1After.snap === "P001", JSON.stringify({ p1Before, p1After }));
+  await page.evaluate(() => MasterSubTabs.show("backup")); await page.waitForTimeout(400);
+  const before38 = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, subs: subsystemsMeta.length, name: projectConfig.projectName,
+    rows: document.querySelectorAll("#projectBackupHistoryBody tr").length, other: BackupHistoryManager.snapshots.filter(s => s.projectId === "P001").length }));
+  const backupBlob = await page.evaluate(async () => { const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
+    ProjectData.exportProject(); ExcelSync._triggerDownload = o; return got ? { name: got.name, text: await got.blob.text() } : null; });
+  await page.click('#masterSub-backup [data-click="ProjectData.clearCurrentTasks"]'); await page.waitForTimeout(300);
+  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(900);
+  const cleared = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, del: deliverablesData.length, mtg: meetingsData.length, notice: noticesData.length, comm: communicationsData.length,
+    wr: weeklyReportsData.length, voc: vocData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, std: standardDeliverablesMeta.length }));
+  check("v3.8: Task reset of this project (Master > Backup): WBS · REQ · deliverables · weekly · VOC · meetings · notices · posts cleared; basic and master data kept",
+    cleared.wbs + cleared.req + cleared.del + cleared.mtg + cleared.notice + cleared.comm + cleared.wr + cleared.voc === 0 && cleared.subs === before38.subs && cleared.std > 0 && cleared.name === before38.name, JSON.stringify(cleared));
+  await page.evaluate(async (txt) => { const f = new File([txt], "project_backup.json", { type: "application/json" }); await ProjectData.importProject({ target: { files: [f], value: "" } }); }, backupBlob.text);
+  await page.waitForTimeout(300);
+  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(1000);
+  const restored = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, name: projectConfig.projectName,
+    rows: document.querySelectorAll("#projectBackupHistoryBody tr").length, p1rows: [...document.querySelectorAll("#projectBackupHistoryBody tr")].some(tr => tr.textContent.includes("P001")) }));
+  check("v3.8: project backup JSON → restore brings this project back (other projects' snapshots not listed here)", backupBlob.name.includes("프로젝트백업") && restored.wbs === before38.wbs && restored.req === before38.req
+    && restored.mtg === before38.mtg && restored.notice === before38.notice && restored.name === before38.name && before38.other >= 1 && !restored.p1rows, JSON.stringify({ before38, restored, file: backupBlob.name }));
   check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
   await page.context().close();
 }
@@ -893,6 +930,17 @@ async function serverScenarios() {
     await a.evaluate(() => AttachManager.close());
     check("Attachment on a notice: up to 5 files per item (6th rejected), count badge on the notice card", nt.rows === 5 && nt.policy.includes("파일 5개까지") && nt.title.includes("[공지]") && nt.badge === "5" && nt.toast, JSON.stringify(nt));
     check("Attachment on meeting minutes: file listed, badge shown, minutes draft not marked as changed", mt.rows === 1 && mt.title.includes("[회의]") && mt.badge === "1" && !mt.dirty, JSON.stringify(mt));
+
+    // [v3.8.0] 시스템 설정 > 백업·복원·초기화: 고른 프로젝트의 Task 정보만 초기화 (서버)
+    await a.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "backup"); }); await a.waitForTimeout(600);
+    const tgt = await a.evaluate(() => [...document.querySelectorAll("#cfgClearTarget option")].map(o => o.value));
+    await a.selectOption("#cfgClearTarget", "P001");
+    await a.click('[data-click="ProjectData.clearFromConfig"]'); await a.waitForTimeout(300);
+    await a.click("#confirmDialogOkBtn"); await a.waitForTimeout(1500);
+    const clr = await a.evaluate(async () => { const p1 = await ServerBackend.request("/api/db/load", { keys: ["wbsData", "subsystemsMeta", "projectConfig"], projectId: "P001" });
+      return { p1wbs: (p1.data.wbsData || []).length, p1cfg: !!(p1.data.projectConfig || {}).projectName, cur: ProjectContext.current, curWbs: wbsData.length }; });
+    check("v3.8 server: System settings Task reset of a chosen project clears only its tasks (project info kept, current project untouched)",
+      tgt.includes("P001") && tgt.includes("__ALL__") && clr.p1wbs === 0 && clr.p1cfg && clr.cur === "DEFAULT" && clr.curWbs > 0, JSON.stringify({ tgt, clr }));
 
     // 서버 중지 → 연결 끊김 표시
     srv.kill();

@@ -42,7 +42,7 @@ var GShell = {
     const layout = document.body.getAttribute("data-layout");
     if (layout !== "top-nav" && layout !== "sidebar-left" && typeof LayoutManager !== "undefined") LayoutManager.setLayout("top-nav", false);
     const theme = document.body.getAttribute("data-theme");
-    if (typeof normalizeTheme === "function" && normalizeTheme(theme) !== theme && typeof changeTheme === "function") changeTheme(normalizeTheme(theme));
+    if (typeof normalizeTheme === "function" && normalizeTheme(theme) !== theme) document.body.setAttribute("data-theme", normalizeTheme(theme));
     this.renderNav();
     this.renderAdmin();
     this.syncSettings();

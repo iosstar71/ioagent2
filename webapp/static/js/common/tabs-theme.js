@@ -70,6 +70,7 @@ function activateTab(tabId) {
       HomeScreenManager.syncConfigUi();
       NoticeCommManager.renderSettingsChannelTable();
       SubTabs.restore("config", "screen");
+      if (typeof ProjectData !== "undefined") ProjectData.renderConfigTarget();
       document.querySelectorAll(".lbl-current-project-name").forEach(el => { el.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current; });
       if (typeof UiMode !== "undefined") UiMode.syncSelects();
       break;
@@ -100,7 +101,9 @@ function normalizeTheme(theme) {
 
 function changeTheme(theme) {
   theme = normalizeTheme(theme);
-  DataRegistry.set("theme", theme);
+  // [v3.8.0] 테마는 프로젝트별 (projectConfig.uiTheme)
+  projectConfig.uiTheme = theme;
+  if (typeof ThemeScope !== "undefined") ThemeScope.apply(); else DataRegistry.set("theme", theme);
   const sel2 = document.getElementById("cfgThemeSelect");
   if (sel2 && sel2.value !== theme) sel2.value = theme;
   if (typeof LayoutManager !== "undefined") LayoutManager.syncThemeSelect();

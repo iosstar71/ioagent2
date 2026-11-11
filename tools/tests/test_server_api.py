@@ -562,6 +562,36 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/admin/users/delete", {"empNo": "ua_new"}, self.admin)
         self.assertEqual((s, any(u["empNo"] == "ua_new" for u in d["users"])), (200, False))
 
+    def test_53_clear_project_tasks(self):
+        """[v3.8.0] 프로젝트 Task 정보 초기화: 기준정보 유지 · 서버 백업 파일 · 권한 (PM 은 자기 프로젝트 1개, 여러 개는 시스템관리자)"""
+        pid = self.pid
+        row = {"id": "9.9", "level": 1, "system": "W1", "name": "CLEAR-ME", "pProg": 0, "aProg": 0}
+        _, revs = self.load(["wbsData"], project=pid)
+        s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W1": [row]}, "base": {"W1": (revs["wbsData"].get("W1") or {}).get("rev", 0)}},
+                                                     "noticesData": {"parts": {"N-CLR": {"id": "N-CLR", "title": "x"}}, "base": {}}}}, self.admin, project=pid)
+        self.assertEqual(s, 200, d)
+        self.call("/api/chat/send", {"channel": "전체", "message": "clear-me"}, self.admin, project=pid)
+        lee = self.ready("lead_lee")
+        self.assertEqual(self.call("/api/projects/clear-tasks", {"ids": [pid]}, lee, project=pid)[0], 403)
+        self.assertEqual(self.call("/api/projects/clear-tasks", {"ids": ["DEFAULT", pid]}, self.ready("pmo_kim"))[0], 403)
+        self.assertEqual(self.call("/api/projects/clear-tasks", {"ids": ["NOPE"]}, self.admin)[0], 404)
+        before_default, _ = self.load(["wbsData"])
+        s, d = self.call("/api/projects/clear-tasks", {"ids": [pid]}, self.admin, project=pid)
+        self.assertEqual(s, 200, d)
+        res = d["results"][0]
+        self.assertTrue(res["counts"]["wbsData"] >= 1 and res["counts"]["noticesData"] >= 1)
+        self.assertTrue((self.tmp / "data" / "backups" / res["backup"]).exists())
+        data, _ = self.load(["projectConfig", "subsystemsMeta", "wbsData", "noticesData"], project=pid)
+        self.assertEqual((data["wbsData"], data["noticesData"]), ([], []))
+        self.assertTrue(data["projectConfig"].get("projectName") and len(data["subsystemsMeta"]) > 0)
+        _, d = self.call("/api/chat/messages?channel=%EC%A0%84%EC%B2%B4", token=self.admin, method="GET", project=pid)
+        self.assertFalse(any(m["message"] == "clear-me" for m in d["messages"]))
+        after_default, _ = self.load(["wbsData"])
+        self.assertEqual(len(after_default["wbsData"]), len(before_default["wbsData"]))  # 다른 프로젝트는 그대로
+        # 지우기 전 화면에서 그 행을 다시 저장하면 충돌로 알려 줌 (지운 자료가 몰래 되살아나지 않게)
+        s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W1": [row]}, "base": {"W1": 1}}}}, self.admin, project=pid)
+        self.assertEqual(s, 409, d)
+
     # ---------------------------------------------------------------- 채팅
     def test_30_chat(self):
         s, _ = self.call("/api/chat/send", {"channel": "전체", "message": "hello"}, self.admin)

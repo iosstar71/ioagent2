@@ -273,6 +273,19 @@ class FileStore:
         return len(rows)
 
     @classmethod
+    def trash_project(cls, pid, who):
+        """[v3.8.0] 프로젝트 Task 정보 초기화: 그 프로젝트의 첨부파일을 모두 휴지통으로 (보존 기간 뒤 자동 삭제)"""
+        with DB_LOCK:
+            conn = Store.connect()
+            try:
+                n = conn.execute("UPDATE TB_ATTACH SET DELETED_AT = ?, DELETED_BY = ? WHERE PROJECT_ID = ? AND DELETED_AT IS NULL",
+                                 (now_str(), f"{who} (Task 초기화)", pid)).rowcount
+                conn.commit()
+            finally:
+                conn.close()
+        return n
+
+    @classmethod
     def drop_project(cls, pid):
         """프로젝트를 지우면 그 프로젝트의 첨부파일도 모두 삭제"""
         with DB_LOCK:
