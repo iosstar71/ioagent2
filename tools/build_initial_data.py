@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "data" / "initial_data.json"
-DST = ROOT / "webapp" / "static" / "js" / "core" / "initial-data.js"
+DST = ROOT / "static" / "js" / "core" / "initial-data.js"
 
 
 def build(src: Path = SRC, dst: Path = DST) -> Path:

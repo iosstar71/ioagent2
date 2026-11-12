@@ -9,10 +9,11 @@ import threading
 
 # 폴더 구성 (전사 시스템 하위 서비스 — 패키지 폴더 하나에 모두 들어 있음)
 #   conf/    설정(app.ini)        server/  서버 프로그램(이 패키지)
-#   webapp/  화면 파일(웹 루트)    data/    DB          logs/  오류 로그 (error.log 하나, 크기 제한)
+#   index.html · static/  화면 (패키지 폴더가 곧 웹 루트)   data/  DB   logs/  오류 로그 (error.log 하나, 크기 제한)
+#   웹 루트 안의 conf/ server/ data/ logs/ 와 .py · .db · .bat · .sh · .log · .ini 파일은 내려받기 차단
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
 CONF_DIR = BASE_DIR / "conf"
-WEB_DIR = BASE_DIR / "webapp"
+WEB_DIR = BASE_DIR  # index.html 이 패키지 폴더 맨 위에 있음
 
 
 def load_app_config(base_dir):
@@ -68,8 +69,8 @@ MAX_BODY_BYTES = 5 * 1024 * 1024  # 저장 요청 1건 최대 크기
 APP_CONFIG_URL = "/static/js/config/app-config.js"  # conf/app.ini 로 즉시 만들어 보내는 화면 설정
 
 
-BLOCKED_URL_PREFIXES = ("/server", "/data", "/logs", "/conf", "/.")
-BLOCKED_URL_EXTENSIONS = {".py", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env", ".log", ".pem", ".key", ".crt", ".pfx"}
+BLOCKED_URL_PREFIXES = ("/server", "/data", "/logs", "/conf", "/tools", "/legal", "/.", "/__pycache__")
+BLOCKED_URL_EXTENSIONS = {".py", ".pyc", ".ini", ".txt", ".md", ".json", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env", ".log", ".pem", ".key", ".crt", ".pfx"}
 
 PWD_SALT = "WBS_OFFLINE_SECURITY_SALT_2026"  # js/access-control.js 와 동일 (브라우저 1차 해시용)
 # [v1.0.10] 서버 저장 비밀번호: 브라우저가 보낸 1차 해시(SHA-256)를 사용자별 솔트 + PBKDF2-SHA256 으로 다시 해시하여 저장

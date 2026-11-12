@@ -41,7 +41,8 @@ def copy_program(dst, lock_mode="off", lock_hours=None):
     """프로그램 폴더(설정 · 서버 · 화면 · 초기 데이터)를 시험용 폴더로 복사
     [Workgroup] 기존 저장 · 권한 시험은 체크아웃 잠금을 끄고(lock_mode=off), 잠금 시험(LockApiTest)은 required 로"""
     shutil.copy(ROOT / "start_server.py", dst / "start_server.py")
-    for d in ("conf", "server", "webapp"):
+    shutil.copy(ROOT / "index.html", dst / "index.html")
+    for d in ("conf", "server", "static"):
         shutil.copytree(ROOT / d, dst / d, ignore=shutil.ignore_patterns("__pycache__"))
     ini = dst / "conf" / "app.ini"
     text = ini.read_text(encoding="utf-8")
@@ -484,7 +485,73 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W2": rows["W2"]}, "base": {"W2": base["W2"]}}}}, al)
         self.assertEqual((s, d.get("blocked")), (200, []), d)
 
-    # ---------------------------------------------------------------- 채팅
+    # ---------------------------------------------------------------- Project Mgmt (협업) 1.0
+    def test_60_base_path_web_root_and_config(self):
+        """하위 주소 /pprjmgmt · 패키지 폴더가 웹 루트(index.html 맨 위) · 내부 파일 차단 · 화면 설정"""
+        with urllib.request.urlopen(self.base + "/pprjmgmt/api/db/ping") as r:
+            self.assertTrue(json.loads(r.read())["ok"])
+        with urllib.request.urlopen(self.base + "/pprjmgmt/") as r:
+            self.assertIn("script-src 'self';", r.headers.get("Content-Security-Policy", ""))
+            self.assertIn("Project Mgmt", r.read().decode("utf-8"))
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.request("GET", "/pprjmgmt")
+        r = conn.getresponse()
+        self.assertEqual((r.status, r.getheader("Location")), (301, "/pprjmgmt/"))
+        conn.close()
+        with urllib.request.urlopen(self.base + "/pprjmgmt/static/js/config/app-config.js") as r:
+            js = r.read().decode("utf-8")
+        for part in ('"productName": "Project Mgmt"', '"editionName": "협업"', '"version": "1.0.0"', '"basePath": "/pprjmgmt"', '"lock": {"mode": '):
+            self.assertIn(part, js)
+        # 이 시험 서버는 잠금을 끄고 띄움 — 배포 설정은 체크아웃해야 저장(required)
+        self.assertIn("lock_mode=required", (ROOT / "conf" / "app.ini").read_text(encoding="utf-8"))
+        for path in ("/pprjmgmt/data/pprjmgmt.db", "/pprjmgmt/start_server.py", "/pprjmgmt/conf/app.ini", "/pprjmgmt/server/store.py",
+                     "/pprjmgmt/data/initial_data.json", "/pprjmgmt/README.txt", "/pprjmgmt/run_server.bat", "/start_server.py"):
+            with self.assertRaises(urllib.error.HTTPError, msg=path) as ctx:
+                urllib.request.urlopen(self.base + path)
+            self.assertEqual(ctx.exception.code, 403, path)
+
+    def test_61_removed_features(self):
+        """채팅 · 첨부파일 · 자가 등록 · 암호 자가 초기화 · 서버 복원 지점 · 서버 백업 목록은 없음"""
+        for path in ("/api/chat/send", "/api/files/upload", "/api/files/list", "/api/auth/register", "/api/auth/reset-password",
+                     "/api/snapshots/save", "/api/admin/backup/create", "/api/admin/backup/list"):
+            self.assertEqual(self.call(path, {}, self.admin)[0], 404, path)
+
+    def test_62_worker_list(self):
+        """작업자 선택 목록: 그 프로젝트 작업자 + 관리자, 암호 · 역할 정보 없음"""
+        s, d = self.call("/api/projects/workers", {"projectId": "DEFAULT"})
+        self.assertEqual(s, 200)
+        ids = [w["empNo"] for w in d["workers"]]
+        self.assertTrue("admin" in ids and "lead_lee" in ids, ids)
+        self.assertTrue(all(set(w) == {"empNo", "name"} for w in d["workers"]))
+
+    def test_63_backup_download_restore_and_usage(self):
+        """시스템 백업: .db 내려받기 → 복원 (서버에 남기지 않음) · 사용 용량 · DB 정리"""
+        self.assertEqual(self.call("/api/admin/usage", {}, self.ready("pmo_kim"))[0], 403)
+        s, d = self.call("/api/admin/usage", {}, self.admin)
+        self.assertTrue(s == 200 and d["total"] < d["limit"] and d["db"] > 0, d)
+        req = urllib.request.Request(self.base + "/api/admin/backup/download", headers={"Authorization": "Bearer " + self.admin})
+        with urllib.request.urlopen(req) as r:
+            blob = r.read()
+        self.assertEqual(blob[:15], b"SQLite format 3")
+        self.call("/api/db/save", {"changes": {"noticesData": {"parts": {"N-AFTER": {"id": "N-AFTER", "title": "after backup"}}, "base": {}}}}, self.admin)
+        for body, ok in ((b"not a db", False), (blob, True)):
+            conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=20)
+            conn.request("POST", "/api/admin/backup/upload", body=body, headers={"Authorization": "Bearer " + self.admin, "Content-Type": "application/octet-stream"})
+            r = conn.getresponse()
+            self.assertEqual(r.status == 200 and json.loads(r.read()).get("ok"), ok)
+            conn.close()
+        data, _ = self.load(["noticesData"])
+        self.assertFalse(any(n.get("id") == "N-AFTER" for n in data["noticesData"]))
+        self.assertEqual(sorted(p.name for p in (self.tmp / "data").iterdir() if p.suffix == ".db"), ["pprjmgmt.db"])  # 임시 파일 남지 않음
+        self.assertFalse((self.tmp / "data" / "backups").exists())
+        self.assertEqual(self.call("/api/admin/vacuum", {}, self.admin)[0], 200)
+
+    def test_64_error_log_only(self):
+        """정상 사용 중에는 로그 파일이 생기지 않음 (오류만 logs/error.log)"""
+        logs = self.tmp / "logs"
+        self.assertTrue(not logs.exists() or all(f.name == "error.log" for f in logs.iterdir()))
+
+
 class LockApiTest(unittest.TestCase):
     """[Workgroup 0.1] 서브시스템 체크아웃 · 체크인 (lock_mode=required)"""
     call = ServerApiTest.__dict__["call"]

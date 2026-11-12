@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""[Project Mgmt] conf/app.ini → 화면 설정(webapp/static/js/config/app-config.js) 만들기 · 배포 파일 이름
+"""[Project Mgmt] conf/app.ini → 화면 설정(static/js/config/app-config.js) 만들기 · 배포 파일 이름
 
 서버는 실행 중에 같은 내용을 app.ini 로 바로 만들어 보내므로, 이 파일은 파일로 직접 열 때(시험용)를 위한 것입니다.
 """
@@ -37,7 +37,7 @@ def client_js(cfg=None):
 
 
 def build(root=None):
-    out = Path(root or ROOT) / "webapp" / "static" / "js" / "config" / "app-config.js"
+    out = Path(root or ROOT) / "static" / "js" / "config" / "app-config.js"
     out.write_text(client_js(load(root)), encoding="utf-8")
     print(f"[OK] {out.relative_to(Path(root or ROOT))} built ({out.stat().st_size:,} bytes)")
 

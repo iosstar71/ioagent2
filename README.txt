@@ -8,7 +8,8 @@ Project Mgmt (협업) v1.0.0 — 전사 시스템 하위 서비스용 프로젝�
 ■ 폴더 (pprjmgmt/)
   conf/app.ini        설정 — 제품 이름 · 버전 · 하위 주소 · 포트 · DB 파일 · 체크아웃 규칙
   server/             서버 프로그램 (Python 3.8+ 표준 라이브러리만)
-  webapp/             화면 (index.html + static/)
+  index.html          화면 시작 파일 (패키지 폴더 맨 위 = 웹 루트)
+  static/             화면 파일 (js · css · 글꼴)
   data/               DB 파일(pprjmgmt.db, 처음 실행 때 생성) + initial_data.json(처음 상태: admin 하나)
   logs/error.log      오류만 기록 (256KB 를 넘으면 뒤쪽 절반만 남김) — 오류가 없으면 생기지 않음
   legal/              오픈소스 고지 (Pretendard 글꼴)
