@@ -2969,7 +2969,7 @@ svg.iostar-ico.ico-solo, svg.iostar-dot.ico-solo,
 body:not(.theme-ready) { visibility: hidden; animation: themeReveal 0s linear 2s forwards; }
 @keyframes themeReveal { to { visibility: visible; } }
 /* 저장 상태 글자(자동저장 대기 ↔ 저장됨 (시각))가 바뀌어도 머리말 항목이 밀리지 않게 폭 고정 */
-@media (min-width: 1440px) { .g-header .storage-status-box { min-width: 170px; justify-content: center; white-space: nowrap; box-sizing: border-box; } }
+@media (min-width: 1440px) { :root:not([style*="--fs-scale"]) .g-header .storage-status-box { min-width: 170px; justify-content: center; white-space: nowrap; box-sizing: border-box; } }
 
 /* Brown — 따뜻한 무광 브라운 (Urban Slate 와 같은 구조, 색만 다름) */
 [data-theme="brown"] {
