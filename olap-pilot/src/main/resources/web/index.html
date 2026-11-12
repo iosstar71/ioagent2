@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다차원 분석 파일럿</title>
+<link rel="stylesheet" href="pivot.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>다차원 분석 <span class="tag">파일럿</span></h1>
+  <div class="spacer"></div>
+  <label class="views">저장된 뷰
+    <select id="viewSelect"><option value="">선택…</option></select>
+  </label>
+  <button id="btnSaveView" type="button">뷰 저장</button>
+  <button id="btnDeleteView" type="button">뷰 삭제</button>
+  <span class="sep"></span>
+  <button id="btnExpand" type="button">모두 펼치기</button>
+  <button id="btnCollapse" type="button">모두 접기</button>
+  <button id="btnSwap" type="button" title="행과 열을 맞바꿉니다">행↔열</button>
+  <button id="btnCsv" type="button">CSV 내보내기</button>
+  <button id="btnSql" type="button" aria-pressed="false">SQL 보기</button>
+</header>
+
+<div class="layout">
+  <aside class="fields" id="fieldPanel" data-zone="none">
+    <h2>차원</h2>
+    <ul id="dimList" class="field-list"></ul>
+    <h2>측정값</h2>
+    <ul id="measureList" class="field-list"></ul>
+    <p class="hint">차원을 끌어서 필터·열·행에 놓습니다. 놓인 칩을 끌어 순서를 바꾸면 그 순서로 다시 집계합니다.</p>
+  </aside>
+
+  <main class="work">
+    <section class="zones">
+      <div class="zone-row"><span class="zone-name">필터</span><div class="zone" id="zoneFilters" data-zone="filters"></div></div>
+      <div class="zone-row"><span class="zone-name">열</span><div class="zone" id="zoneCols" data-zone="cols"></div></div>
+      <div class="zone-row"><span class="zone-name">행</span><div class="zone" id="zoneRows" data-zone="rows"></div></div>
+    </section>
+
+    <div class="status" id="status" role="status"></div>
+    <pre class="sql" id="sqlBox" hidden></pre>
+
+    <div class="grid-wrap" id="gridWrap">
+      <table class="pivot" id="pivot"></table>
+    </div>
+
+    <section class="detail" id="detail" hidden>
+      <div class="detail-head">
+        <strong id="detailTitle"></strong>
+        <button id="btnCloseDetail" type="button">닫기</button>
+      </div>
+      <div class="detail-body"><table id="detailTable"></table></div>
+    </section>
+  </main>
+</div>
+
+<div class="popup" id="filterPopup" hidden>
+  <div class="popup-head"><strong id="filterTitle"></strong></div>
+  <input type="search" id="filterSearch" placeholder="값 검색" aria-label="값 검색">
+  <label class="check all"><input type="checkbox" id="filterAll"> (전체 선택)</label>
+  <div class="popup-list" id="filterList"></div>
+  <div class="popup-foot">
+    <button id="filterCancel" type="button">취소</button>
+    <button id="filterApply" type="button" class="primary">적용</button>
+  </div>
+</div>
+
+<script src="pivot.js"></script>
+</body>
+</html>

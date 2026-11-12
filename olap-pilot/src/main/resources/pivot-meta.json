@@ -1,0 +1,25 @@
+{
+  "factTable": "FACT_PROD_DAILY",
+  "dimensions": [
+    { "id": "month",    "label": "월",     "column": "WORK_MONTH" },
+    { "id": "week",     "label": "주차",   "column": "WORK_WEEK" },
+    { "id": "date",     "label": "일자",   "column": "WORK_DATE" },
+    { "id": "plant",    "label": "공장",   "column": "PLANT" },
+    { "id": "line",     "label": "라인",   "column": "LINE" },
+    { "id": "process",  "label": "공정",   "column": "PROCESS" },
+    { "id": "equip",    "label": "설비",   "column": "EQUIP" },
+    { "id": "pgroup",   "label": "제품군", "column": "PRODUCT_GROUP" },
+    { "id": "product",  "label": "제품",   "column": "PRODUCT" },
+    { "id": "shift",    "label": "Shift",  "column": "SHIFT" }
+  ],
+  "measures": [
+    { "id": "prod_qty",   "label": "생산량",       "type": "sum",   "column": "PROD_QTY",   "format": "int" },
+    { "id": "good_qty",   "label": "양품수",       "type": "sum",   "column": "GOOD_QTY",   "format": "int" },
+    { "id": "defect_qty", "label": "불량수",       "type": "sum",   "column": "DEFECT_QTY", "format": "int" },
+    { "id": "plan_min",   "label": "계획시간(분)", "type": "sum",   "column": "PLAN_MIN",   "format": "int" },
+    { "id": "run_min",    "label": "가동시간(분)", "type": "sum",   "column": "RUN_MIN",    "format": "int" },
+    { "id": "yield",      "label": "수율(%)",      "type": "ratio", "numerator": "GOOD_QTY",   "denominator": "PROD_QTY", "format": "pct" },
+    { "id": "defect_rt",  "label": "불량률(%)",    "type": "ratio", "numerator": "DEFECT_QTY", "denominator": "PROD_QTY", "format": "pct" },
+    { "id": "oper_rt",    "label": "가동률(%)",    "type": "ratio", "numerator": "RUN_MIN",    "denominator": "PLAN_MIN", "format": "pct" }
+  ]
+}
