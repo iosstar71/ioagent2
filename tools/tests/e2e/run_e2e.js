@@ -171,6 +171,45 @@ async function main() {
     await wa.reload(); await wa.waitForTimeout(1500); await waitApp(wa);
     const kept = await wa.evaluate(() => wbsData.find(t => t.id === "1.1").name);
     check("Data survives a reload (stored in IndexedDB)", kept === "W1 설계 (가작업 2차)", kept);
+    // 작업자 선택 화면에서 새 종합본 올리기 → 고르기 (최신으로 맞추기 / 전부 바꾸기 / 그대로)
+    await pm.evaluate(async () => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 3차)"; rebuildAll(true); persistChanges(true);
+      await UserAdmin._save({ isNew: true, empNo: "wg_c", name: "다작업", dept: "", sysAdmin: false, projectRoles: { [ProjectContext.current]: { role: "MEMBER", subsystem: "W2" } } }); });
+    await pm.waitForTimeout(1100);
+    const pkg4 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
+    const s4 = JSON.parse(pkg4.text).packageStamp;
+    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 3차)"; rebuildAll(true); persistChanges(true); });
+    await wa.waitForTimeout(500);
+    const toLogin = async () => { await wa.evaluate(() => { AuthManager._clearSession(); return AppStore.reload(); }); await wa.waitForTimeout(1800); };
+    const choice = () => wa.evaluate(() => { const b = document.getElementById("localPkgChoice"); return { shown: getComputedStyle(b).display !== "none", text: b.textContent }; });
+    const pickChoice = k => wa.evaluate(k => document.querySelector(`#localPkgChoice button[data-click-args*='"${k}"']`).click(), k);
+    await toLogin();
+    await wa.setInputFiles("#localStartInput", tmpFile(pkg4.name, pkg4.text)); await wa.waitForTimeout(1200);
+    const ch = await choice();
+    check("Login screen: a 종합본 on a PC that already has data asks latest / replace all / keep, and says it is newer",
+      ch.shown && ch.text.includes("최신 종합본으로 맞추기") && ch.text.includes("전부 바꾸기") && ch.text.includes("그대로") && ch.text.includes("새 종합본"), ch.text.slice(0, 240));
+    await pickChoice("keep"); await wa.waitForTimeout(300);
+    const kp = await choice();
+    await pickWorker(wa, "wg_a", PWD);
+    const k1 = await wa.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name }));
+    check("[이 PC 자료 그대로] changes nothing", !kp.shown && k1.w1 === "W1 설계 (가작업 3차)" && k1.w2 === "W2 설계 (PM 수정)", JSON.stringify(k1));
+    await toLogin();
+    await wa.setInputFiles("#localStartInput", tmpFile(pkg4.name, pkg4.text)); await wa.waitForTimeout(1200);
+    await pickChoice("latest"); await wa.waitForTimeout(2600);
+    const pend = await wa.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), note: document.getElementById("localPkgChoice").textContent }));
+    await pickWorker(wa, "wg_a", PWD); await wa.waitForTimeout(800);
+    const l1 = await wa.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name, stamp: projectConfig.packageStamp, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG") }));
+    check("[최신 종합본으로 맞추기]: new worker selectable at once; after picking the worker own W1 work kept, W2 and version updated",
+      pend.workers.includes("wg_c") && pend.note.includes("받아 둔 종합본") && l1.w1 === "W1 설계 (가작업 3차)" && l1.w2 === "W2 설계 (PM 3차)" && l1.stamp === s4 && !l1.pending, JSON.stringify({ pend, l1 }));
+    await toLogin();
+    await wa.setInputFiles("#localStartInput", tmpFile(pkg4.name, pkg4.text)); await wa.waitForTimeout(1200);
+    const same = await choice();
+    await pickChoice("replace"); await wa.waitForTimeout(300);
+    const warnR = await choice();
+    await pickChoice("replaceNow"); await wa.waitForTimeout(2600);
+    await pickWorker(wa, "wg_a", PWD);
+    const r1 = await wa.evaluate(() => wbsData.find(t => t.id === "1.1").name);
+    check("[종합본으로 전부 바꾸기] asks once more, then this PC matches the 종합본 exactly (same-version note shown)",
+      same.text.includes("같습니다") && warnR.text.includes("사라집니다") && r1 === "W1 설계 (가작업 수정)", JSON.stringify({ r1, same: same.text.slice(0, 120) }));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);

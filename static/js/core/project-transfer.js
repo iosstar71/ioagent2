@@ -338,6 +338,12 @@ var ProjectTransfer = {
       Partition.split(k, data[k]).forEach((_, p) => { revs[k][p] = { rev: 1, by: "import", at: now }; });
     });
     LocalBackend._write(pid, st, revs);
+    this.writeUsersLocal(pid, item.users);
+  },
+  // 작업자 목록만 로컬 저장소에 추가 · 갱신 (그 프로젝트의 역할 · 담당만 바꾸고 암호는 건드리지 않음)
+  writeUsersLocal(pid, users_) {
+    const now = new Date().toLocaleString();
+    const item = { users: users_ || [] };
     const dst = LocalBackend._read(ProjectContext.DEFAULT) || {};
     const users = Array.isArray(dst.projectUsers) ? dst.projectUsers : [];
     (item.users || []).forEach(u => {

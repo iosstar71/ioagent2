@@ -737,14 +737,21 @@ const SmartMergeCenter = {
     let items;
     try { items = await ProjectTransfer.parse(file); } catch (err) { return showToast("⚠️ 파일을 읽지 못했습니다: " + err.message); }
     if (!items.length) return showToast("⚠️ 종합본(④ 전체 내려받기) 파일이 아닙니다.");
-    const src = items[0].data;
-    const all = Permission.canEditAllSubsystems();
     const own = Permission.ownSubsystem();
-    const keep = all ? [] : [own];
-    const mine = sys => keep.includes(String(sys || ""));
+    const keep = Permission.canEditAllSubsystems() ? [] : [own];
     openConfirmDialog(`📥 [종합본 가져오기] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 종합본으로 맞춥니다.\n` +
       (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 자료를 그대로 둡니다.\n` : "· 모든 서브시스템을 종합본 내용으로 바꿉니다.\n") +
-      `· 종합본의 작업자 목록을 추가 · 갱신합니다 (내 암호는 그대로). 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
+      `· 종합본의 작업자 목록을 추가 · 갱신합니다 (내 암호는 그대로). 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => this.applyConsolidated(items[0]));
+  },
+
+  // 종합본 반영 (확인 없이) — [종합본 가져오기]와 작업자 선택 화면의 [최신 종합본으로 맞추기]가 같이 씀
+  //   일반 작업자: 내 담당 서브시스템 자료는 이 PC 것을 유지 / PM · 관리자: 전부 종합본으로
+  applyConsolidated(item, label) {
+    const src = item.data;
+    const own = Permission.ownSubsystem();
+    const keep = Permission.canEditAllSubsystems() ? [] : [own];
+    const mine = sys => keep.includes(String(sys || ""));
+    {
       BackupHistoryManager.createBackupSnapshot("종합본가져오기직전백업", "ALL", false);
       const cur = ProjectData.collect();
       const by = (k, f) => (src[k] || []).filter(r => !f(r)).concat((cur[k] || []).filter(f));
@@ -756,9 +763,9 @@ const SmartMergeCenter = {
       if (src.projectConfig) projectConfig = Object.assign({}, projectConfig, src.projectConfig, { projectName: keepName });
       if (Array.isArray(src.subsystemsMeta) && src.subsystemsMeta.length) subsystemsMeta = src.subsystemsMeta;
       if (Array.isArray(src.standardDeliverablesMeta)) standardDeliverablesMeta = src.standardDeliverablesMeta;
-      if (Array.isArray(items[0].users) && items[0].users.length) this._mergeUsersList(items[0].users);
-      StorageManager._afterBulkReplace(`✅ 종합본을 가져왔습니다.${keep.length ? ` (내 담당 ${own} 자료는 그대로)` : ""} (${ProjectData.countText(ProjectData.collect())})`);
-    });
+      if (Array.isArray(item.users) && item.users.length) this._mergeUsersList(item.users);
+      StorageManager._afterBulkReplace(`✅ ${label ? label + " " : ""}종합본을 반영했습니다.${keep.length ? ` (내 담당 ${own} 자료는 이 PC 것 그대로)` : ""} (${ProjectData.countText(ProjectData.collect())})`);
+    }
   },
 
   // [v3.9.1] 프로젝트 전체 엑셀(기준정보 · 업무 · 작업자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용

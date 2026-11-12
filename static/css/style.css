@@ -3035,3 +3035,7 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 [data-theme="dark"] .lk-bar[data-state="mine"] { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.45); }
 [data-theme="dark"] .lk-bar[data-state="other"] { background: rgba(220,38,38,0.12); border-color: rgba(248,113,113,0.45); }
 .local-start { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-color, #cbd5e1); text-align: center; }
+
+.pkg-choice { margin: 10px 0 4px; padding: 10px; border: 1px solid var(--border-color, #cbd5e1); border-radius: 8px; background: var(--bg-subtle, rgba(148,163,184,.08)); text-align: left; font-size: var(--fs-sm, 12px); line-height: 1.6; }
+.pkg-choice .pkg-btns { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.pkg-choice .pkg-warn { margin-top: 6px; color: #b45309; font-weight: bold; }

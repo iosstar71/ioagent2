@@ -134,6 +134,7 @@ var AppBoot = {
       HomeScreenManager.render();
     }
     if (typeof GShell !== "undefined") { GShell.refresh(); GShell.syncSettings(); }
+    if (SyncManager.isLocal() && typeof WorkerPick !== "undefined") WorkerPick.applyPending();
     this.backupReminder();
   },
 

@@ -325,7 +325,7 @@ var AuthManager = {
       const notice = typeof ModeGuard !== "undefined" && ModeGuard.loginNotice ? `<div style="margin-top:4px;">${ModeGuard.loginNotice}</div>` : "";
       info.innerHTML = (server
         ? `🗄️ 서버 (${escapeHtml(DbConnector.getApiBase())}) — 작업자를 고른 뒤 [💾 저장]으로 저장합니다.`
-        : "💻 시험용 로컬 저장소 — 이 PC 브라우저에만 저장됩니다.") + notice;
+        : "💻 Local — 자료는 이 PC 브라우저에만 저장됩니다. PM 과는 종합본 · 내 자료 파일로 주고받습니다.") + notice;
       info.style.textAlign = "left";
     }
     const cancel = document.getElementById("btnLockCancel");
@@ -811,9 +811,16 @@ var WorkerPick = {
       if (res.ok && Array.isArray(res.workers)) workers = res.workers;
     }
     list.innerHTML = workers.map(w => `<option value="${escapeAttr(w.empNo)}">${escapeHtml(w.name || w.empNo)}</option>`).join("");
+    if (SyncManager.isLocal()) this.showPending();
   },
 
-  // [Local] 처음 쓰는 PC: PM 이 보낸 종합본으로 프로젝트 · 작업자 목록을 이 브라우저에 넣음
+  // [Local] 작업자 선택 화면에서 PM 이 보낸 종합본 올리기
+  //   - 이 PC 에 그 프로젝트 자료가 없으면: 종합본으로 바로 시작
+  //   - 있으면 고르기: ① 최신 종합본으로 맞추기(내 담당 작업 유지, 작업자를 고른 뒤 반영) ② 전부 바꾸기 ③ 이 PC 자료 그대로
+  PENDING_KEY: "PPRJMGMT_PENDING_PKG",
+  _pkg: null,
+  _norm(s) { return String(s || "").replace(/\s+/g, " ").trim().toLowerCase(); },
+  _stampOf(d) { return String(((d || {}).projectConfig || {}).packageStamp || ""); },
   async startFromPackage(e) {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
@@ -822,24 +829,80 @@ var WorkerPick = {
     try { items = await ProjectTransfer.parse(file); } catch (err) { return AuthManager._err("lockErrorMessage", "파일을 읽지 못했습니다: " + err.message); }
     const it = items && items[0];
     if (!it || !it.users || !it.users.length) return AuthManager._err("lockErrorMessage", "PM 이 보낸 종합본(작업자 목록 포함) 파일이 아닙니다.");
-    const list = ProjectContext.localList();
-    const norm = s => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
-    let pid = (list.find(p => norm(p.name) === norm(it.name)) || {}).id;
+    AuthManager._err("lockErrorMessage", "");
+    const pid = (ProjectContext.localList().find(p => this._norm(p.name) === this._norm(it.name)) || {}).id;
+    const st = pid ? (LocalBackend._read(pid) || {}) : null;
+    const has = !!st && ((st.subsystemsMeta || []).length > 0 || (st.wbsData || []).length > 0);
+    if (!has) return this._replaceAll(it, pid);
+    this._pkg = { it, pid, file: file.name, mine: this._stampOf(st) };
+    this._renderChoice(false);
+  },
+  _box() { return document.getElementById("localPkgChoice"); },
+  _renderChoice(confirmReplace) {
+    const box = this._box(), p = this._pkg;
+    if (!box || !p) return;
+    const fs = this._stampOf(p.it.data), ms = p.mine;
+    const cmp = fs && ms ? (fs > ms ? "🆕 이 PC 가 가진 것보다 새 종합본입니다." : fs === ms ? "ℹ️ 이 PC 가 이미 반영한 종합본과 같습니다." : "⚠️ 이 PC 가 가진 것보다 오래된 종합본입니다.") : "";
+    const b = (kind, label, btn) => `<button type="button" class="btn btn-sm${btn === "primary" ? " btn-primary" : ""}" data-btn="${btn}" data-click="WorkerPick.choose" data-click-args='["${kind}"]'>${label}</button>`;
+    box.innerHTML = `<div class="pkg-info"><b>📥 ${escapeHtml(p.file)}</b> — 프로젝트 [${escapeHtml(p.it.name)}]<br>종합본 버전: ${escapeHtml(fs || "표시 없음")} · 이 PC: ${escapeHtml(ms || "표시 없음")}${cmp ? "<br>" + cmp : ""}<br>이 PC 에 이 프로젝트 자료가 있습니다. 어떻게 할까요?</div>` +
+      (confirmReplace
+        ? `<div class="pkg-warn">⚠️ 이 PC 의 [${escapeHtml(p.it.name)}] 자료를 모두 지우고 종합본으로 바꿉니다. 아직 PM 에게 보내지 않은 내 작업은 사라집니다.</div><div class="pkg-btns">${b("replaceNow", "⚠️ 네, 전부 바꿉니다", "danger")}${b("back", "돌아가기", "")}</div>`
+        : `<div class="pkg-btns">${b("latest", "🔄 최신 종합본으로 맞추기 (내 담당 작업 유지, 권장)", "primary")}${b("keep", "이 PC 자료 그대로 쓰기", "")}${b("replace", "♻️ 종합본으로 전부 바꾸기 (이 PC 자료 버림)", "")}</div>` +
+          `<div class="login-hint">최신으로 맞추기: 작업자를 고르고 [▶ 작업 시작]을 누르면 반영됩니다. 내 담당 서브시스템은 이 PC 작업을 그대로 두고 나머지만 종합본으로 바뀝니다 (PM · 관리자는 전부 종합본으로).</div>`);
+    box.style.display = "block";
+  },
+  choose(kind) {
+    const p = this._pkg, box = this._box();
+    if (kind === "keep" || !p) { this._pkg = null; if (box) { box.style.display = "none"; box.innerHTML = ""; } return showToast("이 PC 자료를 그대로 씁니다."); }
+    if (kind === "replace") return this._renderChoice(true);
+    if (kind === "back") return this._renderChoice(false);
+    if (kind === "replaceNow") return this._replaceAll(p.it, p.pid);
+    if (kind === "latest") {
+      this._suspend();
+      ProjectTransfer.writeUsersLocal(p.pid, p.it.users);   // 새로 들어온 작업자도 바로 고를 수 있게
+      AppStore.setItem(this.PENDING_KEY, JSON.stringify({ pid: p.pid, name: p.it.name, file: p.file, stamp: this._stampOf(p.it.data), item: p.it }));
+      try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, p.pid); } catch (err) {}
+      showToast(`📥 [${p.it.name}] 최신 종합본을 받아 두었습니다. 작업자를 고르고 [▶ 작업 시작]을 누르면 반영됩니다.`);
+      setTimeout(() => AppStore.reload(), 900);
+    }
+  },
+  _suspend() {
+    // 화면의 자료가 자동 저장되어 덮어쓰지 않도록 자동 저장을 멈추고 저장소에만 씀 → 다시 불러옴
+    SyncManager._suspendAuto = true;
+    if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
+  },
+  async _replaceAll(it, pid) {
     if (!pid) {
       const def = LocalBackend._read(ProjectContext.DEFAULT) || {};
       const empty = !(def.subsystemsMeta || []).length && !(def.wbsData || []).length;
       pid = empty ? ProjectContext.DEFAULT : await ProjectTransfer.create(it.name, it.data.projectConfig || {});
     }
-    // 화면의 빈 자료가 자동 저장되어 덮어쓰지 않도록 자동 저장을 멈추고 저장소에만 씀 → 다시 불러옴
-    SyncManager._suspendAuto = true;
-    if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
+    this._suspend();
     ProjectTransfer.writeLocal(pid, it);
     const l2 = ProjectContext.localList();
     const row = l2.find(p => p.id === pid);
     if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
+    try { AppStore.removeItem(this.PENDING_KEY); } catch (err) {}
     showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`);
     setTimeout(() => AppStore.reload(), 900);
+  },
+  _pending() { try { return JSON.parse(AppStore.getItem(this.PENDING_KEY) || "null"); } catch (e) { return null; } },
+  // 작업자 선택 화면: 받아 둔 종합본이 있으면 알림
+  showPending() {
+    const box = this._box(), p = this._pending();
+    if (!box || this._pkg) return;
+    if (!p) { box.style.display = "none"; box.innerHTML = ""; return; }
+    box.innerHTML = `<div class="pkg-info">📥 받아 둔 종합본: <b>${escapeHtml(p.file)}</b> [${escapeHtml(p.name)}] (${escapeHtml(p.stamp || "버전 표시 없음")})<br>이 프로젝트로 작업자를 고르면 반영됩니다.</div><div class="pkg-btns"><button type="button" class="btn btn-sm" data-click="WorkerPick.cancelPending">받아 둔 종합본 취소</button></div>`;
+    box.style.display = "block";
+  },
+  cancelPending() { try { AppStore.removeItem(this.PENDING_KEY); } catch (e) {} this.showPending(); showToast("받아 둔 종합본을 취소했습니다. 이 PC 자료를 그대로 씁니다."); },
+  // 작업자 선택 뒤 (app-boot afterLogin): 받아 둔 종합본을 지금 프로젝트에 반영
+  applyPending() {
+    const p = this._pending();
+    if (!p || !p.item || p.pid !== ProjectContext.current) return;
+    try { AppStore.removeItem(this.PENDING_KEY); } catch (e) {}
+    SmartMergeCenter.applyConsolidated(p.item, `📥 ${p.file}`);
   }
 };
 window.WorkerPick = WorkerPick;

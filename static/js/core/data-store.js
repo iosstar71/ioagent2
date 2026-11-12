@@ -739,8 +739,10 @@ var SyncManager = {
       if (!bl.length || k === "theme") return;
       if (k === "projectConfig") {
         const base = (this.baselineVal[k] || new Map()).get(Partition.WHOLE) || {};
-        const a = Object.assign({}, base, { reportDate: "" });
-        const b = Object.assign({}, projectConfig, { reportDate: "" });
+        // 기준일 · 화면 기본값(내보내기 테마 · 화면 배치 · 밀도)만 다르면 알리지 않음
+        const ui = { reportDate: "", exportSettings: null, layoutType: null, uiDensity: null };
+        const a = Object.assign({}, base, ui);
+        const b = Object.assign({}, projectConfig, ui);
         if (JSON.stringify(a) === JSON.stringify(b)) return;
       }
       const label = DataRegistry.DEFS[k].label;
@@ -761,6 +763,8 @@ var SyncManager = {
       this._archivedNotified = true;
       return { ok: false, archived: true };
     }
+    // 작업자를 고르기 전에는 저장하지 않음 (화면 기본값 정리 등) — 작업자를 고른 뒤 저장
+    if (typeof AuthManager !== "undefined" && !AuthManager.currentUser) return { ok: false, notPicked: true };
     const scopeKeys = keys || DataRegistry.KEYS;
     const d = this.diff(scopeKeys);
     const blockedList = this.blockedSummary(d);
@@ -961,7 +965,7 @@ var SyncManager = {
         if (typeof InitialDataLoader !== "undefined" && InitialDataLoader.apply()) {
           const revs = LocalBackend.replaceAll(DataRegistry.collect());
           this.afterDataApplied(DataRegistry.KEYS, false, revs);
-          showToast("🚀 최초 실행: 초기 프로젝트 데이터(initial_data.json)를 브라우저 로컬 저장소에 설정했습니다.");
+          showToast("🚀 처음 실행: 이 브라우저에 빈 프로젝트를 준비했습니다. (관리자: admin)");
           return { ok: true, initial: true };
         }
       }

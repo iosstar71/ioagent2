@@ -53,8 +53,9 @@
         </div>
         <div class="local-start">
           <input type="file" id="localStartInput" style="display:none;" accept=".json,.xlsx" data-change="WorkerPick.startFromPackage" data-change-args='["$event"]'>
-          <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 종합본 파일로 시작</button>
-          <div class="login-hint">처음 쓰는 PC 이거나 목록에 내 이름이 없으면, PM 이 보낸 종합본(엑셀 / JSON)을 먼저 올리세요. 프로젝트와 작업자 목록이 이 브라우저에 들어옵니다.</div>
+          <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 종합본 올리기 (최신 자료 받기)</button>
+          <div id="localPkgChoice" class="pkg-choice" style="display:none;"></div>
+          <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 종합본을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
           <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:#b45309;">🔑 암호 변경</a>
         </div>
