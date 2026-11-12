@@ -1,5 +1,13 @@
 # IOSTAR-PM 판(Edition) 운영 안내
 
+## Workgroup 0.x (서브 브랜드, v4.1.0 에서 분기)
+- 브랜치: `iostar-pm-workgroup`
+- conf/app.ini: `edition=WORKGROUP`, `edition_name=Workgroup`, `version=0.x` (최종 확정 = 1.0.0), `[features]`, `[lock]`
+- 배포 파일: `IOSTAR-PM-Workgroup_v0.x[_win64].zip`
+- 대상: 폐쇄망 약 100명, SQLite(DB 서버) / 로컬 저장소. 주기 통신 없음, 서브시스템 체크아웃 · 체크인
+- 유료판(Enterprise: Oracle · SSO · 문서보안 · DB보안) 전환 메모: `docs/ENTERPRISE_ROADMAP.md`
+- 통합판 v4.1.0 은 `iostar-pm-unified` 에 보존
+
 ## v3.0.0 부터: Neo 하나
 - 브랜치: `iostar-pm-unified`
 - conf/app.ini: `edition=MAIN`, `edition_name=`(표시 없음), `version=3.x`, `[ui] default_theme`

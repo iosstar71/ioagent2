@@ -35,11 +35,30 @@ def load_app_config(base_dir):
     cfg["default_lang"] = "en" if cfg["default_lang"].lower() == "en" else "ko"
     cfg["edition"] = cfg["edition"].upper()
     if not cfg.get("edition_name"):
-        cfg["edition_name"] = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}.get(cfg["edition"], cfg["edition"])
+        cfg["edition_name"] = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}.get(cfg["edition"], cfg["edition"]) if cfg["edition"] not in ("WORKGROUP", "ENTERPRISE") else cfg["edition"].title()
     cfg["default_ui"] = "neo" if str(cfg.get("default_ui", "")).lower() == "neo" else "standard"
     cfg["allow_ui_switch"] = "0" if str(cfg.get("allow_ui_switch", "1")).strip() in ("0", "false", "no") else "1"
     cfg["default_theme"] = cfg["default_theme"].lower() if str(cfg.get("default_theme", "")).lower() in ("electric", "navy", "green", "brown", "matte", "dark") else "electric"
     return cfg
+
+
+
+FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "db_excel_access", "local_file_sync")
+
+
+def _on(v, default="0"):
+    return str(v if v is not None else default).strip().lower() in ("1", "true", "yes", "on")
+
+
+def app_features(c):
+    """[Workgroup] 기능 켜고 끄기 + 잠금 설정 (화면 · 서버 공용)"""
+    mode = str(c.get("lock_mode", "required")).strip().lower()
+    try:
+        hours = max(0.05, min(72.0, float(c.get("lock_hours", "4"))))
+    except ValueError:
+        hours = 4.0
+    return {"features": {k: _on(c.get(k)) for k in FEATURE_KEYS},
+            "lock": {"mode": mode if mode in ("required", "advisory", "off") else "required", "hours": hours}}
 
 
 APP_CONFIG = load_app_config(BASE_DIR)

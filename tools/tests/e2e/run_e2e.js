@@ -934,9 +934,12 @@ function freePort() {
   return new Promise(res => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => res(p)); }); });
 }
 
-function copyApp(dst) {
+// [Workgroup] 기존 서버 시나리오는 체크아웃 잠금을 끄고(off), 잠금 시나리오는 required 로
+function copyApp(dst, lockMode = "off") {
   fs.copyFileSync(path.join(ROOT, "wbs_db_server.py"), path.join(dst, "wbs_db_server.py"));
   for (const dir of ["conf", "server", "webapp"]) fs.cpSync(path.join(ROOT, dir), path.join(dst, dir), { recursive: true, filter: (s) => !s.includes("__pycache__") });
+  const ini = path.join(dst, "conf", "app.ini");
+  fs.writeFileSync(ini, fs.readFileSync(ini, "utf8").replace(/^lock_mode=.*$/m, "lock_mode=" + lockMode));
   fs.mkdirSync(path.join(dst, "data"));
   fs.copyFileSync(path.join(ROOT, "data", "initial_data.json"), path.join(dst, "data", "initial_data.json"));
 }
@@ -1144,11 +1147,92 @@ async function serverScenarios() {
   }
 }
 
+
+// [Workgroup 0.1] 두 사용자 체크아웃 · 체크인 · 보류 · 3자 비교 · 강제 해제 · 주기 통신 없음
+async function lockScenarios() {
+  console.log("\n[Workgroup check-out / check-in scenarios]");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "axpmys_lock_"));
+  copyApp(tmp, "required");
+  const port = await freePort();
+  const py = process.platform === "win32" ? "python" : "python3";
+  const srv = spawn(py, ["wbs_db_server.py", "--port", String(port), "--host", "127.0.0.1", "--silent"], { cwd: tmp, stdio: "ignore" });
+  const url = `http://127.0.0.1:${port}/index.html`;
+  const PWD = {};
+  try {
+    await new Promise(r => setTimeout(r, 1500));
+    const adm = await newPage();
+    await adm.goto(url); await adm.waitForTimeout(1000);
+    await login(adm, "admin", PWD);
+    await adm.evaluate(async () => {
+      for (const emp of ["wg_a", "wg_b"]) await ServerBackend.request("/api/admin/users/save", { isNew: true, empNo: emp, name: emp === "wg_a" ? "가작업" : "나작업", sysAdmin: false, projectRoles: { DEFAULT: { role: "MEMBER", subsystem: "W1" } } });
+    });
+    const A = await newPage(), B = await newPage();
+    for (const [p, emp] of [[A, "wg_a"], [B, "wg_b"]]) { await p.goto(url); await p.waitForTimeout(1000); await login(p, emp, PWD); }
+    const showW1 = p => p.evaluate(() => { GShell.go("tab-wbs"); const f = document.getElementById("wbsSubsystemFilter"); f.value = "W1"; f.dispatchEvent(new Event("change", { bubbles: true })); LockManager.render(); });
+    await showW1(A); await showW1(B);
+    const free = await A.evaluate(() => document.querySelector("#tab-wbs .lk-bar").dataset.state);
+    await A.click('#tab-wbs .lk-bar [data-click="LockManager.checkout"]'); await A.waitForTimeout(1200);
+    const aState = await A.evaluate(() => ({ st: document.querySelector("#tab-wbs .lk-bar").dataset.state, badge: document.getElementById("lkBadge").textContent }));
+    await B.evaluate(() => LockManager.refresh(true)); await B.waitForTimeout(600);
+    const bState = await B.evaluate(() => ({ st: document.querySelector("#tab-wbs .lk-bar").dataset.state, ro: document.getElementById("tab-wbs").classList.contains("lk-readonly"), text: document.querySelector("#tab-wbs .lk-bar").textContent }));
+    check("Workgroup: A checks out W1 (free → mine, header badge); B sees '편집 중' and the W1 screen is read-only",
+      free === "free" && aState.st === "mine" && aState.badge.includes("W1") && bState.st === "other" && bState.ro && bState.text.includes("가작업"), JSON.stringify({ free, aState, bState }));
+    // B 가 (모르고) 고친 뒤 저장 → 막힘 → 보류
+    const ids = await A.evaluate(() => wbsData.filter(t => t.system === "W1" && t.isLeaf).slice(0, 2).map(t => t.id));
+    await B.evaluate(id => { wbsData.find(t => t.id === id).name += "_B"; SyncManager.save(["wbsData"]); }, ids[0]);
+    await B.waitForTimeout(1000);
+    const askT = await B.$eval("#syncAskTitle", e => e.textContent).catch(() => "");
+    await B.click('#syncAskBtns button:nth-child(1)'); await B.waitForTimeout(600);
+    const held = await B.evaluate(() => ({ n: LockManager.holdCount(), badge: document.getElementById("lkBadge").textContent }));
+    check("Workgroup: B's save is refused while A has W1 checked out (who · since shown) and B keeps the change on hold",
+      askT.includes("체크아웃 중") && held.n === 1 && held.badge.includes("보류"), JSON.stringify({ askT, held }));
+    // 새로고침해도 보류 유지
+    await B.reload(); await B.waitForTimeout(1500); await waitApp(B);
+    const kept = await B.evaluate(id => wbsData.find(t => t.id === id).name.endsWith("_B") && LockManager.holdCount() === 1, ids[0]);
+    check("Workgroup: held change survives a page reload (shown again, still unsaved)", kept);
+    // A: 같은 행 + 다른 행 고치고 체크인 (메모)
+    await A.evaluate(ids => { wbsData.find(t => t.id === ids[0]).name += "_A"; wbsData.find(t => t.id === ids[1]).name += "_A2"; persistChanges(); LockManager.checkin(["W1"]); }, ids);
+    await A.waitForTimeout(500);
+    await A.fill("#lkMemoInput", "설계 일정 조정"); await A.click("#lkMemoOk"); await A.waitForTimeout(1500);
+    const aDone = await A.evaluate(() => ({ mine: LockManager.mySystems().length, dirty: SyncManager.dirtyCount(["wbsData"]) }));
+    // B: 체크아웃 → 3자 비교 → 내 것 → 저장
+    await showW1(B);
+    await B.evaluate(() => { window.__co = LockManager.checkout("W1"); }); await B.waitForTimeout(1500);
+    const cmp = await B.evaluate(() => ({ shown: getComputedStyle(document.getElementById("lkCompareModal")).display, rows: [...document.querySelectorAll("#lkCmpBody tr")].map(tr => tr.innerText.replace(/\s+/g, " ")) }));
+    await B.click('#lkCompareModal [data-click-args=\'["mine"]\'][data-click="LockManager.pickAll"]'); await B.click("#lkCmpOk"); await B.evaluate(() => window.__co); await B.waitForTimeout(500);
+    await B.evaluate(() => SyncManager.save(["wbsData"])); await B.waitForTimeout(1200);
+    const final = await adm.evaluate(async ids => { const r = await ServerBackend.request("/api/db/load", { keys: ["wbsData"] }); const w = r.data.wbsData;
+      return { r0: w.find(t => t.id === ids[0]).name, r1: w.find(t => t.id === ids[1]).name }; }, ids);
+    const bAfter = await B.evaluate(() => ({ hold: LockManager.holdCount() }));
+    check("Workgroup: after A checks in (memo), B checks out → 3-way compare (conflict row + A-only row) → B's choice saved, A's other change kept",
+      aDone.mine === 0 && aDone.dirty === 0 && cmp.shown === "flex" && cmp.rows.some(r => r.includes("둘 다 바뀜")) && cmp.rows.some(r => r.includes("다른 사람만 바뀜"))
+      && /_B$/.test(final.r0) && /_A2$/.test(final.r1) && bAfter.hold === 0, JSON.stringify({ aDone, cmp, final, bAfter }));
+    // 강제 해제 (관리자) + 기록
+    await adm.evaluate(() => { LockManager.openBoard(); }); await adm.waitForTimeout(800);
+    await adm.evaluate(() => { LockManager.forceRelease("W1"); }); await adm.waitForTimeout(400);
+    await adm.fill("#lkMemoInput", "퇴근 후 남은 잠금"); await adm.click("#lkMemoOk"); await adm.waitForTimeout(1200);
+    const board = await adm.evaluate(() => ({ rows: document.querySelectorAll("#lkBoardBody tr").length, log: [...document.querySelectorAll("#lkLogBody tr")].slice(0, 6).map(tr => tr.innerText.replace(/\s+/g, " ")) }));
+    check("Workgroup: admin force-releases W1 with a reason; the check-out board lists subsystems and the log shows check-in memo and force release",
+      board.rows >= 3 && board.log.some(l => l.includes("강제 해제") && l.includes("퇴근")) && board.log.some(l => l.includes("체크인") && l.includes("설계 일정")), JSON.stringify(board));
+    // 주기 통신 없음 + 채팅 잠금
+    let calls = 0; const onReq = r => { if (r.url().includes("/api/")) calls++; };
+    A.on("request", onReq); await A.waitForTimeout(25000); A.off("request", onReq);
+    const chat = await A.evaluate(async () => { GShell.go("tab-notices"); await RealtimeChatManager.init(); return { on: RealtimeChatManager.isConnected, timer: !!RealtimeChatManager.pollTimer, hb: !!ServerHeartbeat.timer, text: (document.getElementById("chatServerStatusText") || {}).textContent || "" }; });
+    check("Workgroup: no periodic server calls while idle (25 s); chat is locked like local storage mode; no heartbeat timer",
+      calls === 0 && !chat.on && !chat.timer && !chat.hb && chat.text.includes("사용 안 함"), JSON.stringify({ calls, chat }));
+    check("Workgroup: no page errors", A.errors.length + B.errors.length + adm.errors.length === 0, A.errors.concat(B.errors, adm.errors).join(" | "));
+  } finally {
+    try { srv.kill(); } catch (e) {}
+    setTimeout(() => fs.rmSync(tmp, { recursive: true, force: true }), 500);
+  }
+}
+
 (async () => {
   browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   try {
-    await localScenarios();
-    if (!process.argv.includes("--local")) await serverScenarios();
+    if (!process.argv.includes("--lock")) await localScenarios();
+    if (!process.argv.includes("--local") && !process.argv.includes("--lock")) await serverScenarios();
+    if (!process.argv.includes("--local")) await lockScenarios();
   } catch (e) {
     check("Test runner error", false, e.message);
   } finally {

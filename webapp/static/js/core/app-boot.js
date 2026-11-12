@@ -157,7 +157,9 @@ var ServerHeartbeat = {
   online: true,
   timer: null,
 
+  // [Workgroup] app.ini [features] server_heartbeat=0 이면 주기 확인 없음 — 저장 · 불러오기 실패 때 setOnline(false)
   start() {
+    if (typeof Features !== "undefined" && !Features.on("server_heartbeat")) return;
     if (SyncManager.isLocal() || this.timer) return;
     this.timer = setInterval(() => this.check(), this.INTERVAL_MS);
   },

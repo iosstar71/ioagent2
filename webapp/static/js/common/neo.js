@@ -520,8 +520,7 @@ document.addEventListener("keydown", e => {
   if (pal && !pal.hidden) return;
   NeoDetail.close();
 });
-// 데이터가 바뀌면 메뉴 배지 갱신 (가벼운 계산이므로 짧은 주기로 확인)
-setInterval(() => { if (UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh(); }, 2000);
+// [Workgroup] 메뉴 배지: 주기 갱신 대신 자료가 바뀔 때(SyncUI.refreshIndicators) · 화면을 바꿀 때만 갱신
 // WBS 화면을 떠나면 상세 패널 닫기
 (function watchWbsPane() {
   const start = () => {

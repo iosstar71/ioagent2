@@ -16,7 +16,24 @@ DEFAULTS = {
     "cert_file": "certs/server.crt", "key_file": "certs/server.key",
 }
 # 판 코드 → 표시 이름 (app.ini 의 edition_name 으로 바꿀 수 있음, 국내판은 표시하지 않음)
-EDITION_NAMES = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}
+EDITION_NAMES = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo", "WORKGROUP": "Workgroup", "ENTERPRISE": "Enterprise"}
+FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "db_excel_access", "local_file_sync")
+
+
+def _on(v, default="0"):
+    return str(v if v is not None else default).strip().lower() in ("1", "true", "yes", "on")
+
+
+def features(c):
+    """[Workgroup] 기능 켜고 끄기 + 잠금 설정 (화면 · 서버 공용)"""
+    mode = str(c.get("lock_mode", "required")).strip().lower()
+    try:
+        hours = max(0.05, min(72.0, float(c.get("lock_hours", "4"))))
+    except ValueError:
+        hours = 4.0
+    return {"features": {k: _on(c.get(k)) for k in FEATURE_KEYS},
+            "lock": {"mode": mode if mode in ("required", "advisory", "off") else "required", "hours": hours}}
+
 
 
 def load(root=None):
@@ -45,7 +62,7 @@ def client_config(c):
     """화면용 설정 값 (서버의 /js/app-config.js 와 같은 내용)"""
     return {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
             "version": c["version"], "defaultLang": c["default_lang"],
-            "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"]}
+            "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"], **features(c)}
 
 
 def package_name(cfg=None):

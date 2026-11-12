@@ -103,6 +103,7 @@ const SmartMergeCenter = {
     rows.push({ category: "BASIC", key: "projectEndDate", value: projectConfig.projectEndDate || "", extra1: "", extra2: "종료일", extra3: "" });
     rows.push({ category: "BASIC", key: "reportDate", value: projectConfig.reportDate || "", extra1: "", extra2: "보고기준일", extra3: "" });
     rows.push({ category: "BASIC", key: "weekStartDay", value: String(projectConfig.weekStartDay ?? 5), extra1: "금요일=5, 월요일=1", extra2: "주차시작요일", extra3: "" });
+    if (projectConfig.weekNumbering) { const w = projectConfig.weekNumbering; rows.push({ category: "BASIC", key: "weekNumbering", value: `${w.basis}|${w.multiYear}|${w.format}`, extra1: "ANNUAL·PROJECT | PREFIX·CONTINUE | 형식", extra2: "주차표시", extra3: "" }); }
     rows.push({ category: "BASIC", key: "maxDeliverableRounds", value: String(projectConfig.maxDeliverableRounds ?? 2), extra1: "최대 4회차", extra2: "산출물운영회차", extra3: "" });
 
     (projectConfig.domains || []).forEach((d, idx) => {
@@ -194,6 +195,7 @@ const SmartMergeCenter = {
         if (k === "projectEndDate" && val) projectConfig.projectEndDate = ExcelSync.normalizeDate(val);
         if (k === "reportDate" && val) projectConfig.reportDate = ExcelSync.normalizeDate(val);
         if (k === "weekStartDay" && val) projectConfig.weekStartDay = parseInt(val, 10) || 5;
+        if (k === "weekNumbering" && val) { const [basis, multiYear, ...f] = String(val).split("|"); projectConfig.weekNumbering = { basis: basis === "PROJECT" ? "PROJECT" : "ANNUAL", multiYear: multiYear === "CONTINUE" ? "CONTINUE" : "PREFIX", format: f.join("|") || '"W"w' }; }
         if (k === "maxDeliverableRounds" && val) projectConfig.maxDeliverableRounds = Math.min(4, Math.max(1, parseInt(val, 10) || 2));
       } else if (cat === "DOMAIN" && val) {
         if (!domains.includes(val) && domains.length < 5) domains.push(val);

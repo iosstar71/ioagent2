@@ -299,7 +299,7 @@ var ProjectTransfer = {
         Partition.split(k, data[k]).forEach((v, p) => { parts[p] = v; });
         changes[k] = { parts, base: {} };
       });
-      const res = await ServerBackend.request("/api/db/save", { changes, force: true, projectId: pid }, "POST", 60000);
+      const res = await ServerBackend.request("/api/db/save", { changes, force: true, lockBypass: true, projectId: pid }, "POST", 60000);
       if (!res.ok) throw new Error(res.message || "자료를 저장하지 못했습니다.");
       const urows = {};
       (item.users || []).forEach(u => {
@@ -311,7 +311,7 @@ var ProjectTransfer = {
         urows[row.empNo] = row;
       });
       if (Object.keys(urows).length) {
-        const ur = await ServerBackend.request("/api/db/save", { changes: { projectUsers: { parts: urows, base: {} } }, force: true, projectId: pid });
+        const ur = await ServerBackend.request("/api/db/save", { changes: { projectUsers: { parts: urows, base: {} } }, force: true, lockBypass: true, projectId: pid });
         if (!ur.ok) throw new Error(ur.message || "사용자를 저장하지 못했습니다.");
       }
       await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });

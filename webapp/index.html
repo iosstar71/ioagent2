@@ -135,6 +135,7 @@
       <span class="report-date-label">기준일</span>
       <input type="date" id="globalReportDate" data-change="syncGlobalDate" data-change-args='["$value"]'>
       <span id="globalReportDayOfWeek" class="day-of-week-tag">(수)</span>
+      <span id="globalReportWeek" class="week-chip" title="기준일의 주차 (기준정보 > 기본정보 > 주차 표시 방식)"></span>
     </div>
     <span class="g-grow"></span>
     <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·사용자 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
@@ -1259,7 +1260,7 @@
             </div>
           </div>
           <div style="background:#fffbeb; border:1px solid #fef3c7; border-radius:6px; padding:10px;">
-            <label style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#92400e; display:block; margin-bottom:6px;">⚠️ 주요 현안 및 PMO / 유관부서 지원 요청사항</label>
+            <label style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#92400e; display:block; margin-bottom:6px;">⚠️ 주요 현안 · 리스크 및 PMO / 유관부서 지원 요청사항 <span class="week-chip lbl-wr-week"></span></label>
             <textarea id="wrIssuesNotes" maxlength="2000" data-input="WeeklyReportManager.onSizeInput" rows="2" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid #fde68a; border-radius:4px; resize:vertical;" placeholder="공정 지연 리스크, 기술적 병목, 대외 협의 지연 등 즉각적인 조치가 필요한 사항을 기록하세요."></textarea>
           </div>
         </div>
@@ -1632,6 +1633,7 @@
       <!-- [v4.0.0] 서브 탭: 스마트 병합(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 시스템관리자 · PM) -->
       <div class="master-subtab-bar" data-group="merge">
         <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 내려받기·올리기</button>
+        <button class="master-subtab-btn" data-subtab="locks" data-click="SubTabs.show" data-click-args='["merge", "locks"]'>🔐 체크아웃 현황</button>
         <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
@@ -1694,6 +1696,31 @@
           <select id="excelSubsysImportSelect"></select>
           <span id="fileSyncDetailStatus"></span>
           <button id="btnFileHandleSync"></button>
+        </div>
+      </div>
+
+      <!-- [Workgroup 0.1] 🔐 체크아웃 현황 — 서브시스템별 편집 잠금 (DB 서버 방식, 자동 새로고침 없음) -->
+      <div class="master-subpane" data-group="merge" data-subpane="locks" id="mergeLocksPane">
+        <div class="card" style="border-left:4px solid #7c3aed;">
+          <div class="card-title"><span>🔐 서브시스템 체크아웃 현황</span>
+            <span style="display:flex; gap:6px; align-items:center;"><span class="bk-who" id="lkBoardNote"></span>
+            <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.refresh">🔄 상태 확인</button></span></div>
+          <div class="pm-hint" style="margin:0 0 8px;">서브시스템의 WBS · 요구사항 · 산출물 · VOC 를 고치려면 먼저 <b>📝 체크아웃</b>(편집 잠금)합니다. 다른 사람은 그동안 읽기만 하고 저장할 수 없습니다. 끝나면 <b>✅ 체크인</b>(저장 · 잠금 해제)합니다. 주간보고 · 회의록 · 공지 · 소통은 잠금 없이 지금처럼 씁니다.</div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table">
+              <thead><tr><th style="width:140px;">서브시스템</th><th style="width:120px;">상태</th><th style="width:200px;">편집하는 사람 · 메모</th><th style="width:200px;">체크아웃 · 마지막 활동</th><th style="width:120px;">만료</th><th>관리</th></tr></thead>
+              <tbody id="lkBoardBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🧾 최근 기록 (40건)</span></div>
+          <div class="table-container" style="max-height:320px;">
+            <table class="m-table">
+              <thead><tr><th style="width:110px;">때</th><th style="width:110px;">서브시스템</th><th style="width:120px;">구분</th><th style="width:130px;">사람</th><th style="width:110px;">처리자</th><th>메모 · 사유</th></tr></thead>
+              <tbody id="lkLogBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -2162,6 +2189,30 @@
                   <option value="6">토요일 시작 (토 ~ 금)</option>
                   <option value="0">일요일 시작 (일 ~ 토)</option>
                 </select>
+              </div>
+            </div>
+
+            <!-- [Workgroup 0.1] 주차 표시 방식 (엑셀 사용자 지정 형식처럼) -->
+            <div id="weekFmtBox" class="wk-box">
+              <div class="wk-head"><b>📅 주차 표시 방식</b> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 위 설정)</span></div>
+              <div class="wk-grid">
+                <div>
+                  <div class="wk-label">① 주차 기준</div>
+                  <label class="bk-check"><input type="radio" name="wkBasis" value="ANNUAL" data-change="WeekFmt.preview"> 연간 주차 — 1월 1일이 들어 있는 주 = W1 (엑셀 WEEKNUM)</label>
+                  <label class="bk-check"><input type="radio" name="wkBasis" value="PROJECT" data-change="WeekFmt.preview"> 프로젝트 주차 — 프로젝트 시작일이 들어 있는 주 = W1</label>
+                  <div class="wk-label" style="margin-top:8px;">② 2개 연도 이상일 때</div>
+                  <label class="bk-check"><input type="radio" name="wkMulti" value="PREFIX" data-change="WeekFmt.preview"> 해마다 W1 부터, 앞에 연도 — 27W52, 28W1</label>
+                  <label class="bk-check"><input type="radio" name="wkMulti" value="CONTINUE" data-change="WeekFmt.preview"> 이어서 — W52, W53, W54</label>
+                  <div class="lk-hint" id="wkSpanNote"></div>
+                </div>
+                <div>
+                  <div class="wk-label">③ 표시 형식 (엑셀 사용자 지정 형식처럼)</div>
+                  <select id="wkFormatPreset" data-change="WeekFmt.preview" style="width:100%;"></select>
+                  <input type="text" id="wkFormatCustom" maxlength="40" placeholder='예: yy"W"ww' data-input="WeekFmt.preview" style="width:100%; margin-top:6px; display:none;">
+                  <div class="lk-hint" style="margin-top:4px;">yyyy · yy = 연도, ww = 두 자리 주차, w = 주차, "…" 안의 글자는 그대로</div>
+                  <table class="m-table" style="margin-top:6px;"><thead><tr><th>날짜</th><th></th><th style="width:110px;">표시</th></tr></thead><tbody id="wkPreviewBody"></tbody></table>
+                  <div style="text-align:right; margin-top:6px;"><button class="btn btn-sm" data-btn="save" data-click="WeekFmt.save">💾 주차 표시 저장</button></div>
+                </div>
               </div>
             </div>
           </div>
@@ -2838,8 +2889,8 @@
               <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:5px;">연동할 데이터베이스(DB) 엔진 선택:</label>
               <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                 <button type="button" id="btnDbMode_SQLITE" class="btn btn-primary btn-sm" data-click="DbConnector.selectMode" data-click-args='["SQLITE"]'>🪶 SQLite 파일 DB</button>
-                <button type="button" id="btnDbMode_ORACLE" class="btn btn-secondary btn-sm db-mode-disabled" disabled title="v1.0.8: 지원 중단 (서버 DB 는 SQLite 만 사용)" data-click="DbConnector.selectMode" data-click-args='["ORACLE"]'>🏛️ Oracle DB</button>
-                <button type="button" id="btnDbMode_EXCEL_ACCESS" class="btn btn-secondary btn-sm db-mode-disabled" data-btn="neutral" disabled title="v1.0.8: 지원 중단 (서버 DB 는 SQLite 만 사용)" data-click="DbConnector.selectMode" data-click-args='["EXCEL_ACCESS"]'>📗 Excel / Access DB</button>
+                <button type="button" id="btnDbMode_ORACLE" class="btn btn-secondary btn-sm db-mode-disabled" disabled title="Workgroup 판은 SQLite 만 사용 — Oracle 은 Enterprise 판 예정" data-click="DbConnector.selectMode" data-click-args='["ORACLE"]'>🏛️ Oracle DB <small>(Enterprise)</small></button>
+                <button type="button" id="btnDbMode_EXCEL_ACCESS" class="btn btn-secondary btn-sm db-mode-disabled" data-btn="neutral" disabled title="Workgroup 판은 SQLite 만 사용" data-click="DbConnector.selectMode" data-click-args='["EXCEL_ACCESS"]'>📗 Excel / Access DB <small>(사용 안 함)</small></button>
                 <button type="button" id="btnDbMode_LOCAL" class="btn btn-secondary btn-sm" data-click="DbConnector.selectMode" data-click-args='["LOCAL"]'>💻 단독 LocalStorage</button>
               </div>
               <div style="font-size:var(--fs-xs, 11px); color:#b45309; margin-top:4px;">※ Oracle · Excel/Access 연동은 비활성화되었습니다. 다중 사용자 서버 DB 는 SQLite(run_server.bat) 를 사용하세요.</div>
@@ -3244,6 +3295,42 @@
     </div>
   </div>
 
+  <!-- [Workgroup 0.1] 체크아웃 3자 비교 (받았던 때 · 다른 사람 결과 · 내 것) -->
+  <div class="modal-overlay" id="lkCompareModal">
+    <div class="modal" style="width:960px; max-width:96vw; max-height:90vh; overflow-y:auto;">
+      <div class="card-title"><span>🔀 그 사이 다른 사람이 바꾼 자료와 내 변경 비교</span></div>
+      <div class="bk-hint" id="lkCmpSum" style="margin-bottom:8px;"></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.pickAll" data-click-args='["mine"]'>모두 내 것 선택</button>
+        <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.pickAll" data-click-args='["theirs"]'>모두 다른 사람 것 선택</button>
+      </div>
+      <div class="table-container" style="max-height:52vh;">
+        <table class="m-table">
+          <thead><tr><th style="width:140px;">자료</th><th>행 · 바뀐 내용 (다른 사람 → 내 것)</th><th style="width:130px;">상태</th><th style="width:150px;">쓸 것</th></tr></thead>
+          <tbody id="lkCmpBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn btn-sm btn-danger" data-click="LockManager.compareDone" data-click-args='["theirs"]'>내 작업 버리고 다른 사람 것 사용</button>
+        <button class="btn btn-sm btn-warning" data-click="LockManager.compareDone" data-click-args='["mine"]'>모두 내 것으로 덮어쓰기</button>
+        <button class="btn btn-sm btn-primary" id="lkCmpOk" data-click="LockManager.compareDone" data-click-args='["rows"]'>✅ 고른 대로 반영</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [Workgroup 0.1] 체크인 메모 · 강제 해제 사유 -->
+  <div class="modal-overlay" id="lkMemoModal">
+    <div class="modal" style="width:520px; max-width:94vw;">
+      <div class="card-title"><span id="lkMemoTitle">메모</span></div>
+      <p id="lkMemoText" style="font-size:var(--fs-sm, 12px); margin:4px 0 8px;"></p>
+      <textarea id="lkMemoInput" rows="3" maxlength="300" style="width:100%;"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" data-click="LockManager.memoDone" data-click-args='[false]'>취소</button>
+        <button class="btn btn-primary btn-sm" id="lkMemoOk" data-click="LockManager.memoDone" data-click-args='[true]'>확인</button>
+      </div>
+    </div>
+  </div>
+
   <!-- [v4.1.0] 올리기 미리 보기 (스마트 병합 · 각 화면 📤 공통) -->
   <div class="modal-overlay" id="mergePreviewModal">
     <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
@@ -3444,6 +3531,8 @@
 
   <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
   <script src="static/js/config/app-config.js"></script>
+  <script src="static/js/core/features.js"></script>
+  <script src="static/js/core/week-format.js"></script>
   <script src="static/js/common/ui-events.js"></script>
   <script src="static/js/common/i18n.js"></script>
   <script src="static/js/common/i18n-en.js"></script>
@@ -3493,6 +3582,7 @@
   <script src="static/js/core/project-transfer.js"></script>
   <script src="static/js/core/system-backup.js"></script>
   <script src="static/js/core/data-admin.js"></script>
+  <script src="static/js/core/lock-manager.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>

@@ -48,6 +48,8 @@ def clear_tasks(pid, who):
         finally:
             conn.close()
     trashed = FileStore.trash_project(pid, who)
+    from . import locks
+    locks.release_all(pid, who, "Task 초기화")
     write_server_log(f"[PROJECT] Task data cleared {pid} by {who} ({counts}) backup={path.name} files->trash={trashed}")
     return {"id": pid, "counts": counts, "backup": path.name, "filesTrashed": trashed}
 

@@ -61,7 +61,11 @@ function renderReportDateLabels() {
   }
   const rEl = document.getElementById("globalReportDate");
   if (rEl && rEl.value !== d) rEl.value = d;
-  document.querySelectorAll(".lbl-current-date").forEach(el => { el.innerText = `${d} (${dayName})`; });
+  // [Workgroup] 주차 (기준정보 > 기본정보 > 주차 표시 방식)
+  const wk = typeof WeekFmt !== "undefined" ? WeekFmt.label(d) : "";
+  const wEl = document.getElementById("globalReportWeek");
+  if (wEl) wEl.textContent = wk;
+  document.querySelectorAll(".lbl-current-date").forEach(el => { el.innerText = `${d} (${dayName})${wk ? " · " + wk : ""}`; });
 }
 
 function syncGlobalDate(newDate) {

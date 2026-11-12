@@ -35,6 +35,7 @@ var MergeTable = {
   _plan: null,
 
   item(k) { return this.ITEMS.find(i => i.k === k); },
+  _lockOn() { return typeof LockManager !== "undefined" && LockManager.active(); },
   scope() { const el = document.getElementById("workDataSubsysSelect"); return el && el.value ? el.value : "ALL"; },
   _sysOf(r) { return String((r && r.system) || "").trim(); },
   _inSys(r, scope) { const s = this._sysOf(r); return s === scope || (typeof WBSEngine !== "undefined" && WBSEngine.getSubsystemCode(s) === scope); },
@@ -45,7 +46,10 @@ var MergeTable = {
     if (!it) return { ok: false, why: "알 수 없는 자료" };
     if (it.unit === "prj") return SmartMergeCenter.isAdminOrPm() ? { ok: true } : { ok: false, why: "시스템관리자 · PM 만" };
     if (!scope || scope === "ALL") return SmartMergeCenter.canBulkWork() ? { ok: true } : { ok: false, why: "전체 범위는 시스템관리자 · PM · 총괄리더만 — 담당 서브시스템을 고르세요" };
-    return Permission.canWriteSubsystem(scope) ? { ok: true } : { ok: false, why: `${scope} 는 담당 서브시스템이 아님` };
+    if (!Permission.canWriteSubsystem(scope)) return { ok: false, why: `${scope} 는 담당 서브시스템이 아님` };
+    // [Workgroup] 다른 사람이 체크아웃한 서브시스템은 올릴 수 없음
+    if (this.WORK.includes(k) && this._lockOn() && LockManager.byOther(scope)) return { ok: false, why: `${LockManager.who(LockManager.holder(scope))} 님이 체크아웃(편집 중)` };
+    return { ok: true };
   },
 
   // 지금 자료 (범위 적용)
@@ -191,14 +195,24 @@ var MergeTable = {
       else apply = rows.filter(r => SmartMergeCenter.COLLAB_DEFS[k].inScope(r, sc));
       if (apply.length < fileRows) why = `${sc} 범위 밖 ${fileRows - apply.length}행`;
     }
+    // [Workgroup] 전체 범위: 다른 사람이 체크아웃한 서브시스템 행은 빼고, 나머지는 서브시스템별로 바꿈
+    let lockedOut = [];
+    if (this.WORK.includes(k) && sc === "ALL" && this._lockOn()) {
+      lockedOut = [...new Set(apply.map(r => this._sysOf(r)))].filter(x => LockManager.byOther(x));
+      if (lockedOut.length) {
+        const before = apply.length;
+        apply = apply.filter(r => !lockedOut.includes(this._sysOf(r)));
+        why = `🔒 ${lockedOut.join(", ")} 체크아웃 중 ${before - apply.length}행`;
+      }
+    }
     const cur = this.count(k, sc);
-    if (this.WORK.includes(k)) how = sc === "ALL" ? `전체 바꾸기 (지금 ${cur}건 → ${apply.length}건)` : `${sc} 자료 바꾸기 (지금 ${cur}건 → ${apply.length}건, 다른 서브시스템은 그대로)`;
+    if (this.WORK.includes(k)) how = sc === "ALL" ? (lockedOut.length ? `서브시스템별 바꾸기 (${lockedOut.join(", ")} 제외)` : `전체 바꾸기 (지금 ${cur}건 → ${apply.length}건)`) : `${sc} 자료 바꾸기 (지금 ${cur}건 → ${apply.length}건, 다른 서브시스템은 그대로)`;
     else if (this.COLLAB.includes(k)) how = "같은 ID 는 고치고 새 ID 는 추가";
     else if (k === "config") how = "기준정보를 파일 내용으로 바꾸기";
     else if (k === "subsystems") how = `서브시스템 목록 바꾸기 (지금 ${cur}개 → ${apply.length}개)`;
     else if (k === "users") how = "이 프로젝트의 역할 · 담당 · 부서를 추가 · 갱신 (목록에 없는 사용자는 그대로)";
     if (!perm.ok) { why = `🔒 ${perm.why}`; apply = []; }
-    return { k, label: `${it.icon} ${it.label}`, scope: sc, fileRows, rows: apply, ignored: fileRows - apply.length, why, how, ok: perm.ok && apply.length > 0 };
+    return { k, label: `${it.icon} ${it.label}`, scope: sc, fileRows, rows: apply, ignored: fileRows - apply.length, why, how, ok: perm.ok && apply.length > 0, lockedOut };
   },
 
   // 공통 미리 보기: opts = { scope, keys(이 자료만), checked(처음 체크할 자료), title, onDone }
@@ -246,6 +260,21 @@ var MergeTable = {
     const picks = [...document.querySelectorAll("#mpBody .mp-chk")].filter(c => c.checked && !c.disabled).map(c => plan.items[+c.dataset.i]);
     if (!picks.length) return showToast("⚠️ 반영할 자료를 1개 이상 체크하세요.");
     this.close();
+    this._applyWithCheckout(plan, picks);
+  },
+  // [Workgroup] 반영할 서브시스템 중 아직 체크아웃하지 않은 곳은 먼저 체크아웃 (다른 사람이 잡은 곳은 미리 보기에서 이미 제외)
+  async _applyWithCheckout(plan, picks) {
+    if (this._lockOn()) {
+      const touched = new Set();
+      picks.filter(p => this.WORK.includes(p.k)).forEach(p => {
+        if (p.scope !== "ALL") touched.add(p.scope); else p.rows.forEach(r => touched.add(this._sysOf(r)));
+      });
+      const need = [...touched].filter(x => x && !LockManager.mine(x) && !LockManager.byOther(x));
+      if (need.length && !(await LockManager.checkout(need, { reload: false, quiet: true, snapshot: false }))) {
+        return showToast("⛔ 체크아웃하지 못한 서브시스템이 있어 반영하지 않았습니다. [🔐 체크아웃 현황]을 확인하세요.");
+      }
+      if (need.length) showToast(`📝 ${need.join(", ")} 체크아웃했습니다. 반영 뒤 [💾 저장] 또는 [✅ 체크인]하세요.`);
+    }
     try {
       const backup = BackupHistoryManager.createBackupSnapshot(`자료올리기(${picks.map(p => p.k).join("+")}:${plan.scope})`, plan.scope, true);
       const done = this.apply(picks, plan.json);
@@ -284,7 +313,10 @@ var MergeTable = {
       const p = by(k);
       if (!p) return;
       const keys = k === "deliverables" && typeof AttachManager !== "undefined" ? AttachManager.rememberKeys() : null;
-      SmartMergeCenter._mergeWorkArrayData(k, p.rows, p.scope);
+      if (p.scope === "ALL" && p.lockedOut && p.lockedOut.length) {
+        // 잠긴 서브시스템은 그대로 두고, 파일에 있는 서브시스템만 바꿈
+        [...new Set(p.rows.map(r => this._sysOf(r)))].forEach(x => SmartMergeCenter._mergeWorkArrayData(k, p.rows.filter(r => this._sysOf(r) === x), x));
+      } else SmartMergeCenter._mergeWorkArrayData(k, p.rows, p.scope);
       if (keys) AttachManager.reapplyKeys(keys);  // 첨부파일 연결 유지
       done.push(`${this.item(k).label} ${p.rows.length}건`);
     });

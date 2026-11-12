@@ -35,6 +35,12 @@ var RealtimeChatManager = {
   },
 
   async checkServerConnection(showFeedback = false) {
+    // [Workgroup] 채팅 꺼짐 (app.ini [features] chat=0): 로컬 저장소 방식처럼 잠금 — 주기 통신 없음
+    if (typeof Features !== "undefined" && !Features.on("chat")) {
+      this.setConnected(false, "사용 안 함 (Workgroup 판 — 채팅은 Enterprise 판 예정)");
+      if (showFeedback) showToast("💬 " + Features.offText("chat"));
+      return false;
+    }
     if (SyncManager.isLocal()) {
       this.setConnected(false, "오프라인 (로컬 저장소 모드에서는 채팅을 사용할 수 없습니다)");
       if (showFeedback) showToast("💬 채팅은 DB 서버 모드에서만 사용할 수 있습니다. (시스템 설정 > DB 연동에서 서버 모드 선택)");
@@ -76,6 +82,7 @@ var RealtimeChatManager = {
 
   async startPolling() {
     this.stopPolling();
+    if (typeof Features !== "undefined" && !Features.on("chat")) return;
     await this.fetchMessages(true);
     this.pollTimer = setInterval(async () => {
       const pane = document.getElementById("tab-notices");

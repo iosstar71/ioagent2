@@ -676,6 +676,8 @@ var WeeklyReportManager = {
     if (inCurSum) inCurSum.value = rep.currentWeekSummary || "";
     if (inNxtSum) inNxtSum.value = rep.nextWeekSummary || "";
     if (inIssues) inIssues.value = rep.issuesNotes || "";
+    const wObj = this.getAllWeeks().find(w => w.weekNum === rep.weekNo);
+    document.querySelectorAll(".lbl-wr-week").forEach(el => { el.textContent = wObj ? wObj.label : ""; });
 
     const curTbody = document.getElementById("wrCurrentTasksBody");
     if (curTbody) {

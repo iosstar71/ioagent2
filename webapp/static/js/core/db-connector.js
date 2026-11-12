@@ -316,6 +316,11 @@ CREATE TABLE TB_WBS_VOC (
   SUPPORTED_MODES: ["LOCAL", "SQLITE"], // v1.0.8: Oracle / Excel·Access 비활성화
 
   selectMode(mode) {
+    // [Workgroup] Oracle · Excel/Access 는 app.ini [features] 로 켜기 전에는 선택 불가 (Enterprise 판 예정)
+    if ((mode === "ORACLE" && !Features.on("db_oracle")) || (mode === "EXCEL_ACCESS" && !Features.on("db_excel_access"))) {
+      showToast("🏛️ " + Features.offText(mode === "ORACLE" ? "db_oracle" : "db_excel_access"));
+      return;
+    }
     if (!this.SUPPORTED_MODES.includes(mode)) {
       showToast("⛔ Oracle · Excel/Access 연동은 비활성화되었습니다. 서버 DB 는 SQLite 를 사용하세요.");
       return;

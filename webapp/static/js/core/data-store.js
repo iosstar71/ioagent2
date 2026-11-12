@@ -587,6 +587,7 @@ var ServerBackend = {
       clearTimeout(timer);
       const json = await res.json().catch(() => ({}));
       json.httpStatus = res.status;
+      if (typeof ServerHeartbeat !== "undefined" && !ServerHeartbeat.online) ServerHeartbeat.setOnline(true);
       if (res.status === 401) {
         json.authRequired = true;
         if (typeof AuthManager !== "undefined" && AuthManager.onServerAuthExpired) AuthManager.onServerAuthExpired();
@@ -594,6 +595,8 @@ var ServerBackend = {
       return json;
     } catch (err) {
       clearTimeout(timer);
+      // [Workgroup] 주기 확인 대신, 사용자 요청이 실패했을 때 연결 끊김 표시
+      if (typeof ServerHeartbeat !== "undefined" && ServerHeartbeat.online && !(typeof Features !== "undefined" && Features.on("server_heartbeat"))) ServerHeartbeat.setOnline(false);
       return { ok: false, network: true, message: err && err.name === "AbortError" ? "서버 응답 시간 초과" : (err.message || "서버 연결 실패") };
     }
   },
@@ -601,11 +604,15 @@ var ServerBackend = {
   async load(keys) {
     const res = await this.request("/api/db/load", { keys: keys || null });
     if (!res.ok) return { ok: false, error: res.message || "DB 조회 실패", network: res.network, authRequired: res.authRequired };
+    if (res.locks && typeof LockManager !== "undefined") LockManager.update(res.locks);  // [Workgroup] 잠금 현황을 함께 받음
     return { ok: true, data: res.data || {}, revs: res.revs || {} };
   },
 
-  async save(changes, force) {
-    const res = await this.request("/api/db/save", { changes, force: !!force }, "POST", 20000);
+  async save(changes, force, who, opts = {}) {
+    const res = await this.request("/api/db/save", { changes, force: !!force, lockBypass: !!opts.lockBypass }, "POST", 20000);
+    if (res.locks && typeof LockManager !== "undefined") LockManager.update(res.locks);
+    // [Workgroup] 체크아웃 잠금으로 막힘 — 아무것도 저장되지 않음
+    if (res.httpStatus === 423 || res.locked) return { ok: false, locked: res.locked || [] };
     if (res.httpStatus === 409 || res.conflict) return { ok: false, conflict: true, conflicts: res.conflicts || [] };
     if (!res.ok) return { ok: false, error: res.message || "DB 저장 실패", network: res.network, authRequired: res.authRequired };
     return { ok: true, data: res.data || {}, revs: res.revs || {}, blocked: res.blocked || [] };
@@ -772,6 +779,13 @@ var SyncManager = {
     const blockedList = this.blockedSummary(d);
     const changes = {};
     Object.keys(d).forEach(k => { if (Object.keys(d[k].parts).length) changes[k] = { parts: d[k].parts, base: d[k].base }; });
+    // [Workgroup] onlyParts: {key: Set(파티션)} — 체크인할 서브시스템만 저장
+    if (opts.onlyParts) Object.keys(changes).forEach(k => {
+      const only = opts.onlyParts[k];
+      if (!only) return;
+      Object.keys(changes[k].parts).forEach(p => { if (!only.has(p)) { delete changes[k].parts[p]; delete changes[k].base[p]; } });
+      if (!Object.keys(changes[k].parts).length) delete changes[k];
+    });
 
     if (blockedList.length) {
       const reverted = this.revertBlocked(d);
@@ -795,9 +809,13 @@ var SyncManager = {
     this.setStatus("저장 중...", "busy");
     let res;
     try {
-      res = await this.backend().save(changes, force, this.whoAmI());
+      res = await this.backend().save(changes, force, this.whoAmI(), opts);
     } finally {
       this._busy = false;
+    }
+    if (res.locked && typeof LockManager !== "undefined") {
+      this.setStatus("저장 안 됨 (체크아웃)", "warn");
+      return LockManager.onBlocked(changes, res.locked, opts);
     }
     if (res.conflict) {
       this.setStatus("저장 충돌", "warn");
@@ -811,6 +829,7 @@ var SyncManager = {
     const savedKeys = Object.keys(res.data || {});
     DataRegistry.apply(res.data, savedKeys);
     this.afterDataApplied(savedKeys, false, res.revs);
+    if (typeof LockManager !== "undefined" && LockManager.active()) LockManager.afterSave();
     if (res.blocked && res.blocked.length) {
       showToast(`⛔ 서버 권한 검증: ${res.blocked.join(", ")} 변경은 저장되지 않았습니다.`);
     }
@@ -975,6 +994,7 @@ var SyncManager = {
     }
     DataRegistry.apply(res.data);
     this.afterDataApplied(DataRegistry.KEYS, false, res.revs);
+    if (typeof LockManager !== "undefined") LockManager.restoreHeld();  // [Workgroup] 보류한 변경 다시 올림
     return { ok: true };
   },
 
@@ -988,7 +1008,7 @@ var SyncManager = {
     }
     // 서버 모드: 변경분 저장(덮어쓰기) — 관리자 권한 필요
     this.afterDataApplied(DataRegistry.KEYS, true);
-    const r = await this.save(null, { notify: false, force: true });
+    const r = await this.save(null, { notify: false, force: true, lockBypass: true });  // [Workgroup] 복원 · 초기화 (서버가 관리자 · PM 만 허용)
     if (r.ok && notifyText) showToast(notifyText);
     return r;
   },
@@ -1099,6 +1119,9 @@ var SyncUI = {
     }
     const mode = document.getElementById("storageStatusText");
     if (mode && all > 0 && !SyncManager._busy) mode.innerText = local ? "자동저장 대기" : `미저장 ${all}건`;
+    // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
+    if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
+    if (typeof LockManager !== "undefined") LockManager.renderBadge();
   },
 
   // 범용 선택 모달 → Promise<choiceId>
@@ -1158,6 +1181,7 @@ var FileAutoSyncManager = {
   fileName: "",
 
   async openExistingFileHandle() {
+    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
     if (!("showOpenFilePicker" in window)) {
       showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
       return;
@@ -1199,6 +1223,7 @@ var FileAutoSyncManager = {
   },
 
   async setupFileHandle() {
+    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
     if (!("showSaveFilePicker" in window)) {
       showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
       return;
@@ -1218,6 +1243,7 @@ var FileAutoSyncManager = {
   },
 
   async syncNow(showAlert = false) {
+    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
     if (!this.fileHandle) return;
     try {
       const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: `AX_PMYS_${APP_VERSION.version}` }, DataRegistry.collect());

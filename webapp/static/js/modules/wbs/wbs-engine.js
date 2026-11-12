@@ -546,15 +546,16 @@ const WBSEngine = {
     const weeks = [];
     const cur = new Date(firstWeekStart);
     let wIdx = 1;
-    while ((cur <= eDate || weeks.length < 4) && wIdx <= 60) {
+    while ((cur <= eDate || weeks.length < 4) && wIdx <= 280) {
       const curEnd = new Date(cur);
       curEnd.setDate(curEnd.getDate() + 6);
       const isoStart = cur.toISOString().split("T")[0];
       const isoEnd = curEnd.toISOString().split("T")[0];
       weeks.push({
         weekNum: wIdx,
-        label: `${wIdx}주차`,
-        fullLabel: `${cur.getFullYear()}년 ${wIdx}주차 (${isoStart} ~ ${isoEnd})`,
+        // [Workgroup] 주차 표시는 기준정보의 주차 표시 방식(WeekFmt)을 따름 — weekNum 은 프로젝트 순번 그대로 (주간보고 ID)
+        label: typeof WeekFmt !== "undefined" ? WeekFmt.label(isoStart) : `${wIdx}주차`,
+        fullLabel: `${typeof WeekFmt !== "undefined" ? WeekFmt.label(isoStart) : cur.getFullYear() + "년 " + wIdx + "주차"} (${isoStart} ~ ${isoEnd})`,
         startDate: isoStart,
         endDate: isoEnd,
         year: cur.getFullYear()

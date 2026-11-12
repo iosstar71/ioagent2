@@ -175,8 +175,23 @@ def restore(name, who):
                             shutil.copyfileobj(s, d)
                 shutil.rmtree(old, ignore_errors=True)
     Store.init_schema()  # 이전 버전 백업이면 표 구조를 맞춤
+    _clear_locks(who)
     write_server_log(f"[BACKUP] restored {name} by {who} (before-restore backup: {before})")
     return before
+
+
+def _clear_locks(who):
+    """[Workgroup] 시스템 복원 뒤에는 그 시점의 체크아웃 잠금을 모두 해제"""
+    with DB_LOCK:
+        conn = Store.connect()
+        try:
+            cur = conn.cursor()
+            from . import locks
+            locks._schema(cur)
+            cur.execute("DELETE FROM TB_LOCK")
+            conn.commit()
+        finally:
+            conn.close()
 
 
 def auto_loop():

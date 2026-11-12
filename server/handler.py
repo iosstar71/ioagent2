@@ -10,6 +10,7 @@ from .settings import (
     APP_CONFIG_URL,
     WEB_DIR,
     APP_CONFIG,
+    app_features,
     APP_NAME,
     BASE_DIR,
     BLOCKED_URL_EXTENSIONS,
@@ -26,7 +27,7 @@ from .settings import (
 from .common import AuthError, MANAGER_ROLES, SecurityError, now_str
 from .security import verify_pwd
 from .permission import can_access_project, effective_user, is_sys_admin, membership
-from . import backup, file_api, project_reset, snapshots, user_admin
+from . import backup, file_api, locks, project_reset, snapshots, user_admin
 from .files import FileStore
 from .logger import write_server_log
 from .store import Store
@@ -150,7 +151,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         data = {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
                 "version": c["version"], "defaultLang": c["default_lang"],
                 "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"],
-                "selfReset": str(c.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no")}
+                "selfReset": str(c.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no"), **app_features(c)}
         body = ("var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n").encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/javascript; charset=utf-8")
@@ -338,13 +339,24 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         info = self._require_user(req=req)
         keys = req.get("keys")
         data, revs = Store.load(keys if isinstance(keys, list) else None, info["projectId"], info)
-        self._send_json(200, {"ok": True, "data": data, "revs": revs})
+        # [Workgroup] 불러올 때 잠금 현황을 함께 보냄 (주기 조회 없이 화면이 잠금 상태를 앎) + 내 잠금 연장
+        lk = locks._run(lambda cur: (locks.touch(cur, info, info["projectId"]), locks.listing(cur, info["projectId"], False))[1])
+        self._send_json(200, {"ok": True, "data": data, "revs": revs, "locks": lk})
 
     def api_db_save(self, req):
         info = self._require_user(req=req)
         if info.get("projectStatus") == "ARCHIVED" and info.get("baseRole") != "SYS_ADMIN":
             raise AuthError("보관된 프로젝트는 읽기 전용입니다.", 403, "PROJECT_ARCHIVED")
-        result = Store.save(info, req.get("changes") or {}, bool(req.get("force")), info["projectId"])
+        changes = req.get("changes") or {}
+        pid = info["projectId"]
+        result = Store.save(info, changes, bool(req.get("force")), pid,
+                            guard=lambda cur: locks.save_guard(cur, info, pid, changes, bool(req.get("lockBypass"))))
+        if result.get("locked"):
+            lk = locks._run(lambda cur: locks.listing(cur, pid, False))
+            self._send_json(423, dict(result, locks=lk, message="다른 사람이 체크아웃했거나 체크아웃하지 않은 서브시스템이 있어 저장하지 않았습니다."))
+            return
+        if result.get("ok"):
+            result["locks"] = locks._run(lambda cur: (locks.touch(cur, info, pid), locks.listing(cur, pid, False))[1])
         if result.get("conflict"):
             self._send_json(409, result)
             return
@@ -408,6 +420,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def api_projects_delete(self, req):
         self._require_user(roles={"SYS_ADMIN"})
         Store.delete_project(str(req.get("id") or ""))
+        locks.release_all(str(req.get("id") or ""), "admin", "프로젝트 삭제")
         FileStore.drop_project(str(req.get("id") or ""))
         write_server_log(f"[PROJECT] Deleted {req.get('id')}")
         self._send_json(200, {"ok": True})
@@ -418,6 +431,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         **project_reset.ROUTES,
         **backup.ROUTES,
         **snapshots.ROUTES,
+        **locks.ROUTES,
         "/api/projects/list": api_projects_list,
         "/api/projects/create": api_projects_create,
         "/api/projects/update": api_projects_update,

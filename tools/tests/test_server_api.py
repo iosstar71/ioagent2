@@ -38,11 +38,17 @@ def free_port():
         return s.getsockname()[1]
 
 
-def copy_program(dst):
-    """프로그램 폴더(설정 · 서버 · 화면 · 초기 데이터)를 시험용 폴더로 복사"""
+def copy_program(dst, lock_mode="off", lock_hours=None):
+    """프로그램 폴더(설정 · 서버 · 화면 · 초기 데이터)를 시험용 폴더로 복사
+    [Workgroup] 기존 저장 · 권한 시험은 체크아웃 잠금을 끄고(lock_mode=off), 잠금 시험(LockApiTest)은 required 로"""
     shutil.copy(ROOT / "wbs_db_server.py", dst / "wbs_db_server.py")
     for d in ("conf", "server", "webapp"):
         shutil.copytree(ROOT / d, dst / d, ignore=shutil.ignore_patterns("__pycache__"))
+    ini = dst / "conf" / "app.ini"
+    text = ini.read_text(encoding="utf-8")
+    text = "\n".join(("lock_mode=" + lock_mode) if l.startswith("lock_mode=") else (("lock_hours=" + str(lock_hours)) if lock_hours and l.startswith("lock_hours=") else l)
+                     for l in text.split("\n"))
+    ini.write_text(text, encoding="utf-8")
     (dst / "data").mkdir()
     shutil.copy(ROOT / "data" / "initial_data.json", dst / "data" / "initial_data.json")
 
@@ -663,6 +669,100 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/chat/messages?channel=%EC%A0%84%EC%B2%B4", token=self.admin, method="GET")
         self.assertEqual(s, 200)
         self.assertTrue(any(m["message"] == "hello" for m in d["messages"]))
+
+
+class LockApiTest(unittest.TestCase):
+    """[Workgroup 0.1] 서브시스템 체크아웃 · 체크인 (lock_mode=required)"""
+    call = ServerApiTest.__dict__["call"]
+    login = ServerApiTest.__dict__["login"]
+    ready = ServerApiTest.__dict__["ready"]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="axpmys_lock_"))
+        copy_program(cls.tmp, "required")
+        cls.port = free_port()
+        cls.base = f"http://127.0.0.1:{cls.port}"
+        cls.pwd = {}
+        cls.proc = subprocess.Popen([sys.executable, "wbs_db_server.py", "--port", str(cls.port), "--host", "127.0.0.1", "--silent"],
+                                    cwd=cls.tmp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(50):
+            try:
+                urllib.request.urlopen(cls.base + "/api/db/ping", timeout=1)
+                break
+            except Exception:
+                time.sleep(0.2)
+        cls.admin = cls.ready("admin")
+        for emp in ("wg_a", "wg_b"):
+            s, d = cls.call("/api/admin/users/save", {"isNew": True, "empNo": emp, "name": emp.upper(), "sysAdmin": False,
+                                                      "projectRoles": {"DEFAULT": {"role": "MEMBER", "subsystem": "W1"}}}, cls.admin)
+            assert s == 200, d
+        cls.a, cls.b = cls.ready("wg_a"), cls.ready("wg_b")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.proc.terminate()
+        cls.proc.wait(timeout=5)
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def save_w1(self, token, suffix, bypass=False):
+        s, d = self.call("/api/db/load", {"keys": ["wbsData"]}, token)
+        rows = [r for r in d["data"]["wbsData"] if r["system"] == "W1"]
+        rows[0]["name"] = rows[0]["name"].split("#")[0] + "#" + suffix
+        body = {"changes": {"wbsData": {"parts": {"W1": rows}, "base": {"W1": d["revs"]["wbsData"]["W1"]["rev"]}}}}
+        if bypass:
+            body["lockBypass"] = True
+        return self.call("/api/db/save", body, token)
+
+    def test_1_checkout_blocks_others(self):
+        s, d = self.call("/api/locks/checkout", {"scopes": ["SUB:W1"], "memo": "설계 일정"}, self.a)
+        self.assertEqual((s, d["ok"], d["got"]), (200, True, ["SUB:W1"]), d)
+        s, d = self.save_w1(self.b, "b")
+        self.assertEqual(s, 423, d)
+        self.assertEqual((d["locked"][0]["reason"], d["locked"][0]["empNo"]), ("LOCKED", "wg_a"))
+        s, d = self.call("/api/locks/checkout", {"scopes": ["SUB:W1"]}, self.b)
+        self.assertFalse(d["ok"])
+        self.assertEqual(d["taken"][0]["empNo"], "wg_a")
+        s, d = self.save_w1(self.a, "a")
+        self.assertEqual(s, 200, d)
+        self.assertTrue(any(l["scope"] == "SUB:W1" for l in d["locks"]["locks"]))
+        s, d = self.call("/api/db/load", {"keys": ["meetingsData"]}, self.b)
+        self.assertEqual(d["locks"]["locks"][0]["empNo"], "wg_a")
+        s, d = self.call("/api/locks/checkin", {"scopes": ["SUB:W1"], "memo": "끝"}, self.a)
+        self.assertEqual(d["released"], ["SUB:W1"])
+
+    def test_2_checkout_required(self):
+        s, d = self.save_w1(self.b, "b2")
+        self.assertEqual((s, d["locked"][0]["reason"]), (423, "CHECKOUT_REQUIRED"), d)
+        self.call("/api/locks/checkout", {"scopes": ["SUB:W1"]}, self.b)
+        s, d = self.save_w1(self.b, "b2")
+        self.assertEqual(s, 200, d)
+        s, d = self.call("/api/locks/cancel", {"scopes": ["SUB:W1"]}, self.b)
+        self.assertEqual(d["released"], ["SUB:W1"])
+
+    def test_3_force_release_and_bypass(self):
+        self.call("/api/locks/checkout", {"scopes": ["SUB:W1"]}, self.a)
+        self.assertEqual(self.call("/api/locks/force-release", {"scopes": ["SUB:W1"], "reason": "x"}, self.b)[0], 403)
+        self.assertEqual(self.call("/api/locks/force-release", {"scopes": ["SUB:W1"]}, self.admin)[0], 400)
+        s, d = self.save_w1(self.admin, "adm", bypass=True)
+        self.assertEqual(s, 200, d)
+        s, d = self.call("/api/locks/force-release", {"scopes": ["SUB:W1"], "reason": "퇴근"}, self.admin)
+        self.assertEqual(d["released"], ["SUB:W1"])
+        s, d = self.call("/api/locks/list", {}, self.admin)
+        self.assertEqual(d["log"][0]["action"], "FORCE")
+        self.assertEqual(d["log"][0]["memo"], "퇴근")
+
+    def test_4_expiry(self):
+        self.call("/api/locks/checkout", {"scopes": ["SUB:W1"]}, self.a)
+        con = sqlite3.connect(str(self.tmp / "data" / "wbs_enterprise.db"))
+        con.execute("UPDATE TB_LOCK SET EXPIRES = 1")
+        con.commit()
+        con.close()
+        s, d = self.call("/api/locks/checkout", {"scopes": ["SUB:W1"]}, self.b)
+        self.assertTrue(d["ok"], d)
+        s, d = self.call("/api/locks/list", {}, self.b)
+        self.assertIn("EXPIRE", [l["action"] for l in d["log"]])
+        self.call("/api/locks/cancel", {"scopes": ["SUB:W1"]}, self.b)
 
 
 class SharedFilesTest(unittest.TestCase):

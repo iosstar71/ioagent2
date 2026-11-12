@@ -375,14 +375,20 @@ class Store:
                 conn.close()
 
     @classmethod
-    def save(cls, user, changes, force=False, pid=DEFAULT_PROJECT):
-        """changes = {key: {"parts": {part: rows|row|None}, "base": {part: rev}}}"""
+    def save(cls, user, changes, force=False, pid=DEFAULT_PROJECT, guard=None):
+        """changes = {key: {"parts": {part: rows|row|None}, "base": {part: rev}}}
+        guard(cur) → 막힌 항목 목록 ([Workgroup] 체크아웃 잠금 — server/locks.py). 하나라도 있으면 아무것도 저장하지 않음"""
         who = f"{user.get('name', '')}({user['empNo']})"
         blocked = []
         with DB_LOCK:
             conn = cls.connect()
             try:
                 cur = conn.cursor()
+                if guard:
+                    locked = guard(cur)
+                    if locked:
+                        conn.commit()
+                        return {"ok": False, "locked": locked}
                 current = {}
                 conflicts = []
                 accepted = {}
