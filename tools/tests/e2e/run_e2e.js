@@ -378,8 +378,9 @@ async function main() {
     await wc.selectOption("#vocTypeFilter", "ALL");
     check("VOC 구분 (VOC / 버그 / 이슈) filters the list only; old 착수전 reads as 대기", vt.rows === 1 && vt.st === "대기", JSON.stringify(vt));
     await wc.evaluate(() => SampleProject.add()); await wc.waitForTimeout(300); await wc.click("#confirmDialogOkBtn"); await wc.waitForTimeout(1200);
-    const sp = await wc.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); const st = p ? LocalBackend._read(p.id) : null; return { has: !!p, wbs: st ? (st.wbsData || []).length : 0 }; });
-    check("[🧪 샘플 프로젝트 추가] adds a separate sample project", sp.has && sp.wbs > 20, JSON.stringify(sp));
+    const sp = await wc.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); const st = p ? LocalBackend._read(p.id) : null;
+      return { has: !!p, wbs: st ? (st.wbsData || []).length : 0, members: p ? ProjectTransfer._usersOf(p.id, ProjectContext.allUsers).length : 0 }; });
+    check("[🧪 샘플 프로젝트 추가] adds a separate sample project with its members (no reload needed)", sp.has && sp.wbs > 20 && sp.members >= 8, JSON.stringify(sp));
     const th = await wc.evaluate(() => {
       const r = { opts: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), def: defaultTheme(),
         legacy: ["green", "navy", "matte", "mocha", "graphite"].map(normalizeTheme).join(",") };
@@ -404,6 +405,21 @@ async function main() {
     check("English UI is available on the member selection screen", /Choose member/.test(enT.title) && /Start/.test(enT.btn), JSON.stringify(enT));
     const enIco = await en.evaluate(() => { const b = [...document.querySelectorAll(".login-2col button, .login-2col a")].filter(x => x.offsetParent && x.querySelector("svg.iostar-ico")); return b.map(x => x.textContent.trim()).join(" | "); });
     check("English text still applies next to the line icons (emoji-free lookup)", enIco && !/[가-힣]/.test(enIco), enIco);
+    // Workgroup(서버 판)에서 내려받은 프로젝트 백업(JSON)을 새 프로젝트로 올림 (같은 자료 형식)
+    const wgJson = fs.readFileSync(path.join(ROOT, "tools", "tests", "fixtures", "workgroup_project_backup.json"), "utf8");
+    const wg = await pm.evaluate(async (txt) => {
+      GShell.go("tab-merge"); if (typeof SubTabs !== "undefined") SubTabs.show("merge", "backup"); await new Promise(r => setTimeout(r, 600));
+      if (typeof ProjectTransfer.render === "function") await ProjectTransfer.render();
+      document.getElementById("ptUpTarget").value = "__NEW__";
+      await ProjectTransfer.upload({ target: { files: [new File([txt], "workgroup_project_backup.json")], value: "" } });
+      await new Promise(r => setTimeout(r, 600));
+      const p = ProjectContext.localList().find(x => x.name === "Workgroup 서버 프로젝트 (호환 시험)");
+      const st = p ? LocalBackend._read(p.id) : null;
+      return { pid: p && p.id, wbs: st ? (st.wbsData || []).length : 0, req: st ? (st.reqMasterData || []).length : 0, src: JSON.parse(txt).data.wbsData.length,
+        members: p ? ProjectTransfer._usersOf(p.id, ProjectContext.allUsers).length : 0, from: JSON.parse(txt).appVersion };
+    }, wgJson);
+    check("A Workgroup project backup (JSON, v0.4.0) uploads into Standalone as a new project (Tasks · REQ · members)",
+      !!wg.pid && wg.wbs === wg.src && wg.req > 0 && wg.members >= 8, JSON.stringify(wg));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);

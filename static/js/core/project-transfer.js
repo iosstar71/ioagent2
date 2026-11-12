@@ -358,6 +358,8 @@ var ProjectTransfer = {
     drevs.projectUsers = drevs.projectUsers || {};
     (item.users || []).forEach(u => { const r = drevs.projectUsers[u.empNo]; drevs.projectUsers[u.empNo] = { rev: ((r && r.rev) || 0) + 1, by: "import", at: now }; });
     LocalBackend._write(ProjectContext.DEFAULT, dst, drevs);
+    // 화면의 전체 멤버 목록도 바로 맞춤 (다시 열지 않아도 그 프로젝트 멤버 · 백업에 보이도록)
+    ProjectContext.allUsers = this._c(users);
   }
 };
 window.ProjectTransfer = ProjectTransfer;
