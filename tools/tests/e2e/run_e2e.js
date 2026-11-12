@@ -210,12 +210,40 @@ async function main() {
     const r1 = await wa.evaluate(() => wbsData.find(t => t.id === "1.1").name);
     check("[종합본으로 전부 바꾸기] asks once more, then this PC matches the 종합본 exactly (same-version note shown)",
       same.text.includes("같습니다") && warnR.text.includes("사라집니다") && r1 === "W1 설계 (가작업 수정)", JSON.stringify({ r1, same: same.text.slice(0, 120) }));
+    // 배포 폴더의 최신 종합본(shared/latest.json): 화면을 열 때 자동으로 읽음
+    await pm.evaluate(() => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 4차)"; rebuildAll(true); persistChanges(true); });
+    await pm.waitForTimeout(1100);
+    const lj = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("SERVER")');
+    const s5 = JSON.parse(lj.text).packageStamp;
+    fs.writeFileSync(path.join(web.tmp, "pprjmgmt", "shared", "latest.json"), lj.text);
+    check("PM makes the deploy 종합본 named latest.json (whole project, new version)", lj.name === "latest.json" && JSON.parse(lj.text).targetScope === "ALL" && s5 > s4, lj.name + " " + s5);
+    const wb = await newPage();
+    await wb.goto(web.url); await wb.waitForTimeout(3500);
+    await wb.waitForFunction(() => window.AppBoot && document.querySelectorAll("#workerPickList option").length > 1, null, { timeout: 8000 }).catch(() => {});
+    const nb = await wb.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), proj: document.getElementById("inputLoginProject").selectedOptions[0].textContent }));
+    await pickWorker(wb, "wg_b", PWD);
+    const nb2 = await wb.evaluate(() => ({ wbs: wbsData.length, w2: wbsData.find(t => t.id === "2.1").name, own: Permission.ownSubsystem() }));
+    check("New PC opening the site starts from the server 종합본 automatically (no file to pass around)",
+      nb.workers.includes("wg_b") && nb.proj.includes(j1.projectName) && nb2.wbs === 4 && nb2.w2 === "W2 설계 (PM 4차)" && nb2.own === "W2", JSON.stringify({ nb, nb2 }));
+    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 4차)"; rebuildAll(true); persistChanges(true); });
+    await wa.waitForTimeout(500);
+    await toLogin(); await wa.waitForTimeout(1500);
+    const sn = await choice();
+    await pickWorker(wa, "wg_a", PWD); await wa.waitForTimeout(800);
+    const sv = await wa.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name, stamp: projectConfig.packageStamp }));
+    check("PC with data: a newer server 종합본 is announced on the worker screen and applied after picking the worker (own W1 kept)",
+      sn.shown && sn.text.includes("새 종합본이 올라와 있습니다") && sv.w1 === "W1 설계 (가작업 4차)" && sv.w2 === "W2 설계 (PM 4차)" && sv.stamp === s5, JSON.stringify({ sn: sn.text.slice(0, 120), sv }));
+    await toLogin();
+    const again = await choice();
+    await pm.reload(); await pm.waitForTimeout(1800); await waitApp(pm);
+    const pmSame = await pm.evaluate(() => ({ w2: wbsData.find(t => t.id === "2.1").name, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG"), dlg: getComputedStyle(document.getElementById("confirmDialogModal")).display }));
+    check("Same version is not applied again (worker PC and the PM's own PC are left alone)", !again.shown && pmSame.w2 === "W2 설계 (PM 4차)" && !pmSame.pending && pmSame.dlg === "none", JSON.stringify({ again, pmSame }));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);
     check("Data management shows browser storage usage", usage.includes("IndexedDB"), usage);
     check("No requests outside /pprjmgmt (no server, no external calls) and no page errors",
-      pm.external.length + wa.external.length === 0 && pm.errors.length + wa.errors.length === 0, pm.external.concat(wa.external, pm.errors, wa.errors).slice(0, 4).join(" | "));
+      pm.external.length + wa.external.length + wb.external.length === 0 && pm.errors.length + wa.errors.length + wb.errors.length === 0, pm.external.concat(wa.external, wb.external, pm.errors, wa.errors, wb.errors).slice(0, 4).join(" | "));
     void pkg2;
   } finally {
     web.stop();

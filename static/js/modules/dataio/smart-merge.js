@@ -447,9 +447,15 @@ const SmartMergeCenter = {
     return projectConfig.packageStamp;
   },
   downloadMasterPackage(format) {
+    // SERVER = 배포 폴더(shared/latest.json)에 넣을 최신 종합본 — 프로젝트 전체, 이름 latest.json
+    const server = format === "SERVER";
+    if (server) {
+      if (!Permission.canEditAllSubsystems()) return showToast("⛔ 배포용 종합본은 PM · 관리자만 만들 수 있습니다.");
+      format = "JSON";
+    }
     this.stampPackage();
     const sel = document.getElementById("masterPkgSubsysSelect");
-    const scope = sel ? sel.value : "ALL";
+    const scope = server ? "ALL" : (sel ? sel.value : "ALL");
     const repDate = projectConfig.reportDate || "2027-06-01";
     const isAll = scope === "ALL";
 
@@ -474,9 +480,9 @@ const SmartMergeCenter = {
         payload[def.dataKey] = this._collabRecords(k, scope);
       });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("종합본", [scope], "json");
+      const filename = server ? "latest.json" : ExcelSync.stdName("종합본", [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[통합 JSON 내려받기 완료] ${filename}`);
+      showToast(server ? `🌐 latest.json (버전 ${projectConfig.packageStamp}) 을 받았습니다. 배포 폴더 pprjmgmt/shared/ 에 넣어 전체를 올리면, 작업자가 화면을 열 때 자동으로 받습니다.` : `[통합 JSON 내려받기 완료] ${filename}`);
       return;
     }
 

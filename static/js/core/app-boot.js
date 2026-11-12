@@ -113,9 +113,12 @@ var AppBoot = {
     SyncUI.init();
     if (SyncManager.isLocal()) {
       await SyncManager.initialLoad();
+      // 배포 폴더의 최신 종합본(shared/latest.json) 확인 — 새것이면 받아 두거나 그것으로 시작
+      if (typeof WorkerPick !== "undefined" && await WorkerPick.checkServerPackage()) return;
     }
     this.initUi();
     AuthManager.init();
+    if (typeof WorkerPick !== "undefined") WorkerPick.startMessage();
   },
 
   // 작업자 선택 성공 후 호출 (DB 서버 모드: 서버 데이터 로드)

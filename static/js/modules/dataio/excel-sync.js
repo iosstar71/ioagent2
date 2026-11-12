@@ -653,7 +653,7 @@ const ExcelSync = {
     // [v1.0.5] 윈도우 파일명 금지문자 치환 및 다운로드 안정화
     const safeName = String(filename || "download").replace(/[\\/:*?"<>|\r\n\t]+/g, "_").replace(/\s+/g, " ").trim() || "download";
     // [Local] 자료 파일을 PC 에 받은 때를 기억 (백업 알림용)
-    if (/백업|종합본|자료|내변경|프로젝트/.test(safeName) && typeof AppStore !== "undefined") { try { AppStore.setItem("PPRJMGMT_LAST_FILE_SAVE", String(Date.now())); } catch (e) {} }
+    if (/백업|종합본|자료|내변경|프로젝트|latest/.test(safeName) && typeof AppStore !== "undefined") { try { AppStore.setItem("PPRJMGMT_LAST_FILE_SAVE", String(Date.now())); } catch (e) {} }
     if (typeof window !== "undefined" && window.navigator && typeof window.navigator.msSaveOrOpenBlob === "function") {
       window.navigator.msSaveOrOpenBlob(blob, safeName);
       return;

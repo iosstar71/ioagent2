@@ -19,7 +19,7 @@ import build_initial_data  # noqa: E402
 CFG = app_config.load()
 PKG = app_config.package_name(CFG)
 FOLDER = app_config.folder_name(CFG)
-INCLUDE = ["index.html", "static", "legal", "README.txt"]
+INCLUDE = ["index.html", "static", "legal", "shared", "README.txt"]
 EXCLUDE_SUFFIX = {".pyc", ".db", ".db-wal", ".db-shm", ".log"}
 LIMIT = 10 * 1024 * 1024
 PACKAGE_MAX = LIMIT // 2

@@ -818,6 +818,8 @@ var WorkerPick = {
   //   - 이 PC 에 그 프로젝트 자료가 없으면: 종합본으로 바로 시작
   //   - 있으면 고르기: ① 최신 종합본으로 맞추기(내 담당 작업 유지, 작업자를 고른 뒤 반영) ② 전부 바꾸기 ③ 이 PC 자료 그대로
   PENDING_KEY: "PPRJMGMT_PENDING_PKG",
+  SERVER_PKG_URL: "shared/latest.json",     // 배포 폴더(pprjmgmt/shared/)에 PM 이 넣어 올린 최신 종합본
+  SKIP_KEY: "PPRJMGMT_SERVER_SKIP",          // 이번 서버 종합본은 반영하지 않기로 한 버전
   _pkg: null,
   _norm(s) { return String(s || "").replace(/\s+/g, " ").trim().toLowerCase(); },
   _stampOf(d) { return String(((d || {}).projectConfig || {}).packageStamp || ""); },
@@ -871,7 +873,40 @@ var WorkerPick = {
     SyncManager._suspendAuto = true;
     if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
   },
-  async _replaceAll(it, pid) {
+  // [Local] 화면을 처음 불러올 때 배포 폴더의 최신 종합본(shared/latest.json)을 읽음 (app-boot start)
+  //   - 이 PC 에 그 프로젝트 자료가 없으면: 그 종합본으로 바로 시작
+  //   - 이 PC 보다 새 버전이면: 받아 두고 작업자를 고르면 반영 (내 담당 서브시스템은 이 PC 작업 유지)
+  //   - 같거나 오래된 버전 · 파일 없음: 아무것도 안 함
+  //   반환 true = 화면을 다시 불러오는 중
+  async checkServerPackage() {
+    let text;
+    try {
+      const r = await fetch(this.SERVER_PKG_URL + "?t=" + Date.now(), { cache: "no-store" });
+      if (!r.ok) return false;
+      text = await r.text();
+    } catch (e) { return false; }
+    let items;
+    try { items = await ProjectTransfer.parse(new File([text], "latest.json")); } catch (e) { return false; }
+    const it = items && items[0];
+    if (!it || !it.users || !it.users.length) return false;
+    const fs = this._stampOf(it.data);
+    const pid = (ProjectContext.localList().find(p => this._norm(p.name) === this._norm(it.name)) || {}).id;
+    const st = pid ? (LocalBackend._read(pid) || {}) : null;
+    const has = !!st && ((st.subsystemsMeta || []).length > 0 || (st.wbsData || []).length > 0);
+    if (!has) { this._replaceAll(it, pid, "🌐 서버의 최신 종합본"); return true; }
+    const ms = this._stampOf(st);
+    if (!fs || (ms && fs <= ms)) return false;
+    try { if (AppStore.getItem(this.SKIP_KEY) === fs) return false; } catch (e) {}
+    const p = this._pending();
+    if (p && p.stamp === fs) return false;
+    this._suspend();
+    ProjectTransfer.writeUsersLocal(pid, it.users);
+    AppStore.setItem(this.PENDING_KEY, JSON.stringify({ pid, name: it.name, file: "🌐 서버의 최신 종합본", stamp: fs, item: it, server: true }));
+    try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
+    await AppStore.reload();
+    return true;
+  },
+  async _replaceAll(it, pid, label) {
     if (!pid) {
       const def = LocalBackend._read(ProjectContext.DEFAULT) || {};
       const empty = !(def.subsystemsMeta || []).length && !(def.wbsData || []).length;
@@ -884,6 +919,7 @@ var WorkerPick = {
     if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
     try { AppStore.removeItem(this.PENDING_KEY); } catch (err) {}
+    try { AppStore.setItem("PPRJMGMT_START_MSG", `${label || "📥 종합본"} [${it.name}]으로 시작합니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`); } catch (err) {}
     showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`);
     setTimeout(() => AppStore.reload(), 900);
   },
@@ -893,16 +929,27 @@ var WorkerPick = {
     const box = this._box(), p = this._pending();
     if (!box || this._pkg) return;
     if (!p) { box.style.display = "none"; box.innerHTML = ""; return; }
-    box.innerHTML = `<div class="pkg-info">📥 받아 둔 종합본: <b>${escapeHtml(p.file)}</b> [${escapeHtml(p.name)}] (${escapeHtml(p.stamp || "버전 표시 없음")})<br>이 프로젝트로 작업자를 고르면 반영됩니다.</div><div class="pkg-btns"><button type="button" class="btn btn-sm" data-click="WorkerPick.cancelPending">받아 둔 종합본 취소</button></div>`;
+    box.innerHTML = `<div class="pkg-info">📥 ${p.server ? "새 종합본이 올라와 있습니다" : "받아 둔 종합본"}: <b>${escapeHtml(p.file)}</b> [${escapeHtml(p.name)}] (${escapeHtml(p.stamp || "버전 표시 없음")})<br>이 프로젝트로 작업자를 고르면 반영됩니다 (내 담당 서브시스템은 이 PC 작업 유지).</div><div class="pkg-btns"><button type="button" class="btn btn-sm" data-click="WorkerPick.cancelPending">이번 종합본은 반영하지 않기</button></div>`;
     box.style.display = "block";
   },
-  cancelPending() { try { AppStore.removeItem(this.PENDING_KEY); } catch (e) {} this.showPending(); showToast("받아 둔 종합본을 취소했습니다. 이 PC 자료를 그대로 씁니다."); },
+  cancelPending() { const p = this._pending(); try { if (p && p.server) AppStore.setItem(this.SKIP_KEY, p.stamp); AppStore.removeItem(this.PENDING_KEY); } catch (e) {} this.showPending(); showToast("받아 둔 종합본을 취소했습니다. 이 PC 자료를 그대로 씁니다."); },
   // 작업자 선택 뒤 (app-boot afterLogin): 받아 둔 종합본을 지금 프로젝트에 반영
   applyPending() {
     const p = this._pending();
     if (!p || !p.item || p.pid !== ProjectContext.current) return;
     try { AppStore.removeItem(this.PENDING_KEY); } catch (e) {}
-    SmartMergeCenter.applyConsolidated(p.item, `📥 ${p.file}`);
+    // PM · 관리자는 전부 바뀌므로 서버 종합본은 한 번 묻고 반영 (아니오 = 이번 버전은 반영 안 함)
+    if (p.server && Permission.canEditAllSubsystems()) {
+      try { AppStore.setItem(this.SKIP_KEY, p.stamp); } catch (e) {}
+      return openConfirmDialog(`🌐 서버에 이 PC 보다 새 종합본(${p.stamp})이 있습니다.\nPM · 관리자는 프로젝트 자료 전체가 종합본으로 바뀝니다 (바꾸기 전에 복원 지점을 만듦). 반영할까요?\n(취소하면 이번 종합본은 다시 묻지 않습니다.)`, () => SmartMergeCenter.applyConsolidated(p.item, p.file));
+    }
+    SmartMergeCenter.applyConsolidated(p.item, p.file);
+  },
+  // 다시 불러온 뒤 알림
+  startMessage() {
+    let m = null;
+    try { m = AppStore.getItem("PPRJMGMT_START_MSG"); if (m) AppStore.removeItem("PPRJMGMT_START_MSG"); } catch (e) {}
+    if (m) setTimeout(() => showToast(m), 600);
   }
 };
 window.WorkerPick = WorkerPick;
