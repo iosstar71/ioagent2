@@ -31,12 +31,12 @@ function renderPhaseMatrix() {
       const roundThs = activeRounds.map(r => `<th>${r}(완료/전체)</th>`).join("");
       thead.innerHTML = `
         <tr>
-          <th rowspan="2" style="width: 105px;">분야</th>
+          <th rowspan="2" style="width: 105px;">도메인</th>
           <th rowspan="2" style="width: 130px;">서브시스템</th>
           <th rowspan="2" style="width: 110px;">관리유형</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
           <th colspan="4" style="background:#f0fdf4; color:#166534;">🎯 요구사항(REQ) 진척</th>
-          <th colspan="${activeRounds.length + 2}" style="background:#eff6ff; color:#1e40af;">📑 산출물 제출 진척 (${activeRounds.length}회차 운영)</th>
+          <th colspan="${activeRounds.length + 2}" style="background:#eff6ff; color:#1e40af;">📑 산출물 제출 진척 (${activeRounds.length}차 운영)</th>
           <th colspan="5" style="background:#fef3c7; color:#92400e;">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
         </tr>
         <tr>
@@ -90,7 +90,7 @@ function renderPhaseMatrix() {
 
     // VOC: 대기와 진행중 분리
     const sVocs = vocData.filter(v => v.system === sys && v.status !== "삭제");
-    const vWait = sVocs.filter(v => v.status === "착수전" || v.status === "대기" || v.status === "보류").length;
+    const vWait = sVocs.filter(v => v.status === "대기" || v.status === "대기" || v.status === "보류").length;
     const vProg = sVocs.filter(v => v.status === "진행").length;
     const vDone = sVocs.filter(v => v.status === "완료" || v.status === "제외").length;
     const vRate = sVocs.length > 0 ? Math.round((vDone / sVocs.length) * 100) : 0;
@@ -277,7 +277,7 @@ function renderPhaseMatrix() {
             <table class="matrix-table">
               <thead>
                 <tr>
-                  <th rowspan="2" style="width: 105px;">분야</th>
+                  <th rowspan="2" style="width: 105px;">도메인</th>
                   <th rowspan="2" style="width: 130px;">서브시스템</th>
                   ${topThs}
                   <th colspan="3" class="col-total sdlc-ph-total">그룹 합계</th>
@@ -334,7 +334,7 @@ function renderPhaseMatrix() {
           <td style="text-align:right;">${pAvg}%</td>
           <td style="text-align:right;"><strong>${aAvg}%</strong></td>
           <td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "#15803d" : (rate >= 70 ? "#b45309" : "#b91c1c")}">${rate}%</td>
-          <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "착수전")}</span></td>
+          <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
         `;
         enhTbody.appendChild(row);
       });
@@ -376,9 +376,9 @@ function renderSubsystemCards(systems) {
         <span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:var(--fs-sm, 12px);">
-        <span>계획 진척율: <b>${pVal}%</b></span>
-        <span>실행 과업: <b>${leafTasks.length}개</b></span>
-        <span>실적 진척율: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
+        <span>계획 진척률: <b>${pVal}%</b></span>
+        <span>실행 Task: <b>${leafTasks.length}개</b></span>
+        <span>실적 진척률: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
       </div>
       <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
         <div style="background:var(--success); width:${Math.min(100, aVal)}%; height:100%;"></div>

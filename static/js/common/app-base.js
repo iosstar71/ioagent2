@@ -5,12 +5,13 @@
 // =============================================================================
 // [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
 const APP_VERSION = (function () {
-  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "Project Mgmt", version: "1.0.0", edition: "LOCAL", editionName: "협업", variant: "Local" };
-  const edName = c.editionName || "";
-  const variant = c.variant || "";
-  // 제품 이름: Project Mgmt (협업) · 판 표시: Local
-  const name = `${c.productName}${edName ? " (" + edName + ")" : ""}`;
-  return { version: c.version, variant, name, title: `${name}${variant ? " " + variant : ""} ver${c.version}`, edition: c.edition || "LOCAL", editionName: edName };
+  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { brand: "IOSTAR-PM", displayName: "PM Hub", version: "1.0.0", edition: "STANDALONE", editionName: "Standalone" };
+  // 사내 표시 이름: PM Hub · 브랜드 · 판: IOSTAR-PM Standalone
+  const name = c.displayName || c.productName || "PM Hub";
+  const brand = c.brand || "IOSTAR-PM";
+  const edName = c.editionName || "Standalone";
+  return { version: c.version, variant: edName, name, brand, product: `${brand} ${edName}`,
+    title: `${name} · ${brand} ${edName} v${c.version}`, edition: c.edition || "STANDALONE", editionName: edName };
 })();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼

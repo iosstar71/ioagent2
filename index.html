@@ -4,19 +4,19 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageBrowserTitle">Project Mgmt (협업) Local</title>
+  <title id="pageBrowserTitle">PM Hub · IOSTAR-PM Standalone</title>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEUjKj0mLEMbJjEAAAAnNlEAAH8jKj0jHTAvSW+0VvwE/P4jKj0vxvtIM3IiKDwnLUHBU/4bZHhOpfhtRqytTPQbXG4G0tsP5PQjKjwmLUE3OGMvl8lYN4ZmOpiJd/cdSFsKydYhXXhzPKmKSc6EXNa0Zf8UnK8byfAQ1uskJDwoKEMlLUAkMDwoNUNDg8Z1Xs1hd9V1kf1qo/+UaPSHhP+mcv8bHigWc4IUgY4bn8INq7YTvtgiaYEt1f8h7P9RabJMnfBGv/9pbdN0ifmBRL+bSOGUWuMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsk0ebAAAAgHRSTlP9//8A/wLZ/////5b//y8v//////////+hmP///////////////////xUT0RUT/////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALf39SIAAAF0SURBVHjahVPXksIwDJRlh/QeSkIIcMDRO1zv7f8/6ZzAMEkgwZ7xg3fllSUtUCpQavpTyK2pbyYQ8GPmA4GzRcCfcRAEalYuwAmlYlIB6LwIjxlzLtEoxDmjQcGE0mWCSspwokLlwm0q5gSLKQIixmcmqG2ffg9MkgKOB2ltVlcexORClJrOZr3bEib/pN4gNeU+ERFt7dNZfUUuk2U9LcLaR6mhtmBxmn9ZHJ461eSFx9cm3AGS/kDXSZoxUmxgjDBNk/Bdwv4gJHKIqTRrSvW2PmpKmkPYd7QcuNizbs4IGid8MAyivYvo5gkHCceRAHWXq/9aYTqHjmLHSeJis+Il5LsleyRL6CZTxda7ZfzNlme1Mt98rncPbZCi/bbX82SeQaYXw7fuoV0Y9GXZ8rxsPED1hR2Ljsj0MFukfLsxbjfJTwQpHJirI2eUD61xfeyFSZlxJgK3nlFsPSO2nkDH6mXzquPYvInHDfXMHhXVSKB/ASkXCeYmbS8AAAAASUVORK5CYII=">
   <link rel="stylesheet" href="static/css/style.css">
   
   
 </head>
 <body data-theme="electric" data-layout="top-nav" data-density="standard">
-  <!-- [v1.0.6] 작업자 선택 / 신규 작업자 등록 / 권한 메뉴 인증 오버레이 -->
+  <!-- [v1.0.6] 멤버 선택 / 신규 멤버 등록 / 권한 메뉴 인증 오버레이 -->
   <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
     <div class="security-lock-modal login-2col">
       <div class="login-side">
-      <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="Project Mgmt"><div class="login-brand-name">Project Mgmt <span>(협업) · Local</span></div><div class="login-brand-full">프로젝트 일정 · 산출물 · 요구사항 · 주간보고 협업</div></div>
-      <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: var(--fs-xl, 18px); color: var(--text-main);">작업자 선택</h2>
+      <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">PM Hub <span>IOSTAR-PM · Standalone</span></div><div class="login-brand-full">프로젝트 일정 · 산출물 · 요구사항 · 주간보고 협업</div></div>
+      <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: var(--fs-xl, 18px); color: var(--text-main);">멤버 선택</h2>
       <p id="lockModalDesc" style="font-size: var(--fs-sm, 12px); color: var(--text-sub); margin-bottom: 14px;"></p>
       <div id="lockServerInfo" style="display:none; font-size:var(--fs-xs, 11px); margin-bottom:10px; padding:5px 8px; border-radius:6px; background:rgba(59,130,246,0.08);"></div>
 
@@ -28,20 +28,20 @@
       </div>
       </div>
       <div class="login-main">
-      <!-- 작업자 선택 폼 -->
+      <!-- 멤버 선택 폼 -->
       <div id="loginFormPane" style="text-align: left;">
         <div id="loginProjectRow">
           <label class="login-label" for="inputLoginProject">① 작업할 프로젝트:</label>
           <select id="inputLoginProject" class="login-input" data-change="WorkerPick.load"></select>
         </div>
         <div class="login-hint" id="loginProjectHint">관리자는 프로젝트를 고르지 않아도 됩니다.</div>
-        <label class="login-label" for="inputSecurityEmpNo">② 작업자 (목록에서 고르거나 작업자 ID 입력):</label>
-        <input type="text" id="inputSecurityEmpNo" value="" list="workerPickList" placeholder="작업자 선택 (처음: admin)" autocomplete="off" class="login-input"
+        <label class="login-label" for="inputSecurityEmpNo">② 멤버 (목록에서 고르거나 멤버 ID 입력):</label>
+        <input type="text" id="inputSecurityEmpNo" value="" list="workerPickList" placeholder="멤버 선택 (처음: admin)" autocomplete="off" class="login-input"
                data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
         <datalist id="workerPickList"></datalist>
-        <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 작업자를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
-        <label class="login-label">③ 작업자 암호:</label>
-        <input type="password" id="inputSecurityPassword" placeholder="작업자 암호 (처음: 작업자 ID + 123!)" autocomplete="off" class="login-input"
+        <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
+        <label class="login-label">③ 멤버 암호:</label>
+        <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 멤버 ID + 123!)" autocomplete="off" class="login-input"
                data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
         <div id="lockErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-top: 2px; display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 14px;">
@@ -49,21 +49,21 @@
           <button id="btnLockSubmit" class="btn btn-primary" style="flex: 1.4; padding: 10px; font-size: var(--fs-base, 13px); justify-content: center;" data-click="AuthManager.unlock">▶ 작업 시작</button>
         </div>
         <div id="registerLinkRow" style="text-align:center; margin-top:12px; font-size:var(--fs-sm, 12px);">
-          <span style="color:var(--text-muted);">작업자 등록은 관리자 · PM 이 합니다.</span>
+          <span style="color:var(--text-muted);">멤버 등록은 관리자 · PM 이 합니다.</span>
         </div>
         <div class="local-start">
           <input type="file" id="localStartInput" style="display:none;" accept=".json,.xlsx" data-change="WorkerPick.startFromPackage" data-change-args='["$event"]'>
-          <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 종합본 올리기 (최신 자료 받기)</button>
+          <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 마스터 파일 업로드 (최신 자료 받기)</button>
           <div id="localPkgChoice" class="pkg-choice" style="display:none;"></div>
-          <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 종합본을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
+          <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 마스터 파일을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
           <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:#b45309;">🔑 암호 변경</a>
         </div>
       </div>
 
-      <!-- [v1.0.7] 작업자 선택 화면 암호 변경 폼 -->
+      <!-- [v1.0.7] 멤버 선택 화면 암호 변경 폼 -->
       <div id="pwdChangeFormPane" style="display:none; text-align:left;">
-        <label class="login-label">작업자 ID (작업자 선택 ID) *:</label>
+        <label class="login-label">멤버 ID (멤버 선택 ID) *:</label>
         <input type="text" id="pcEmpNo" class="login-input" autocomplete="off">
         <label class="login-label">현재 암호 *:</label>
         <input type="password" id="pcOldPwd" class="login-input" autocomplete="current-password">
@@ -73,7 +73,7 @@
         <input type="password" id="pcNewPwd2" class="login-input" autocomplete="new-password" data-keydown="AuthManager.changePasswordFromLogin" data-keydown-key="Enter">
         <div id="pcErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
-          <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 작업자 선택으로</button>
+          <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 멤버 선택으로</button>
           <button class="btn" data-btn="save" style="flex: 1.4; padding: 10px; justify-content: center;" data-click="AuthManager.changePasswordFromLogin">🔑 암호 변경</button>
         </div>
       </div>
@@ -83,11 +83,11 @@
   </div>
 
   <!-- [요건 1] 상단 헤더: 상태 표시 영역(Status Zone)과 동작 버튼 영역(Action Zone) 분리 -->
-  <!-- [Standard] 한 줄 머리글 (B2): 로고 · 프로젝트 · 기준일 · 검색 · 저장 상태 + 전체 저장 · 공지 · 도움말 · ⚙ 관리 · 작업자 -->
+  <!-- [Standard] 한 줄 머리글 (B2): 로고 · 프로젝트 · 기준일 · 검색 · 저장 상태 + 전체 저장 · 공지 · 도움말 · ⚙ 관리 · 멤버 -->
   <header class="g-header">
     <div class="brand-title g-brand">
-      <img class="brand-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAADAFBMVEUjKj0AAAAmLEIaJTCwTfuxVfwC+v0iHC8lM0wjKjyXaPoO6PqNdvtNqfsY2Pkpx/mqZP4AVVU3uvqPR9F0iPkLt8MiKTx0RbJsmP03OmcAAFUPprQiKjwmLkFLNXcal7RUm/NEtf4l1f5aN4lRZ7OGhf8XeYoUiJcayO0iKTw0Nk0oSmsLPDwWqsUkDSE/Pz92Pq1wZs8dHCoeOUwNsbomLkArNEctNEYqMUQojLdVVVWEVdIkKzsnL0I7LGAjcJEkkrkomsVURI5qUbZ1duVio/+dSOMcHDgfKj8eSmAYW2okJDwpMEIqVno4WYlVVXFKc7ukd//BU/8fJj8cR1gfZYEIw80lYoM/ZqM5e7Q6iMYmosY8pOom4/9HL3BERnteR6NQVZ9Sb8BUcMFgSp5/TsZ9UsB9beNhf9uFRb6dX/kAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVrOkwAAABAHRSTlP+APn///////+K/////////wP/////2P///wP/Sor//////////////7MS/wb//wT//////9YlSoX/A/8kRv///////////wkY//8Vs///Cf///yj//////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA00BMAwAAA4xJREFUeNqtl2df4kAQxie7CWmQIEEgCugpSlXEAtazneXser33+v0/wM0mRAiSAMnNC3+KPP99dnd2dgc4J8Y47rq1frFGfGPtYr11bX25HdCRN9eZGAYEfmNtvdlBgKOv5GCg+B4CuYpDsAETXIsMLbd9tFB0D5jgciPJLUTOJjBALYDeItRtQD2Q3iEALsZOID0SsihGBxUIHBV0sMnJJKieyNwmcE0IEU2cQo4E16MFqKTCOEhVYAdCxQ7IJIyeyFAO56AMqXCAVO8hI15FAIY67aIo9v8HtcL5w3tJiqvFfp9LV4Wbb4UvnyTGoCRNvBDjkUhk8sGnl/ux2FEmk5ybUw5NHMUQDI/ZPI+wWOkZfV9/FItNJ5PJaDR6+5nCliAIRn8LK0yvSq7PqrqeQD0zgIBDStNxwdOBWETAvGsZn2p6Ag1kfhcKjV+OnvdcAzgrnrn0UmkmgYDXEtsGMMkgPYiLLr04xQxMm8u0vZffUS889tYXVydX590TwBWQqJ1ehB4wfZ563gDiS1yDVZG4DVSXiZU6qFcUppf4vIcHcTyiRiY7kyAlPZF4iylMCyYlNM/0s5Qc3y15AzCRRKkdUGUGLimQQuaJRM223uAFA/wAi/OqppVK+p74ArcghhtwhUnQQP3feJrSWYH33AcHEFFVbWZmQ9ydwS1gK1JgSaQoqCf0o8DzgwGapjOA3gbQRluPv+aHAKhaSdf1jeVXOiaxndmNqBL/wVRsCn4AtgvSykp7EfEUHFUtGdmKb9nJtISAY/DZxqmubXwfmz76Sq1JkJ/2qATHF9J0OMDyGzyGSdMi2GWIWAYEv0RSuwBQjeExxhS4z02aRwOeM2AAzQWgN5lkcg4JdlnFJGB6TwMPAUCsQqQcSFZJffyH7YBXOWKABbUHQE1WiJS4YqTTaYO3wvAp6gjQ9lwVgZoshRR2jAU2PH9n+JQTWFBLmICuQk9J4zYed+Q8v+RzK1gOPuyJvVdKfivuODB8qpFVkRb23+32uZXM2bRhGEuzhNJBVxuI/R621IngzwDi/Bh4P49+vYd+YIR+4mTDOcjCSbhn3glwcsiHJrcdxsH2/3hsc+fBDZzbDUc2ZMNRCzgJnEDNbrrqgQior3favtEJqB/rbjyzMFrjCdnuxpO1vqfyKK2vfOpufZkH7pmcgqGa75S8zbXH7wCsdryWlcsDjkaqLGdr3e3/P8Q7UGbtiRDTAAAAAElFTkSuQmCC" width="28" height="28" alt="Project Mgmt">
-      <span id="headerSystemTitleText">Project Mgmt (협업)</span>
+      <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
+      <span id="headerSystemTitleText" title="IOSTAR-PM Standalone">PM Hub</span>
       <span id="headerVersionBadge" class="brand-badge g-ver">v3.5.0</span>
       <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">프로젝트</span>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
@@ -96,10 +96,10 @@
       <span class="report-date-label">기준일</span>
       <input type="date" id="globalReportDate" data-change="syncGlobalDate" data-change-args='["$value"]'>
       <span id="globalReportDayOfWeek" class="day-of-week-tag">(수)</span>
-      <span id="globalReportWeek" class="week-chip" title="기준일의 주차 (기준정보 > 기본정보 > 주차 표시 방식)"></span>
+      <span id="globalReportWeek" class="week-chip" title="기준일의 주차 (프로젝트 설정 > 기본정보 > 주차 표시 방식)"></span>
     </div>
     <span class="g-grow"></span>
-    <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·작업자 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
+    <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·멤버 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
     <div class="g-menu-wrap">
       <button type="button" class="storage-status-box g-status" id="storageStatusBox" data-click="GShell.toggleMenu" data-click-args='["gStatusMenu"]' data-click-stop="1" title="저장 상태 · 새로고침 · 동기화">
         <span class="storage-icon" id="storageIcon">💾</span>
@@ -110,12 +110,12 @@
         <div class="g-menu-row"><span id="headerDbStatusBadge" class="status-badge-chip chip-hold">🟡 DB: SQLite(대기)</span></div>
         <div class="g-menu-row"><span id="fileSyncBadge" class="status-badge-chip chip-ready" style="display:none;">동기화 대기</span></div>
         <button type="button" id="btnHeaderRefreshAll" class="g-menu-item" data-click="SyncManager.refresh" data-click-args='[null]'>🔄 전체 새로고침</button>
-        <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (기준정보 다시 적용)</button>
+        <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (프로젝트 설정 다시 적용)</button>
       </div>
     </div>
-    <!-- [Local] 종합본(최신 자료 파일) 내려받기 · 가져오기 — 자주 쓰므로 상단에 -->
+    <!-- [Local] 마스터 파일(최신 자료 파일) 다운로드 · 가져오기 — 자주 쓰므로 상단에 -->
     <div class="g-menu-wrap">
-      <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="종합본(최신 자료 파일) 내려받기 · 가져오기 · 내 자료 보내기">📦 종합본 ▾</button>
+      <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="마스터 파일(최신 자료 파일) 다운로드 · 가져오기 · 내 작업 파일 보내기">📦 마스터 파일 ▾</button>
       <div class="g-menu g-menu-right g-pkg-menu" id="gPkgMenu" hidden></div>
     </div>
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
@@ -139,7 +139,7 @@
           <button type="button" class="g-scale" data-scale="1.15" data-click="UiScale.set" data-click-args='[1.15]'>크게</button>
           <button type="button" class="g-scale" data-scale="1.3" data-click="UiScale.set" data-click-args='[1.3]'>아주 크게</button>
         </div>
-        <div class="g-menu-hint">글자 크기는 작업자마다 기억합니다. 넓은 표(WBS 등)는 가로로 스크롤될 수 있습니다.</div>
+        <div class="g-menu-hint">글자 크기는 멤버마다 기억합니다. 넓은 표(WBS 등)는 가로로 스크롤될 수 있습니다.</div>
         <div class="g-menu-sep"></div>
         <label class="g-menu-field g-hidden-field">테마 (목록)
           <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
@@ -166,7 +166,7 @@
       </div>
     </div>
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" title="관리 (기준정보 · 시스템 설정 · 프로젝트)">⚙ <span class="g-lbl">관리</span></button>
+      <button type="button" class="g-icon-btn g-labeled" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" title="관리 (프로젝트 설정 · 시스템 설정 · 프로젝트)">⚙ <span class="g-lbl">관리</span></button>
       <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
@@ -175,11 +175,11 @@
       </div>
     </div>
     <div class="g-menu-wrap">
-      <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="작업자 (언어 · 암호 · 잠금)">
+      <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="멤버 (언어 · 암호 · 잠금)">
         <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress">👤 admin</span> ▾
       </button>
       <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
-        <div class="g-menu-title">작업자</div>
+        <div class="g-menu-title">멤버</div>
         <label class="g-menu-field">언어
           <select id="gLangSelect" data-change="GShell.setLanguage" data-change-args='["$value"]'>
             <option value="ko">한국어</option>
@@ -199,24 +199,24 @@
   <div class="tab-bar">
     <button class="tab-btn active" data-click="switchTab" data-click-args='["tab-home"]' title="맞춤형 프로젝트 통합 홈 (이그제큐티브 브리핑 / 스마트 포털)">🏠 홈</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-dashboard"]' title="프로젝트 핵심 KPI 및 종합 진척 현황 대시보드">📊 대시보드</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-matrix"]' title="SDLC 및 개선과제 단계별 공정 매트릭스">📈 단계별 진척</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-gantt"]' title="WBS 일정 공정표 및 주차별 타임라인">🗓️ 간트차트</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-matrix"]' title="SDLC 및 개선과제 단계별 공정 매트릭스">📈 Phase 진척</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-gantt"]' title="WBS 일정 공정표 및 주차별 타임라인">🗓️ Gantt</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-wbs"]' title="4레벨 계층형 통합 WBS 공정표 관리">📋 WBS 공정</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-req"]' title="요구사항 추적표(RTM) 및 요건 단위 진행 현황">📌 요구사항</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-voc"]' title="현장 VOC 및 개선 이슈 등록 통제">📣 VOC·이슈</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-deliverables"]' title="회차별 필수 표준 산출물 검수 및 관리">📑 산출물</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-deliverables"]' title="차수별 필수 표준 산출물 검수 및 관리">📑 산출물</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-weekly-report"]' title="서브시스템별 금주 실적 및 차주 계획 주간보고서 작성·출력">📝 주간보고</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-meeting"]' title="회의일정 캘린더, 회의록 작성 및 ActionItem 통합 관리">📅 회의관리</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-merge"]' style="color:#0284c7; font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 스마트 병합</button>
-    <button class="tab-btn" data-click="NoticeCommManager.goToNotice" style="color:#059669; font-weight:800;" title="프로젝트 공지사항 및 업무 소통 광장">📢 공지/소통</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-master"]' style="color:#0f766e; font-weight:800;" title="프로젝트 기본정보, 분야/서브시스템, SDLC, REQ, 휴일, 채번 규칙">🗂️ 기준정보</button>
-    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-config"]' style="color:#7c3aed; font-weight:800;" title="화면 레이아웃, 보안 인증 정책, DB 연동 및 백업 복원">⚙️ 시스템 설정</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-merge"]' style="color:#0284c7; font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 파일 Merge</button>
+    <button class="tab-btn" data-click="NoticeCommManager.goToNotice" style="color:#059669; font-weight:800;" title="프로젝트 공지 및 업무 소통 광장">📢 공지/소통</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-master"]' style="color:#0f766e; font-weight:800;" title="프로젝트 기본정보, 도메인/서브시스템, SDLC, REQ, 휴일, ID 규칙">🗂️ 프로젝트 설정</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-config"]' style="color:#7c3aed; font-weight:800;" title="화면 레이아웃, 보안 인증 정책, DB 연동 및 백업 복원">⚙️ Admin</button>
   </div>
 
   <div class="main-container">
 
     <!-- ======<!-- =================================================================== -->
-    <!-- 8. 스마트 데이터 병합 (tab-merge)                                   -->
+    <!-- 8. 파일 Merge (tab-merge)                                   -->
     <!-- =================================================================== -->
     <!-- 1. 종합대시보드 (tab-dashboard)                                      -->
     <!-- =================================================================== -->
@@ -228,7 +228,7 @@
       <!-- 상단 모드 전환 및 실시간 상태 툴바 -->
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <span class="sub-title">🏠 홈</span><span class="neo-ph-desc">오늘 확인할 일과 프로젝트 상황을 한눈에 봅니다.</span>
+          <span class="sub-title">🏠 홈</span><span class="neo-ph-desc">오늘 체크할 일과 프로젝트 상황을 한눈에 봅니다.</span>
           <div class="home-style-switch" role="group" aria-label="홈 스타일">
             <button type="button" class="home-style-btn" data-home-style="EXECUTIVE" data-click="HomeScreenManager.setStyle" data-click-args='["EXECUTIVE"]'>📊 브리핑</button>
             <button type="button" class="home-style-btn" data-home-style="PORTAL" data-click="HomeScreenManager.setStyle" data-click-args='["PORTAL"]'>🧰 워크벤치</button>
@@ -250,7 +250,7 @@
       <!-- [모드 2] 🏛️ 이그제큐티브 브리핑 룸 (Executive Briefing Room) 컨테이너 -->
       <div id="homeExecutiveContainer" style="display:block;">
         <!-- 전사 달성률 히어로 배너 (Hero Banner) -->
-        <div class="card hero-banner" id="execHeroBanner" data-click="switchTab" data-click-args='["tab-dashboard"]' style="cursor:pointer;" title="종합 대시보드 탭으로 바로 이동">
+        <div class="card hero-banner" id="execHeroBanner" data-click="switchTab" data-click-args='["tab-dashboard"]' style="cursor:pointer;" title="Dashboard 탭으로 바로 이동">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
             <div>
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
@@ -285,8 +285,8 @@
             <div class="kpi-sub" id="execKpiWbsSub">계획 42.0% (달성률 90.5%)</div>
           </div>
           <!-- 2. 지연 Task수 -->
-          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-wbs"]' style="border-left:4px solid #ef4444; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="지연 과업 WBS 공정표로 바로 이동">
-            <div class="kpi-title">⚠️ 지연 관리 과업</div>
+          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-wbs"]' style="border-left:4px solid #ef4444; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="지연 Task WBS 공정표로 바로 이동">
+            <div class="kpi-title">⚠️ 지연 관리 Task</div>
             <div class="kpi-value" id="execKpiDelayed" style="color:#b91c1c;">0건</div>
             <div class="kpi-sub" id="execKpiDelayedSub" style="color:#15803d;">지연 리스크 정상 통제</div>
           </div>
@@ -313,18 +313,18 @@
           <div id="execSubsystemGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:12px;"></div>
         </div>
 
-        <!-- 상위 분야별 포트폴리오 표 & 주간보고서 원클릭 출력 바 -->
+        <!-- 상위 도메인별 포트폴리오 표 & 주간보고서 원클릭 출력 바 -->
         <div class="grid-2" style="margin-bottom:14px;">
-          <!-- 분야별 포트폴리오 -->
+          <!-- 도메인별 포트폴리오 -->
           <div class="card" style="margin-bottom:0;">
             <div class="card-title">
-              <span style="font-weight:700;">🏛️ 상위 분야별 포트폴리오 추진 현황</span>
+              <span style="font-weight:700;">🏛️ 상위 도메인별 포트폴리오 추진 현황</span>
             </div>
             <div class="table-container" style="max-height:260px;">
               <table class="matrix-table" id="execDomainPortfolioTable">
                 <thead>
                   <tr>
-                    <th>상위 분야명</th>
+                    <th>상위 도메인명</th>
                     <th>Task수</th>
                     <th>가중치</th>
                     <th>계획</th>
@@ -337,17 +337,17 @@
               </table>
             </div>
           </div>
-          <!-- [v3.1.0] 경영 보고: 기준일 주차의 통합 주간보고 (주간보고 화면 위쪽 내려받기와 같은 결과) -->
+          <!-- [v3.1.0] 임원 보고: 기준일 주차의 통합 주간보고 (주간보고 화면 위쪽 다운로드와 같은 결과) -->
           <div class="card exec-report-card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
             <div>
               <div class="card-title">
-                <span style="font-weight:700;">📑 경영 보고 (주간 보고 장표)</span>
+                <span style="font-weight:700;">📑 임원 보고 (주간 보고 장표)</span>
                 <button class="btn btn-xs" data-btn="nav" data-click="ExecReport.openWeekly" title="주간보고 화면에서 작성 현황 보기">주간보고 열기 →</button>
               </div>
               <div id="execReportInfo" class="exec-report-info"></div>
               <div class="exec-report-btns exec-deck-btns">
-                <button class="btn" data-btn="nav" data-click="ExecDeck.downloadPptx" title="표지 · 목차 · 종합 진척(그래프) · 서브시스템별 주간보고 장표 (PowerPoint)">📽 경영 보고 PPT</button>
-                <button class="btn" data-btn="nav" data-click="ExecDeck.openPdf" title="같은 장표를 인쇄 화면으로 열어 [PDF로 저장]">🖨 경영 보고 PDF</button>
+                <button class="btn" data-btn="nav" data-click="ExecDeck.downloadPptx" title="표지 · 목차 · 종합 진척(그래프) · 서브시스템별 주간보고 장표 (PowerPoint)">📽 임원 보고 PPT</button>
+                <button class="btn" data-btn="nav" data-click="ExecDeck.openPdf" title="같은 장표를 인쇄 화면으로 열어 [PDF로 저장]">🖨 임원 보고 PDF</button>
               </div>
               <div class="exec-report-sub">주간보고 문서 (엑셀 · 워드)</div>
               <div class="exec-report-btns">
@@ -358,14 +358,14 @@
               </div>
             </div>
             <div class="exec-report-note">
-              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만들고, 작성 완료 시점 자료로 내려받습니다. 테마·글꼴·파일 약칭은 [시스템 설정 &gt; 보고서 양식]에서 정합니다.
+              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만들고, 작성 완료 시점 자료로 다운로드합니다. 테마·글꼴·파일 약칭은 [시스템 설정 &gt; 보고서 템플릿]에서 정합니다.
             </div>
           </div>
         </div>
       </div>
 
       <!-- [모드 3] 🚀 하이브리드 스마트 포털 (Hybrid Smart Portal) 컨테이너 -->
-      <!-- [v2.4.0] ✅ 내 할 일 홈: 확인할 일(자동) + 내가 등록한 할 일 -->
+      <!-- [v2.4.0] ✅ 내 할 일 홈: 체크할 일(자동) + 내가 등록한 할 일 -->
       <div id="homeTodoContainer" style="display:none;"></div>
 
       <div id="homePortalContainer" style="display:none;">
@@ -374,7 +374,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
               <h3 style="margin:0 0 4px 0; font-size:var(--fs-lg, 16px); font-weight:800; color:#1e293b;">
-                🧰 워크벤치 — 내 담당 서브시스템 과업
+                🧰 워크벤치 — 내 담당 서브시스템 Task
               </h3>
               <div style="font-size:var(--fs-sm, 12px); color:#64748b;">
                 내 담당 서브시스템의 미완료 Task을 확인하고, <b>[✓ 100% 완료]</b> 버튼으로 실적을 즉시 등록할 수 있습니다.
@@ -415,7 +415,7 @@
             </div>
           </div>
 
-          <!-- 우측: 3대 업무 요약 카드 + 공지사항 & 소통 피드 -->
+          <!-- 우측: 3대 업무 요약 카드 + 공지 & 게시판 -->
           <div style="display:flex; flex-direction:column; gap:14px;">
             <!-- 3대 업무 요약 카드 (요구사항, 산출물, VOC) -->
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
@@ -436,19 +436,19 @@
               </div>
             </div>
 
-            <!-- 주요 공지사항 카드 -->
+            <!-- 주요 공지 카드 -->
             <div class="card" style="margin-bottom:0;">
               <div class="card-title">
-                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["NOTICES"]' title="공지사항 탭으로 이동">📢 프로젝트 주요 공지사항</span>
+                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["NOTICES"]' title="공지 탭으로 이동">📢 프로젝트 주요 공지</span>
                 <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["NOTICES"]'>공지 전체보기</button>
               </div>
               <div id="portalNoticesList" style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;"></div>
             </div>
 
-            <!-- 실시간 팀 소통 피드 및 퀵 메시지 작성 -->
+            <!-- 실시간 팀 게시판 및 퀵 메시지 작성 -->
             <div class="card" style="margin-bottom:0; flex:1;">
               <div class="card-title">
-                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["FEED"]' title="소통 피드 탭으로 이동">💬 실시간 팀 소통 피드</span>
+                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["FEED"]' title="게시판 탭으로 이동">💬 실시간 팀 게시판</span>
                 <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["FEED"]'>소통센터 이동</button>
               </div>
               <div id="portalChatStream" style="height:110px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; font-size:var(--fs-xs, 11px); margin-bottom:8px;"></div>
@@ -465,14 +465,14 @@
     <div id="tab-dashboard" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📊 종합 대시보드</span><span class="neo-ph-desc">프로젝트가 계획대로 가고 있는지 숫자와 그래프로 확인합니다.</span>
+          <span class="sub-title">📊 Dashboard</span><span class="neo-ph-desc">프로젝트가 계획대로 가고 있는지 숫자와 그래프로 확인합니다.</span>
           <div class="current-date-badge">수행기간: <b id="dashProjPeriodText">-</b></div>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <!-- [요건 8] 주간보고/월간보고 엑셀/PPT 생성 및 대시보드 리프레시 버튼 -->
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <button class="btn btn-success btn-sm" data-click="ReportExporter.exportExcelReport" title="주간보고 탭의 [전체 통합 엑셀]과 동일한 주간보고 엑셀(.xlsx: 종합요약·금주실적·차주계획·VOC·회의일정)을 다운로드합니다.">
-            📥 엑셀 내려받기 (보고서)
+            📥 엑셀 다운로드 (보고서)
           </button>
           <!-- [v1.0.5] PPT 보고서 기능 일시 비활성화 (재정비 후 재오픈 예정) -->
           <button class="btn btn-warning btn-sm" id="btnDashPptxReport" disabled aria-disabled="true" style="opacity:0.45; cursor:not-allowed;" title="PPT 보고서 기능은 현재 버전에서 일시 비활성화되었습니다.">
@@ -488,12 +488,12 @@
       <!-- 상단 4대 KPI 카드 -->
       <div class="grid-4" style="margin-bottom: 12px;">
         <div class="kpi-card" style="border-left-color: var(--primary);">
-          <div class="kpi-title">통합 계획 진척율 (기준일 연산)</div>
+          <div class="kpi-title">통합 계획 진척률 (기준일 연산)</div>
           <div class="kpi-value" id="kpi-plan">0.0%</div>
           <div class="kpi-sub">서브시스템 가중치 합산</div>
         </div>
         <div class="kpi-card" style="border-left-color: var(--success);">
-          <div class="kpi-title">통합 실적 진척율 (가중치 롤업)</div>
+          <div class="kpi-title">통합 실적 진척률 (가중치 롤업)</div>
           <div class="kpi-value" id="kpi-actual" style="color: var(--success);">0.0%</div>
           <div class="kpi-sub">L5 ➔ L1 자동합산</div>
         </div>
@@ -509,7 +509,7 @@
         </div>
       </div>
 
-      <!-- [Neo 2.1] 확인할 일 -->
+      <!-- [Neo 2.1] 체크할 일 -->
       <div class="card neo-todo" id="neoTodoCard"></div>
 
       <!-- 공정 상태 요약 칩 바 ([Neo 2.1] 누르면 WBS 에서 해당 상태 최하위 Task 조회) -->
@@ -518,7 +518,7 @@
         <span class="status-badge-chip chip-completed" data-click="NeoTodo.openWbsStatus" data-click-args='["완료"]' title="WBS 에서 보기">완료: <b id="stat-count-completed">0</b></span>
         <span class="status-badge-chip chip-progress" data-click="NeoTodo.openWbsStatus" data-click-args='["진행중"]' title="WBS 에서 보기">진행중: <b id="stat-count-progress">0</b></span>
         <span class="status-badge-chip chip-delayed" data-click="NeoTodo.openWbsStatus" data-click-args='["지연"]' title="WBS 에서 보기">지연: <b id="stat-count-delayed">0</b></span>
-        <span class="status-badge-chip chip-ready" data-click="NeoTodo.openWbsStatus" data-click-args='["착수전"]' title="WBS 에서 보기">착수전: <b id="stat-count-ready">0</b></span>
+        <span class="status-badge-chip chip-ready" data-click="NeoTodo.openWbsStatus" data-click-args='["대기"]' title="WBS 에서 보기">대기: <b id="stat-count-ready">0</b></span>
         <span class="status-badge-chip chip-error" id="stat-chip-error" style="display:none;">⚠️ 기간이탈 오류: <b id="stat-count-error">0</b></span>
       </div>
 
@@ -530,7 +530,7 @@
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">전체: <b id="req-stat-total">0</b>건 | 완료율: <b id="req-stat-rate" style="color:var(--primary);">0.0%</b></span>
           </div>
           <div class="status-summary-bar" style="margin-bottom:0;">
-            <span class="status-badge-chip chip-ready">착수전: <b id="req-stat-ready">0</b></span>
+            <span class="status-badge-chip chip-ready">대기: <b id="req-stat-ready">0</b></span>
             <span class="status-badge-chip chip-progress">진행중: <b id="req-stat-progress">0</b></span>
             <span class="status-badge-chip chip-completed">완료: <b id="req-stat-completed">0</b></span>
             <span class="status-badge-chip chip-hold">보류: <b id="req-stat-hold">0</b></span>
@@ -544,7 +544,7 @@
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">전체: <b id="voc-stat-total">0</b>건 | VOC 달성률: <b id="voc-stat-achieve" style="color:var(--success); font-size:var(--fs-base, 13px);">0.0%</b></span>
           </div>
           <div class="status-summary-bar" style="margin-bottom:0;">
-            <span class="status-badge-chip chip-ready">착수전(접수): <b id="voc-stat-ready">0</b></span>
+            <span class="status-badge-chip chip-ready">대기(접수): <b id="voc-stat-ready">0</b></span>
             <span class="status-badge-chip chip-progress">진행: <b id="voc-stat-progress">0</b></span>
             <span class="status-badge-chip chip-completed">완료: <b id="voc-stat-completed">0</b></span>
             <span class="status-badge-chip chip-excluded">제외: <b id="voc-stat-excluded">0</b></span>
@@ -566,7 +566,7 @@
           </div>
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <div class="filter-item">
-              <label style="font-weight: bold; font-size: calc(11.5px * var(--fs-scale, 1)); color: #334155;">🗂️ 분야별 조회:</label>
+              <label style="font-weight: bold; font-size: calc(11.5px * var(--fs-scale, 1)); color: #334155;">🗂️ 도메인별 조회:</label>
               <select id="dashDomainFilter" data-change="UiH.domainFilter" data-change-args='["dashDomainFilter", "dashSubsystemFilter", "renderDashboard"]' style="font-weight: bold; font-size: calc(11.5px * var(--fs-scale, 1)); padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 140px;">
               </select>
             </div>
@@ -583,7 +583,7 @@
         </div>
       </div>
 
-      <!-- [요건 8] 서브시스템별 공정 현황 카드 (단계별 진척 현황 탭에서 종합대시보드로 이동) -->
+      <!-- [요건 8] 서브시스템별 공정 현황 카드 (Phase 진척 탭에서 종합대시보드로 이동) -->
       <div class="card" style="margin-bottom: 12px;">
         <div class="card-title">
           <span>🏢 서브시스템별 공정 진척 현황</span>
@@ -594,7 +594,7 @@
       <!-- S-Curve 누적 진척 및 달성률 차트 -->
       <div class="card">
         <div class="card-title">
-          <span>📈 S-Curve 주별 진척율 (선) 및 달성률 (막대)</span>
+          <span>📈 S-Curve 주별 진척률 (선) 및 달성률 (막대)</span>
           <div style="display: flex; gap: 12px; align-items: center; font-size: calc(11.5px * var(--fs-scale, 1)); flex-wrap: wrap;">
             <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #64748b;"><span style="display:inline-block; width:12px; height:3px; background:#64748b; border-radius:2px;"></span> 누적 계획(%)</span>
             <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #10b981;"><span style="display:inline-block; width:12px; height:3px; background:#10b981; border-radius:2px;"></span> 누적 실적(%)</span>
@@ -620,7 +620,7 @@
       <div class="grid-2">
         <div class="card" style="margin-bottom: 0;">
           <div class="card-title">
-            <span>📑 서브시스템 · 회차별 산출물 제출 현황 통계</span>
+            <span>📑 서브시스템 · 차수별 산출물 제출 현황 통계</span>
             <span style="font-size: var(--fs-xs, 11px); color: var(--text-muted);">보완완료: <b id="dash-deliv-done">0</b> / 전체: <b id="dash-deliv-total">0</b>건 (완료율 <b id="dash-deliv-rate" style="color:var(--success);">0%</b>)</span>
           </div>
           <div class="table-container" style="max-height: 240px;">
@@ -628,8 +628,8 @@
               <thead>
                 <tr>
                   <th>서브시스템</th>
-                  <th>1회차(완료/전체)</th>
-                  <th>2회차(완료/전체)</th>
+                  <th>1차(완료/전체)</th>
+                  <th>2차(완료/전체)</th>
                   <th>보완완료</th>
                   <th>검토/작성중</th>
                   <th>작성전</th>
@@ -655,7 +655,7 @@
                   <th>완료</th>
                   <th>제외</th>
                   <th>진행중</th>
-                  <th>착수전/보류</th>
+                  <th>대기/보류</th>
                   <th>달성률(%)</th>
                 </tr>
               </thead>
@@ -667,20 +667,20 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- 2. 단계별 진척 현황 (tab-matrix)                                     -->
+    <!-- 2. Phase 진척 (tab-matrix)                                     -->
     <!-- =================================================================== -->
     <!-- =================================================================== -->
-    <!-- 2. 단계별 진척 현황 (tab-matrix)                                     -->
+    <!-- 2. Phase 진척 (tab-matrix)                                     -->
     <!-- =================================================================== -->
     <div id="tab-matrix" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">📌 단계별 진척 현황</span><span class="neo-ph-desc">서브시스템마다 분석 · 설계 · 개발 같은 단계가 어디까지 왔는지 봅니다.</span>
+          <span class="sub-title">📈 Phase 진척</span><span class="neo-ph-desc">서브시스템마다 분석 · 설계 · 개발 같은 단계가 어디까지 왔는지 봅니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <div class="filter-item">
-            <label style="font-weight:bold; font-size:var(--fs-xs, 11px);">🗂️ 분야별 조회:</label>
+            <label style="font-weight:bold; font-size:var(--fs-xs, 11px);">🗂️ 도메인별 조회:</label>
             <select id="matrixDomainFilter" data-change="UiH.domainFilter" data-change-args='["matrixDomainFilter", "matrixSubsystemFilter", "renderPhaseMatrix"]' style="font-weight:bold;"></select>
           </div>
           <div class="filter-item">
@@ -705,7 +705,7 @@
           <table class="matrix-table" id="integratedProgressTable">
             <thead>
               <tr>
-                <th rowspan="2" style="width: 105px;">분야</th>
+                <th rowspan="2" style="width: 105px;">도메인</th>
                 <th rowspan="2" style="width: 130px;">서브시스템</th>
                 <th rowspan="2" style="width: 110px;">관리유형</th>
                 <th colspan="3" class="col-phase">WBS 공정 진척</th>
@@ -716,7 +716,7 @@
               <tr>
                 <th>계획</th><th>실적</th><th>달성률</th>
                 <th>전체</th><th>진행</th><th>완료</th><th>완료율</th>
-                <th>1회차(완료/전체)</th><th>2회차(완료/전체)</th><th>검토/작성중</th><th>완료율</th>
+                <th>1차(완료/전체)</th><th>2차(완료/전체)</th><th>검토/작성중</th><th>완료율</th>
                 <th>유효전체</th><th>대기</th><th>진행중</th><th>완료·제외</th><th>달성률</th>
               </tr>
             </thead>
@@ -763,13 +763,13 @@
           <table id="enhancementMatrixTable">
             <thead>
               <tr>
-                <th style="width: 100px;">분야</th>
+                <th style="width: 100px;">도메인</th>
                 <th style="width: 110px;">서브시스템</th>
                 <th style="width: 110px;">요구사항 ID</th>
-                <th>개선 요건 명칭 및 과업</th>
-                <th style="width: 90px;">연계 태스크 수</th>
-                <th style="width: 90px;">계획 진척율</th>
-                <th style="width: 90px;">실적 진척율</th>
+                <th>개선 요건 명칭 및 Task</th>
+                <th style="width: 90px;">연계 Task 수</th>
+                <th style="width: 90px;">계획 진척률</th>
+                <th style="width: 90px;">실적 진척률</th>
                 <th style="width: 90px;">달성률</th>
                 <th style="width: 100px;">요건 상태</th>
               </tr>
@@ -783,7 +783,7 @@
     <div id="tab-gantt" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">🗓️ 간트차트</span><span class="neo-ph-desc">모든 일정을 막대로 펼쳐 겹치거나 늦어진 일을 찾습니다.</span>
+          <span class="sub-title">🗓️ Gantt</span><span class="neo-ph-desc">모든 일정을 막대로 펼쳐 겹치거나 늦어진 일을 찾습니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -796,7 +796,7 @@
             </select>
           </div>
           <div class="filter-item">
-            <label style="font-weight:bold; font-size:var(--fs-xs, 11px);">🗂️ 분야별:</label>
+            <label style="font-weight:bold; font-size:var(--fs-xs, 11px);">🗂️ 도메인별:</label>
             <select id="ganttDomainFilter" data-change="UiH.domainFilter" data-change-args='["ganttDomainFilter", "ganttSubsystemFilter", "renderGantt"]' style="font-weight:bold;"></select>
           </div>
           <div class="filter-item">
@@ -830,22 +830,22 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- 4. WBS 공정 관리 (tab-wbs) - [요건 5] 전면 개선                      -->
+    <!-- 4. WBS (tab-wbs) - [요건 5] 전면 개선                      -->
     <!-- =================================================================== -->
     <div id="tab-wbs" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">📝 WBS 공정 관리</span><span class="neo-ph-desc">해야 할 일을 단계별로 나누고 일정 · 담당자 · 실적을 입력합니다.</span>
+          <span class="sub-title">📋 WBS</span><span class="neo-ph-desc">해야 할 일을 단계별로 나누고 일정 · 담당자 · 실적을 입력합니다.</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
           <!-- [요건 5] 서브시스템별 템플릿 추가 버튼 WBS 탭으로 이동 -->
           <button class="btn btn-primary btn-sm" data-click="WbsTemplate.open">📋 서브시스템별 템플릿 추가 · 복사</button>
           
-          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["wbs"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 내려받습니다">📥 엑셀 내려받기 (WBS)</button>
-          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["wbs"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 올리기 (WBS)</button>
-          <button class="btn btn-primary btn-sm" data-click="addNewRow">+ 태스크 추가</button>
-          <button class="btn btn-success btn-sm" data-click="UiH.rebuildToast" data-click-args='["WBS 재정렬, 기간검증 및 롤업이 완료되었습니다."]'>📐 롤업 재계산</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["wbs"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (WBS)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["wbs"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (WBS)</button>
+          <button class="btn btn-primary btn-sm" data-click="addNewRow">+ Task 추가</button>
+          <button class="btn btn-success btn-sm" data-click="UiH.rebuildToast" data-click-args='["WBS 재정렬, 기간검증 및 롤업이 완료되었습니다."]'>📐 다시 계산</button>
         </div>
       </div>
 
@@ -858,7 +858,7 @@
           </select>
         </div>
         <div class="filter-item">
-          <label style="font-weight:bold;">🗂️ 분야별 조회:</label>
+          <label style="font-weight:bold;">🗂️ 도메인별 조회:</label>
           <select id="wbsDomainFilter" data-change="UiH.domainFilter" data-change-args='["wbsDomainFilter", "wbsSubsystemFilter", "renderWbsTable"]' style="font-weight:bold;"></select>
         </div>
         <div class="filter-item">
@@ -868,7 +868,7 @@
           </select>
         </div>
         <div class="filter-item">
-          <label style="font-weight:bold;">📂 레벨 단위 접기/펼치기:</label>
+          <label style="font-weight:bold;">📂 레벨 보기:</label>
           <select id="wbsMaxLevelFilter" data-change="renderWbsTable">
             <option value="5">전체 레벨 표시 (L1 ~ L5)</option>
             <option value="4">L4까지만 표시 (L5 이하 숨김)</option>
@@ -883,7 +883,7 @@
             <option value="ALL">전체 (계층 표시)</option>
             <option value="지연">🔴 지연 Task만</option>
             <option value="진행중">🔵 진행중 Task만</option>
-            <option value="착수전">⚪ 착수전 Task만</option>
+            <option value="대기">⚪ 대기 Task만</option>
             <option value="완료">🟢 완료 Task만</option>
           </select>
           <span class="status-badge-chip chip-delayed neo-std-only" style="cursor:pointer;" data-click="UiH.setValueRun" data-click-args='["wbsStatusFilter", "지연", "renderWbsTable"]' title="지연 최하위 Task 조회">지연 <b id="wbsDelayedCount">0</b>건</span>
@@ -898,12 +898,12 @@
         </div>
         <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="btn btn-sm wbs-fold-btn" id="btnWbsFold" data-click="WbsFold.toggle" title="가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다">◀ 가중치·REQ·담당자·산출물 접기</button>
-          <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 오류 보정</button>
+          <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 맞추기</button>
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
-            🗓️ 휴일 자동보정
+            🗓️ 휴일 날짜 옮기기
           </button>
-          <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="선택한 서브시스템(또는 전체)에서 계획 진척률이 있는 최하위 Task 를 모두 실적에 반영합니다. 실적시작일: 계획시작이 기준 주차보다 앞이면 주차 시작일, 주차 안이면 계획시작일. 실적종료일(100%): 계획종료가 기준 주차 안이면 계획종료일, 앞이면 기준일. 이미 입력된 실적일은 그대로 둡니다.">
-            ⚡ 실적 자동반영
+          <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="선택한 서브시스템(또는 전체)에서 계획 진척률이 있는 최하위 Task 를 모두 실적에 반영합니다. 실제 시작일: 계획시작이 기준 주차보다 앞이면 주차 시작일, 주차 안이면 계획시작일. 실제 종료일(100%): 계획종료가 기준 주차 안이면 계획종료일, 앞이면 기준일. 이미 입력된 실적일은 그대로 둡니다.">
+            ⚡ 계획 → 실적 채우기
           </button>
         </div>
       </div>
@@ -916,13 +916,13 @@
               <th style="width: 50px;" title="◀ 상위 레벨로 / ▶ 하위 레벨로">레벨</th>
               <th style="width: 92px;">서브시스템</th>
               <th style="min-width: 250px;">Task명 (Task Name)</th>
-              <th style="width: 54px;" title="완료 / 지연 / 진행중 / 착수전 (지연 기준: 기준정보 > 판정 기준)">상태</th>
+              <th style="width: 54px;" title="완료 / 지연 / 진행중 / 대기 (지연 기준: 프로젝트 설정 > 판정 기준)">상태</th>
               <th class="col-fold" style="width: 50px;">가중치</th>
               <th class="col-fold" style="width: 80px;">REQ ID</th>
               <th style="width: 112px;">계획시작</th>
               <th style="width: 112px;">계획종료</th>
-              <th style="width: 112px;">실적시작</th>
-              <th style="width: 112px;">실적종료</th>
+              <th style="width: 112px;">실제 시작</th>
+              <th style="width: 112px;">실제 종료</th>
               <th style="width: 48px;">계획%</th>
               <th style="width: 48px;">실적%</th>
               <th class="col-fold" style="width: 100px;" title="목록에서 고르거나 직접 입력 (1명). 상위 Task 에 지정하면 하위 Task 에도 자동 지정">담당자</th>
@@ -941,13 +941,13 @@
     <div id="tab-req" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">🎯 요구사항 관리</span><span class="neo-ph-desc">고객이 요청한 기능을 등록하고 처리 상태를 관리합니다.</span>
+          <span class="sub-title">📌 요구사항 (REQ)</span><span class="neo-ph-desc">고객이 요청한 기능을 등록하고 처리 상태를 관리합니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           
-          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["req"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 내려받습니다">📥 엑셀 내려받기 (요구사항)</button>
-          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["req"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 올리기 (요구사항)</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["req"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (요구사항)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["req"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (요구사항)</button>
           <button class="btn btn-primary btn-sm" data-click="addNewReq">+ 요구사항 추가</button>
         </div>
       </div>
@@ -955,7 +955,7 @@
       <!-- 요구사항 서브시스템 필터 및 상태 통계 바 -->
       <div class="filter-toolbar">
         <div class="filter-item">
-          <label style="font-weight:bold;">🗂️ 분야별 조회:</label>
+          <label style="font-weight:bold;">🗂️ 도메인별 조회:</label>
           <select id="reqDomainFilter" data-change="UiH.domainFilter" data-change-args='["reqDomainFilter", "reqSubsystemFilter", "renderReqMasterTable"]' style="font-weight:bold;"></select>
         </div>
         <div class="filter-item">
@@ -967,7 +967,7 @@
         <div class="filter-item"><span class="neo-chips" id="reqStatusChips" role="group" aria-label="상태 필터"></span></div>
         <div class="status-summary-bar" style="margin-bottom:0; margin-left:auto;">
           <span class="status-badge-chip chip-total">전체: <b id="tab-req-stat-total">0</b></span>
-          <span class="status-badge-chip chip-ready">착수전: <b id="tab-req-stat-ready">0</b></span>
+          <span class="status-badge-chip chip-ready">대기: <b id="tab-req-stat-ready">0</b></span>
           <span class="status-badge-chip chip-progress">진행중: <b id="tab-req-stat-progress">0</b></span>
           <span class="status-badge-chip chip-completed">완료: <b id="tab-req-stat-completed">0</b></span>
           <span class="status-badge-chip chip-hold">보류: <b id="tab-req-stat-hold">0</b></span>
@@ -985,7 +985,7 @@
               <th style="width: 95px;">유형</th>
               <th style="width: 85px;">중요도</th>
               <th style="width: 95px;">수용 여부</th>
-              <th style="width: 85px;">연계 태스크</th>
+              <th style="width: 85px;">연계 Task</th>
               <th style="width: 85px;">평균 실적(%)</th>
               <th style="width: 105px;">진행 상태</th>
               <th style="width: 45px;">삭제</th>
@@ -1002,13 +1002,13 @@
     <div id="tab-voc" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">💬 VOC·이슈 관리</span><span class="neo-ph-desc">진행 중에 새로 들어온 요청과 문제를 접수해 해결까지 챙깁니다.</span>
+          <span class="sub-title">📣 VOC · 이슈</span><span class="neo-ph-desc">진행 중에 새로 들어온 요청과 문제를 접수해 해결까지 챙깁니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
           
-          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["voc"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 내려받습니다">📥 엑셀 내려받기 (VOC)</button>
-          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["voc"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 올리기 (VOC)</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["voc"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (VOC)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["voc"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (VOC)</button>
           <button class="btn btn-primary btn-sm" data-click="addNewVoc">+ VOC 등록</button>
         </div>
       </div>
@@ -1016,7 +1016,7 @@
       <!-- VOC 서브시스템 필터 및 상태 통계 바 -->
       <div class="filter-toolbar">
         <div class="filter-item">
-          <label style="font-weight:bold;">🗂️ 분야별 조회:</label>
+          <label style="font-weight:bold;">🗂️ 도메인별 조회:</label>
           <select id="vocDomainFilter" data-change="UiH.domainFilter" data-change-args='["vocDomainFilter", "vocSubsystemFilter", "renderVocTable"]' style="font-weight:bold;"></select>
         </div>
         <div class="filter-item">
@@ -1028,7 +1028,7 @@
         <div class="filter-item"><span class="neo-chips" id="vocStatusChips" role="group" aria-label="상태 필터"></span></div>
         <div class="status-summary-bar" style="margin-bottom:0; margin-left:auto; align-items:center;">
           <span class="status-badge-chip chip-total">전체: <b id="tab-voc-stat-total">0</b></span>
-          <span class="status-badge-chip chip-ready">착수전: <b id="tab-voc-stat-ready">0</b></span>
+          <span class="status-badge-chip chip-ready">대기: <b id="tab-voc-stat-ready">0</b></span>
           <span class="status-badge-chip chip-progress">진행: <b id="tab-voc-stat-progress">0</b></span>
           <span class="status-badge-chip chip-completed">완료: <b id="tab-voc-stat-completed">0</b></span>
           <span class="status-badge-chip chip-excluded">제외: <b id="tab-voc-stat-excluded">0</b></span>
@@ -1073,16 +1073,16 @@
         <div style="display: flex; gap: 8px; align-items: center;">
           
           <button class="btn btn-warning btn-sm" data-click="openBulkDeliverableModal">⚡ 표준 산출물 자동생성</button>
-          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["deliverables"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 내려받습니다">📥 엑셀 내려받기 (산출물)</button>
-          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["deliverables"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 올리기 (산출물)</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["deliverables"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (산출물)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["deliverables"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (산출물)</button>
           <button class="btn btn-primary btn-sm" data-click="addNewDeliverable">+ 산출물 직접 추가</button>
         </div>
       </div>
 
-      <!-- [요건 7] 서브시스템별 · 제출회차별 · 산출물명별 다중 조회 필터 바 -->
+      <!-- [요건 7] 서브시스템별 · 제출차수별 · 산출물명별 다중 조회 필터 바 -->
       <div class="filter-toolbar">
         <div class="filter-item">
-          <label style="font-weight:bold;">🗂️ 분야별:</label>
+          <label style="font-weight:bold;">🗂️ 도메인별:</label>
           <select id="delivDomainFilter" data-change="UiH.domainFilter" data-change-args='["delivDomainFilter", "delivSubsystemFilter", "renderDeliverablesTable"]' style="font-weight:bold;"></select>
         </div>
         <div class="filter-item">
@@ -1092,11 +1092,11 @@
           </select>
         </div>
         <div class="filter-item">
-          <label style="font-weight:bold;">🔢 제출 회차별:</label>
+          <label style="font-weight:bold;">🔢 제출 차수별:</label>
           <select id="delivRoundFilter" data-change="renderDeliverablesTable">
-            <option value="ALL">전체 회차 (1회차 + 2회차)</option>
-            <option value="1회차">1회차 제출분만 보기</option>
-            <option value="2회차">2회차 제출분만 보기</option>
+            <option value="ALL">전체 차수 (1차 + 2차)</option>
+            <option value="1차">1차 제출분만 보기</option>
+            <option value="2차">2차 제출분만 보기</option>
           </select>
         </div>
         <div class="filter-item">
@@ -1114,7 +1114,7 @@
         <table id="deliverablesTable">
           <thead>
             <tr>
-              <th style="width: 105px;">제출 회차</th>
+              <th style="width: 105px;">제출 차수</th>
               <th style="width: 135px;">서브시스템</th>
               <th style="width: 120px;">단계 구분</th>
               <th style="min-width: 220px;">산출물명</th>
@@ -1143,10 +1143,10 @@
         <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
         <div class="wr-export-bar" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
           <span class="neo-dd-label" style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">선택 주차 통합 주간보고</span>
-          <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 내려받습니다.">📥 엑셀 주간보고</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 내려받습니다.">📥 워드 주간보고 (표 포함)</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 내려받습니다.">📥 워드 주간보고 (표 제외)</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="ExecDeck.downloadPptxSelected" title="선택 주차의 주간 경영 보고 장표 (PowerPoint)">📥 경영 보고 장표 (PPT)</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="ExecDeck.downloadPptxSelected" title="선택 주차의 주간 임원 보고 장표 (PowerPoint)">📥 임원 보고 장표 (PPT)</button>
         </div>
       </div>
 
@@ -1191,7 +1191,7 @@
               <button class="btn btn-sm" data-btn="cancel" data-click="WeeklyReportManager.discardChanges" title="저장하지 않은 변경 내용을 취소합니다.">↩️ 변경 취소</button>
             </div>
             <div class="wr-toolbar-group">
-              <button class="btn btn-sm" data-btn="refresh" data-click="WeeklyReportManager.syncWbsTasks" title="WBS 공정표의 최신 과업 일정·진척을 다시 불러옵니다. (제외한 항목과 직접 입력 항목은 유지)">🔄 WBS 과업 다시 불러오기</button>
+              <button class="btn btn-sm" data-btn="refresh" data-click="WeeklyReportManager.syncWbsTasks" title="WBS 공정표의 최신 Task 일정·진척을 다시 불러옵니다. (제외한 항목과 직접 입력 항목은 유지)">🔄 WBS Task 다시 불러오기</button>
               <button class="btn btn-sm" data-btn="neutral" data-click="WeeklyReportManager.openHistoryModal" title="이전 주차 보고서의 요약·현안 내용을 복사합니다.">📋 이전 보고서 내용 복사</button>
             </div>
           </div>
@@ -1212,7 +1212,7 @@
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:10px;">
               <label style="font-weight:bold; font-size:var(--fs-sm, 12px); color:#0369a1; display:block; margin-bottom:6px;">🔹 차주 중점 추진 목표 및 계획 요약</label>
-              <textarea id="wrNextSummary" maxlength="3000" data-input="WeeklyReportManager.onSizeInput" rows="3" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical;" placeholder="차주에 착수 또는 완료 예정인 중점 과업, 연계 산출물 검수 목표를 서술하세요."></textarea>
+              <textarea id="wrNextSummary" maxlength="3000" data-input="WeeklyReportManager.onSizeInput" rows="3" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical;" placeholder="차주에 착수 또는 완료 예정인 중점 Task, 연계 산출물 검수 목표를 서술하세요."></textarea>
             </div>
           </div>
           <div style="background:#fffbeb; border:1px solid #fef3c7; border-radius:6px; padding:10px;">
@@ -1226,7 +1226,7 @@
             <span>✅ 금주 실적 <span id="wrCurCount" class="badge" style="background:#dcfce7; color:#166534;">0</span></span>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <select id="wrAddCurWbsSelect" style="font-size:var(--fs-xs, 11px); max-width:320px;"></select>
-              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["cur"]'>➕ WBS 과업 추가</button>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["cur"]'>➕ WBS Task 추가</button>
               <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addManualItem" data-click-args='["cur"]'>➕ 직접 입력 항목 추가</button>
             </div>
           </div>
@@ -1256,7 +1256,7 @@
             <span>🎯 차주 계획 <span id="wrNxtCount" class="badge" style="background:#e0f2fe; color:#075985;">0</span></span>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <select id="wrAddNxtWbsSelect" style="font-size:var(--fs-xs, 11px); max-width:320px;"></select>
-              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["nxt"]'>➕ WBS 과업 추가</button>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["nxt"]'>➕ WBS Task 추가</button>
               <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addManualItem" data-click-args='["nxt"]'>➕ 직접 입력 항목 추가</button>
             </div>
           </div>
@@ -1333,7 +1333,7 @@
     <div id="tab-meeting" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📅 회의 관리 센터</span><span class="neo-ph-desc">회의 일정을 잡고 회의록과 후속 조치(Action Item)를 기록합니다.</span>
+          <span class="sub-title">📅 회의</span><span class="neo-ph-desc">회의 일정을 잡고 회의록과 후속 조치(Action Item)를 기록합니다.</span>
           <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1389,7 +1389,7 @@
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <button class="btn btn-success btn-xs" data-click="MeetingManager.exportScheduleListExcel" title="조회된 회의 일정 목록 엑셀(XLSX) 다운로드">
-                📥 엑셀 내려받기 (회의일정)
+                📥 엑셀 다운로드 (회의일정)
               </button>
               <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">총 등록 회의:</span>
               <span id="meetingTotalCountBadge" class="brand-badge" style="background:#1e40af; color:white;">0건</span>
@@ -1484,7 +1484,7 @@
             <div class="kpi-value" id="aiKpiTotal" style="color:#1e3a8a;">0건</div>
           </div>
           <div class="kpi-card" style="border-left-color: #2563eb;">
-            <div class="kpi-title">진행중 과업</div>
+            <div class="kpi-title">진행중 Task</div>
             <div class="kpi-value" id="aiKpiProg" style="color:#2563eb;">0건</div>
           </div>
           <div class="kpi-card" style="border-left-color: #15803d;">
@@ -1496,7 +1496,7 @@
             <div class="kpi-value" id="aiKpiRate" style="color:#059669;">0%</div>
           </div>
           <div class="kpi-card" style="border-left-color: #dc2626;">
-            <div class="kpi-title">지연 주의 과업</div>
+            <div class="kpi-title">지연 주의 Task</div>
             <div class="kpi-value" id="aiKpiDelay" style="color:#dc2626;">0건</div>
           </div>
         </div>
@@ -1508,7 +1508,7 @@
               <span>⚡ 회의 도출 Action Item 전사 통합 관리 대장</span>
             </div>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-success btn-xs" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 내려받기 (Action Item)</button>
+              <button class="btn btn-success btn-xs" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 다운로드 (Action Item)</button>
               <button class="btn btn-primary btn-xs" data-click="MeetingManager.openAddActionItemModal">➕ Action Item 등록</button>
             </div>
           </div>
@@ -1567,24 +1567,24 @@
     </div>
 
     <!-- =================================================================== -->
-    <!-- 8. 스마트 데이터 병합 (tab-merge)                                   -->
+    <!-- 8. 파일 Merge (tab-merge)                                   -->
     <!-- =================================================================== -->
     <div id="tab-merge" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🔀 스마트 병합</span><span class="neo-ph-desc">여러 사람이 각자 PC에서 고친 자료를 하나로 모으는 곳입니다. 작업자는 내 자료를 파일로 받아 PM에게 보내고, PM은 받은 파일을 올려 미리 보기로 확인한 뒤 합칩니다.</span>
+          <span class="sub-title">🔀 파일 Merge</span><span class="neo-ph-desc">여러 사람이 각자 PC에서 고친 자료를 하나로 모으는 곳입니다. 멤버는 내 작업 파일을 파일로 받아 PM에게 보내고, PM은 받은 파일을 업로드해 미리 보기로 확인한 뒤 합칩니다.</span>
           <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
       </div>
 
-      <!-- [v4.0.0] 서브 탭: 스마트 병합(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 관리자 · PM) -->
+      <!-- [v4.0.0] 서브 탭: 파일 Merge(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 관리자 · PM) -->
       <div class="master-subtab-bar" data-group="merge">
-        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 내려받기·올리기</button>
+        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 다운로드·업로드</button>
         <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
-        <!-- [v4.1.0] 📋 자료 내려받기·올리기 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
+        <!-- [v4.1.0] 📋 자료 다운로드·업로드 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
         <div class="card mt-card">
           <div class="mt-scope">
             <span class="mt-step">1 범위</span>
@@ -1604,10 +1604,10 @@
           <div class="mt-actions">
             <div class="mt-btns">
               <span class="mt-step">2 체크한 자료</span>
-              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 내려받기</button>
-              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 내려받기</button>
+              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
+              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
               <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
-              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick">📤 파일 올리기 → 미리 보기</button>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick">📤 파일 업로드 → 미리 보기</button>
             </div>
             <div class="mt-quick">
               <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["sys"]'>서브시스템 단위만</button>
@@ -1616,17 +1616,17 @@
           </div>
         </div>
 
-        <!-- 종합본: 프로젝트 전체 한 파일 (모든 작업자 내려받기 · 로컬 저장소 방식은 가져오기) -->
+        <!-- 마스터 파일: 프로젝트 전체 한 파일 (모든 멤버 다운로드 · 로컬 저장소 방식은 가져오기) -->
         <div class="card mt-card mt-pkg">
           <div class="mt-pkg-row">
-            <div><b>📦 종합본</b> — 기준정보 · 업무 · 작업자 · 협업 자료 전체를 한 파일로</div>
+            <div><b>📦 마스터 파일</b> — 프로젝트 설정 · 업무 · 멤버 · 협업 자료 전체를 한 파일로</div>
             <div class="mt-btns">
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>📥 엑셀 (전체)</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>📥 JSON (전체)</button>
-              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["SERVER"]' title="PM · 관리자: 배포 폴더 pprjmgmt/shared/ 에 넣어 올리면 작업자가 화면을 열 때 자동으로 받는 최신 종합본">🌐 배포용 latest.json</button>
+              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["SERVER"]' title="PM · 관리자: 배포 폴더 pprjmgmt/shared/ 에 넣어 올리면 멤버가 화면을 열 때 자동으로 받는 최신 마스터 파일">🌐 배포용 latest.json</button>
               <span id="consolidateBox" style="display:none;">
                 <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
-                <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]' title="로컬 저장소 방식: PM 이 나눠 준 종합본을 내 브라우저에 반영 (내 담당 서브시스템 자료는 그대로)">📥 종합본 가져오기</button>
+                <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]' title="로컬 저장소 방식: PM 이 나눠 준 마스터 파일을 내 브라우저에 반영 (내 담당 서브시스템 자료는 그대로)">📥 마스터 파일 적용</button>
               </span>
             </div>
           </div>
@@ -1643,7 +1643,7 @@
         </div>
       </div>
 
-      <!-- [v4.0.0] 💾 백업 · 복원 (비상 대응) — 관리자 · PM 만, 권한 없는 기능은 비활성 / [v4.1.0] 3영역 (프로젝트 · 시스템 · 복원 지점), 초기화 · 자동 백업 설정은 시스템 설정 > 데이터 관리 -->
+      <!-- [v4.0.0] 💾 백업 · 복원 (비상 대응) — 관리자 · PM 만, 권한 없는 기능은 비활성 / [v4.1.0] 3영역 (프로젝트 · 시스템 · 스냅샷), 초기화 · 자동 백업 설정은 시스템 설정 > 데이터 관리 -->
       <div class="master-subpane" data-group="merge" data-subpane="backup" id="mergeBackupPane">
         <div class="bk-role" id="bkRoleNote"></div>
 
@@ -1651,8 +1651,8 @@
           <div class="card-title"><span>🗂️ ① 프로젝트 백업 · 복원 (엑셀 / JSON)</span><span class="bk-who">관리자: 모든 프로젝트 · PM: 지금 프로젝트</span></div>
           <div class="grid-2" style="gap:14px;">
             <div class="proj-box proj-box-blue">
-              <div class="proj-box-title">📥 백업 내려받기</div>
-              <p>프로젝트의 기본정보 · 기준정보 · 작업자(참여자)와 Task 정보(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 · 공지 · 소통)를 파일로 보관합니다. 엑셀은 프로젝트마다 파일 1개, JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
+              <div class="proj-box-title">📥 백업 다운로드</div>
+              <p>프로젝트의 기본정보 · 프로젝트 설정 · 멤버(참여자)와 Task 정보(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 · 공지 · 소통)를 파일로 보관합니다. 엑셀은 프로젝트마다 파일 1개, JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
               <div class="proj-box-btns">
                 <select id="ptDownTarget" style="min-width:230px;"></select>
                 <button class="btn btn-sm" data-btn="excel-down" data-click="ProjectTransfer.download" data-click-args='["EXCEL"]'>📥 엑셀</button>
@@ -1661,21 +1661,21 @@
             </div>
             <div class="proj-box proj-box-amber">
               <div class="proj-box-title">📤 복원 · 새 프로젝트 추가</div>
-              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 일부 자료만 합칠 때는 [📋 자료 내려받기·올리기]를 씁니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 복원 지점을 자동으로 만듭니다.</p>
+              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 일부 자료만 합칠 때는 [📋 자료 다운로드·업로드]를 씁니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 스냅샷을 자동으로 만듭니다.</p>
               <div class="proj-box-btns">
                 <select id="ptUpTarget" style="min-width:250px;"></select>
                 <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
-                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 올리기 (엑셀 / JSON)</button>
+                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 업로드 (엑셀 / JSON)</button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="card bk-sec" data-need="admin" style="border-left:4px solid #dc2626;">
-          <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">관리자 전용 — 모든 프로젝트 · 작업자 · 공정 유형 · 설정</span></div>
+          <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">관리자 전용 — 모든 프로젝트 · 멤버 · SDLC 유형 · 설정</span></div>
           <div id="bkServerBox">
             <div class="proj-box-btns">
-              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.download">📥 시스템 백업 내려받기 (.db)</button>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.download">📥 시스템 백업 다운로드 (.db)</button>
               <input type="file" id="bkUploadInput" style="display:none;" accept=".db" data-change="SystemBackup.upload" data-change-args='["$event"]'>
               <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 백업 파일로 복원</button>
             </div>
@@ -1691,12 +1691,12 @@
         </div>
 
         <div class="card bk-sec" data-need="manager" style="border-left:4px solid #7c3aed;">
-          <div class="card-title"><span>🕒 ③ 복원 지점 (자동 · 수동 스냅샷)</span>
+          <div class="card-title"><span>🕒 ③ 스냅샷 (자동 · 수동 스냅샷)</span>
             <span style="display:flex; gap:6px; align-items:center;"><span class="bk-who" id="bkSnapWhere"></span>
             <button class="btn btn-secondary btn-sm" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["수동백업", "ALL", false]'>+ 지금 복원 지점 만들기</button></span></div>
           <div class="table-container" style="max-height: 280px;">
             <table id="backupHistoryTable">
-              <thead><tr><th style="width:155px;">만든 때</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th style="width:240px; text-align:center;">내려받기 / 복원</th></tr></thead>
+              <thead><tr><th style="width:155px;">만든 때</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th style="width:240px; text-align:center;">다운로드 / 복원</th></tr></thead>
               <tbody id="backupHistoryTableBody"></tbody>
             </table>
           </div>
@@ -1705,36 +1705,36 @@
 </div>
 
     <!-- =================================================================== -->
-    <!-- 9. 기준정보 관리 (tab-master) - [권한: 프로젝트 관리자(PM) / 관리자] -->
+    <!-- 9. 프로젝트 설정 관리 (tab-master) - [권한: 프로젝트 관리자(PM) / 관리자] -->
     <!-- =================================================================== -->
         <!-- ============================================================
-         [ver1.0.4 신규] 공지사항 등록 및 팀원 간 소통 센터 탭
+         [ver1.0.4 신규] 공지 등록 및 팀원 간 소통 센터 탭
          ============================================================ -->
         <!-- ============================================================
-         [ver1.0.4] 공지사항, 업무소통 피드 통합 센터
+         [ver1.0.4] 공지, 업무게시판 통합 센터
          ============================================================ -->
     <div id="tab-notices" class="tab-pane">
       <div class="sub-header-bar">
-        <div><span class="sub-title">📢 공지·소통</span><span class="neo-ph-desc">팀 공지를 올리고 과업에 대한 의견을 주고받습니다.</span>
+        <div><span class="sub-title">📢 게시판</span><span class="neo-ph-desc">팀 공지를 올리고 Task에 대한 의견을 주고받습니다.</span>
 </div>
       </div>
       <!-- 서브 탭 네비게이션 바 -->
       <div class="sub-tab-nav">
-        <button id="subtabBtn_NOTICES" class="subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지사항 등록 및 조회">
-          📌 공지사항
+        <button id="subtabBtn_NOTICES" class="subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지 등록 및 조회">
+          📌 공지
         </button>
-        <button id="subtabBtn_FEED" class="subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 소통 피드 및 과업 매핑 안건">
-          💬 소통 피드
+        <button id="subtabBtn_FEED" class="subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 게시판 및 Task 매핑 안건">
+          💬 게시판
         </button>
       </div>
 
-      <!-- 서브 탭 1: 프로젝트 공지사항 (NOTICES) -->
+      <!-- 서브 탭 1: 프로젝트 공지 (NOTICES) -->
       <div id="subpane_NOTICES" style="display: block;">
         <div class="card" style="margin-bottom: 14px;">
           <div class="card-title">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: var(--fs-xl, 18px);">📢</span>
-              <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">프로젝트 중요 공지사항 게시판</strong>
+              <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">프로젝트 중요 공지 게시판</strong>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <input type="text" placeholder="🔍 공지 제목/내용 검색..." data-input="NoticeCommManager.filterNoticesByKeyword" data-input-args='["$value"]' style="padding: 5px 10px; font-size: var(--fs-sm, 12px); border: 1px solid var(--border-color); border-radius: 4px; min-width: 200px;">
@@ -1761,13 +1761,13 @@
         </div>
       </div>
 
-      <!-- 서브 탭 2: 업무 소통 피드 & 안건 (FEED) -->
+      <!-- 서브 탭 2: 업무 게시판 & 안건 (FEED) -->
       <div id="subpane_FEED" style="display: none;">
         <div class="card" style="margin-bottom: 14px;">
           <div class="card-title">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: var(--fs-xl, 18px);">💬</span>
-              <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">업무 소통 피드 &amp; WBS 과업 연계 토론</strong>
+              <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">업무 게시판 &amp; WBS Task 연계 토론</strong>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <!-- 3대 UI 뷰 모드 스위처 -->
@@ -1827,11 +1827,11 @@
       </div>
 
     </div>
-  <!-- [ver1.0.4] 신규 공지사항 등록 모달 -->
+  <!-- [ver1.0.4] 신규 공지 등록 모달 -->
   <div class="modal-overlay" id="newNoticeModal" style="display: none;">
     <div class="modal" style="width: 90vw; max-width: 620px; padding: 20px;">
       <div class="card-title">
-        <span style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800; color: var(--primary);">📢 신규 프로젝트 공지사항 등록</span>
+        <span style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800; color: var(--primary);">📢 신규 프로젝트 공지 등록</span>
         <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeNewNoticeModal">✕</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
@@ -1866,11 +1866,11 @@
       </div>
     </div>
   </div>
-  <!-- [ver1.0.4] 공지사항 수정 모달 -->
+  <!-- [ver1.0.4] 공지 수정 모달 -->
   <div class="modal-overlay" id="editNoticeModal" style="display: none;">
     <div class="modal" style="width: 90vw; max-width: 620px; padding: 20px;">
       <div class="card-title">
-        <span style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800; color: var(--primary);">✏️ 공지사항 수정 (작성자/관리자/PM 전용)</span>
+        <span style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800; color: var(--primary);">✏️ 공지 수정 (작성자/관리자/PM 전용)</span>
         <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeEditNoticeModal">✕</button>
       </div>
       <input type="hidden" id="editNoticeId">
@@ -1912,22 +1912,22 @@
                 <div id="tab-master" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🗂️ 프로젝트 기준정보</span><span class="neo-ph-desc">기간 · 서브시스템 · 단계 · 휴일 · 작업자처럼 모든 화면의 기준이 되는 값을 정합니다.</span>
+          <span class="sub-title">🗂️ 프로젝트 설정</span><span class="neo-ph-desc">기간 · 서브시스템 · 단계 · 휴일 · 멤버처럼 모든 화면의 기준이 되는 값을 정합니다.</span>
           <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 관리자(SYS_ADMIN)</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
       </div>
 
       
-      <!-- [v1.0.6] 기준정보 기능별 서브탭 -->
+      <!-- [v1.0.6] 프로젝트 설정 기능별 서브탭 -->
       <div class="master-subtab-bar" data-group="master">
         <button class="master-subtab-btn active" data-subtab="basic" data-click="MasterSubTabs.show" data-click-args='["basic"]'>📋 프로젝트 기본정보</button>
-        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 공정단계정보</button>
+        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 Phase 설정</button>
         <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>📅 휴일정보</button>
-        <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 작업자 정보</button>
+        <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
-        <button class="master-subtab-btn" data-subtab="ui-report" data-click="MasterSubTabs.show" data-click-args='["ui-report"]'>📊 보고서 양식</button>
-        <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 소통 채널</button>
+        <button class="master-subtab-btn" data-subtab="ui-report" data-click="MasterSubTabs.show" data-click-args='["ui-report"]'>📊 보고서 템플릿</button>
+        <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
       </div>
 
       <div class="master-subpane" data-group="master" id="masterSub-basic" data-subpane="basic">
@@ -1944,14 +1944,14 @@
               <div>
                 <strong>프로젝트 기본정보</strong>
               </div>
-              <button class="btn btn-success btn-sm" style="font-weight:bold; padding:4px 12px; font-size:calc(11.5px * var(--fs-scale, 1));" data-click="MasterSyncEngine.syncAll" data-click-args='[true]' title="변경된 프로젝트 기준정보를 모든 탭에 즉시 실시간 동기화">⚡ 기준정보 적용</button>
+              <button class="btn btn-success btn-sm" style="font-weight:bold; padding:4px 12px; font-size:calc(11.5px * var(--fs-scale, 1));" data-click="MasterSyncEngine.syncAll" data-click-args='[true]' title="변경된 프로젝트 설정을 모든 탭에 즉시 실시간 동기화">⚡ 프로젝트 설정 적용</button>
             </div>
           </div>
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="Project Mgmt (협업)" readonly style="width:100%;" data-change="updateProjectTitles">
+                <input type="text" id="cfgSystemTitle" value="PM Hub · IOSTAR-PM Standalone" readonly style="width:100%;" data-change="updateProjectTitles">
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
@@ -1962,23 +1962,23 @@
             <div class="grid-2" style="gap: 8px; padding: 8px 10px; background: rgba(59,130,246,0.05); border: 1px solid #bfdbfe; border-radius: 6px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); color:var(--primary); margin-bottom:3px;">
-                  🗂️ 상위 분야(Domain) 관리 (서브시스템 상위 그룹핑 · 최대 5개):
+                  🗂️ 상위 도메인(Domain) 관리 (서브시스템 상위 그룹핑 · 최대 5개):
                 </label>
                 <div style="display:flex; gap:6px; margin-bottom:6px;">
-                  <input type="text" id="newDomainInput" placeholder="추가할 분야명 입력 (최대 5개)" style="flex:1;">
-                  <button class="btn btn-primary btn-sm" data-click="addNewDomain">+ 분야 추가</button>
+                  <input type="text" id="newDomainInput" placeholder="추가할 도메인명 입력 (최대 5개)" style="flex:1;">
+                  <button class="btn btn-primary btn-sm" data-click="addNewDomain">+ 도메인 추가</button>
                 </div>
                 <div id="domainChipsContainer" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
               </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); color:#0f766e; margin-bottom:3px;">
-                  📑 산출물 제출 운영 회차 수 (최대 4회차까지 설정 가능):
+                  📑 산출물 제출 운영 차수 수 (최대 4차까지 설정 가능):
                 </label>
                 <select id="cfgMaxDeliverableRounds" style="width:100%; font-weight:bold;" data-change="updateMaxDeliverableRounds" data-change-args='["$value"]'>
-                  <option value="1">1회차만 운영 (단일 제출)</option>
-                  <option value="2">1회차 ~ 2회차 운영 (2회 제출)</option>
-                  <option value="3">1회차 ~ 3회차 운영 (3회 제출)</option>
-                  <option value="4" selected>1회차 ~ 4회차 전체 운영 (최대 4회 제출)</option>
+                  <option value="1">1차만 운영 (단일 제출)</option>
+                  <option value="2">1차 ~ 2차 운영 (2회 제출)</option>
+                  <option value="3">1차 ~ 3차 운영 (3회 제출)</option>
+                  <option value="4" selected>1차 ~ 4차 전체 운영 (최대 4회 제출)</option>
                 </select>
               </div>
             </div>
@@ -2034,7 +2034,7 @@
           </div>
         </div>
 
-        <!-- [v1.0.7] 주요 마일스톤 (통합 / 서브시스템별) — 간트차트에 ◆ 로 표시 -->
+        <!-- [v1.0.7] 주요 마일스톤 (통합 / 서브시스템별) — Gantt에 ◆ 로 표시 -->
         <div class="card" style="border-left: 4px solid #7c3aed;">
           <div class="card-title">
             <div>
@@ -2043,7 +2043,7 @@
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["ALL"]'>➕ 통합 마일스톤 추가</button>
               <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["SYS"]'>➕ 서브시스템 마일스톤 추가</button>
-              <button class="btn btn-sm" data-btn="nav" data-click="switchTab" data-click-args='["tab-gantt"]'>🗓️ 간트차트에서 보기</button>
+              <button class="btn btn-sm" data-btn="nav" data-click="switchTab" data-click-args='["tab-gantt"]'>🗓️ Gantt에서 보기</button>
             </div>
           </div>
           <div class="table-container" style="max-height:300px;">
@@ -2055,11 +2055,11 @@
         </div>
 
 
-        <!-- [1-2] 분야 및 서브시스템 기준정보 등록 -->
+        <!-- [1-2] 도메인 및 서브시스템 프로젝트 설정 등록 -->
         <div class="card" style="border-left: 4px solid #0284c7;">
           <div class="card-title">
             <div>
-              <strong>분야 및 서브시스템</strong>
+              <strong>도메인 및 서브시스템</strong>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
               <button class="btn btn-primary btn-sm" data-click="addNewSubsystemMeta">+ 서브시스템 추가</button>
@@ -2069,14 +2069,14 @@
             <table id="subsystemsMetaTable">
               <thead>
                 <tr>
-                  <th style="width: 135px;">소속 분야 (상위그룹)</th>
+                  <th style="width: 135px;">소속 도메인 (상위그룹)</th>
                   <th style="width: 100px;">코드(Prefix)</th>
                   <th style="width: 135px;">서브시스템명</th>
                   <th style="width: 130px;">관리 유형</th>
                   <th style="width: 170px;">적용 SDLC 타입</th>
                   <th style="width: 80px;">가중치(%)</th>
                   <th style="width: 95px;">담당자(PM)</th>
-                  <th>서브시스템 상세 과업 및 개발 개요</th>
+                  <th>서브시스템 상세 Task 및 개발 개요</th>
                   <th style="width: 75px; text-align: center;">Task수</th>
                   <th style="width: 80px; text-align: right;">실적공정</th>
                   <th style="width: 45px; text-align: center;">삭제</th>
@@ -2091,9 +2091,9 @@
         <div class="card" style="border-left: 4px solid #6366f1;">
           <div class="card-title">
             <div>
-              <strong>WBS · REQ · VOC 코드 채번 규칙 (ID Prefix)</strong>
+              <strong>WBS · REQ · VOC 코드 ID 규칙 (ID Prefix)</strong>
             </div>
-            <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 재채번</button>
+            <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button>
           </div>
           <div class="grid-4" style="gap:12px; grid-template-columns: repeat(4, 1fr);">
             <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
@@ -2124,36 +2124,36 @@
       <div class="master-subpane" data-group="master" id="masterSub-phase" data-subpane="phase">
         <div style="display:flex; flex-direction:column; gap:16px;">
 
-        <!-- [1-3] SDLC 생명주기 공정 기준정보 -->
+        <!-- [1-3] SDLC 생명주기 공정 프로젝트 설정 -->
         <div class="card" style="border-left: 4px solid #3b82f6;">
           <div class="card-title">
             <div>
-              <strong>SDLC 공정 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
+              <strong>SDLC SDLC 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
             </div>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 관리자가 [시스템 설정 > 공정 유형]에서 합니다">⚙ 공정 유형 관리 (시스템 설정)</button>
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
             </div>
           </div>
           <div id="customSdlcCardsContainer" class="grid-2" style="gap:12px;"></div>
         </div>
 
-        <!-- [1-4] 개선과제형(REQ) 공정 단계 기준정보 관리 -->
+        <!-- [1-4] 개선과제형(REQ) 공정 단계 프로젝트 설정 관리 -->
         <div class="card" style="border-left: 4px solid #0f766e;">
           <div class="card-title">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:var(--fs-lg, 16px);">🔄</span>
-              <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#0f766e;">개선과제(REQ) 공정 유형 — 이 프로젝트에서 쓸 유형 선택 · 단계별 계획 일정</strong>
+              <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#0f766e;">개선과제(REQ) SDLC 유형 — 이 프로젝트에서 쓸 유형 선택 · 단계별 계획 일정</strong>
             </div>
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <span id="reqPhasesWeightSum" style="font-size:var(--fs-sm, 12px); font-weight:bold; margin-right:8px; color:#10b981;">가중치 합계: 100%</span>
               <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; color:#0f766e; margin-left:4px;">사용할 개선과제 유형:</label>
               <select id="reqPresetSelector" style="padding:4px 8px; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; border:1px solid #0f766e; border-radius:4px; background:#f0fdfa;" data-change="ReqPhaseManager.applyPreset" data-change-args='["$value"]'></select>
               <button class="btn btn-warning btn-sm" id="reqRefreshBtn" style="display:none;" data-click="ReqPhaseManager.refreshFromLib" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>
-              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin">⚙ 공정 유형 관리 (시스템 설정)</button>
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin">⚙ SDLC 유형 관리 (시스템 설정)</button>
             </div>
           </div>
           <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:10px;">
-            서브시스템 관리유형이 <strong>개선타입(REQ)</strong>인 과제에 쓸 유형을 고르고, 단계별 계획 일정을 정합니다. (단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 &gt; 공정 유형]에서 관리) 단계별 진척 현황 및 공정 통제에 즉시 연동됩니다.
+            서브시스템 관리유형이 <strong>개선타입(REQ)</strong>인 과제에 쓸 유형을 고르고, 단계별 계획 일정을 정합니다. (단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 &gt; SDLC 유형]에서 관리) Phase 진척 및 공정 통제에 즉시 연동됩니다.
           </p>
           <div class="table-container" style="max-height: 240px;">
             <table class="m-table">
@@ -2162,10 +2162,10 @@
                   <th style="width: 50px; text-align: center;">No</th>
                   <th style="width: 200px;">개선 단계명</th>
                   <th style="width: 80px; text-align: right;">가중치(%)</th>
-                  <th style="width: 128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
+                  <th style="width: 128px;" title="WBS 템플릿 추가 때 이 단계 Task의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
                   <th style="width: 128px;">계획 종료</th>
                   <th style="width: 180px;">표준 산출물명</th>
-                  <th>WBS 과업 매핑 키워드</th>
+                  <th>WBS Task 매핑 키워드</th>
                 </tr>
               </thead>
               <tbody id="reqPhasesTableBody"></tbody>
@@ -2191,7 +2191,7 @@
                   <th style="width:85px;">공정 구분</th>
                   <th style="width:130px;">표준 단계명</th>
                   <th>표준 산출물 명칭</th>
-                  <th style="width:140px;">필수 제출 회차 (복수선택)</th>
+                  <th style="width:140px;">필수 제출 차수 (복수선택)</th>
                   <th style="width:110px;">작성 주체</th>
                   <th style="width:110px;">검토/승인 주체</th>
                   <th style="width:50px; text-align:center;">삭제</th>
@@ -2231,7 +2231,7 @@
           <div class="card-title">
             <div>
               <strong>🚦 판정 기준 (지연 · 마감 임박)</strong>
-              <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-top:3px;">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>확인할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 과업 · 산출물을 보여 줍니다.</div>
+              <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-top:3px;">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>체크할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 Task · 산출물을 보여 줍니다.</div>
             </div>
           </div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -2258,7 +2258,7 @@
             <label style="font-weight:bold;">휴일 필터링:</label>
             <select id="holidayTypeFilter" data-change="renderHolidays" style="padding:3px 8px;">
               <option value="ALL">전체 휴일 목록 보기</option>
-              <option value="CUSTOM">작업자 지정 휴일만 보기</option>
+              <option value="CUSTOM">사용자 지정 휴일만 보기</option>
               <option value="NATIONAL">대한민국 법정공휴일만 보기</option>
             </select>
           </div>
@@ -2272,7 +2272,7 @@
         </div>
       </div>
 
-      <!-- [v3.8.0] 프로젝트별 설정: 시스템 설정의 화면·테마 / 보고서 양식 / 소통 채널을 여기서도 엶 (SharedPanes 가 화면을 옮겨 옴) -->
+      <!-- [v3.8.0] 프로젝트별 설정: 시스템 설정의 화면·테마 / 보고서 템플릿 / 게시판 채널을 여기서도 엶 (SharedPanes 가 화면을 옮겨 옴) -->
       <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-report" data-subpane="ui-report"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
@@ -2280,15 +2280,15 @@
       
 
       <div class="config-group-banner" style="background: linear-gradient(90deg, #b45309, #d97706);">
-        <span>👥 작업자 정보</span>
+        <span>👥 멤버 정보</span>
       </div>
 
       <!-- 권한 등급별 요약 카드 -->
       <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom: 14px;">
         <div class="kpi-card" style="border-left-color: #1e293b;">
-          <div class="kpi-title">전체 등록 작업자</div>
+          <div class="kpi-title">전체 등록 멤버</div>
           <div class="kpi-value" id="userStatTotal">9 명</div>
-          <div class="kpi-sub">프로젝트 등록 작업자 ID 총계</div>
+          <div class="kpi-sub">프로젝트 등록 멤버 ID 총계</div>
         </div>
         <div class="kpi-card" style="border-left-color: #7c3aed;">
           <div class="kpi-title">👑 관리자 (SYS_ADMIN)</div>
@@ -2298,15 +2298,15 @@
         <div class="kpi-card" style="border-left-color: #0284c7;">
           <div class="kpi-title">🛡️ 프로젝트 관리자 (PM / PMO)</div>
           <div class="kpi-value" id="userStatPm">2 명</div>
-          <div class="kpi-sub">기준정보 · 작업자관리 · 전체 데이터 병합</div>
+          <div class="kpi-sub">프로젝트 설정 · 멤버관리 · 전체 데이터 병합</div>
         </div>
         <div class="kpi-card" style="border-left-color: #f59e0b;">
-          <div class="kpi-title">⭐ 총괄 리더 (LEAD)</div>
+          <div class="kpi-title">⭐ PL (LEAD)</div>
           <div class="kpi-value" id="userStatLead">0 명</div>
           <div class="kpi-sub">전체 서브시스템 업무 데이터 수정</div>
         </div>
         <div class="kpi-card" style="border-left-color: #10b981;">
-          <div class="kpi-title">👤 일반 담당자 (PL / 실무자)</div>
+          <div class="kpi-title">👤 멤버 (MEMBER)</div>
           <div class="kpi-value" id="userStatMember">6 명</div>
           <div class="kpi-sub">담당 서브시스템 데이터만 저장</div>
         </div>
@@ -2315,9 +2315,9 @@
       <div class="card" style="border-left: 4px solid #d97706;">
         <div class="card-title">
           <div>
-            <span>📋 프로젝트 투입인력 계정 및 권한 일람표</span>
+            <span>📋 프로젝트 멤버 계정 및 권한 일람표</span>
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
-              * <b>관리자</b>: 전 메뉴 | <b>PM</b>: 기준정보·작업자·전체 데이터 | <b>총괄리더(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>일반(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+              * <b>관리자</b>: 전 메뉴 | <b>PM</b>: 프로젝트 설정·멤버·전체 데이터 | <b>PL(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>멤버(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
             </span>
           </div>
           <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
@@ -2326,9 +2326,9 @@
               <option value="ko">한국어</option>
               <option value="en">English</option>
             </select>
-            <button class="btn btn-secondary btn-sm" data-click="applyBulkUserLanguage">전체 작업자에 적용</button>
-            <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 작업자(역할·담당·부서)를 이 프로젝트로 복사 (관리자)">📥 다른 프로젝트에서 복사</button>
-            <button class="btn btn-primary btn-sm" data-click="addNewProjectUser">+ 신규 작업자 추가</button>
+            <button class="btn btn-secondary btn-sm" data-click="applyBulkUserLanguage">전체 멤버에 적용</button>
+            <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 멤버(역할·담당·부서)를 이 프로젝트로 복사 (관리자)">📥 다른 프로젝트에서 복사</button>
+            <button class="btn btn-primary btn-sm" data-click="addNewProjectUser">+ 신규 멤버 추가</button>
           </div>
         </div>
         <div id="projectUsersScopeInfo" class="pm-scope-info" style="display:none;"></div>
@@ -2336,7 +2336,7 @@
           <table id="projectUsersTable">
             <thead>
               <tr>
-                <th style="width: 130px;">작업자 ID (작업자 선택 ID)</th>
+                <th style="width: 130px;">멤버 ID (멤버 선택 ID)</th>
                 <th style="width: 120px;">성명</th>
                 <th style="width: 260px;">시스템 권한 등급 (4단계 RBAC)</th>
                 <th style="width: 150px;">담당 서브시스템</th>
@@ -2363,7 +2363,7 @@
     <div id="tab-config" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">⚙️ 시스템 설정</span><span class="neo-ph-desc">화면 모양 · 프로젝트 목록 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
+          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">화면 모양 · 프로젝트 목록 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -2372,20 +2372,20 @@
       <div class="master-subtab-bar" data-group="config">
         <button class="master-subtab-btn active" data-subtab="screen" data-click="SubTabs.show" data-click-args='["config", "screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
-        <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 작업자</button>
-        <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 공정 유형</button>
-        <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 양식</button>
+        <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 멤버</button>
+        <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 SDLC 유형</button>
+        <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 템플릿</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
         <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
         <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
-        <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 소통 채널</button>
+        <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 게시판 채널</button>
       </div>
 
-      <!-- [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 관리자 -->
+      <!-- [v3.9.0] SDLC 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 관리자 -->
       <div class="master-subpane" data-group="config" data-subpane="process">
         <div class="card" style="border-left:4px solid #3b82f6;">
           <div class="card-title">
-            <span>🔄 공정 유형 라이브러리 — SDLC 유형 · 개선과제(REQ) 유형</span>
+            <span>🔄 SDLC 유형 라이브러리 — SDLC 유형 · 개선과제(REQ) 유형</span>
             <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
               <span id="plStatus" style="font-size:var(--fs-xs, 11px); color:var(--text-muted);"></span>
               <button class="btn btn-secondary btn-sm" data-click="ProcessLib.resetDefaults">🔄 기본 유형으로</button>
@@ -2398,22 +2398,22 @@
         </div>
       </div>
 
-      <!-- [v3.7.0] 전체 작업자 통합 관리 (관리자) -->
+      <!-- [v3.7.0] 전체 멤버 통합 관리 (관리자) -->
       <div class="master-subpane" data-group="config" data-subpane="users" id="uaPane">
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title">
-            <span>👥 전체 작업자 · 프로젝트별 권한 통합 관리</span>
+            <span>👥 전체 멤버 · 프로젝트별 권한 통합 관리</span>
             <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-              <input type="text" id="uaSearch" placeholder="작업자 ID · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
+              <input type="text" id="uaSearch" placeholder="멤버 ID · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
               <select id="uaProjectFilter" data-change="UserAdmin.render"><option value="ALL">전체 프로젝트</option></select>
               <button class="btn btn-secondary btn-sm" data-click="UserAdmin.load">🔄 새로고침</button>
-              <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 작업자 추가</button>
+              <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 멤버 추가</button>
             </span>
           </div>
           <div id="uaSummary" style="font-size:var(--fs-sm, 12px); font-weight:700; margin:6px 0;"></div>
           <div class="table-container" style="max-height: 560px;">
             <table class="m-table ua-table">
-              <thead><tr><th style="width:110px;">작업자 ID</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">암호</th><th style="width:120px;">관리</th></tr></thead>
+              <thead><tr><th style="width:110px;">멤버 ID</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">암호</th><th style="width:120px;">관리</th></tr></thead>
               <tbody id="uaBody"></tbody>
             </table>
           </div>
@@ -2439,11 +2439,11 @@
             <button class="btn btn-sm" data-btn="warn" type="button">🔒 주의 동작</button>
             <button class="btn btn-sm" data-btn="cancel" type="button">↩️ 취소 · 닫기</button>
             <button class="btn btn-sm" data-btn="nav" type="button">➡️ 이동 · 보기</button>
-            <button class="btn btn-sm" data-btn="excel-down" type="button">📥 엑셀 내려받기</button>
-            <button class="btn btn-sm" data-btn="excel-up" type="button">📤 엑셀 올리기</button>
-            <button class="btn btn-sm" data-btn="word-down" type="button">📥 워드 내려받기</button>
-            <button class="btn btn-sm" data-btn="json-down" type="button">📥 JSON 내려받기</button>
-            <button class="btn btn-sm" data-btn="json-up" type="button">📤 JSON 올리기</button>
+            <button class="btn btn-sm" data-btn="excel-down" type="button">📥 엑셀 다운로드</button>
+            <button class="btn btn-sm" data-btn="excel-up" type="button">📤 엑셀 업로드</button>
+            <button class="btn btn-sm" data-btn="word-down" type="button">📥 워드 다운로드</button>
+            <button class="btn btn-sm" data-btn="json-down" type="button">📥 JSON 다운로드</button>
+            <button class="btn btn-sm" data-btn="json-up" type="button">📤 JSON 업로드</button>
           </div>
         </div>
         <div class="card" style=" border-left: 4px solid #6366f1;">
@@ -2467,7 +2467,7 @@
               </select>
             </div>
             <div class="home-role-box">
-              <label>👔 프로젝트 관리자 · 총괄리더 (PM · LEAD)</label>
+              <label>👔 프로젝트 관리자 · PL (PM · LEAD)</label>
               <select id="cfgRoleHomePM" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["PM", "$value"]' class="home-role-select">
                 <option value="EXECUTIVE" selected>📊 브리핑</option>
                 <option value="PORTAL">🧰 워크벤치</option>
@@ -2475,7 +2475,7 @@
               </select>
             </div>
             <div class="home-role-box">
-              <label>👷 일반 작업자 (MEMBER)</label>
+              <label>👷 멤버 (MEMBER)</label>
               <select id="cfgRoleHomeMember" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["MEMBER", "$value"]' class="home-role-select">
                 <option value="EXECUTIVE">📊 브리핑</option>
                 <option value="PORTAL">🧰 워크벤치</option>
@@ -2496,7 +2496,7 @@
 
           <div style="margin-bottom: 12px;">
             <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:8px; color:var(--text-main);">
-              1. 메뉴 위치 (클릭 시 바로 적용 · 작업자 메뉴의 [메뉴 위치]와 같음):
+              1. 메뉴 위치 (클릭 시 바로 적용 · 멤버 메뉴의 [메뉴 위치]와 같음):
             </label>
             <div class="g-layout-cards">
               <div class="layout-option-card active" id="layoutCard_top-nav" data-click="LayoutManager.setLayout" data-click-args='["top-nav", true]'>
@@ -2632,10 +2632,10 @@
           <div class="grid-2" style="gap: 16px;">
             <div style="display:flex; flex-direction:column; gap:10px;">
               <div>
-                <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">🔐 1. 작업자 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
+                <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">🔐 1. 멤버 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
                 <select id="cfgAuthPolicySelect" style="width:100%; font-weight:bold;" data-change="AuthManager.setAuthPolicy" data-change-args='["$value"]'>
-                  <option value="STARTUP_ONLY">🔑 최초 접속(작업자 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
-                  <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(기준정보·시스템설정) 진입 시 재인증 (고보안)</option>
+                  <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+                  <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(프로젝트 설정·시스템설정) 진입 시 재인증 (고보안)</option>
                   <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
                   <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>
                 </select>
@@ -2652,8 +2652,8 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--border-color); padding-left:16px;">
-              <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(작업자 선택 작업자) 암호 변경:</label>
-              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 작업자 ID + 123!)" autocomplete="off" style="width:100%;">
+              <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(멤버 선택 멤버) 암호 변경:</label>
+              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 멤버 ID + 123!)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgNewPassword" placeholder="새 암호 입력 (8자 이상, 영문+숫자)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgConfirmPassword" placeholder="새 암호 확인 입력" autocomplete="off" style="width:100%;">
               <button class="btn btn-primary btn-sm" data-btn="save" style="margin-top:4px; padding:8px; justify-content:center;" data-click="AuthManager.changePassword">🔑 암호 변경</button>
@@ -2685,7 +2685,7 @@
         </div>
 
         <div class="card" style="border-left:4px solid #dc2626;">
-          <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 복원 지점을 남깁니다</span></div>
+          <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 스냅샷을 남깁니다</span></div>
           <div class="da-target">
             <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">대상 프로젝트:</label>
             <select id="cfgClearTarget" style="min-width:260px;" data-change="DataAdmin.renderActions"></select>
@@ -2709,17 +2709,17 @@
           <div class="card-title" style="color: #0369a1; border-bottom: 2px solid #bae6fd;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: var(--fs-lg, 16px);">💬</span>
-              <strong style="font-size: var(--fs-md, 14px);">프로젝트 소통 채널 관리 및 대화/피드 데이터 초기화</strong>
+              <strong style="font-size: var(--fs-md, 14px);">프로젝트 게시판 채널 관리 및 대화/피드 데이터 초기화</strong>
             </div>
             <span style="font-size: calc(11.5px * var(--fs-scale, 1)); color: #64748b;">공지 &amp; 소통 탭의 피드 채널을 등록·삭제하고 데이터를 초기화합니다.</span>
           </div>
-          <div class="channel-scope-note">🗂️ <b>소통 채널·공지·소통 피드는 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
+          <div class="channel-scope-note">🗂️ <b>게시판 채널·공지·게시판는 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
 
           <div class="grid-2" style="margin-top: 10px;">
             <!-- 좌측: 채널 등록 및 관리 -->
             <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <strong style="font-size: var(--fs-base, 13px); color: #1e293b;">📋 등록된 소통 채널 목록</strong>
+                <strong style="font-size: var(--fs-base, 13px); color: #1e293b;">📋 등록된 게시판 채널 목록</strong>
                 <span style="font-size: var(--fs-xs, 11px); color: #64748b;">(피드에 자동 반영)</span>
               </div>
               <div id="settingsChannelAddContainer" style="display: flex; gap: 8px; margin-bottom: 12px;">
@@ -2753,8 +2753,8 @@
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
                     <div>
-                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #d97706;">💬 업무 소통 피드(게시글) 전체 초기화</strong>
-                      <div style="font-size: var(--fs-xs, 11px); color: #64748b;">작성된 소통 피드 포스트, 과업 매핑 이슈, 답글 스레드 전체 초기화</div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #d97706;">💬 업무 게시판(게시글) 전체 초기화</strong>
+                      <div style="font-size: var(--fs-xs, 11px); color: #64748b;">작성된 게시판 포스트, Task 매핑 이슈, 답글 스레드 전체 초기화</div>
                     </div>
                     <button class="btn btn-danger btn-sm" data-click="NoticeCommManager.clearAllCommunications">
                       피드 초기화
@@ -2762,8 +2762,8 @@
                   </div>
                   <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
                     <div>
-                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #475569;">📢 프로젝트 공지사항 전체 초기화</strong>
-                      <div style="font-size: var(--fs-xs, 11px); color: #64748b;">등록된 모든 공지사항 목록 및 상단 고정 핀 전체 초기화</div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #475569;">📢 프로젝트 공지 전체 초기화</strong>
+                      <div style="font-size: var(--fs-xs, 11px); color: #64748b;">등록된 모든 공지 목록 및 상단 고정 핀 전체 초기화</div>
                     </div>
                     <button class="btn btn-danger btn-sm" data-click="NoticeCommManager.clearAllNotices">
                       공지 초기화
@@ -2789,7 +2789,7 @@
         <button class="btn btn-secondary btn-sm" data-click="closeDataBackupModal">닫기</button>
       </div>
       <p style="margin-bottom: 15px; color: var(--text-sub); font-size: var(--fs-sm, 12px); line-height: 1.5;">
-        현재 시스템의 모든 데이터(WBS 공정표, 서브시스템 기준정보, 산출물, 요구사항 REQ, VOC/이슈)를
+        현재 시스템의 모든 데이터(WBS 공정표, 서브시스템 프로젝트 설정, 산출물, 요구사항 REQ, VOC/이슈)를
         <strong>엑셀(.xlsx) 통합 파일</strong>로 내보내거나 불러올 수 있습니다.
       </p>
 
@@ -2802,11 +2802,11 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <button class="btn btn-success btn-sm" style="justify-content: center; padding: 8px;" data-click="ExcelSync.exportMasterWorkbook">
-            📥 엑셀 내려받기 (전체)
+            📥 엑셀 다운로드 (전체)
           </button>
           <input type="file" id="modalExcelMasterInput" style="display: none;" accept=".xlsx,.xls,.csv" data-change="UiH.importMasterWorkbook" data-change-args='["$event"]'>
           <button class="btn btn-secondary btn-sm" style="justify-content: center; padding: 8px;" data-click="UiH.clickEl" data-click-args='["modalExcelMasterInput"]'>
-            📤 엑셀 올리기 (전체)
+            📤 엑셀 업로드 (전체)
           </button>
         </div>
       </div>
@@ -2836,7 +2836,7 @@
           </p>
           <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: var(--fs-xs, 11px); padding: 6px 8px; background: rgba(0,0,0,0.03); border-radius: 4px;">
             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearWbs" checked> WBS 공정표</label>
-            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearSubsystems"> 서브시스템 기준정보</label>
+            <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearSubsystems"> 서브시스템 프로젝트 설정</label>
             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearDeliverables" checked> 산출물</label>
             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearReq" checked> 요구사항(REQ)</label>
             <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" id="chkClearVoc" checked> VOC/이슈</label>
@@ -2851,7 +2851,7 @@
             🗂️ 옵션 2. LocalStorage 내 JSON 데이터만 보존하고 기타 저장소 항목(암호·캐시 등) 모두 삭제
           </div>
           <p style="font-size: var(--fs-xs, 11px); color: var(--text-sub); margin-bottom: 8px; line-height: 1.4;">
-            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>작업자 ID + 123!</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
+            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>멤버 ID + 123!</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
           </p>
           <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; padding: 8px;" data-click="StorageManager.clearStorageExceptJsonKey">
             🧹 기타 캐시 삭제
@@ -2889,20 +2889,20 @@
         </label>
       </div>
       <div id="tplNoSystem" class="tpl-empty" hidden>
-        등록된 서브시스템이 없습니다. [기준정보 &gt; 기본정보]에서 서브시스템을 먼저 등록하세요.
-        <button class="btn btn-sm" data-btn="nav" data-click="WbsTemplate.goMaster">🗂️ 기준정보로 이동</button>
+        등록된 서브시스템이 없습니다. [프로젝트 설정 &gt; 기본정보]에서 서브시스템을 먼저 등록하세요.
+        <button class="btn btn-sm" data-btn="nav" data-click="WbsTemplate.goMaster">🗂️ 프로젝트 설정으로 이동</button>
       </div>
       <div id="tplExisting" class="tpl-existing" hidden>
-        <div class="tpl-existing-title">⚠️ 이 서브시스템에 이미 WBS 과업 <b id="tplExistingCount">0</b>개가 있습니다. 처리 방법을 고르세요.</div>
+        <div class="tpl-existing-title">⚠️ 이 서브시스템에 이미 WBS Task <b id="tplExistingCount">0</b>개가 있습니다. 처리 방법을 고르세요.</div>
         <label class="tpl-radio"><input type="radio" name="tplMode" value="append" checked data-change="WbsTemplate.renderPreview">
-          <span><b>추가 (Append)</b> — 기존 과업은 그대로 두고, 기존 최상위(L1) 과업 아래에 템플릿 단계 과업을 덧붙입니다.</span></label>
+          <span><b>추가 (Append)</b> — 기존 Task는 그대로 두고, 기존 최상위(L1) Task 아래에 템플릿 단계 Task를 덧붙입니다.</span></label>
         <label class="tpl-radio"><input type="radio" name="tplMode" value="replace" data-change="WbsTemplate.renderPreview">
-          <span><b>교체 (Replace)</b> — 기존 과업을 모두 지우고 템플릿으로 새로 만듭니다. 입력한 실적·진척률도 함께 지워집니다.</span></label>
+          <span><b>교체 (Replace)</b> — 기존 Task를 모두 지우고 템플릿으로 새로 만듭니다. 입력한 실적·진척률도 함께 지워집니다.</span></label>
       </div>
       <div class="tpl-preview-title">미리 보기 <span id="tplPreviewNote"></span></div>
       <div class="table-container tpl-preview">
         <table class="matrix-table">
-          <thead><tr><th style="width:44px;">레벨</th><th>과업명</th><th style="width:60px;">가중치</th><th style="width:170px;">계획 기간</th><th style="width:150px;">산출물</th></tr></thead>
+          <thead><tr><th style="width:44px;">레벨</th><th>Task명</th><th style="width:60px;">가중치</th><th style="width:170px;">계획 기간</th><th style="width:150px;">산출물</th></tr></thead>
           <tbody id="tplPreviewBody"></tbody>
         </table>
       </div>
@@ -2913,14 +2913,14 @@
     </div>
   </div>
 
-  <!-- [v4.0.0] 같은 이름의 프로젝트가 있을 때 (백업 · 복원 > 파일 올리기) -->
+  <!-- [v4.0.0] 같은 이름의 프로젝트가 있을 때 (백업 · 복원 > 파일 업로드) -->
   <div class="modal-overlay" id="dupProjectModal">
     <div class="modal" style="width:520px; max-width:94vw;">
       <div class="card-title"><span>⚠️ 같은 이름의 프로젝트가 있습니다</span></div>
       <p style="font-size:var(--fs-sm, 12px); margin:4px 0 10px;">올리는 파일의 프로젝트 <b id="dupProjectName"></b> 와(과) 이름이 같은 프로젝트가 이미 있습니다. 어떻게 할까요?</p>
       <label class="ua-check"><input type="radio" name="dupAction" value="new" checked> <b>새 이름으로 추가</b></label>
       <input type="text" id="dupNewName" maxlength="100" style="width:100%; margin:2px 0 8px;">
-      <label class="ua-check"><input type="radio" name="dupAction" value="overwrite"> <b>그 프로젝트에 덮어쓰기</b> — 기존 프로젝트의 자료를 파일 내용으로 바꿈 (이름 유지, 바꾸기 전 Task 정보는 서버 백업 / 복원 지점에 남김)</label>
+      <label class="ua-check"><input type="radio" name="dupAction" value="overwrite"> <b>그 프로젝트에 덮어쓰기</b> — 기존 프로젝트의 자료를 파일 내용으로 바꿈 (이름 유지, 바꾸기 전 Task 정보는 서버 백업 / 스냅샷에 남김)</label>
       <div id="dupErr" style="color:#dc2626; font-size:var(--fs-xs, 11px); min-height:1em;"></div>
       <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:8px;">
         <button class="btn btn-secondary btn-sm" data-click="ProjectTransfer.dupDone" data-click-args='[false]'>건너뛰기</button>
@@ -2929,10 +2929,10 @@
     </div>
   </div>
 
-  <!-- [v4.1.0] 올리기 미리 보기 (스마트 병합 · 각 화면 📤 공통) -->
+  <!-- [v4.1.0] 올리기 미리 보기 (파일 Merge · 각 화면 📤 공통) -->
   <div class="modal-overlay" id="mergePreviewModal">
     <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
-      <div class="card-title"><span id="mpTitle">📤 올리기 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeTable.close">닫기</button></div>
+      <div class="card-title"><span id="mpTitle">📤 업로드 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeTable.close">닫기</button></div>
       <div class="bk-hint" id="mpFile" style="margin-bottom:8px;"></div>
       <div class="table-container" style="max-height:none;">
         <table class="m-table">
@@ -2962,20 +2962,20 @@
     </div>
   </div>
 
-  <!-- [v3.7.0] 작업자 추가 · 편집 창 (시스템 설정 > 전체 작업자) -->
+  <!-- [v3.7.0] 멤버 추가 · 편집 창 (시스템 설정 > 전체 멤버) -->
   <div class="modal-overlay" id="userAdminModal">
     <div class="modal" style="width: 720px; max-width: 94vw; max-height: 90vh; overflow-y: auto;">
       <div class="card-title">
-        <span id="uaEditTitle">👤 작업자 편집</span>
+        <span id="uaEditTitle">👤 멤버 편집</span>
         <button class="btn btn-secondary btn-sm" data-click="UserAdmin.closeEdit">닫기</button>
       </div>
       <div class="grid-2" style="gap:10px; margin-bottom:10px;">
-        <label class="ua-field"><span>작업자 ID (작업자 선택 ID)</span><input type="text" id="uaEmpNo" maxlength="30" style="width:100%;"></label>
+        <label class="ua-field"><span>멤버 ID (멤버 선택 ID)</span><input type="text" id="uaEmpNo" maxlength="30" style="width:100%;"></label>
         <label class="ua-field"><span>이름</span><input type="text" id="uaName" maxlength="50" style="width:100%;"></label>
       </div>
       <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
       <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
-      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(작업자 ID + 123!)으로 되돌림 — 바꾸고 싶으면 작업자가 [🔑 암호 변경]에서 바꿈</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(멤버 ID + 123!)으로 되돌림 — 바꾸고 싶으면 멤버가 [🔑 암호 변경]에서 바꿈</label>
       <div class="ua-sub-title">프로젝트별 권한</div>
       <div class="pm-hint" id="uaAdminNote" style="display:none;">관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
       <div class="table-container" style="max-height: 300px;">
@@ -2991,15 +2991,15 @@
     </div>
   </div>
 
-  <!-- [요건 7] 설정 탭의 표준산출물관리 정보 기반 서브시스템별·회차별 자동생성 모달 -->
+  <!-- [요건 7] 설정 탭의 표준산출물관리 정보 기반 서브시스템별·차수별 자동생성 모달 -->
   <div class="modal-overlay" id="bulkDeliverableModal">
     <div class="modal" style="width: 580px;">
       <div class="card-title">
-        <span>⚡ 표준 산출물 서브시스템별 · 회차별 자동 생성</span>
+        <span>⚡ 표준 산출물 서브시스템별 · 차수별 자동 생성</span>
         <button class="btn btn-secondary btn-sm" data-click="closeBulkDeliverableModal">닫기</button>
       </div>
       <p style="margin-bottom: 12px; color: var(--text-sub); font-size: var(--fs-sm, 12px); line-height: 1.5;">
-        <b>[⚙️ 설정 ➔ 1-4. 단계별 표준산출물관리]</b>에 등록된 기준정보(1회차·2회차 복수 제출 대상 설정)를 바탕으로 서브시스템별·회차별 산출물 목록을 자동 생성합니다.
+        <b>[⚙️ 설정 ➔ 1-4. 단계별 표준산출물관리]</b>에 등록된 프로젝트 설정(1차·2차 복수 제출 대상 설정)를 바탕으로 서브시스템별·차수별 산출물 목록을 자동 생성합니다.
       </p>
       <div class="grid-2" style="gap: 12px; margin-bottom: 14px;">
         <div>
@@ -3009,11 +3009,11 @@
           </select>
         </div>
         <div>
-          <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">생성 대상 제출 회차 선택:</label>
+          <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">생성 대상 제출 차수 선택:</label>
           <select id="bulkDelivTargetRound" style="width:100%;">
-            <option value="ALL">전체 회차 (1회차 + 2회차 모두)</option>
-            <option value="1회차">1회차 제출 대상 산출물만 생성</option>
-            <option value="2회차">2회차 제출 대상 산출물만 생성</option>
+            <option value="ALL">전체 차수 (1차 + 2차 모두)</option>
+            <option value="1차">1차 제출 대상 산출물만 생성</option>
+            <option value="2차">2차 제출 대상 산출물만 생성</option>
           </select>
         </div>
       </div>
@@ -3061,7 +3061,7 @@
               <th style="width:50px;">순번</th>
               <th style="width:140px;">단계명</th>
               <th style="width:80px;">가중치(%)</th>
-              <th class="col-date" style="width:128px;" title="WBS 템플릿 추가 때 이 단계 과업의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
+              <th class="col-date" style="width:128px;" title="WBS 템플릿 추가 때 이 단계 Task의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
               <th class="col-date" style="width:128px;">계획 종료</th>
               <th style="width:140px;">대표 산출물</th>
               <th>매칭 키워드 (쉼표 구분)</th>
@@ -3186,7 +3186,7 @@
   </div>
 
 
-  <!-- [ver1.0.4 신규] 기준정보 신규 개선과제형(REQ) 타입 등록 모달 -->
+  <!-- [ver1.0.4 신규] 프로젝트 설정 신규 개선과제형(REQ) 타입 등록 모달 -->
   <div id="newReqPresetModal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-content" style="max-width:540px; width:90%; padding:20px; border-radius:10px; background:#fff; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid #e2e8f0;">

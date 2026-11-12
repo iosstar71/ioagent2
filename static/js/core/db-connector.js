@@ -36,7 +36,7 @@ const DbConnector = {
   },
 
   getConnectionSummaryHtml() {
-    if (!this.isServerMode()) return `<b>현재 방식:</b> Local — 이 PC 브라우저(IndexedDB)에 저장. 다른 사람과는 종합본 · 담당 자료 파일로 주고받습니다. 사용량 약 ${(AppStore.usageBytes() / 1048576).toFixed(2)}MB`;
+    if (!this.isServerMode()) return `<b>현재 방식:</b> Standalone — 이 PC 브라우저(IndexedDB)에 저장. 다른 사람과는 마스터 파일 · 담당 자료 파일로 주고받습니다. 사용량 약 ${(AppStore.usageBytes() / 1048576).toFixed(2)}MB`;
     const st = this.config.connected
       ? `<span class="status-tag tag-completed">🟢 서버 연결됨 (${escapeHtml(this.getApiBase())})</span>`
       : `<span class="status-tag tag-ready">⚪ 연결 대기</span>`;

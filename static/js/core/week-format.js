@@ -88,7 +88,7 @@ var WeekFmt = {
     set("wkBasis", c.basis); set("wkMulti", c.multiYear);
     const sel = document.getElementById("wkFormatPreset");
     const custom = !this.PRESETS.some(p => p[0] === c.format);
-    sel.innerHTML = this.PRESETS.map(p => `<option value="${escapeAttr(p[0])}">${escapeHtml(p[1])}  —  ${escapeHtml(p[0])}</option>`).join("") + `<option value="__CUSTOM__">작업자 지정…</option>`;
+    sel.innerHTML = this.PRESETS.map(p => `<option value="${escapeAttr(p[0])}">${escapeHtml(p[1])}  —  ${escapeHtml(p[0])}</option>`).join("") + `<option value="__CUSTOM__">사용자 지정…</option>`;
     sel.value = custom ? "__CUSTOM__" : c.format;
     const inp = document.getElementById("wkFormatCustom");
     inp.value = c.format;

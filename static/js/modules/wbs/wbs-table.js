@@ -132,7 +132,7 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.aStart || ""}" data-dow="${aStartDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${aStartOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실적시작일이 실적종료일보다 늦습니다 (일정 역전)"` : ""}
+                 class="${aStartOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실제 시작일이 실제 종료일보다 늦습니다 (일정 역전)"` : ""}
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aStart", "$value", "rebuildAll")}">
           <span class="wbs-dow ${aStartDay === "토" ? "day-sat" : (aStartDay === "일" ? "day-sun" : "")}">${aStartDay || ""}</span>
         </div>
@@ -141,7 +141,7 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.aEnd || ""}" data-dow="${aEndDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${aEndOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실적시작일이 실적종료일보다 늦습니다 (일정 역전)"` : ""}
+                 class="${aEndOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실제 시작일이 실제 종료일보다 늦습니다 (일정 역전)"` : ""}
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aEnd", "$value", "rebuildAll")}">
           <span class="wbs-dow ${aEndDay === "토" ? "day-sat" : (aEndDay === "일" ? "day-sun" : "")}">${aEndDay || ""}</span>
         </div>
@@ -153,7 +153,7 @@ function renderWbsTable() {
       <td class="col-fold"><input type="text" value="${escapeHtml(row.output || "")}" style="width:106px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
-          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 과업만 계획일정/진척율(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
+          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 Task만 계획일정/진척률(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
           <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>↳</button>
           <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">＋</button>
           <button class="btn-xs" title="위로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, -1)}" ${row.level === 1 ? "disabled" : ""}>▲</button>
@@ -306,7 +306,7 @@ function addChildTask(idx) {
   const parent = wbsData[idx];
   if (!parent) return;
   if (parent.level >= 5) {
-    showToast("최대 하위 레벨(L5) 이하로는 자식 과업을 추가할 수 없습니다.");
+    showToast("최대 하위 레벨(L5) 이하로는 자식 Task를 추가할 수 없습니다.");
     return;
   }
   const childLevel = parent.level + 1;
@@ -316,7 +316,7 @@ function addChildTask(idx) {
     id: "",
     level: childLevel,
     system: parent.system,
-    name: `${parent.name} - 하위과업`,
+    name: `${parent.name} - 하위 Task`,
     weight: childW,
     reqId: parent.reqId || "",
     owner: parent.owner || "",
@@ -330,7 +330,7 @@ function addChildTask(idx) {
   };
   wbsData.splice(insertPos, 0, newTask);
   rebuildAll();
-  showToast(`[${parent.id} ${parent.name}] 하위에 L${childLevel} 자식 과업이 추가되었습니다.`);
+  showToast(`[${parent.id} ${parent.name}] 하위에 L${childLevel} 자식 Task가 추가되었습니다.`);
 }
 
 function addSiblingTask(idx) {
@@ -344,7 +344,7 @@ function addSiblingTask(idx) {
     id: "",
     level: sibLevel,
     system: target.system,
-    name: `신규 L${sibLevel} 단위과업`,
+    name: `신규 L${sibLevel} Task`,
     weight: sibW,
     reqId: target.reqId || "",
     owner: WbsOwner.parentOwner(idx, sibLevel),
@@ -358,7 +358,7 @@ function addSiblingTask(idx) {
   };
   wbsData.splice(insertPos, 0, newTask);
   rebuildAll();
-  showToast(`[${target.id}] 다음에 L${sibLevel} 동위 과업이 추가되었습니다.`);
+  showToast(`[${target.id}] 다음에 L${sibLevel} 동위 Task가 추가되었습니다.`);
 }
 
 // [v1.0.7] 레벨 변경: 선택 과업과 하위 과업(서브트리)을 함께 이동하고 WBS ID 를 자동 재채번·재정렬
@@ -374,20 +374,20 @@ function changeTaskLevel(idx, delta) {
   const nextLvl = row.level + delta;
   const maxLvl = Math.max(...subtree.map(t => t.level || 1)) + delta;
   if (nextLvl < 2 || maxLvl > 5) {
-    showToast(`단위 과업 레벨은 L2 ~ L5 범위 내에서만 조정 가능합니다. (하위 과업 포함 최대 L${maxLvl})`);
+    showToast(`단위 Task 레벨은 L2 ~ L5 범위 내에서만 조정 가능합니다. (하위 Task 포함 최대 L${maxLvl})`);
     return;
   }
   if (delta > 0) {
     const prev = wbsData[idx - 1];
     if (!prev || (prev.system || "").trim() !== (row.system || "").trim() || nextLvl > (prev.level || 1) + 1) {
-      showToast(`직전 과업(L${prev ? prev.level : "-"}) 아래로만 내릴 수 있습니다. (최대 L${prev ? (prev.level || 1) + 1 : 2})`);
+      showToast(`직전 Task(L${prev ? prev.level : "-"}) 아래로만 내릴 수 있습니다. (최대 L${prev ? (prev.level || 1) + 1 : 2})`);
       return;
     }
   }
   const oldId = row.id;
   subtree.forEach(t => { t.level = (t.level || 1) + delta; });
   rebuildAll();
-  showToast(`🔢 [${oldId} → ${row.id}] 레벨 L${nextLvl - delta} → L${nextLvl} 변경 (하위 ${subtree.length - 1}건 포함) · WBS ID 자동 재채번 완료`);
+  showToast(`🔢 [${oldId} → ${row.id}] 레벨 L${nextLvl - delta} → L${nextLvl} 변경 (하위 ${subtree.length - 1}건 포함) · WBS ID 자동 다시 매기기 완료`);
 }
 
 // 레벨 선택 상자 변경
@@ -404,7 +404,7 @@ function changeTaskSystem(idx, sys) {
   const row = wbsData[idx];
   if (!row || !sys || row.system === sys) return;
   if (row.level === 1) {
-    showToast("서브시스템 루트(L1)는 다른 서브시스템으로 이동할 수 없습니다. 기준정보에서 서브시스템명을 변경하세요.");
+    showToast("서브시스템 루트(L1)는 다른 서브시스템으로 이동할 수 없습니다. 프로젝트 설정에서 서브시스템명을 변경하세요.");
     renderWbsTable();
     return;
   }
@@ -418,7 +418,7 @@ function changeTaskSystem(idx, sys) {
   }
   wbsData.splice(insertAt, 0, ...block);
   rebuildAll();
-  showToast(`🔀 과업(하위 ${block.length - 1}건 포함)을 [${sys}] 서브시스템 마지막으로 이동하고 WBS ID 를 재채번했습니다.`);
+  showToast(`🔀 Task(하위 ${block.length - 1}건 포함)을 [${sys}] 서브시스템 마지막으로 이동하고 WBS ID 를 다시 매기기했습니다.`);
 }
 
 function moveTaskOrder(idx, direction) {
@@ -439,7 +439,7 @@ function moveTaskOrder(idx, direction) {
       }
     }
     if (prevStart < 0) {
-      showToast("현재 상위 그룹 내에서 가장 첫 번째 과업입니다.");
+      showToast("현재 상위 그룹 내에서 가장 첫 번째 Task입니다.");
       return;
     }
     const movingBlock = wbsData.splice(blockStart, blockEnd - blockStart);
@@ -452,7 +452,7 @@ function moveTaskOrder(idx, direction) {
       (wbsData[nextStart].system || "").trim() !== sys ||
       wbsData[nextStart].level !== lvl
     ) {
-      showToast("현재 상위 그룹 내에서 가장 마지막 과업입니다.");
+      showToast("현재 상위 그룹 내에서 가장 마지막 Task입니다.");
       return;
     }
     const nextEnd = getSubtreeEndIndex(nextStart);
@@ -481,7 +481,7 @@ function addNewRow() {
     id: "",
     level: 2,
     system: defaultSys,
-    name: "신규 단위과업",
+    name: "신규 Task",
     weight: newW,
     reqId: "REQ-NEW",
     pStart: validStart,
@@ -523,9 +523,9 @@ function autoAdjustWbsHolidays() {
 
   rebuildAll();
   if (adjustedCount > 0) {
-    showToast(`[휴일 자동보정 완료] 주말·공휴일에 걸쳐 있던 ${adjustedCount}건의 과업 계획일정을 평일(영업일)로 자동 보정했습니다.`);
+    showToast(`[휴일 날짜 옮기기 완료] 주말·공휴일에 걸쳐 있던 ${adjustedCount}건의 Task 계획일정을 평일(영업일)로 자동 보정했습니다.`);
   } else {
-    showToast("현재 조회된 과업 중 휴일(주말·공휴일)에 해당하는 계획일정이 없습니다.");
+    showToast("현재 조회된 Task 중 휴일(주말·공휴일)에 해당하는 계획일정이 없습니다.");
   }
 }
 
@@ -554,7 +554,7 @@ function fillRowActualFromPlan(idx) {
   if (!task || !task.isLeaf) return;
   applyPlanToActual(task);
   rebuildAll();
-  showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${task.aProg >= 100 ? ` (실적완료일 ${task.aEnd})` : ""}`);
+  showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${task.aProg >= 100 ? ` (실제 종료일 ${task.aEnd})` : ""}`);
 }
 
 // [실적 일괄 반영] 서브시스템(또는 전체)에서 계획 진척률이 0 보다 큰 최하위 Task 를 모두 반영 (규칙은 applyPlanToActual)
@@ -573,5 +573,5 @@ function fillActualFromPlan() {
   });
   rebuildAll();
   const scopeLabel = sysFilter === "ALL" ? "전체 서브시스템" : `[${sysFilter}]`;
-  showToast(`${scopeLabel} 과업 ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준).`);
+  showToast(`${scopeLabel} Task ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준).`);
 }

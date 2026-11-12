@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""[Project Mgmt Local] 배포 zip 만들기 — 전사 시스템 하위 폴더(pprjmgmt)에 그대로 올리는 정적 파일(HTML · CSS · JS)만
+"""[IOSTAR-PM Standalone] 배포 zip 만들기 — 전사 시스템 하위 폴더(pprjmgmt)에 그대로 올리는 정적 파일(HTML · CSS · JS)만
 
-    python tools/make_release.py [출력폴더]   → pprjmgmt_v1.0.0_local.zip (안에 pprjmgmt/ 폴더 하나)
+    python tools/make_release.py [출력폴더]   → IOSTAR-PM-Standalone_v1.0.0.zip (안에 배포 폴더 pprjmgmt/ 하나 — 웹 주소 /pprjmgmt)
 
 - 넣는 것: index.html · static/ · legal/ · README.txt (서버 프로그램 없음, 자료는 각 사용자 브라우저에 저장)
 - 풀었을 때 크기가 5MB 를 넘으면 실패 (한도 10MB)

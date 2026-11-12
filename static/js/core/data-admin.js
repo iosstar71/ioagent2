@@ -10,9 +10,9 @@ var DataAdmin = {
   ALL: "__ALL__",
   LIMIT: 10 * 1024 * 1024,
   ACTIONS: {
-    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통", keep: "프로젝트 기본정보 · 기준정보 · 작업자", all: true },
-    project: { label: "⚠️ 프로젝트 전체 초기화", what: "기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 작업자" },
-    factory: { label: "⚠️ 완전 초기화 (작업자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 작업자 목록을 처음 상태로 (admin 하나, 암호 admin123!)", keep: "다른 프로젝트 자료", current: true }
+    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통", keep: "프로젝트 기본정보 · 프로젝트 설정 · 멤버", all: true },
+    project: { label: "⚠️ 프로젝트 전체 초기화", what: "프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 멤버" },
+    factory: { label: "⚠️ 완전 초기화 (멤버 포함)", what: "지금 프로젝트의 프로젝트 설정 · 업무 자료 + 멤버 목록을 처음 상태로 (admin 하나, 암호 admin123!)", keep: "다른 프로젝트 자료", current: true }
   },
   isAdmin() { return typeof ProjectData !== "undefined" && ProjectData.isAdmin(); },
   isServer() { return typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
@@ -52,7 +52,7 @@ var DataAdmin = {
       const el = document.getElementById("daUsage");
       let quota = "";
       try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); quota = e.quota ? ` · 브라우저 허용량 약 ${this.size(e.quota)}` : ""; } } catch (err) {}
-      if (el) el.innerHTML = `이 브라우저(IndexedDB "pprjmgmt")에 저장된 자료 약 <b>${this.size(AppStore.usageBytes())}</b>${quota}. 자료는 이 PC 에만 있으니 정기적으로 💾 백업 · 복원에서 내려받으세요.`;
+      if (el) el.innerHTML = `이 브라우저(IndexedDB "pprjmgmt")에 저장된 자료 약 <b>${this.size(AppStore.usageBytes())}</b>${quota}. 자료는 이 PC 에만 있으니 정기적으로 💾 백업 · 복원에서 다운로드하세요.`;
       return;
     }
     const res = await ServerBackend.request("/api/admin/usage", {});
@@ -117,7 +117,7 @@ var DataAdmin = {
     const t = this.target();
     if (!a || (t.all && !a.all)) return;
     const lines = [`대상: ${t.name}${t.current ? " (지금 프로젝트)" : ""}`, `· 지우는 것: ${a.what}`, `· 그대로: ${a.keep}`,
-      "바꾸기 전 자료는 복원 지점(이 브라우저)에 남깁니다. 오래 보관하려면 먼저 💾 백업 · 복원에서 내려받으세요.",
+      "바꾸기 전 자료는 스냅샷(이 브라우저)에 남깁니다. 오래 보관하려면 먼저 💾 백업 · 복원에서 다운로드하세요.",
       "되돌리기 어렵습니다. 확인을 위해 아래에 대상 이름을 그대로 입력하세요."];
     this.ask(`${a.label} — ${t.name}`, lines, t.name, () => this._do(action, t));
   },
@@ -147,7 +147,7 @@ var DataAdmin = {
     BackupHistoryManager.createBackupSnapshot("프로젝트초기화직전백업", "ALL", false, { projectId: t.pid, projectName: t.name, source: cur.data });
     const next = build(cur.data);
     await ProjectTransfer.write(t.pid, { name: t.name, data: next.data, users: next.users }, true);
-    showToast(`✅ [${t.name}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 작업자는 그대로)`);
+    showToast(`✅ [${t.name}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 멤버는 그대로)`);
   }
 };
 window.DataAdmin = DataAdmin;

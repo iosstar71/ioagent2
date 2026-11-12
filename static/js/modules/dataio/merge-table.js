@@ -12,15 +12,15 @@ var MergeTable = {
   ITEMS: [
     { k: "wbs", unit: "sys", icon: "📋", label: "WBS 공정표", desc: "계층 공정 · 가중치 · 계획/실적 일정 · 진척률" },
     { k: "req", unit: "sys", icon: "📌", label: "요구사항(REQ)", desc: "과제 · 추가 요구사항, 유형 · 상태" },
-    { k: "deliverables", unit: "sys", icon: "📑", label: "산출물", desc: "회차별 산출물 계획/실적 · 검수 상태" },
+    { k: "deliverables", unit: "sys", icon: "📑", label: "산출물", desc: "차수별 산출물 계획/실적 · 검수 상태" },
     { k: "voc", unit: "sys", icon: "📣", label: "VOC / 이슈", desc: "현업 요청 · 우선순위 · 목표일 · 조치" },
     { k: "weekly", unit: "sys", icon: "📝", label: "주간보고", desc: "서브시스템 주간보고 (전체 범위면 통합 보고서 포함)" },
     { k: "meetings", unit: "sys", icon: "📅", label: "회의록 · Action Item", desc: "서브시스템 회의 (+ 통합 회의)" },
-    { k: "notices", unit: "prj", icon: "📢", label: "공지사항", desc: "프로젝트 공지" },
-    { k: "comms", unit: "prj", icon: "💬", label: "소통 피드", desc: "채널별 게시글" },
-    { k: "config", unit: "prj", icon: "🗂️", label: "프로젝트 기준정보", desc: "기본정보 · 분야 · SDLC · 공휴일 · 표준 산출물" },
-    { k: "subsystems", unit: "prj", icon: "🏢", label: "서브시스템 기준정보", desc: "분야 · 코드/명 · SDLC 모델 · 가중치 · 담당" },
-    { k: "users", unit: "prj", icon: "👥", label: "작업자(참여자)", desc: "작업자 ID · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
+    { k: "notices", unit: "prj", icon: "📢", label: "공지", desc: "프로젝트 공지" },
+    { k: "comms", unit: "prj", icon: "💬", label: "게시판", desc: "채널별 게시글" },
+    { k: "config", unit: "prj", icon: "🗂️", label: "프로젝트 설정", desc: "기본정보 · 도메인 · SDLC · 공휴일 · 표준 산출물" },
+    { k: "subsystems", unit: "prj", icon: "🏢", label: "서브시스템 프로젝트 설정", desc: "도메인 · 코드/명 · SDLC 모델 · 가중치 · 담당" },
+    { k: "users", unit: "prj", icon: "👥", label: "멤버(참여자)", desc: "멤버 ID · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
   ],
   DATA_KEY: { wbs: "wbsData", req: "reqMasterData", deliverables: "deliverablesData", voc: "vocData", weekly: "weeklyReportsData", meetings: "meetingsData",
     notices: "noticesData", comms: "communicationsData", config: "projectConfig", subsystems: "subsystemsMeta", users: "projectUsers" },
@@ -28,7 +28,7 @@ var MergeTable = {
   COLLAB: ["weekly", "meetings", "notices", "comms"],
   // 시트 이름으로 자료 찾기 (먼저 맞는 것)
   SHEET_RX: [
-    ["config", /프로젝트\s*기준|기본\s*정보|config/i], ["subsystems", /서브시스템/], ["users", /작업자|인력|user/i],
+    ["config", /프로젝트\s*기준|기본\s*정보|config/i], ["subsystems", /서브시스템/], ["users", /작업자|사용자|멤버|인력|user/i],
     ["weekly", /주간\s*보고/], ["meetings", /회의/], ["notices", /공지/], ["comms", /소통/],
     ["wbs", /wbs|공정표/i], ["deliverables", /산출물/], ["req", /요구|req/i], ["voc", /voc|이슈/i]
   ],
@@ -86,7 +86,7 @@ var MergeTable = {
       </tr>`;
     };
     const grp = (t, unit) => `<tr class="mt-group"><td colspan="5">${t}</td></tr>` + this.ITEMS.filter(i => i.unit === unit).map(row).join("");
-    body.innerHTML = grp("🏢 서브시스템 단위 — 위에서 고른 범위만 내려받고 합칩니다", "sys") + grp("🗂️ 프로젝트 단위 — 범위와 관계없이 프로젝트 전체", "prj");
+    body.innerHTML = grp("🏢 서브시스템 단위 — 위에서 고른 범위만 다운로드하고 합칩니다", "sys") + grp("🗂️ 프로젝트 단위 — 범위와 관계없이 프로젝트 전체", "prj");
     const all = document.getElementById("mtAll");
     if (all) all.checked = this.selected().length === this.ITEMS.length;
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(body);
@@ -113,7 +113,7 @@ var MergeTable = {
   },
   download(format) {
     const keys = this.selected();
-    if (!keys.length) return showToast("⚠️ 내려받을 자료를 1개 이상 체크하세요.");
+    if (!keys.length) return showToast("⚠️ 다운로드할 자료를 1개 이상 체크하세요.");
     const scope = this.scope();
     const tag = keys.length === this.ITEMS.length ? "ALL" : keys.join("_").toUpperCase();
     if (format === "JSON") {
@@ -127,20 +127,20 @@ var MergeTable = {
       });
       const name = ExcelSync.stdName("자료", [scope, tag], "json");
       ExcelSync._triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }), name);
-      return showToast(`📥 [자료 ${keys.length}종 · ${scope}] JSON 내려받기: ${name}`);
+      return showToast(`📥 [자료 ${keys.length}종 · ${scope}] JSON 다운로드: ${name}`);
     }
     const sheets = keys.map(k => this.sheetFor(k, scope)).filter(Boolean);
     // 파일 정보 시트: 어느 종합본을 받아 작업했는지 · 보낸 사람 (PM 이 올릴 때 이전 종합본이면 경고)
     sheets.push({ name: this.INFO_SHEET, colWidths: [18, 40], rows: [
       { cells: ["항목", "값"], styleId: 1, height: 22 },
-      { cells: ["기준 종합본", projectConfig.packageStamp || ""], styleId: 2, height: 20 },
+      { cells: ["기준 마스터 파일", projectConfig.packageStamp || ""], styleId: 2, height: 20 },
       { cells: ["보낸 사람", (AuthManager.getCurrentUser() || {}).name || ""], styleId: 2, height: 20 },
       { cells: ["범위", scope === "ALL" ? "전체" : scope], styleId: 2, height: 20 },
       { cells: ["프로젝트", ProjectData.currentName()], styleId: 2, height: 20 },
-      { cells: ["내려받은 시각", new Date().toLocaleString()], styleId: 2, height: 20 }] });
+      { cells: ["다운로드한 시각", new Date().toLocaleString()], styleId: 2, height: 20 }] });
     const name = ExcelSync.stdName("자료", [scope, tag], "xlsx");
     ExcelSync._triggerDownload(ExcelSync._buildXlsxBlob(sheets), name);
-    showToast(`📥 [자료 ${keys.length}종 · ${scope}] 엑셀 내려받기: ${name}`);
+    showToast(`📥 [자료 ${keys.length}종 · ${scope}] 엑셀 다운로드: ${name}`);
   },
 
   // ---- 올리기 ----
@@ -149,7 +149,7 @@ var MergeTable = {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
     if (!file) return;
-    await this.previewFile(file, { scope: this.scope(), checked: this.selected(), title: "📋 자료 올리기" });
+    await this.previewFile(file, { scope: this.scope(), checked: this.selected(), title: "📋 자료 업로드" });
   },
 
   // 파일 읽기 → { json } 또는 { sheets }
@@ -166,7 +166,7 @@ var MergeTable = {
     const meta = {};
     if (info) (info.rows || []).forEach(r => {
       const k = String((r && r[0]) || "").trim(), v = String((r && r[1]) || "").trim();
-      if (k === "기준 종합본") meta.basedOn = v;
+      if (k === "기준 종합본" || k === "기준 마스터 파일") meta.basedOn = v;
       else if (k === "보낸 사람") meta.exportedBy = v;
     });
     return { sheets: all.filter(sh => sh !== info), meta };
@@ -227,9 +227,9 @@ var MergeTable = {
     const cur = this.count(k, sc);
     if (this.WORK.includes(k)) how = sc === "ALL" ? (lockedOut.length ? `서브시스템별 바꾸기 (${lockedOut.join(", ")} 제외)` : `전체 바꾸기 (지금 ${cur}건 → ${apply.length}건)`) : `${sc} 자료 바꾸기 (지금 ${cur}건 → ${apply.length}건, 다른 서브시스템은 그대로)`;
     else if (this.COLLAB.includes(k)) how = "같은 ID 는 고치고 새 ID 는 추가";
-    else if (k === "config") how = "기준정보를 파일 내용으로 바꾸기";
+    else if (k === "config") how = "프로젝트 설정을 파일 내용으로 바꾸기";
     else if (k === "subsystems") how = `서브시스템 목록 바꾸기 (지금 ${cur}개 → ${apply.length}개)`;
-    else if (k === "users") how = "이 프로젝트의 역할 · 담당 · 부서를 추가 · 갱신 (목록에 없는 작업자는 그대로)";
+    else if (k === "users") how = "이 프로젝트의 역할 · 담당 · 부서를 추가 · 갱신 (목록에 없는 멤버는 그대로)";
     if (!perm.ok) { why = `🔒 ${perm.why}`; apply = []; }
     return { k, label: `${it.icon} ${it.label}`, scope: sc, fileRows, rows: apply, ignored: fileRows - apply.length, why, how, ok: perm.ok && apply.length > 0, lockedOut };
   },
@@ -248,15 +248,15 @@ var MergeTable = {
       try { rows = this.extract(parsed, k, only); } catch (err) { rows = null; }
       if (rows && rows.length) plan.push(this._planOne(k, rows, scope));
     });
-    if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 내려받은 양식(엑셀 / JSON)을 쓰세요.`);
+    if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 다운로드한 양식(엑셀 / JSON)을 쓰세요.`);
     this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
     // [Local] 오래된 종합본을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
     const src = parsed.json || parsed.meta || {};
     const based = src.basedOn, cur = projectConfig.packageStamp;
-    const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 종합본(${based})을 받아 작업한 것입니다. 지금 종합본은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
+    const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 마스터 파일(${based})을 받아 작업한 것입니다. 지금 마스터 파일은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
     const who = src.exportedBy ? `보낸 사람: ${src.exportedBy} · ` : "";
     const checked = opts.checked && opts.checked.length ? opts.checked : keys;
-    document.getElementById("mpTitle").textContent = `${opts.title || "📤 올리기"} — 미리 보기`;
+    document.getElementById("mpTitle").textContent = `${opts.title || "📤 업로드"} — 미리 보기`;
     document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
     document.getElementById("mpBody").innerHTML = plan.map((p, i) => `<tr class="${p.ok ? "" : "mp-off"}">
         <td style="text-align:center;"><input type="checkbox" class="mp-chk" data-i="${i}" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
@@ -267,7 +267,7 @@ var MergeTable = {
         <td class="mt-desc">${escapeHtml(p.how)}</td>
       </tr>`).join("");
     const auto = typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.autoDownload && BackupHistoryManager.autoDownload();
-    document.getElementById("mpNote").textContent = `${stale}${who}[반영]을 누르면 지금 상태를 복원 지점으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 내려받음)" : ""}. 체크한 자료만 반영합니다.`;
+    document.getElementById("mpNote").textContent = `${stale}${who}[반영]을 누르면 지금 상태를 스냅샷으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 다운로드음)" : ""}. 체크한 자료만 반영합니다.`;
     const m = document.getElementById("mergePreviewModal");
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
     m.style.display = "flex";
@@ -300,12 +300,12 @@ var MergeTable = {
       if (need.length) showToast(`📝 ${need.join(", ")} 체크아웃했습니다. 반영 뒤 [💾 저장] 또는 [✅ 체크인]하세요.`);
     }
     try {
-      const backup = BackupHistoryManager.createBackupSnapshot(`자료올리기(${picks.map(p => p.k).join("+")}:${plan.scope})`, plan.scope, true);
+      const backup = BackupHistoryManager.createBackupSnapshot(`자료업로드(${picks.map(p => p.k).join("+")}:${plan.scope})`, plan.scope, true);
       const done = this.apply(picks, plan.json);
       if (typeof plan.onDone === "function") plan.onDone(done);
-      showToast(`✅ [올리기 반영 완료] ${done.join(", ")} · 복원 지점: ${backup}`);
+      showToast(`✅ [업로드 반영 완료] ${done.join(", ")} · 스냅샷: ${backup}`);
     } catch (err) {
-      showToast("⚠️ 올리기 반영 오류: " + err.message);
+      showToast("⚠️ 업로드 반영 오류: " + err.message);
     }
   },
 
@@ -322,7 +322,7 @@ var MergeTable = {
         delete c.uiTheme;
         projectConfig = Object.assign({}, projectConfig, c);
       } else SmartMergeCenter.applyConfigRows(cfg.rows);
-      done.push("프로젝트 기준정보");
+      done.push("프로젝트 설정");
     }
     const subs = by("subsystems");
     if (subs) {
@@ -332,7 +332,7 @@ var MergeTable = {
       done.push(`서브시스템 ${subsystemsMeta.length}개`);
     }
     const users = by("users");
-    if (users) { SmartMergeCenter._mergeUsersList(users.rows); done.push(`작업자 ${users.rows.length}명`); }
+    if (users) { SmartMergeCenter._mergeUsersList(users.rows); done.push(`멤버 ${users.rows.length}명`); }
     this.WORK.forEach(k => {
       const p = by(k);
       if (!p) return;

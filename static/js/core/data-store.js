@@ -19,23 +19,23 @@ var DataRegistry = {
   // part: "system" = 서브시스템 단위 / "id"·"empNo" = 행 단위 / null = 데이터셋 전체
   // scope: 저장 권한 그룹
   DEFS: {
-    projectConfig:            { part: null,     scope: "master",    label: "프로젝트 기준정보" },
-    subsystemsMeta:           { part: null,     scope: "master",    label: "분야/서브시스템" },
+    projectConfig:            { part: null,     scope: "master",    label: "프로젝트 설정" },
+    subsystemsMeta:           { part: null,     scope: "master",    label: "도메인/서브시스템" },
     standardDeliverablesMeta: { part: null,     scope: "master",    label: "표준 산출물" },
-    projectUsers:             { part: "empNo",  scope: "users",     label: "작업자" },
-    wbsData:                  { part: "system", scope: "subsystem", label: "WBS 공정", volatile: ["pProg", "status"] },
+    projectUsers:             { part: "empNo",  scope: "users",     label: "멤버" },
+    wbsData:                  { part: "system", scope: "subsystem", label: "WBS", volatile: ["pProg", "status"] },
     deliverablesData:         { part: "system", scope: "subsystem", label: "산출물" },
     reqMasterData:            { part: "system", scope: "subsystem", label: "요구사항" },
     vocData:                  { part: "system", scope: "subsystem", label: "VOC" },
-    noticesData:              { part: "id",     scope: "shared",    label: "공지사항" },
-    communicationsData:       { part: "id",     scope: "shared",    label: "소통 피드" },
+    noticesData:              { part: "id",     scope: "shared",    label: "공지" },
+    communicationsData:       { part: "id",     scope: "shared",    label: "게시판" },
     meetingsData:             { part: "id",     scope: "shared",    label: "회의" },
     weeklyReportsData:        { part: "id",     scope: "weekly",    label: "주간보고" },
     // [v2.4.0] 작업자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
     todosData:                { part: "id",     scope: "personal",  label: "내 할 일" },
     theme:                    { part: null,     scope: "pref",      label: "화면 테마" },
     // [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 관리자가 관리, 모든 프로젝트 공통
-    processTypes:             { part: null,     scope: "system",    label: "공정 유형" }
+    processTypes:             { part: null,     scope: "system",    label: "SDLC 유형" }
   },
 
   get KEYS() { return Object.keys(this.DEFS); },
@@ -118,6 +118,7 @@ var DataRegistry = {
   // 데이터 일괄 적용 (구버전 백업/JSON 파일 호환: 없는 키는 건너뜀)
   apply(data, keys) {
     if (!data || typeof data !== "object") return false;
+    this.normalizeTerms(data);
     (keys || this.KEYS).forEach(k => {
       if (k in data) this.set(k, data[k]);
     });
@@ -125,7 +126,17 @@ var DataRegistry = {
     return true;
   },
 
-  clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
+  clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); },
+
+  // 용어 정리 이전 자료: 상태 "착수전" → "대기", 산출물 "N회차" → "N차" (불러올 때 바꿈, 저장할 때 새 값으로 저장)
+  normalizeTerms(data) {
+    const st = r => { if (r && r.status === "착수전") r.status = "대기"; };
+    ["reqMasterData", "vocData", "wbsData"].forEach(k => { if (Array.isArray(data[k])) data[k].forEach(st); });
+    if (Array.isArray(data.deliverablesData)) data.deliverablesData.forEach(d => {
+      st(d);
+      if (d && typeof d.round === "string") d.round = d.round.replace(/^(\d)회차$/, "$1차");
+    });
+  }
 };
 
 // -----------------------------------------------------------------------------
@@ -838,7 +849,7 @@ var SyncManager = {
       const lines = conflicts.map(c => {
         const def = DataRegistry.DEFS[c.key] || { label: c.key };
         const part = c.part && c.part !== Partition.WHOLE ? ` [${c.part}]` : "";
-        return `• ${def.label}${part} — ${c.by || "다른 작업자"} ${c.at ? "(" + c.at + ")" : ""}`;
+        return `• ${def.label}${part} — ${c.by || "다른 멤버"} ${c.at ? "(" + c.at + ")" : ""}`;
       });
       SyncUI.openConflictModal(lines, async choice => {
         if (choice === "overwrite") {
@@ -858,7 +869,7 @@ var SyncManager = {
           const conflictKeys = [...new Set(conflicts.map(c => c.key))];
           await this.reloadParts(conflictKeys, conflictSet);
           if (Object.keys(remaining).length) resolve(await this._commit(remaining, false, opts));
-          else { showToast("↩️ 내 변경을 무시하고 다른 작업자가 저장한 최신 데이터를 불러왔습니다."); resolve({ ok: true }); }
+          else { showToast("↩️ 내 변경을 무시하고 다른 멤버가 저장한 최신 데이터를 불러왔습니다."); resolve({ ok: true }); }
         } else {
           this.setStatus("저장 취소 (미저장 변경 유지)", "warn");
           resolve({ ok: false, cancelled: true });
@@ -895,7 +906,7 @@ var SyncManager = {
     if (!opts.skipConfirm && this.isDirty(scopeKeys)) {
       const choice = await SyncUI.ask(
         "🔄 새로고침 확인",
-        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 다른 작업자가 저장한 최신 데이터로 화면이 바뀝니다.`,
+        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 다른 멤버가 저장한 최신 데이터로 화면이 바뀝니다.`,
         [
           { id: "save", label: "💾 저장 후 새로고침", cls: "btn-primary" },
           { id: "discard", label: "🗑️ 변경 버리고 새로고침", cls: "btn-danger" },
@@ -1142,9 +1153,9 @@ var SyncUI = {
 
   openConflictModal(lines, cb) {
     this.ask(
-      "⚠️ 저장 충돌 — 다른 작업자가 이미 저장한 데이터가 있습니다",
-      "내가 화면을 불러온 이후 아래 데이터를 다른 작업자가 먼저 저장했습니다.\n\n" + lines.join("\n") +
-      "\n\n• 덮어쓰기: 내 데이터로 저장합니다. (다른 작업자의 해당 변경은 사라집니다)\n• 무시하기: 충돌된 항목은 다른 작업자의 저장본을 불러오고, 충돌이 없는 내 변경만 저장합니다.",
+      "⚠️ 저장 충돌 — 다른 멤버가 이미 저장한 데이터가 있습니다",
+      "내가 화면을 불러온 이후 아래 데이터를 다른 멤버가 먼저 저장했습니다.\n\n" + lines.join("\n") +
+      "\n\n• 덮어쓰기: 내 데이터로 저장합니다. (다른 멤버의 해당 변경은 사라집니다)\n• 무시하기: 충돌된 항목은 다른 멤버의 저장본을 불러오고, 충돌이 없는 내 변경만 저장합니다.",
       [
         { id: "overwrite", label: "⚠️ 덮어쓰기", cls: "btn-danger" },
         { id: "ignore", label: "↩️ 무시하기 (최신본 적용)", cls: "btn-primary" },

@@ -10,16 +10,16 @@ let projectUsers = [
   { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
 ];
 
-// [요건 2 & 7 신규] 단계별 표준산출물관리 마스터 (1회차 / 2회차 복수 체크 가능)
+// [요건 2 & 7 신규] 단계별 표준산출물관리 마스터 (1차 / 2차 복수 체크 가능)
 const DEFAULT_STANDARD_DELIVERABLES = [
-  { phase: "요구사항정의단계", name: "사업수행계획서 및 WBS 공정표", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-10-15", remarks: "1회차 착수본 / 2회차 중간본 / 4회차 최종본" },
-  { phase: "요구사항정의단계", name: "요구사항 정의서 및 추적표(RTM)", round1: true, round2: true, round3: true, round4: true, defaultDate: "2026-10-30", remarks: "전 회차(1~4회차) 변경이력 관리 산출물" },
-  { phase: "분석설계단계", name: "UI/UX 화면설계서", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-11-06", remarks: "1회차 초안 / 2회차 확정 / 4회차 현행화" },
-  { phase: "분석설계단계", name: "데이터베이스 ERD 및 테이블정의서", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-11-12", remarks: "1회차 논리·물리설계 / 4회차 최종본" },
-  { phase: "분석설계단계", name: "인터페이스 API 명세서", round1: true, round2: true, round3: false, round4: false, defaultDate: "2026-11-12", remarks: "1·2회차 대내외 인터페이스 설계" },
-  { phase: "구현단계", name: "단위테스트 시나리오 및 결과보고서", round1: false, round2: true, round3: true, round4: false, defaultDate: "2026-12-10", remarks: "2·3회차 구현단계 검증 산출물" },
-  { phase: "통합테스트단계", name: "통합테스트 결함조치결과서", round1: false, round2: false, round3: true, round4: true, defaultDate: "2026-12-22", remarks: "3회차 통합테스트 / 4회차 최종검증" },
-  { phase: "이행안정화단계", name: "시스템 운영자 및 작업자 매뉴얼", round1: false, round2: false, round3: false, round4: true, defaultDate: "2026-12-30", remarks: "4회차 이행 및 안정화 최종 산출물" }
+  { phase: "요구사항정의단계", name: "사업수행계획서 및 WBS 공정표", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-10-15", remarks: "1차 착수본 / 2차 중간본 / 4차 최종본" },
+  { phase: "요구사항정의단계", name: "요구사항 정의서 및 추적표(RTM)", round1: true, round2: true, round3: true, round4: true, defaultDate: "2026-10-30", remarks: "전 차수(1~4차) 변경이력 관리 산출물" },
+  { phase: "분석설계단계", name: "UI/UX 화면설계서", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-11-06", remarks: "1차 초안 / 2차 확정 / 4차 현행화" },
+  { phase: "분석설계단계", name: "데이터베이스 ERD 및 테이블정의서", round1: true, round2: true, round3: false, round4: true, defaultDate: "2026-11-12", remarks: "1차 논리·물리설계 / 4차 최종본" },
+  { phase: "분석설계단계", name: "인터페이스 API 명세서", round1: true, round2: true, round3: false, round4: false, defaultDate: "2026-11-12", remarks: "1·2차 대내외 인터페이스 설계" },
+  { phase: "구현단계", name: "단위테스트 시나리오 및 결과보고서", round1: false, round2: true, round3: true, round4: false, defaultDate: "2026-12-10", remarks: "2·3차 구현단계 검증 산출물" },
+  { phase: "통합테스트단계", name: "통합테스트 결함조치결과서", round1: false, round2: false, round3: true, round4: true, defaultDate: "2026-12-22", remarks: "3차 통합테스트 / 4차 최종검증" },
+  { phase: "이행안정화단계", name: "시스템 운영자 및 멤버 매뉴얼", round1: false, round2: false, round3: false, round4: true, defaultDate: "2026-12-30", remarks: "4차 이행 및 안정화 최종 산출물" }
 ];
 
 let standardDeliverablesMeta = JSON.parse(JSON.stringify(DEFAULT_STANDARD_DELIVERABLES));
@@ -50,7 +50,7 @@ function renderDomainChips() {
     chip.style.fontSize = "var(--fs-xs, 11px)";
     chip.innerHTML = `
       <b>${escapeHtml(d)}</b>
-      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="분야 삭제">×</button>
+      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="도메인 삭제">×</button>
     `;
     container.appendChild(chip);
   });
@@ -61,16 +61,16 @@ function addNewDomain() {
   if (!input) return;
   const val = input.value.trim();
   if (!val) {
-    showToast("추가할 분야명을 입력해주세요.");
+    showToast("추가할 도메인명을 입력해주세요.");
     return;
   }
   const domains = getProjectDomains();
   if (domains.length >= 5) {
-    showToast("⚠️ 상위 분야는 최대 5개까지만 등록 가능합니다.");
+    showToast("⚠️ 상위 도메인은 최대 5개까지만 등록 가능합니다.");
     return;
   }
   if (domains.includes(val)) {
-    showToast("이미 등록된 분야명입니다.");
+    showToast("이미 등록된 도메인명입니다.");
     return;
   }
   projectConfig.domains.push(val);
@@ -78,24 +78,24 @@ function addNewDomain() {
   renderDomainChips();
   updateAllSubsystemFilterDropdowns();
   persistChanges();
-  showToast(`신규 분야 [${val}] 가 등록되었습니다. (총 ${projectConfig.domains.length}/5개)`);
+  showToast(`신규 도메인 [${val}] 가 등록되었습니다. (총 ${projectConfig.domains.length}/5개)`);
 }
 
 function deleteDomain(idx) {
   const domains = getProjectDomains();
   if (domains.length <= 1) {
-    showToast("최소 1개 이상의 분야가 유지되어야 합니다.");
+    showToast("최소 1개 이상의 도메인이 유지되어야 합니다.");
     return;
   }
   const delName = domains[idx];
-  openConfirmDialog(`[${delName}] 분야를 삭제하시겠습니까?\n(소속된 서브시스템은 '미지정분야'로 변경됩니다)`, () => {
+  openConfirmDialog(`[${delName}] 도메인을 삭제하시겠습니까?\n(소속된 서브시스템은 '미지정도메인'로 변경됩니다)`, () => {
     projectConfig.domains.splice(idx, 1);
     subsystemsMeta.forEach(s => {
       if (s.domain === delName) s.domain = projectConfig.domains[0] || "공통";
     });
     renderDomainChips();
     rebuildAll();
-    showToast(`[${delName}] 분야가 삭제되었습니다.`);
+    showToast(`[${delName}] 도메인이 삭제되었습니다.`);
   });
 }
 
@@ -162,7 +162,7 @@ function updateAllSubsystemFilterDropdowns() {
     const dSel = document.getElementById(dId);
     if (!dSel) return;
     const curD = dSel.value || "ALL";
-    dSel.innerHTML = `<option value="ALL">전체 분야 (5개중 ${domains.length}개 운영)</option>` +
+    dSel.innerHTML = `<option value="ALL">전체 도메인 (5개중 ${domains.length}개 운영)</option>` +
       domains.map(d => `<option value="${escapeHtml(d)}" ${d === curD ? "selected" : ""}>🗂️ ${escapeHtml(d)}</option>`).join("");
   });
 
@@ -222,7 +222,7 @@ function updateAllSubsystemFilterDropdowns() {
 function getActiveDeliverableRounds() {
   const maxR = Math.min(4, Math.max(1, parseInt((projectConfig && projectConfig.maxDeliverableRounds) || 2, 10)));
   const rounds = [];
-  for (let i = 1; i <= maxR; i++) rounds.push(`${i}회차`);
+  for (let i = 1; i <= maxR; i++) rounds.push(`${i}차`);
   return rounds;
 }
 
@@ -233,14 +233,14 @@ function updateDeliverableRoundDropdowns() {
   const filterEl = document.getElementById("delivRoundFilter");
   if (filterEl) {
     const cur = filterEl.value || "ALL";
-    filterEl.innerHTML = `<option value="ALL">전체 회차 (${roundLabelsStr})</option>` +
+    filterEl.innerHTML = `<option value="ALL">전체 차수 (${roundLabelsStr})</option>` +
       rounds.map(r => `<option value="${r}" ${r === cur ? "selected" : ""}>${r} 제출분만 보기</option>`).join("");
   }
 
   const bulkEl = document.getElementById("bulkDelivTargetRound");
   if (bulkEl) {
     const cur = bulkEl.value || "ALL";
-    bulkEl.innerHTML = `<option value="ALL">전체 운영 회차 (${roundLabelsStr})</option>` +
+    bulkEl.innerHTML = `<option value="ALL">전체 운영 차수 (${roundLabelsStr})</option>` +
       rounds.map(r => `<option value="${r}" ${r === cur ? "selected" : ""}>${r} 제출 대상 산출물만 생성</option>`).join("");
   }
 }
@@ -324,7 +324,7 @@ function addNewSubsystemMeta() {
     sdlcCode: defaultSdlcCode,
     weight: 15,
     pm: `담당PM${nextIdx}`,
-    desc: `${name} 과업 범위`
+    desc: `${name} Task 범위`
   });
   renderSubsystemsMetaTable();
   rebuildAll();
@@ -350,7 +350,7 @@ function updateSubsystemName(idx, newName) {
 function syncSubsystemWeights() {}
 
 function deleteSubsystemMeta(idx) {
-  openConfirmDialog(`[${subsystemsMeta[idx].name}] 기준정보를 삭제하시겠습니까?`, () => {
+  openConfirmDialog(`[${subsystemsMeta[idx].name}] 프로젝트 설정을 삭제하시겠습니까?`, () => {
     subsystemsMeta.splice(idx, 1);
     renderSubsystemsMetaTable();
     rebuildAll();
@@ -371,12 +371,12 @@ function renderStandardDeliverablesMetaTable() {
       thead.innerHTML = `
         <tr>
           <th style="width: 45px; text-align:center;">No</th>
-          <th style="width: 140px;">표준 공정단계</th>
+          <th style="width: 140px;">표준 Phase</th>
           <th>필수 표준 산출물 명칭</th>
-          <th style="width: 75px; text-align:center;">1회차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">2회차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">3회차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">4회차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">1차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">2차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">3차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">4차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
           <th style="width: 125px;">기준일자</th>
           <th style="width: 140px;">비고</th>
           <th style="width: 50px; text-align:center;">삭제</th>
@@ -392,7 +392,7 @@ function renderStandardDeliverablesMetaTable() {
   const order = standardDeliverablesMeta.map((item, idx) => idx).sort((a, b) => phaseRank(standardDeliverablesMeta[a].phase) - phaseRank(standardDeliverablesMeta[b].phase) || a - b);
   order.forEach((idx, no) => {
     const item = standardDeliverablesMeta[idx];
-    // 자동 초기화: maxR 초과 회차는 무조건 false로 동기화
+    // 자동 초기화: maxR 초과 차수는 무조건 false로 동기화
     for (let r = maxR + 1; r <= 4; r++) {
       item[`round${r}`] = false;
     }
@@ -408,18 +408,18 @@ function renderStandardDeliverablesMetaTable() {
       if (!isEnabled) {
         return `
           <td style="text-align:center; opacity:0.38; background:#f8fafc; cursor:not-allowed;">
-            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:#94a3b8; cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}회차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
+            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:#94a3b8; cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
               <input type="checkbox" disabled style="cursor:not-allowed;">
-              <span style="font-size:var(--fs-2xs, 10px);">${rNum}회차</span>
+              <span style="font-size:var(--fs-2xs, 10px);">${rNum}차</span>
             </label>
           </td>
         `;
       }
       return `
         <td style="text-align:center;">
-          <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:var(--fs-xs, 11px); color:${colorHex};" title="${rNum}회차 필수 제출 대상 여부">
+          <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:var(--fs-xs, 11px); color:${colorHex};" title="${rNum}차 필수 제출 대상 여부">
             <input type="checkbox" ${item[key] ? "checked" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, key, "$checked", "persistChanges")}">
-            ${rNum}회차
+            ${rNum}차
           </label>
         </td>
       `;
@@ -460,15 +460,15 @@ function addNewStandardDeliverableMeta() {
     round1: true,
     round2: true,
     defaultDate: projectConfig.reportDate || "2026-11-04",
-    remarks: "1회차 초안 / 2회차 최종본 제출"
+    remarks: "1차 초안 / 2차 최종본 제출"
   });
   renderStandardDeliverablesMetaTable();
   persistChanges();
-  showToast("신규 표준 산출물 항목이 추가되었습니다. (1회차·2회차 제출 여부를 복수로 체크할 수 있습니다.)");
+  showToast("신규 표준 산출물 항목이 추가되었습니다. (1차·2차 제출 여부를 복수로 체크할 수 있습니다.)");
 }
 
 function resetStandardDeliverablesMeta() {
-  openConfirmDialog("표준산출물 기준정보를 초기 기본 목록(8종)으로 복원하시겠습니까?", () => {
+  openConfirmDialog("표준산출물 프로젝트 설정을 초기 기본 목록(8종)으로 복원하시겠습니까?", () => {
     standardDeliverablesMeta = JSON.parse(JSON.stringify(DEFAULT_STANDARD_DELIVERABLES));
     renderStandardDeliverablesMetaTable();
     persistChanges();

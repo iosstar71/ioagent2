@@ -57,7 +57,7 @@ var ExecDeck = {
       T(0.45, 0.12, 9.5, 0.66, [p(title, 24, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
       T(9.4, 0.12, 3.5, 0.66, [p(sub || c.wObj.fullLabel, 11, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
       R(0, this.H - 0.32, this.W, 0.32, SUB),
-      T(0.45, this.H - 0.32, 8, 0.32, [p(`${c.projName} · 주간 경영 보고`, 9, { color: "475569" })], { anchor: "ctr" }),
+      T(0.45, this.H - 0.32, 8, 0.32, [p(`${c.projName} · 주간 임원 보고`, 9, { color: "475569" })], { anchor: "ctr" }),
       T(this.W - 3.2, this.H - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "475569", align: "r" })], { anchor: "ctr" })
     ];
     // 표 그리기 (머리줄 + 줄무늬 행)
@@ -83,7 +83,7 @@ var ExecDeck = {
       R(0, 0, 0.35, this.H, H),
       R(0.35, 2.15, this.W - 0.35, 0.06, C),
       T(1.0, 1.0, 11.3, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
-      T(1.0, 2.45, 11.3, 1.1, [p("주간 경영 보고", 44, { bold: true, color: C })]),
+      T(1.0, 2.45, 11.3, 1.1, [p("주간 임원 보고", 44, { bold: true, color: C })]),
       T(1.0, 3.65, 11.3, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
       T(1.0, 4.4, 11.3, 0.5, [p(`차주: ${c.integ.nextStartDate} ~ ${c.integ.nextEndDate}`, 14, { color: "475569" })]),
       T(1.0, 6.0, 11.3, 0.9, [
@@ -109,7 +109,7 @@ var ExecDeck = {
       // 과업 상태 분포 막대
       const parts = [["완료", c.m.cntComp || 0, "15803D"], ["진행", c.m.cntProg || 0, C], ["지연", c.m.cntDel || 0, "DC2626"], ["착수 전", c.m.cntReady || 0, "CBD5E1"]];
       const tot = parts.reduce((a, x) => a + x[1], 0) || 1;
-      els.push(T(0.45, 3.0, 12.4, 0.4, [p(`과업 상태 분포 (전체 ${tot}건)`, 14, { bold: true, color: C })]));
+      els.push(T(0.45, 3.0, 12.4, 0.4, [p(`Task 상태 분포 (전체 ${tot}건)`, 14, { bold: true, color: C })]));
       let x = 0.45;
       parts.forEach(([n, v, col]) => {
         const w = 12.4 * v / tot;
@@ -193,7 +193,7 @@ var ExecDeck = {
       const tr = c.order.map(sys => {
         const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys);   // 삭제 요구사항은 완료율에서 뺌
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
-        const vw = vc.filter(v => v.status === "착수전" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
+        const vw = vc.filter(v => v.status === "대기" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
         const rr = rq.length ? Math.round(rd / rq.length * 100) : 0, vr = vc.length ? Math.round(vd / vc.length * 100) : 0;
         return [domainOf(sys), sys, `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
@@ -202,7 +202,7 @@ var ExecDeck = {
       els.push(R(3.25, 1.15, 4.6, 0.36, C)); els.push(T(3.25, 1.15, 4.6, 0.36, [p("🎯 요구사항 (REQ) 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
       els.push(R(7.85, 1.15, 5.0, 0.36, "B45309")); els.push(T(7.85, 1.15, 5.0, 0.36, [p("💬 추가 VOC · 이슈 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
       const rh = Math.min(0.42, 5.0 / Math.max(1, tr.length + 1));
-      table(els, 0.45, 1.51, [["분야", 1.3, "l"], ["서브시스템", 1.5, "l"], ["전체", 1.1], ["진행", 1.1], ["완료", 1.1], ["완료율", 1.3], ["유효 전체", 1.0], ["대기", 1.0], ["진행중", 1.0], ["완료·제외", 1.0], ["달성률", 1.0]], tr, rh);
+      table(els, 0.45, 1.51, [["도메인", 1.3, "l"], ["서브시스템", 1.5, "l"], ["전체", 1.1], ["진행", 1.1], ["완료", 1.1], ["완료율", 1.3], ["유효 전체", 1.0], ["대기", 1.0], ["진행중", 1.0], ["완료·제외", 1.0], ["달성률", 1.0]], tr, rh);
       slides.push({ name: "요구사항·VOC", els });
     }
 
@@ -220,7 +220,7 @@ var ExecDeck = {
       const nph = g.phases.length;
       const fixedW = 1.3 + 1.4, restW = 12.4 - fixedW;
       const colW = restW / (nph + 1);
-      const cols = [["분야", 1.3, "l"], ["서브시스템", 1.4, "l"]].concat(g.phases.map(ph => [`${ph.name} (${ph.weight}%)`, colW])).concat([["합계", colW]]);
+      const cols = [["도메인", 1.3, "l"], ["서브시스템", 1.4, "l"]].concat(g.phases.map(ph => [`${ph.name} (${ph.weight}%)`, colW])).concat([["합계", colW]]);
       const parse = s => { const m = String(s).match(/(\d+)%\s*\/\s*(\d+)%\s*\((\d+)%\)/); return m ? { t: `${m[1]}% / ${m[2]}%  (${m[3]}%)`, r: +m[3] } : { t: String(s), r: 100 }; };
       const tr = g.rows.map(r => [r[0], r[1]].concat(r.slice(2).map(x => { const q = parse(x); return { text: q.t, color: rateColor(q.r) }; })));
       const rh = Math.min(0.5, 5.2 / Math.max(1, tr.length + 1));
@@ -229,12 +229,12 @@ var ExecDeck = {
     });
 
     // 8. 지연 과업 · 주요 마일스톤
-    mark("지연 과업 · 주요 마일스톤");
+    mark("지연 Task · 주요 마일스톤");
     {
-      const els = head("지연 과업 · 주요 마일스톤");
+      const els = head("지연 Task · 주요 마일스톤");
       const del = (c.data.delayed || []).slice(0, 12);
       els.push(T(0.45, 1.15, 7.3, 0.35, [p(`지연 Task ${c.m.cntDel || 0}건${del.length < (c.m.cntDel || 0) ? ` (상위 ${del.length}건)` : ""}`, 13, { bold: true, color: "B91C1C" })]));
-      const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 과업 없음", 12, { color: "15803D" })];
+      const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 Task 없음", 12, { color: "15803D" })];
       els.push(T(0.45, 1.55, 7.3, 5.4, this.fit(dl, 7.3, 5.4)));
       const ms = (c.data.milestones || []).slice(0, 10);
       els.push(T(8.1, 1.15, 4.8, 0.35, [p("주요 마일스톤", 13, { bold: true, color: C })]));
@@ -476,7 +476,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
 .t p { margin: 0 0 2pt; line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; background: #111827; color: #fff; padding: 10px 16px; font: 14px sans-serif; z-index: 5; }
 @media print { html, body { background: #fff; } .slide { margin: 0; box-shadow: none; } .bar { display: none; } }
-</style></head><body><div class="bar">주간 경영 보고 미리보기 — 인쇄 창에서 대상을 [PDF로 저장]으로 고르면 PDF 파일이 됩니다. (용지: 가로, 여백 없음)</div>${slides}</body></html>`;
+</style></head><body><div class="bar">주간 임원 보고 미리보기 — 인쇄 창에서 대상을 [PDF로 저장]으로 고르면 PDF 파일이 됩니다. (용지: 가로, 여백 없음)</div>${slides}</body></html>`;
   },
 
   // ---------------------------------------------------------------------------
@@ -488,7 +488,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     if (!deck) return showToast("⚠️ 보고 주차를 찾을 수 없습니다.");
     const name = `${deck.c.docNo}_PPT.pptx`;
     ExcelSync._triggerDownload(this.toPptxBlob(deck), name);
-    showToast(`📽 [경영 보고] ${name} 내려받기 완료 (${deck.slides.length}장)`);
+    showToast(`📽 [임원 보고] ${name} 다운로드 완료 (${deck.slides.length}장)`);
     return name;
   },
   // 주간보고 화면 [⬇ 내려받기]: 왼쪽 목록에서 고른 주차
@@ -502,7 +502,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     w.document.write(this.toHtml(deck));
     w.document.close();
     setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 600);
-    showToast(`🖨 [경영 보고] 인쇄 창에서 [PDF로 저장]을 고르세요 (${deck.slides.length}장)`);
+    showToast(`🖨 [임원 보고] 인쇄 창에서 [PDF로 저장]을 고르세요 (${deck.slides.length}장)`);
   }
 };
 window.ExecDeck = ExecDeck;

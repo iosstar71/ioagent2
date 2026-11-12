@@ -129,7 +129,7 @@ var WbsWeight = {
   // 경고가 있으면 알림 (입력 · 저장 때)
   notify(prefix) {
     const c = this.count();
-    if (c) showToast(`${prefix || ""}⚠️ 가중치 오류 ${c}건: 하위 가중치 합이 상위와 다릅니다 (경고색 칸). 직접 고치거나 [⚖️ 가중치 오류 보정]을 누르세요.`);
+    if (c) showToast(`${prefix || ""}⚠️ 가중치 오류 ${c}건: 하위 가중치 합이 상위와 다릅니다 (경고색 칸). 직접 고치거나 [⚖️ 가중치 맞추기]을 누르세요.`);
     return c;
   },
 
@@ -243,7 +243,7 @@ var WbsWeight = {
     const need = data.length > 0 && this.count(data) > 0;
     if (need) this.migrate(data);
     projectConfig.weightModel = this.MODEL;
-    if (need) setTimeout(() => showToast("⚖️ WBS 가중치를 서브시스템 100 기준으로 바꿨습니다 (기존 비율 그대로라 진척률은 같음). 서브시스템 사이 비중은 [기준정보]의 서브시스템 가중치로 계산합니다."), 900);
+    if (need) setTimeout(() => showToast("⚖️ WBS 가중치를 서브시스템 100 기준으로 바꿨습니다 (기존 비율 그대로라 진척률은 같음). 서브시스템 사이 비중은 [프로젝트 설정]의 서브시스템 가중치로 계산합니다."), 900);
     return true;
   },
 

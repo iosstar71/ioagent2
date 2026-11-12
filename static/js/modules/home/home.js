@@ -305,13 +305,13 @@ var HomeScreenManager = {
     if (elKpiReq) elKpiReq.textContent = `${reqRate}%`;
     if (elKpiReqSub) elKpiReqSub.textContent = `완료 ${reqDone}건 / 전체 ${validReqs.length}건`;
 
-    const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1회차", "2회차"];
+    const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1차", "2차"];
     const validDelivs = (deliverablesData || []).filter(d => activeRounds.includes(d.round));
     const delivDone = validDelivs.filter(d => d.status === "보완완료").length;
     const delivRate = validDelivs.length > 0 ? Math.round((delivDone / validDelivs.length) * 100) : 0;
 
     const validVocs = (vocData || []).filter(v => v.status !== "삭제");
-    const vocWait = validVocs.filter(v => v.status === "착수전" || v.status === "대기" || v.status === "보류").length;
+    const vocWait = validVocs.filter(v => v.status === "대기" || v.status === "대기" || v.status === "보류").length;
     const vocProg = validVocs.filter(v => v.status === "진행").length;
     const vocDone = validVocs.filter(v => v.status === "완료" || v.status === "제외").length;
     const vocRate = validVocs.length > 0 ? Math.round((vocDone / validVocs.length) * 100) : 0;
@@ -474,7 +474,7 @@ var HomeScreenManager = {
     if (badge) badge.textContent = `${uncompleted.length}건 진행중`;
 
     if (uncompleted.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:var(--fs-sm, 12px);">🎉 모든 과업이 100% 완료되었거나 필터 조건에 해당하는 미완료 Task이 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:var(--fs-sm, 12px);">🎉 모든 Task가 100% 완료되었거나 필터 조건에 해당하는 미완료 Task가 없습니다.</td></tr>`;
       return;
     }
 
@@ -498,7 +498,7 @@ var HomeScreenManager = {
         </td>
         <td>${stTag}</td>
         <td style="text-align:center;">
-          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:var(--fs-2xs, 10px);" title="이 과업의 실적을 즉시 100% 완료 상태로 반영">
+          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:var(--fs-2xs, 10px);" title="이 Task의 실적을 즉시 100% 완료 상태로 반영">
             ✓ 100% 완료
           </button>
         </td>
@@ -524,7 +524,7 @@ var HomeScreenManager = {
     if (typeof renderDashboard === "function") renderDashboard();
     if (typeof renderPhaseMatrix === "function") renderPhaseMatrix();
     if (typeof StorageManager !== "undefined") StorageManager.saveAll(false);
-    showToast(`✅ [과업 완료] WBS [${task.id}] '${task.name}' 과업이 100% 완료 처리되었습니다.`);
+    showToast(`✅ [Task 완료] WBS [${task.id}] '${task.name}' Task가 100% 완료 처리되었습니다.`);
   },
 
   renderPortalSummaryCards() {
@@ -542,7 +542,7 @@ var HomeScreenManager = {
     if (elRSub) elRSub.textContent = `완료율 ${reqRate}%`;
 
     // Deliv
-    const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1회차", "2회차"];
+    const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1차", "2차"];
     let delivs = (deliverablesData || []).filter(d => activeRounds.includes(d.round));
     if (filterSys !== "ALL") delivs = delivs.filter(d => d.system === filterSys);
     const delivDone = delivs.filter(d => d.status === "보완완료").length;
@@ -573,7 +573,7 @@ var HomeScreenManager = {
       : ((typeof projectNoticesData !== "undefined" && Array.isArray(projectNoticesData)) ? projectNoticesData : []);
 
     if (notices.length === 0) {
-      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:#64748b; padding:12px; text-align:center;">등록된 공지사항이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
+      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:#64748b; padding:12px; text-align:center;">등록된 공지이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
       return;
     }
     notices.slice(0, 4).forEach(n => {
@@ -586,7 +586,7 @@ var HomeScreenManager = {
       item.style.transition = "background 0.15s ease, transform 0.15s ease";
       item.onmouseenter = () => { item.style.background = "#eff6ff"; item.style.transform = "translateX(2px)"; };
       item.onmouseleave = () => { item.style.background = "#f8fafc"; item.style.transform = "none"; };
-      item.title = "클릭 시 공지사항 탭으로 바로 이동합니다.";
+      item.title = "클릭 시 공지 탭으로 바로 이동합니다.";
       item.onclick = () => {
         switchTab("tab-notices");
         if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.switchSubTab === "function") {
@@ -615,7 +615,7 @@ var HomeScreenManager = {
       : ((typeof teamChatMessages !== "undefined" && Array.isArray(teamChatMessages)) ? teamChatMessages : []);
 
     if (comms.length === 0) {
-      stream.innerHTML = `<div style="color:#94a3b8; font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 소통 피드 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
+      stream.innerHTML = `<div style="color:#94a3b8; font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 게시판 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
       return;
     }
 
@@ -632,7 +632,7 @@ var HomeScreenManager = {
       p.style.transition = "background 0.15s ease";
       p.onmouseenter = () => { p.style.background = "#eff6ff"; };
       p.onmouseleave = () => { p.style.background = "#ffffff"; };
-      p.title = "클릭 시 소통 피드 탭으로 바로 이동합니다.";
+      p.title = "클릭 시 게시판 탭으로 바로 이동합니다.";
       p.onclick = () => {
         switchTab("tab-notices");
         if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.switchSubTab === "function") {
@@ -695,7 +695,7 @@ var HomeScreenManager = {
     if (typeof StorageManager !== "undefined" && typeof StorageManager.saveAll === "function") {
       StorageManager.saveAll(false);
     }
-    showToast("💬 팀 소통 피드에 새 메시지가 등록되었습니다.");
+    showToast("💬 팀 게시판에 새 메시지가 등록되었습니다.");
   }
 };
 

@@ -33,9 +33,9 @@ var ButtonStandard = {
     if (/JSON|json|백업 다운|DDL/i.test(t) && (up || down)) return up && !/다운|Download/i.test(text) ? "json-up" : "json-down";
     if (has(/삭제|초기화|✕|×|🗑️|비우기|Delete|Reset|Clear|delete|remove|clearAll/) && !/선택 해제/.test(text)) return "danger";
     if (has(/잠금|Lock/)) return "warn";
-    if (/취소|닫기|작업자 선택으로|Cancel|Close|Back to/i.test(text)) return "cancel";
-    if (/저장|작성 완료|적용|작업자 선택|확인|변경$|전송|완료$|Save|Apply|Login|Complete|Send|Done|^OK$/i.test(text)) return "save";
-    if (/새로고침|동기화|다시 불러|재계산|재채번|재확인|재연결|연결 테스트|자동반영|자동보정|Refresh|Sync|Recalc|Renumber|Reconnect|Test Connection|Auto-/i.test(text)) return "refresh";
+    if (/취소|닫기|작업자 선택으로|멤버 선택으로|Cancel|Close|Back to/i.test(text)) return "cancel";
+    if (/저장|작성 완료|적용|작업자 선택|멤버 선택|확인|변경$|전송|완료$|Save|Apply|Login|Complete|Send|Done|^OK$/i.test(text)) return "save";
+    if (/새로고침|동기화|다시 불러|재계산|다시 계산|재채번|다시 매기기|재확인|재연결|연결 테스트|자동반영|자동보정|채우기|옮기기|맞추기|Refresh|Sync|Recalc|Renumber|Reconnect|Test Connection|Auto-/i.test(text)) return "refresh";
     if (/^[➕+＋]|추가|등록|생성|작성|게시|Add|Register|Generate|Post|New/i.test(text)) return "add";
     if (/이동|보기|열기|바로가기|미리보기|📍|도움말|◀|▶|Go to|View|Open|Preview|Help/i.test(text)) return "nav";
     if (/설정|회의록|Settings|Minutes/i.test(text)) return "nav";

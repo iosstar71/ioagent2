@@ -164,7 +164,7 @@ var WeeklyExport = {
         ["전체 계획", pct(m.totalPlan)], ["전체 실적", pct(m.totalActual)],
         ["달성률", `${m.achieveRate || rate(m.totalPlan, m.totalActual)}%`], ["지연 Task", `${m.cntDel || 0}건`]
       ],
-      tables: [T("서브시스템별 공정 진척", ["분야", "서브시스템", "공정 유형", "담당 PM", "Task 수", "계획", "실적", "달성률", "지연"],
+      tables: [T("서브시스템별 공정 진척", ["도메인", "서브시스템", "SDLC 유형", "담당 PM", "Task 수", "계획", "실적", "달성률", "지연"],
         [12, 14, 16, 14, 9, 9, 9, 9, 8],
         subRows.map(r => [r[0], r[1], r[2], r[3], String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
         r => `[${r[1]}] 계획 ${r[5]} · 실적 ${r[6]} · 달성률 ${r[7]} · 지연 ${r[8]} (${r[0]}, PM ${r[3]})`)]
@@ -300,7 +300,7 @@ var WeeklyExport = {
     const table = t => {
       // 칸 폭: 짧은 칸(숫자·상태·ID)은 글자가 세로로 쪼개지지 않을 만큼 최소 폭을 주고, 나머지는 긴 글 칸이 나눠 가짐
       const MIN = { "계획": 760, "실적": 760, "달성률": 860, "지연": 760, "Task 수": 820, "전체": 760, "진행": 760, "완료": 760, "보류": 760, "완료율": 860,
-        "상태": 900, "목표 계획": 900, "목표일": 1150, "일자": 1150, "시간": 1150, "WBS ID": 1000, "ID": 1000, "VOC ID": 1000, "서브시스템": 1050, "분야": 1000, "우선순위": 900, "담당자": 1000, "요청자": 1000, "담당 PM": 1150 };
+        "상태": 900, "목표 계획": 900, "목표일": 1150, "일자": 1150, "시간": 1150, "WBS ID": 1000, "ID": 1000, "VOC ID": 1000, "서브시스템": 1050, "도메인": 1000, "우선순위": 900, "담당자": 1000, "요청자": 1000, "담당 PM": 1150 };
       const mins = t.headers.map(h => MIN[h] || 0);
       const fixedSum = mins.reduce((a, b) => a + b, 0);
       const flexIdx = t.headers.map((h, i) => (mins[i] ? -1 : i)).filter(i => i >= 0);
@@ -386,7 +386,7 @@ var WeeklyExport = {
     const blob = fmt === "XLSX" ? this.toXlsxBlob(model) : this.toDocxBlob(model, fmt === "DOC-T");
     const name = this.fileName(rep, fmt);
     ExcelSync._triggerDownload(blob, name);
-    showToast(`📥 [주간보고] ${name} 내려받기 완료${model.live ? " (현재 자료 기준)" : " (작성 완료 시점 자료)"}`);
+    showToast(`📥 [주간보고] ${name} 다운로드 완료${model.live ? " (현재 자료 기준)" : " (작성 완료 시점 자료)"}`);
     return name;
   }
 };

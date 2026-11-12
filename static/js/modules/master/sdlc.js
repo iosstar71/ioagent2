@@ -94,10 +94,10 @@ function renderCustomSdlcCards() {
   summaryDiv.style.alignItems = "center";
   summaryDiv.innerHTML = `
     <span style="font-size:var(--fs-sm, 12px); color:#166534; font-weight:bold;">
-      📋 시스템 공정 유형: <b>${masterList.length}개</b> | 이 프로젝트 활성화: <b>${activeCodes.length}/4개</b>
+      📋 시스템 SDLC 유형: <b>${masterList.length}개</b> | 이 프로젝트 활성화: <b>${activeCodes.length}/4개</b>
     </span>
     <span style="font-size:var(--fs-xs, 11px); color:#15803d;">
-      (유형 추가 · 단계 수정은 [시스템 설정 &gt; 🔄 공정 유형] · 이 화면에서는 활성화와 단계별 계획 일정만)
+      (유형 추가 · 단계 수정은 [시스템 설정 &gt; 🔄 SDLC 유형] · 이 화면에서는 활성화와 단계별 계획 일정만)
     </span>
   `;
   container.appendChild(summaryDiv);
@@ -124,7 +124,7 @@ function renderCustomSdlcCards() {
           <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-          ${sdlc._projectOnly ? '<span class="badge" style="background:#b45309; color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 공정 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
+          ${sdlc._projectOnly ? '<span class="badge" style="background:#b45309; color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 SDLC 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
           ${isActive && canEdit && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(sdlc.code) ? `<button class="btn btn-warning btn-sm" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(String(sdlc.code))}" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
           ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 일정</button>` : ""}
           ${canEdit ? `<button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">

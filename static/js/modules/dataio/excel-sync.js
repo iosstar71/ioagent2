@@ -57,7 +57,7 @@ const ExcelSync = {
     ],
     // 작업자 목록
     users: [
-      { key: "empNo", label: "작업자 ID(ID)", width: 16 },
+      { key: "empNo", label: "멤버 ID(ID)", width: 16 },
       { key: "name", label: "성명", width: 16 },
       { key: "role", label: "권한등급(SYS_ADMIN/PM/LEAD/MEMBER)", width: 30 },
       { key: "subsystem", label: "담당서브시스템", width: 18 },
@@ -65,14 +65,14 @@ const ExcelSync = {
       { key: "lang", label: "언어(ko/en)", width: 12 }
     ],
     subsystems: [
-      { key: "domain", label: "분야(상위그룹)", width: 18 },
+      { key: "domain", label: "도메인(상위그룹)", width: 18 },
       { key: "code", label: "서브시스템코드", width: 18 },
       { key: "name", label: "서브시스템명", width: 20 },
       { key: "type", label: "프로젝트유형(SDLC/REQ)", width: 22 },
       { key: "sdlcCode", label: "SDLC타입코드", width: 16 },
       { key: "weight", label: "가중치(%)", width: 12 },
       { key: "pm", label: "담당자", width: 14 },
-      { key: "desc", label: "과업개요", width: 42 }
+      { key: "desc", label: "Task개요", width: 42 }
     ],
     wbs: [
       { key: "id", label: "WBS ID", width: 12 },
@@ -83,15 +83,15 @@ const ExcelSync = {
       { key: "reqId", label: "요구사항 ID", width: 16 },
       { key: "pStart", label: "계획시작일", width: 16 },
       { key: "pEnd", label: "계획종료일", width: 16 },
-      { key: "aStart", label: "실적시작일", width: 16 },
-      { key: "aEnd", label: "실적종료일", width: 16 },
+      { key: "aStart", label: "실제 시작일", width: 16 },
+      { key: "aEnd", label: "실제 종료일", width: 16 },
       { key: "pProg", label: "계획(%)", width: 11 },
       { key: "aProg", label: "실적(%)", width: 11 },
       { key: "owner", label: "담당자", width: 14 },
       { key: "output", label: "산출물 / 조치계획", width: 24 }
     ],
     deliverables: [
-      { key: "round", label: "제출회차", width: 12 },
+      { key: "round", label: "제출 차수", width: 12 },
       { key: "system", label: "서브시스템", width: 16 },
       { key: "phase", label: "단계구분", width: 16 },
       { key: "name", label: "산출물명", width: 32 },
@@ -126,7 +126,7 @@ const ExcelSync = {
   SECTION_META: [
     { key: "wbs", sheetName: "1_WBS공정표", title: "1. WBS 공정표 데이터 (WBS Master)" },
     { key: "subsystems", sheetName: "2_서브시스템기준정보", title: "2. 서브시스템 기준정보 (Subsystems Meta)" },
-    { key: "deliverables", sheetName: "3_산출물관리", title: "3. 산출물 관리 데이터 (Deliverables 1~4회차)" },
+    { key: "deliverables", sheetName: "3_산출물관리", title: "3. 산출물 관리 데이터 (Deliverables 1~4차)" },
     { key: "req", sheetName: "4_요구사항REQ", title: "4. 요구사항 관리 데이터 (Requirements REQ)" },
     { key: "voc", sheetName: "5_VOC이슈관리", title: "5. 추가 VOC 및 이슈 관리 데이터 (VOC List)" }
   ],
@@ -176,7 +176,7 @@ const ExcelSync = {
       output: ["산출물 / 조치계획", "산출물/조치계획", "산출물", "조치계획", " 비고", "output"]
     },
     deliverables: {
-      round: ["제출회차", "제출 회차", "회차", "round"],
+      round: ["제출차수", "제출 차수", "차수", "round"],
       system: ["서브시스템", "서브시스템명", "구분", "system"],
       phase: ["단계구분", "단계 구분", "단계", "phase"],
       name: ["산출물명", "산출물 명칭", "name"],
@@ -210,7 +210,7 @@ const ExcelSync = {
 
   // 무시할 UI 전용 계산 컬럼 (화면 표 복사 시 자동 스킵)
   IGNORED_HEADERS: new Set([
-    "삭제", "하위·동위 추가 / 순서 / 삭제", "연계 태스크 수", "실적 진척율", "평균 실적(%)"
+    "삭제", "하위·동위 추가 / 순서 / 삭제", "연계 Task 수", "실적 진척률", "평균 실적(%)"
   ]),
 
   escapeXml(str) {
@@ -653,7 +653,7 @@ const ExcelSync = {
     // [v1.0.5] 윈도우 파일명 금지문자 치환 및 다운로드 안정화
     const safeName = String(filename || "download").replace(/[\\/:*?"<>|\r\n\t]+/g, "_").replace(/\s+/g, " ").trim() || "download";
     // [Local] 자료 파일을 PC 에 받은 때를 기억 (백업 알림용)
-    if (/백업|종합본|자료|내변경|프로젝트|latest/.test(safeName) && typeof AppStore !== "undefined") { try { AppStore.setItem("PPRJMGMT_LAST_FILE_SAVE", String(Date.now())); } catch (e) {} }
+    if (/백업|종합본|마스터|자료|내변경|작업|프로젝트|latest/.test(safeName) && typeof AppStore !== "undefined") { try { AppStore.setItem("PPRJMGMT_LAST_FILE_SAVE", String(Date.now())); } catch (e) {} }
     if (typeof window !== "undefined" && window.navigator && typeof window.navigator.msSaveOrOpenBlob === "function") {
       window.navigator.msSaveOrOpenBlob(blob, safeName);
       return;
@@ -776,7 +776,7 @@ const ExcelSync = {
         rows: rows
       }
     ]);
-    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "작업자", subsystems: "서브시스템", config: "기준정보" }[tabKey] || tabKey, [], "xlsx"));
+    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "멤버", subsystems: "서브시스템", config: "프로젝트 설정" }[tabKey] || tabKey, [], "xlsx"));
   },
 
   // ---------------------------------------------------------------------------
@@ -1203,7 +1203,7 @@ const ExcelSync = {
       const rawRole = String(raw.role || "MEMBER").toUpperCase();
       let role = "MEMBER";
       if (rawRole.includes("SYS_ADMIN") || rawRole.includes("시스템") || empNo.toLowerCase() === "admin") role = "SYS_ADMIN";
-      else if (rawRole.includes("LEAD") || rawRole.includes("총괄리더")) role = "LEAD";
+      else if (rawRole.includes("LEAD") || rawRole.includes("총괄리더") || /^PL$/i.test(rawRole.trim())) role = "LEAD";
       else if (rawRole.includes("PM") || rawRole.includes("프로젝트")) role = "PM";
       const lang = String(raw.lang || "ko").trim().toLowerCase() === "en" ? "en" : "ko";
       return {
@@ -1244,7 +1244,7 @@ const ExcelSync = {
         id: String(raw.id || "").trim(),
         level: level,
         system: sys || "미분류",
-        name: name || "단위과업",
+        name: name || "Task",
         weight: isNaN(weightNum) ? 1 : Math.round(Math.max(0, weightNum) * 10) / 10,
         reqId: String(raw.reqId || "").trim(),
         pStart: this.normalizeDate(raw.pStart),
@@ -1284,12 +1284,12 @@ const ExcelSync = {
     if (tabKey === "deliverables") {
       const name = String(raw.name || "").trim();
       if (!name) return null;
-      const rawR = String(raw.round || "1회차");
-      let roundStr = "1회차";
-      if (rawR.includes("4")) roundStr = "4회차";
-      else if (rawR.includes("3")) roundStr = "3회차";
-      else if (rawR.includes("2")) roundStr = "2회차";
-      const phaseStr = String(raw.phase || (roundStr === "2회차" ? "구축단계" : "분석설계단계")).trim();
+      const rawR = String(raw.round || "1차");
+      let roundStr = "1차";
+      if (rawR.includes("4")) roundStr = "4차";
+      else if (rawR.includes("3")) roundStr = "3차";
+      else if (rawR.includes("2")) roundStr = "2차";
+      const phaseStr = String(raw.phase || (roundStr === "2차" ? "구축단계" : "분석설계단계")).trim();
 
       return {
         id: index + 1,
@@ -1309,7 +1309,8 @@ const ExcelSync = {
       const id = String(raw.id || "").trim();
       const name = String(raw.name || "").trim();
       if (!id && !name) return null;
-      let status = String(raw.status || "착수전").trim();
+      let status = String(raw.status || "대기").trim();
+      if (status === "착수전") status = "대기";
       if (status === "진행중") status = "진행";
 
       return {
@@ -1327,9 +1328,10 @@ const ExcelSync = {
       const id = String(raw.id || "").trim();
       const title = String(raw.title || "").trim();
       if (!id && !title) return null;
-      let status = String(raw.status || "착수전").trim();
+      let status = String(raw.status || "대기").trim();
+      if (status === "착수전") status = "대기";
       if (status === "진행중") status = "진행";
-      if (status === "접수" || status === "착수전(접수)") status = "착수전";
+      if (status === "접수" || status === "대기(접수)" || status === "착수전" || status === "착수전(접수)") status = "대기";
 
       return {
         id: id || `VOC-${String(index + 1).padStart(2, "0")}`,
@@ -1379,7 +1381,7 @@ const ExcelSync = {
           type: "SDLC",
           weight: 10,
           pm: "담당PM",
-          desc: `${sys} 과업`
+          desc: `${sys} Task`
         });
       }
     });
@@ -1431,7 +1433,7 @@ const ExcelSync = {
     const filename = ExcelSync.stdName("서브시스템", [subCode], "xlsx");
     this._triggerDownload(blob, filename);
     if (typeof showToast === "function") {
-      showToast(`[${targetSys} 엑셀 내려받기 완료] ${filename} 파일이 생성되었습니다. 엑셀에서 수정 후 업로드하면 해당 서브시스템에 바로 반영됩니다.`);
+      showToast(`[${targetSys} 엑셀 다운로드 완료] ${filename} 파일이 생성되었습니다. 엑셀에서 수정 후 업로드하면 해당 서브시스템에 바로 반영됩니다.`);
     }
   },
 
@@ -1569,14 +1571,14 @@ const ExcelSync = {
 
       if (typeof showToast === "function") {
         showToast(
-          `[${targetSys} 엑셀 올리기 병합 완료]
+          `[${targetSys} 엑셀 업로드 병합 완료]
 • 반영 건수: WBS ${subWbs.length}건, 산출물 ${subDeliv.length}건, REQ ${subReq.length}건, VOC ${subVoc.length}건
 • 백업 JSON 생성: ${backupFilename}`
         );
       }
     } catch (err) {
-      console.error("서브시스템 엑셀 올리기 오류:", err);
-      if (typeof showToast === "function") showToast("서브시스템 엑셀 올리기 중 오류 발생: " + err.message);
+      console.error("서브시스템 엑셀 업로드 오류:", err);
+      if (typeof showToast === "function") showToast("서브시스템 엑셀 업로드 중 오류 발생: " + err.message);
     }
   },
 
@@ -1623,7 +1625,7 @@ const ExcelSync = {
         // 시트 이름으로 기본 섹션 추정
         const sName = (sheet.name || "").toLowerCase();
         if (sName.includes("프로젝트기준정보")) { configRows.push(...sheetRowsOf(sheet, "config")); return; }
-        if (sName.includes("작업자")) { userRows.push(...sheetRowsOf(sheet, "users")); return; }
+        if (sName.includes("작업자") || sName.includes("사용자") || sName.includes("멤버")) { userRows.push(...sheetRowsOf(sheet, "users")); return; }
         if (/주간보고|회의록|공지|소통/.test(sName)) return;  // 협업 데이터 시트는 SmartMergeCenter._applyCollabSheets 가 처리
         if (sName.includes("wbs") || sName.includes("공정")) currentSection = "wbs";
         else if (sName.includes("서브시스템") || sName.includes("기준정보") || sName.includes("subsystem")) currentSection = "subsystems";
@@ -1784,8 +1786,8 @@ const ExcelSync = {
       if (typeof rebuildAll === "function") rebuildAll();
       showToast(`[${tabKey.toUpperCase()}] 성공적으로 ${imported.length}건의 데이터를 가져왔습니다.`);
     } catch (err) {
-      console.error(`[${tabKey}] 엑셀 올리기 오류:`, err);
-      showToast(`엑셀 올리기 중 오류가 발생했습니다: ${err.message}`);
+      console.error(`[${tabKey}] 엑셀 업로드 오류:`, err);
+      showToast(`엑셀 업로드 중 오류가 발생했습니다: ${err.message}`);
     }
   }
 };

@@ -20,7 +20,7 @@ function renderReqMasterTable() {
     if (typeof StatusChips !== "undefined" && !StatusChips.match("req", row)) return;
 
     statTotal++;
-    if (row.status === "착수전") statReady++;
+    if (row.status === "대기") statReady++;
     else if (row.status === "진행") statProg++;
     else if (row.status === "완료") statComp++;
     else if (row.status === "보류") statHold++;
@@ -75,7 +75,7 @@ function renderReqMasterTable() {
       <td style="text-align:right;"><b>${avgProg}%</b></td>
       <td>
         <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "status", "$value", "renderReqMasterTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
-          <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
+          <option value="대기" ${row.status === "대기" ? "selected" : ""}>대기</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
           <option value="보류" ${row.status === "보류" ? "selected" : ""}>보류</option>
@@ -108,7 +108,7 @@ function addNewReq() {
     type: "기능",
     priority: "중",
     accept: "수용",
-    status: "착수전"
+    status: "대기"
   });
   renderReqMasterTable();
   renderDashboard();
@@ -136,7 +136,7 @@ function renderVocTable() {
     if (typeof StatusChips !== "undefined" && !StatusChips.match("voc", row)) return;
 
     statTotal++;
-    if (row.status === "착수전") statReady++;
+    if (row.status === "대기") statReady++;
     else if (row.status === "진행") statProg++;
     else if (row.status === "완료") statComp++;
     else if (row.status === "제외") statExcl++;
@@ -185,7 +185,7 @@ function renderVocTable() {
       </td>
       <td>
         <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "status", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
-          <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
+          <option value="대기" ${row.status === "대기" ? "selected" : ""}>대기</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
           <option value="제외" ${row.status === "제외" ? "selected" : ""}>제외</option>
@@ -226,7 +226,7 @@ function addNewVoc() {
     requester: "요청부서",
     reqDate: WBSEngine.getNextWorkingDay(projectConfig.reportDate, projectConfig.holidays, projectConfig.projectEndDate),
     targetDate: "",
-    status: "착수전",
+    status: "대기",
     action: ""
   });
   renderVocTable();

@@ -122,7 +122,7 @@ var ProjectTransfer = {
       }
       showToast(`📥 ${target === this.ALL ? `모든 프로젝트 ${items.length}개` : `[${items[0].name}] 프로젝트`}를 ${format === "JSON" ? "JSON" : "엑셀"}으로 내려받았습니다.${format !== "JSON" && items.length > 1 ? " (프로젝트마다 파일 1개)" : ""}`);
     } catch (err) {
-      showToast("❌ 내려받기 실패: " + err.message);
+      showToast("❌ 다운로드 실패: " + err.message);
     }
   },
 
@@ -213,12 +213,12 @@ var ProjectTransfer = {
       if (target === ProjectContext.current) return ProjectData.importProject({ target: { files: [file], value: "" } });
       const p = ProjectData.projects().find(x => x.id === target) || { name: target };
       const it = items[0];
-      return openConfirmDialog(`[${p.name}] 프로젝트를 파일 [${file.name}] 의 내용으로 바꿉니다.\n· 기준정보 + ${ProjectData.countText(it.data)}\n· 프로젝트 이름은 그대로 · 작업자는 참여자로 추가 · 갱신\n계속할까요?`, async () => {
+      return openConfirmDialog(`[${p.name}] 프로젝트를 파일 [${file.name}] 의 내용으로 바꿉니다.\n· 프로젝트 설정 + ${ProjectData.countText(it.data)}\n· 프로젝트 이름은 그대로 · 멤버는 참여자로 추가 · 갱신\n계속할까요?`, async () => {
         try {
           await this.write(target, it, true);
           showToast(`✅ [${p.name}] 프로젝트를 [${file.name}] 내용으로 바꿨습니다.`);
           await this.afterChange();
-        } catch (err) { showToast("❌ 올리기 실패: " + err.message); }
+        } catch (err) { showToast("❌ 업로드 실패: " + err.message); }
       });
     }
     const added = [], replaced = [];
@@ -312,7 +312,7 @@ var ProjectTransfer = {
       });
       if (Object.keys(urows).length) {
         const ur = await ServerBackend.request("/api/db/save", { changes: { projectUsers: { parts: urows, base: {} } }, force: true, lockBypass: true, projectId: pid });
-        if (!ur.ok) throw new Error(ur.message || "작업자를 저장하지 못했습니다.");
+        if (!ur.ok) throw new Error(ur.message || "멤버를 저장하지 못했습니다.");
       }
       await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
       return;

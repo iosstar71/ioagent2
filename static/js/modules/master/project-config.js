@@ -7,7 +7,7 @@ let projectConfig = {
   systemTitle: APP_VERSION.title,
   projectName: "기본 프로젝트",
   domains: ["기본분야"],
-  channels: [], // [v3.0.0] 소통 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
+  channels: [], // [v3.0.0] 게시판 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
   customSdlcTypes: [ // SDLC 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
     {
       code: "SDLC_PMO",
@@ -194,7 +194,7 @@ function updateMaxDeliverableRounds(newMax) {
   renderStandardDeliverablesMetaTable();
   renderDeliverablesTable();
   rebuildAll();
-  showToast(`[산출물 제출 회차 설정] 1회차 ~ ${maxR}회차 운영으로 동기화되었습니다. (초과 회차 비선택 초기화 완료)`);
+  showToast(`[산출물 제출 차수 설정] 1차 ~ ${maxR}차 운영으로 동기화되었습니다. (초과 차수 비선택 초기화 완료)`);
 }
 
 function updateProjectTitles() {
@@ -341,7 +341,7 @@ function applyIdPrefixSettings(reNumberAll = false) {
   if (reNumberAll) {
     showToast("WBS · 요구사항(REQ) · VOC · Action Item 전체 ID에 설정된 접두어(Prefix) 및 서브시스템 코드 규칙이 일괄 적용되었습니다.");
   } else {
-    showToast("ID 채번 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)");
+    showToast("ID 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)");
   }
 }
 

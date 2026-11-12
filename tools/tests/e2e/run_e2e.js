@@ -87,7 +87,7 @@ async function main() {
   const PWD = {};
   try {
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip.endsWith("_local.zip") && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.0.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -95,7 +95,7 @@ async function main() {
     await pm.reload(); await pm.waitForTimeout(1500);
     const login = await pm.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), start: !!document.getElementById("localStartInput"),
       brand: document.querySelector(".login-brand-name").textContent }));
-    check("Worker selection: only admin, [start from 종합본] button, Local shown", login.workers === "admin" && login.start && login.brand.includes("Local"), JSON.stringify(login));
+    check("Worker selection: only admin, [start from 종합본] button, Local shown", login.workers === "admin" && login.start && login.brand.includes("Standalone"), JSON.stringify(login));
     await pm.fill("#inputSecurityEmpNo", "admin"); await pm.fill("#inputSecurityPassword", "1234");
     await pm.click("#btnLockSubmit"); await pm.waitForTimeout(900);
     const pw = await pm.evaluate(() => ({ err: (document.getElementById("lockErrorMessage") || {}).textContent || "", hint: document.getElementById("lockModalDesc").textContent,
@@ -107,7 +107,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat, typeof WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Local v1.0.0" && st.title.includes("Local") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.0.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -126,7 +126,7 @@ async function main() {
     });
     const pkg1 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
     const j1 = JSON.parse(pkg1.text);
-    check("PM downloads a 종합본 (JSON) with a version stamp and the worker list", /종합본/.test(pkg1.name) && !!j1.packageStamp && j1.projectUsers.map(u => u.empNo).join() === "wg_a,wg_b", pkg1.name + " " + j1.packageStamp);
+    check("PM downloads a 종합본 (JSON) with a version stamp and the worker list", /마스터파일/.test(pkg1.name) && !!j1.packageStamp && j1.projectUsers.map(u => u.empNo).join() === "wg_a,wg_b", pkg1.name + " " + j1.packageStamp);
 
     // 작업자 PC: 종합본으로 시작
     const wa = await newPage();
@@ -159,14 +159,14 @@ async function main() {
     const pv1 = await pm.evaluate(() => ({ note: document.getElementById("mpNote").textContent, rows: [...document.querySelectorAll("#mpBody tr")].length }));
     await pm.click("#mpOkBtn"); await pm.waitForTimeout(600);
     const merged = await pm.evaluate(() => wbsData.find(t => t.id === "1.1").name);
-    check("PM merges the worker's file through the preview (W1 only); no stale warning for a current file", merged === "W1 설계 (가작업 수정)" && !pv1.note.includes("이전 종합본") && pv1.note.includes("가작업"), JSON.stringify(pv1));
+    check("PM merges the worker's file through the preview (W1 only); no stale warning for a current file", merged === "W1 설계 (가작업 수정)" && !pv1.note.includes("이전 마스터 파일") && pv1.note.includes("가작업"), JSON.stringify(pv1));
     // PM 이 새 종합본을 낸 뒤, 예전 종합본 기준 파일을 올리면 경고
     await pm.waitForTimeout(1100);
     const pkg2 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
     await pm.evaluate(async t => { await MergeTable.previewFile(new File([t], "old.json"), { scope: "W1" }); }, mine.text);
     const warn = await pm.evaluate(() => document.getElementById("mpNote").textContent);
     await pm.evaluate(() => MergeTable.close());
-    check("A file based on an older 종합본 shows a warning in the preview", warn.includes("이전 종합본"), warn);
+    check("A file based on an older 종합본 shows a warning in the preview", warn.includes("이전 마스터 파일"), warn);
     // 작업자 자료를 엑셀로 보내도 됨: 파일정보 시트(기준 종합본 · 보낸 사람)로 같은 경고, 미리 보기로 반영
     await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").aProg = 30; rebuildAll(true); persistChanges(true); });
     const xl = await wa.evaluate(async () => {
@@ -182,7 +182,7 @@ async function main() {
     await pm.click("#mpOkBtn"); await pm.waitForTimeout(600);
     const xa = await pm.evaluate(() => wbsData.find(t => t.id === "1.1").aProg);
     check("Worker data can also go as Excel: the file carries its 종합본 version and sender (stale warning), PM merges it through the preview",
-      /\.xlsx$/.test(xl.name) && pvx.note.includes("이전 종합본") && pvx.note.includes("가작업") && parseInt(pvx.wbs, 10) > 0 && xa === 30, JSON.stringify({ n: xl.name, pvx, xa }));
+      /\.xlsx$/.test(xl.name) && pvx.note.includes("이전 마스터 파일") && pvx.note.includes("가작업") && parseInt(pvx.wbs, 10) > 0 && xa === 30, JSON.stringify({ n: xl.name, pvx, xa }));
     // 작업자가 새 종합본을 가져와도 내 담당(W1) 작업은 그대로, W2 는 종합본대로
     await pm.evaluate(() => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 수정)"; rebuildAll(true); persistChanges(true); });
     const pkg3 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
@@ -212,7 +212,7 @@ async function main() {
     await wa.setInputFiles("#localStartInput", tmpFile(pkg4.name, pkg4.text)); await wa.waitForTimeout(1200);
     const ch = await choice();
     check("Login screen: a 종합본 on a PC that already has data asks latest / replace all / keep, and says it is newer",
-      ch.shown && ch.text.includes("최신 종합본으로 맞추기") && ch.text.includes("전부 바꾸기") && ch.text.includes("그대로") && ch.text.includes("새 종합본"), ch.text.slice(0, 240));
+      ch.shown && ch.text.includes("최신 마스터 파일로 맞추기") && ch.text.includes("전부 바꾸기") && ch.text.includes("그대로") && ch.text.includes("새 마스터 파일"), ch.text.slice(0, 240));
     await pickChoice("keep"); await wa.waitForTimeout(300);
     const kp = await choice();
     await pickWorker(wa, "wg_a", PWD);
@@ -225,7 +225,7 @@ async function main() {
     await pickWorker(wa, "wg_a", PWD); await wa.waitForTimeout(800);
     const l1 = await wa.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name, stamp: projectConfig.packageStamp, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG") }));
     check("[최신 종합본으로 맞추기]: new worker selectable at once; after picking the worker own W1 work kept, W2 and version updated",
-      pend.workers.includes("wg_c") && pend.note.includes("받아 둔 종합본") && l1.w1 === "W1 설계 (가작업 3차)" && l1.w2 === "W2 설계 (PM 3차)" && l1.stamp === s4 && !l1.pending, JSON.stringify({ pend, l1 }));
+      pend.workers.includes("wg_c") && pend.note.includes("받아 둔 마스터 파일") && l1.w1 === "W1 설계 (가작업 3차)" && l1.w2 === "W2 설계 (PM 3차)" && l1.stamp === s4 && !l1.pending, JSON.stringify({ pend, l1 }));
     await toLogin();
     await wa.setInputFiles("#localStartInput", tmpFile(pkg4.name, pkg4.text)); await wa.waitForTimeout(1200);
     const same = await choice();
@@ -258,7 +258,7 @@ async function main() {
     await pickWorker(wa, "wg_a", PWD); await wa.waitForTimeout(800);
     const sv = await wa.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name, stamp: projectConfig.packageStamp }));
     check("PC with data: a newer server 종합본 is announced on the worker screen and applied after picking the worker (own W1 kept)",
-      sn.shown && sn.text.includes("새 종합본이 올라와 있습니다") && sv.w1 === "W1 설계 (가작업 4차)" && sv.w2 === "W2 설계 (PM 4차)" && sv.stamp === s5, JSON.stringify({ sn: sn.text.slice(0, 120), sv }));
+      sn.shown && sn.text.includes("새 마스터 파일이 올라와 있습니다") && sv.w1 === "W1 설계 (가작업 4차)" && sv.w2 === "W2 설계 (PM 4차)" && sv.stamp === s5, JSON.stringify({ sn: sn.text.slice(0, 120), sv }));
     await toLogin();
     const again = await choice();
     await pm.reload(); await pm.waitForTimeout(1800); await waitApp(pm);
@@ -301,7 +301,7 @@ async function main() {
     await wc.evaluate(() => NeoDetail.level(-1)); await wc.waitForTimeout(400);
     const p2 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name, max: Math.max(...wbsData.map(t => t.level)) }));
     check("Detail panel: [+ 하위] opens the new child, and [◀ 레벨 올리기] moves it back up (follows the Task after renumbering)",
-      p1.lv === 4 && /하위과업/.test(p1.name) && p2.lv === 3 && p2.name === p1.name && p2.max <= 5, JSON.stringify({ p1, p2 }));
+      p1.lv === 4 && /하위 Task/.test(p1.name) && p2.lv === 3 && p2.name === p1.name && p2.max <= 5, JSON.stringify({ p1, p2 }));
     // 실적 일괄 반영 규칙 · 일정 역전 색 · 단계별 조회 · 판정 기준
     console.log("\n[Actual apply rules, stage filter, judgement rules]");
     await wc.evaluate(() => {

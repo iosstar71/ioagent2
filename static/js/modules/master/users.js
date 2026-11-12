@@ -4,7 +4,7 @@
 // [기준정보 > 작업자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
 // =============================================================================
 // [v3.0.0] 작업자 정보는 프로젝트별 — 이 프로젝트의 작업자(관리자 + 참여자)만 표시
-//  역할·담당 서브시스템·부서는 이 프로젝트에만 적용, 작업자 ID·이름·암호는 계정 공통
+//  역할·담당 서브시스템·부서는 이 프로젝트에만 적용, 멤버 ID·이름·암호는 계정 공통
 function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
   const pid = ProjectContext.current;
@@ -16,7 +16,7 @@ function renderProjectUsersTable() {
     if (info) {
       const p = ProjectContext.info();
       info.style.display = "block";
-      info.innerHTML = `🗂️ <b>${escapeHtml(p ? p.name : (projectConfig.projectName || pid))}</b> 프로젝트의 작업자입니다. 역할·담당 서브시스템·부서는 이 프로젝트에만 적용되고, 작업자 ID·이름·암호는 계정 공통입니다. 다른 프로젝트의 작업자는 ${amAdmin ? "[📥 다른 프로젝트에서 복사]로" : "관리자에게 요청하여"} 가져옵니다.`;
+      info.innerHTML = `🗂️ <b>${escapeHtml(p ? p.name : (projectConfig.projectName || pid))}</b> 프로젝트의 멤버입니다. 역할·담당 서브시스템·부서는 이 프로젝트에만 적용되고, 멤버 ID·이름·암호는 계정 공통입니다. 다른 프로젝트의 멤버는 ${amAdmin ? "[📥 다른 프로젝트에서 복사]로" : "관리자에게 요청하여"} 가져옵니다.`;
     }
     const copyBtn = document.getElementById("btnCopyUsers");
     if (copyBtn) copyBtn.style.display = amAdmin ? "" : "none";
@@ -28,7 +28,7 @@ function renderProjectUsersTable() {
       const roleOpts = roles.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${u._new ? "" : "readonly title='저장된 작업자 ID은 바꿀 수 없습니다.'"} data-change="setProjectUserEmpNo" data-change-args="${UiEvents.args(idx, "$trim")}"></td>
+        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${u._new ? "" : "readonly title='저장된 멤버 ID은 바꿀 수 없습니다.'"} data-change="setProjectUserEmpNo" data-change-args="${UiEvents.args(idx, "$trim")}"></td>
         <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "name", "$trim", "persistChanges")}"></td>
         <td>
           <select style="width:250px; font-weight:bold;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='관리자 계정은 모든 프로젝트에서 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
@@ -51,7 +51,7 @@ function renderProjectUsersTable() {
           <div style="display:flex; gap:4px; align-items:center;">
             <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:var(--fs-xs, 11px);">
             <button class="btn btn-sm" data-btn="save" data-click="updateProjectUserPassword" data-click-args="${UiEvents.args(idx)}">변경</button>
-            <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(작업자 ID + 123!)으로 초기화합니다.">🔄 초기화</button>
+            <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(멤버 ID + 123!)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
         <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='기본 관리자(admin)와 관리자 계정은 관리자만 삭제할 수 있습니다.'" : "title='이 프로젝트에서 빼기 (다른 프로젝트 참여는 유지)'"}>×</button></td>
@@ -70,15 +70,15 @@ function renderProjectUsersTable() {
   setText("userStatMember", count("MEMBER"));
 }
 
-// 새로 추가한 행의 작업자 ID 변경 (다른 프로젝트·이 프로젝트에 이미 있는 작업자 ID은 불가)
+// 새로 추가한 행의 멤버 ID 변경 (다른 프로젝트·이 프로젝트에 이미 있는 멤버 ID은 불가)
 function setProjectUserEmpNo(idx, value) {
   const u = projectUsers[idx];
   if (!u || !u._new) return;
   const v = String(value || "").trim();
-  if (!/^[A-Za-z0-9_.-]{2,30}$/.test(v)) { showToast("⚠️ 작업자 ID은 영문/숫자/_.- 2~30자로 입력하세요."); return renderProjectUsersTable(); }
+  if (!/^[A-Za-z0-9_.-]{2,30}$/.test(v)) { showToast("⚠️ 멤버 ID은 영문/숫자/_.- 2~30자로 입력하세요."); return renderProjectUsersTable(); }
   const other = ProjectContext.findAny(v) || projectUsers.find((x, i) => i !== idx && String(x.empNo || "").toLowerCase() === v.toLowerCase());
   if (other && other !== u) {
-    showToast(ProjectManager.isAdmin() ? `⚠️ 이미 있는 작업자 ID(${v})입니다. 다른 프로젝트 작업자라면 [📥 다른 프로젝트에서 복사]를 쓰세요.` : `⚠️ 이미 있는 작업자 ID(${v})입니다. 다른 프로젝트 작업자는 관리자에게 복사를 요청하세요.`);
+    showToast(ProjectManager.isAdmin() ? `⚠️ 이미 있는 멤버 ID(${v})입니다. 다른 프로젝트 멤버라면 [📥 다른 프로젝트에서 복사]를 쓰세요.` : `⚠️ 이미 있는 멤버 ID(${v})입니다. 다른 프로젝트 멤버는 관리자에게 복사를 요청하세요.`);
     return renderProjectUsersTable();
   }
   u.empNo = v;
@@ -90,11 +90,11 @@ function setProjectUserEmpNo(idx, value) {
 function applyBulkUserLanguage() {
   const sel = document.getElementById("bulkUserLangSelect");
   const lang = sel && sel.value === "en" ? "en" : "ko";
-  openConfirmDialog(`모든 작업자(${projectUsers.length}명)의 언어를 [${lang === "en" ? "English" : "한국어"}]로 설정하시겠습니까? (다음 작업자 선택부터 적용)`, () => {
+  openConfirmDialog(`모든 멤버(${projectUsers.length}명)의 언어를 [${lang === "en" ? "English" : "한국어"}]로 설정하시겠습니까? (다음 작업자 선택부터 적용)`, () => {
     projectUsers.forEach(u => { u.lang = lang; });
     renderProjectUsersTable();
     persistChanges();
-    showToast(`🌐 전체 작업자 언어가 [${lang === "en" ? "English" : "한국어"}]로 설정되었습니다. 저장 후 다음 작업자 선택부터 적용됩니다.`);
+    showToast(`🌐 전체 멤버 언어가 [${lang === "en" ? "English" : "한국어"}]로 설정되었습니다. 저장 후 다음 작업자 선택부터 적용됩니다.`);
   });
 }
 
@@ -217,7 +217,7 @@ var JudgeRules = {
     projectConfig.dueDays = d;
     rebuildAll();
     this.render();
-    showToast(`🚦 판정 기준을 적용했습니다: 지연 = 계획보다 ${projectConfig.delayGap}%p 이상 늦거나 계획종료일 경과 미완료 · 확인할 일 = ${d}일 안 마감`);
+    showToast(`🚦 판정 기준을 적용했습니다: 지연 = 계획보다 ${projectConfig.delayGap}%p 이상 늦거나 계획종료일 경과 미완료 · 체크할 일 = ${d}일 안 마감`);
   }
 };
 
@@ -258,13 +258,13 @@ function addNewProjectUser() {
   const sub = subsystemsMeta[0] ? subsystemsMeta[0].name : "ALL";
   projectUsers.push({
     empNo: newEmpNo, name: `신규담당자${seq}`, role: "MEMBER", subsystem: sub, dept: "", lang: "ko",
-    pwdHash: "", // 초기 암호: 작업자 ID + 123!
+    pwdHash: "", // 초기 암호: 멤버 ID + 123!
     projectRoles: { [pid]: { role: "MEMBER", subsystem: sub, dept: "프로젝트 수행팀" } },
     _new: true
   });
   renderProjectUsersTable();
   persistChanges();
-  showToast(`신규 작업자 [${newEmpNo}] 을(를) 이 프로젝트에 추가했습니다. 작업자 ID을 바꿀 수 있습니다. (초기 암호: 작업자 ID + 123!)`);
+  showToast(`신규 멤버 [${newEmpNo}] 을(를) 이 프로젝트에 추가했습니다. 멤버 ID을 바꿀 수 있습니다. (초기 암호: 멤버 ID + 123!)`);
 }
 
 async function updateProjectUserPassword(idx) {
@@ -281,17 +281,17 @@ async function updateProjectUserPassword(idx) {
   }
   const hash = await AuthManager.hashPassword(input.value);
   u.pwdHash = hash;
-  u.pwdTemp = true; // 관리자가 지정한 임시 암호 → 작업자가 첫 작업자 선택 때 변경
+  u.pwdTemp = true; // 관리자가 지정한 임시 암호 → 멤버가 첫 멤버 선택 때 변경
   input.value = "";
   persistChanges();
   showToast(`[${u.name}(${u.empNo})] 인력의 암호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
 }
 
-// [v1.0.7] 작업자별 암호 초기화 (초기 암호: 작업자 ID + 123!)
+// [v1.0.7] 작업자별 암호 초기화 (초기 암호: 멤버 ID + 123!)
 function resetProjectUserPassword(idx) {
   const u = projectUsers[idx];
   if (!u) return;
-  openConfirmDialog(`[${u.name}(${u.empNo})] 작업자의 암호를 초기값(${u.empNo}123!)으로 초기화하시겠습니까?`, () => {
+  openConfirmDialog(`[${u.name}(${u.empNo})] 멤버의 암호를 초기값(${u.empNo}123!)으로 초기화하시겠습니까?`, () => {
     u.pwdHash = "";
     u.pwdTemp = false;
     u.pwdReset = true;
@@ -314,8 +314,8 @@ function deleteProjectUser(idx) {
   const full = ProjectContext.findAny(u.empNo) || u;
   const others = Object.keys(full.projectRoles || {}).filter(k => k !== pid);
   const msg = adminRow ? `[${u.name}(${u.empNo})] 관리자 계정을 삭제하시겠습니까?`
-    : others.length ? `[${u.name}(${u.empNo})] 작업자를 이 프로젝트에서 뺄까요? (다른 프로젝트 ${others.length}곳의 참여는 유지됩니다)`
-    : `[${u.name}(${u.empNo})] 작업자를 이 프로젝트에서 뺄까요? 다른 프로젝트 참여가 없어 계정도 삭제됩니다.`;
+    : others.length ? `[${u.name}(${u.empNo})] 멤버를 이 프로젝트에서 뺄까요? (다른 프로젝트 ${others.length}곳의 참여는 유지됩니다)`
+    : `[${u.name}(${u.empNo})] 멤버를 이 프로젝트에서 뺄까요? 다른 프로젝트 참여가 없어 계정도 삭제됩니다.`;
   openConfirmDialog(msg, () => {
     if (!adminRow && others.length) {
       const pr = Object.assign({}, u.projectRoles);

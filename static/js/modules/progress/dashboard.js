@@ -64,7 +64,7 @@ function renderDashboard() {
 
   let reqTot = scopeReqs.length, reqRdy = 0, reqPrg = 0, reqCmp = 0, reqHld = 0, reqDel = 0;
   scopeReqs.forEach(r => {
-    if (r.status === "착수전") reqRdy++;
+    if (r.status === "대기") reqRdy++;
     else if (r.status === "진행") reqPrg++;
     else if (r.status === "완료") reqCmp++;
     else if (r.status === "보류") reqHld++;
@@ -87,7 +87,7 @@ function renderDashboard() {
 
   let vocTot = scopeVocsAll.length, vocRdy = 0, vocPrg = 0, vocCmp = 0, vocExc = 0, vocHld = 0, vocDel = 0;
   scopeVocsAll.forEach(v => {
-    if (v.status === "착수전") vocRdy++;
+    if (v.status === "대기") vocRdy++;
     else if (v.status === "진행") vocPrg++;
     else if (v.status === "완료") vocCmp++;
     else if (v.status === "제외") vocExc++;
@@ -118,7 +118,7 @@ function renderDashboard() {
   }
   DashboardChart.renderSCurve("scurveCanvas", wbsData, repDate, projectConfig.weekStartDay, selSubsys, selDomain);
 
-  // [3] 서브시스템 · 회차별 산출물 제출 현황 통계 (선택 필터 연동 적용)
+  // [3] 서브시스템 · 차수별 산출물 제출 현황 통계 (선택 필터 연동 적용)
   const activeRounds = getActiveDeliverableRounds();
   const dashDelivTable = document.getElementById("dashDeliverablesTable");
   if (dashDelivTable) {
@@ -150,7 +150,7 @@ function renderDashboard() {
   let sDone = 0, sIng = 0, sRdy = 0;
 
   if (activeSystems.length === 0) {
-    dashDelivTbody.innerHTML = `<tr><td colspan="${activeRounds.length + 5}" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(분야: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
+    dashDelivTbody.innerHTML = `<tr><td colspan="${activeRounds.length + 5}" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const dAll = validDelivs.filter(d => d.system === sys);
@@ -209,14 +209,14 @@ function renderDashboard() {
 
   let vTotSum = 0, vCmpSum = 0, vExcSum = 0, vPrgSum = 0, vRdySum = 0;
   if (activeSystems.length === 0) {
-    dashVocTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(분야: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
+    dashVocTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const vAll = scopeVocs.filter(v => v.system === sys);
       const vCmp = vAll.filter(v => v.status === "완료").length;
       const vExc = vAll.filter(v => v.status === "제외").length;
       const vPrg = vAll.filter(v => v.status === "진행").length;
-      const vRdy = vAll.filter(v => v.status === "착수전" || v.status === "보류").length;
+      const vRdy = vAll.filter(v => v.status === "대기" || v.status === "보류").length;
       const vRate = vAll.length > 0 ? Math.round(((vCmp + vExc) / vAll.length) * 100) : 0;
 
       vTotSum += vAll.length; vCmpSum += vCmp; vExcSum += vExc; vPrgSum += vPrg; vRdySum += vRdy;

@@ -20,15 +20,15 @@ var AuthManager = {
   ROLES: ["SYS_ADMIN", "PM", "LEAD", "MEMBER"],
   ROLE_LABELS: {
     SYS_ADMIN: "관리자",
-    PM: "프로젝트관리자",
-    LEAD: "총괄리더",
-    MEMBER: "일반작업자"
+    PM: "PM",
+    LEAD: "PL",
+    MEMBER: "멤버"
   },
   ROLE_DESCS: {
     SYS_ADMIN: "👑 관리자 (전체 메뉴·시스템설정)",
-    PM: "🛡️ 프로젝트 관리자 (기준정보·스마트병합·전체 데이터)",
-    LEAD: "⭐ 총괄 리더 (담당 서브시스템 — 담당을 ALL 로 지정하면 프로젝트 전체)",
-    MEMBER: "👤 일반 작업자 (담당 서브시스템 데이터만 저장)"
+    PM: "🛡️ 프로젝트 관리자 (프로젝트 설정·파일 Merge·전체 데이터)",
+    LEAD: "⭐ PL (담당 서브시스템 — 담당을 ALL 로 지정하면 프로젝트 전체)",
+    MEMBER: "👤 멤버 (담당 서브시스템 데이터만 저장)"
   },
   // 여기에 없는 탭은 모든 작업자 접근 가능
   TAB_POLICY: {
@@ -38,7 +38,7 @@ var AuthManager = {
 
   currentUser: null,
   sessionAuthenticated: false,
-  lockMode: "LOGIN", // LOGIN (작업자 선택/잠금) | CONFIG (권한 메뉴 진입 인증)
+  lockMode: "LOGIN", // LOGIN (멤버 선택/잠금) | CONFIG (권한 메뉴 진입 인증)
   pendingTabId: null,
   failedAttempts: 0,
   lockoutUntil: 0,
@@ -115,22 +115,22 @@ var AuthManager = {
     return this._sha256PureJs(bytes);
   },
 
-  // 초기 암호 = 작업자 ID + "123!" (예: hong → hong123!) — 암호를 정하지 않았거나 초기화한 작업자
+  // 초기 암호 = 멤버 ID + "123!" (예: hong → hong123!) — 암호를 정하지 않았거나 초기화한 작업자
   INITIAL_PWD_SUFFIX: "123!",
-  INITIAL_PWD_HINT: "작업자 ID + 123!",
+  INITIAL_PWD_HINT: "멤버 ID + 123!",
   initialPassword(empNo) { return String(empNo || "") + this.INITIAL_PWD_SUFFIX; },
   // 새 암호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 암호 사용 불가
   PWD_MIN_LENGTH: 8,
   validateNewPassword(pwd, empNo) {
     const p = String(pwd || "");
-    if (empNo && p.toLowerCase() === this.initialPassword(empNo).toLowerCase()) return "초기 암호(작업자 ID + 123!)는 새 암호로 쓸 수 없습니다.";
+    if (empNo && p.toLowerCase() === this.initialPassword(empNo).toLowerCase()) return "초기 암호(멤버 ID + 123!)는 새 암호로 쓸 수 없습니다.";
     if (p.length < this.PWD_MIN_LENGTH) return `암호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
     if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "암호는 영문과 숫자를 모두 포함해야 합니다.";
     if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 암호는 사용할 수 없습니다.";
     return "";
   },
   // 초기 암호 사용 중이거나 관리자가 지정한 임시 암호이면 첫 작업자 선택 때 변경 필수
-  // [Local] 작업자 선택 때 암호 변경을 강제하지 않음 (초기 암호 = 작업자 ID + 123! 그대로 써도 됨, 바꾸려면 [🔑 암호 변경])
+  // [Local] 작업자 선택 때 암호 변경을 강제하지 않음 (초기 암호 = 멤버 ID + 123! 그대로 써도 됨, 바꾸려면 [🔑 암호 변경])
   mustChangeLocal(u) { void u; return false; },
 
   // ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ var AuthManager = {
   setAuthPolicy(policy) {
     try { AppStore.setItem(this.STORAGE_POLICY_KEY, policy); } catch (e) {}
     const labels = {
-      STARTUP_ONLY: "최초 접속(작업자 선택) 시 1회 인증 (권장)",
+      STARTUP_ONLY: "최초 접속(멤버 선택) 시 1회 인증 (권장)",
       STARTUP_AND_CONFIG: "최초 접속 시 + 권한 메뉴 진입 시 재인증",
       CONFIG_ONLY: "권한 메뉴 진입 시에만 인증 (로컬 모드 전용)",
       OFF: "인증 사용 안 함 (로컬 모드 전용 · 관리자로 동작)"
@@ -182,7 +182,7 @@ var AuthManager = {
   },
   roleLabel(role) { return this.ROLE_LABELS[this.normalizeRole(role)]; },
 
-  _guestUser() { return { empNo: "", name: "작업자 미선택", role: "MEMBER", subsystem: "", dept: "", lang: "ko" }; },
+  _guestUser() { return { empNo: "", name: "멤버 미선택", role: "MEMBER", subsystem: "", dept: "", lang: "ko" }; },
   getCurrentUser() { return this.currentUser || this._guestUser(); },
   getCurrentRole() { return this.normalizeRole(this.getCurrentUser().role); },
 
@@ -213,8 +213,8 @@ var AuthManager = {
 
   getTabMeta(tabId) {
     const metas = {
-      "tab-config": { name: "⚙️ 시스템 설정", reqRoleLabel: "관리자(SYS_ADMIN)", defaultEmpNo: "admin" },
-      "tab-master": { name: "🗂️ 기준정보", reqRoleLabel: "프로젝트 관리자(PM) 또는 관리자(SYS_ADMIN)", defaultEmpNo: "pm" }
+      "tab-config": { name: "⚙️ Admin", reqRoleLabel: "관리자(SYS_ADMIN)", defaultEmpNo: "admin" },
+      "tab-master": { name: "🗂️ 프로젝트 설정", reqRoleLabel: "프로젝트 관리자(PM) 또는 관리자(SYS_ADMIN)", defaultEmpNo: "pm" }
     };
     return metas[tabId] || { name: "관리 메뉴", reqRoleLabel: "관리자", defaultEmpNo: "admin" };
   },
@@ -227,7 +227,7 @@ var AuthManager = {
     badge.className = "db-status-pill " + (norm === "MEMBER" ? "local" : "connected");
     badge.innerHTML = u.empNo
       ? `👤 ${escapeHtml(u.name)}(${escapeHtml(u.empNo)} · ${this.roleLabel(norm)}${norm === "MEMBER" || norm === "LEAD" ? " · " + escapeHtml(u.subsystem || "ALL") : ""})`
-      : "👤 작업자 미선택";
+      : "👤 멤버 미선택";
   },
 
   // ---------------------------------------------------------------------------
@@ -316,17 +316,17 @@ var AuthManager = {
     this.pendingTabId = null;
     this._showPane("loginFormPane");
     const server = !SyncManager.isLocal();
-    this._setText("lockModalTitle", title || "🔐 작업자 선택");
+    this._setText("lockModalTitle", title || "🔐 멤버 선택");
     this._setText("lockModalDesc",
-      (desc || "작업자 ID과 암호를 입력하여 작업자를 선택하세요.") +
-      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>작업자 ID + 123!</b> (예: admin → admin123!)</span>`, true);
+      (desc || "멤버 ID과 암호를 입력하여 멤버를 선택하세요.") +
+      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>멤버 ID + 123!</b> (예: admin → admin123!)</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
       const notice = typeof ModeGuard !== "undefined" && ModeGuard.loginNotice ? `<div style="margin-top:4px;">${ModeGuard.loginNotice}</div>` : "";
       info.innerHTML = (server
-        ? `🗄️ 서버 (${escapeHtml(DbConnector.getApiBase())}) — 작업자를 고른 뒤 [💾 저장]으로 저장합니다.`
-        : "💻 Local — 자료는 이 PC 브라우저에만 저장됩니다. PM 과는 종합본 · 내 자료 파일로 주고받습니다.") + notice;
+        ? `🗄️ 서버 (${escapeHtml(DbConnector.getApiBase())}) — 멤버를 고른 뒤 [💾 저장]으로 저장합니다.`
+        : "💻 Standalone — 자료는 이 PC 브라우저에만 저장됩니다. PM 과는 마스터 파일 · 내 작업 파일로 주고받습니다.") + notice;
       info.style.textAlign = "left";
     }
     const cancel = document.getElementById("btnLockCancel");
@@ -406,7 +406,7 @@ var AuthManager = {
     this._saveSession();
     this.openLogin(
       isIdle ? "⏱️ 자리 비움 자동 잠금" : "🔒 화면 잠금 / 계정 전환",
-      isIdle ? "일정 시간 동안 입력이 없어 자동 잠금되었습니다. 다시 작업자를 선택하세요." : "계속 작업하거나 다른 계정으로 전환하려면 작업자를 선택하세요."
+      isIdle ? "일정 시간 동안 입력이 없어 자동 잠금되었습니다. 다시 멤버를 선택하세요." : "계속 작업하거나 다른 계정으로 전환하려면 멤버를 선택하세요."
     );
   },
 
@@ -415,7 +415,7 @@ var AuthManager = {
     this._expiredNotified = true;
     this.sessionAuthenticated = false;
     ServerBackend.setToken("");
-    this.openLogin("🔐 서버 인증 만료", "서버 작업자 선택 세션이 만료되었습니다. 다시 작업자를 선택하세요. (화면의 미저장 변경 내용은 유지됩니다)");
+    this.openLogin("🔐 서버 인증 만료", "서버 멤버 선택 세션이 만료되었습니다. 다시 멤버를 선택하세요. (화면의 미저장 변경 내용은 유지됩니다)");
   },
 
   // ---------------------------------------------------------------------------
@@ -454,7 +454,7 @@ var AuthManager = {
 
   async _verifyLocal(empNo, pwd) {
     const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
-    if (!u) return { ok: false, message: `등록되지 않은 작업자 ID(${empNo})입니다. 관리자 · PM 에게 등록을 요청하세요.` };
+    if (!u) return { ok: false, message: `등록되지 않은 멤버 ID(${empNo})입니다. 관리자 · PM 에게 등록을 요청하세요.` };
     const inputHash = await this.hashPassword(pwd);
     let target = u.pwdHash;
     if (!target && String(u.empNo).toLowerCase() === "admin") {
@@ -476,7 +476,7 @@ var AuthManager = {
     const langSel = document.getElementById("inputLoginLang");
     const lang = langSel ? langSel.value : "ko";
     if (!empNo || !pwd) {
-      this._err("lockErrorMessage", "작업자 ID과 암호를 입력하세요.");
+      this._err("lockErrorMessage", "멤버 ID과 암호를 입력하세요.");
       return;
     }
 
@@ -487,7 +487,7 @@ var AuthManager = {
       result = await this._verifyLocal(empNo, pwd);
       if (result.ok && !ProjectContext.isAdminUser(result.user)) {
         if (!project) result = { ok: false, message: "작업할 프로젝트를 선택하세요.", noCount: true };
-        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 작업자가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
+        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 멤버가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
       }
       if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
     } else {
@@ -497,7 +497,7 @@ var AuthManager = {
         if (Array.isArray(res.projects)) ProjectContext.projects = res.projects;
         result = { ok: true, user: res.user, mustChange: !!(res.user && res.user.mustChangePassword) };
       } else {
-        result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "작업자 선택 실패") };
+        result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "멤버 선택 실패") };
       }
     }
 
@@ -510,7 +510,7 @@ var AuthManager = {
       if (this.failedAttempts >= 5) {
         this.lockoutUntil = Date.now() + 30000;
         this.failedAttempts = 0;
-        this._err("lockErrorMessage", "🛡️ 5회 연속 실패로 30초간 작업자 선택이 제한됩니다.");
+        this._err("lockErrorMessage", "🛡️ 5회 연속 실패로 30초간 멤버 선택이 제한됩니다.");
       } else {
         this._err("lockErrorMessage", `⚠️ ${result.message} (실패 ${this.failedAttempts}/5회)`);
       }
@@ -652,8 +652,8 @@ var AuthManager = {
     this._showPane("pwdChangeFormPane");
     this._setText("lockModalTitle", forced ? "🔑 암호 변경 필요" : "🔑 암호 변경");
     this._setText("lockModalDesc", forced
-      ? "초기 암호 또는 관리자가 지정한 임시 암호로 작업자를 선택했습니다. 새 암호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
-      : "작업자 ID과 현재 암호를 확인한 후 새 암호로 변경합니다. (8자 이상, 영문+숫자)");
+      ? "초기 암호 또는 관리자가 지정한 임시 암호로 멤버를 선택했습니다. 새 암호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
+      : "멤버 ID과 현재 암호를 확인한 후 새 암호로 변경합니다. (8자 이상, 영문+숫자)");
     this._err("pcErrorMessage", "");
     const emp = document.getElementById("pcEmpNo");
     const loginEmp = document.getElementById("inputSecurityEmpNo");
@@ -700,7 +700,7 @@ var AuthManager = {
       await this._completeLogin(user, { lang: forced.lang, landing: forced.landing, project: forced.project });
       return;
     }
-    showToast(`🔑 [${empNo}] 암호가 변경되었습니다. 새 암호로 작업자를 선택하세요.`);
+    showToast(`🔑 [${empNo}] 암호가 변경되었습니다. 새 암호로 멤버를 선택하세요.`);
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;
     this.openLogin();
@@ -796,7 +796,7 @@ var AuthManager = {
 window.AuthManager = AuthManager;
 
 // =============================================================================
-// [Project Mgmt] 작업자 선택 목록 — 고른 프로젝트의 작업자(이름 · 작업자 ID)를 보여 줌 (전사 SSO 계정과 별개)
+// [Project Mgmt] 작업자 선택 목록 — 고른 프로젝트의 작업자(이름 · 멤버 ID)를 보여 줌 (전사 SSO 계정과 별개)
 // =============================================================================
 var WorkerPick = {
   async load() {
@@ -819,8 +819,8 @@ var WorkerPick = {
   //   - 이 PC 에 그 프로젝트 자료가 없으면: 종합본으로 바로 시작
   //   - 있으면 고르기: ① 최신 종합본으로 맞추기(내 담당 작업 유지, 작업자를 고른 뒤 반영) ② 전부 바꾸기 ③ 이 PC 자료 그대로
   PENDING_KEY: "PPRJMGMT_PENDING_PKG",
-  SERVER_PKG_URL: "shared/latest.json",     // 배포 폴더(pprjmgmt/shared/)에 PM 이 넣어 올린 최신 종합본
-  SKIP_KEY: "PPRJMGMT_SERVER_SKIP",          // 이번 서버 종합본은 반영하지 않기로 한 버전
+  SERVER_PKG_URL: "shared/latest.json",     // 배포 폴더(pprjmgmt/shared/)에 PM 이 넣어 올린 최신 마스터 파일
+  SKIP_KEY: "PPRJMGMT_SERVER_SKIP",          // 이번 서버 마스터 파일은 반영하지 않기로 한 버전
   _pkg: null,
   _norm(s) { return String(s || "").replace(/\s+/g, " ").trim().toLowerCase(); },
   _stampOf(d) { return String(((d || {}).projectConfig || {}).packageStamp || ""); },
@@ -831,7 +831,7 @@ var WorkerPick = {
     let items;
     try { items = await ProjectTransfer.parse(file); } catch (err) { return AuthManager._err("lockErrorMessage", "파일을 읽지 못했습니다: " + err.message); }
     const it = items && items[0];
-    if (!it || !it.users || !it.users.length) return AuthManager._err("lockErrorMessage", "PM 이 보낸 종합본(작업자 목록 포함) 파일이 아닙니다.");
+    if (!it || !it.users || !it.users.length) return AuthManager._err("lockErrorMessage", "PM 이 보낸 마스터 파일(멤버 목록 포함) 파일이 아닙니다.");
     AuthManager._err("lockErrorMessage", "");
     const pid = (ProjectContext.localList().find(p => this._norm(p.name) === this._norm(it.name)) || {}).id;
     const st = pid ? (LocalBackend._read(pid) || {}) : null;
@@ -845,13 +845,13 @@ var WorkerPick = {
     const box = this._box(), p = this._pkg;
     if (!box || !p) return;
     const fs = this._stampOf(p.it.data), ms = p.mine;
-    const cmp = fs && ms ? (fs > ms ? "🆕 이 PC 가 가진 것보다 새 종합본입니다." : fs === ms ? "ℹ️ 이 PC 가 이미 반영한 종합본과 같습니다." : "⚠️ 이 PC 가 가진 것보다 오래된 종합본입니다.") : "";
+    const cmp = fs && ms ? (fs > ms ? "🆕 이 PC 가 가진 것보다 새 마스터 파일입니다." : fs === ms ? "ℹ️ 이 PC 가 이미 반영한 마스터 파일과 같습니다." : "⚠️ 이 PC 가 가진 것보다 오래된 마스터 파일입니다.") : "";
     const b = (kind, label, btn) => `<button type="button" class="btn btn-sm${btn === "primary" ? " btn-primary" : ""}" data-btn="${btn}" data-click="WorkerPick.choose" data-click-args='["${kind}"]'>${label}</button>`;
-    box.innerHTML = `<div class="pkg-info"><b>📥 ${escapeHtml(p.file)}</b> — 프로젝트 [${escapeHtml(p.it.name)}]<br>종합본 버전: ${escapeHtml(fs || "표시 없음")} · 이 PC: ${escapeHtml(ms || "표시 없음")}${cmp ? "<br>" + cmp : ""}<br>이 PC 에 이 프로젝트 자료가 있습니다. 어떻게 할까요?</div>` +
+    box.innerHTML = `<div class="pkg-info"><b>📥 ${escapeHtml(p.file)}</b> — 프로젝트 [${escapeHtml(p.it.name)}]<br>마스터 파일 버전: ${escapeHtml(fs || "표시 없음")} · 이 PC: ${escapeHtml(ms || "표시 없음")}${cmp ? "<br>" + cmp : ""}<br>이 PC 에 이 프로젝트 자료가 있습니다. 어떻게 할까요?</div>` +
       (confirmReplace
-        ? `<div class="pkg-warn">⚠️ 이 PC 의 [${escapeHtml(p.it.name)}] 자료를 모두 지우고 종합본으로 바꿉니다. 아직 PM 에게 보내지 않은 내 작업은 사라집니다.</div><div class="pkg-btns">${b("replaceNow", "⚠️ 네, 전부 바꿉니다", "danger")}${b("back", "돌아가기", "")}</div>`
-        : `<div class="pkg-btns">${b("latest", "🔄 최신 종합본으로 맞추기 (내 담당 작업 유지, 권장)", "primary")}${b("keep", "이 PC 자료 그대로 쓰기", "")}${b("replace", "♻️ 종합본으로 전부 바꾸기 (이 PC 자료 버림)", "")}</div>` +
-          `<div class="login-hint">최신으로 맞추기: 작업자를 고르고 [▶ 작업 시작]을 누르면 반영됩니다. 내 담당 서브시스템은 이 PC 작업을 그대로 두고 나머지만 종합본으로 바뀝니다 (PM · 관리자는 전부 종합본으로).</div>`);
+        ? `<div class="pkg-warn">⚠️ 이 PC 의 [${escapeHtml(p.it.name)}] 자료를 모두 지우고 마스터 파일로 바꿉니다. 아직 PM 에게 보내지 않은 내 작업은 사라집니다.</div><div class="pkg-btns">${b("replaceNow", "⚠️ 네, 전부 바꿉니다", "danger")}${b("back", "돌아가기", "")}</div>`
+        : `<div class="pkg-btns">${b("latest", "🔄 최신 마스터 파일로 맞추기 (내 담당 작업 유지, 권장)", "primary")}${b("keep", "이 PC 자료 그대로 쓰기", "")}${b("replace", "♻️ 마스터 파일로 전부 바꾸기 (이 PC 자료 버림)", "")}</div>` +
+          `<div class="login-hint">최신으로 맞추기: 멤버를 고르고 [▶ 작업 시작]을 누르면 반영됩니다. 내 담당 서브시스템은 이 PC 작업을 그대로 두고 나머지만 마스터 파일로 바뀝니다 (PM · 관리자는 전부 마스터 파일로).</div>`);
     box.style.display = "block";
   },
   choose(kind) {
@@ -862,10 +862,10 @@ var WorkerPick = {
     if (kind === "replaceNow") return this._replaceAll(p.it, p.pid);
     if (kind === "latest") {
       this._suspend();
-      ProjectTransfer.writeUsersLocal(p.pid, p.it.users);   // 새로 들어온 작업자도 바로 고를 수 있게
+      ProjectTransfer.writeUsersLocal(p.pid, p.it.users);   // 새로 들어온 멤버도 바로 고를 수 있게
       AppStore.setItem(this.PENDING_KEY, JSON.stringify({ pid: p.pid, name: p.it.name, file: p.file, stamp: this._stampOf(p.it.data), item: p.it }));
       try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, p.pid); } catch (err) {}
-      showToast(`📥 [${p.it.name}] 최신 종합본을 받아 두었습니다. 작업자를 고르고 [▶ 작업 시작]을 누르면 반영됩니다.`);
+      showToast(`📥 [${p.it.name}] 최신 마스터 파일을 받아 두었습니다. 멤버를 고르고 [▶ 작업 시작]을 누르면 반영됩니다.`);
       setTimeout(() => AppStore.reload(), 900);
     }
   },
@@ -894,7 +894,7 @@ var WorkerPick = {
     const pid = (ProjectContext.localList().find(p => this._norm(p.name) === this._norm(it.name)) || {}).id;
     const st = pid ? (LocalBackend._read(pid) || {}) : null;
     const has = !!st && ((st.subsystemsMeta || []).length > 0 || (st.wbsData || []).length > 0);
-    if (!has) { this._replaceAll(it, pid, "🌐 서버의 최신 종합본"); return true; }
+    if (!has) { this._replaceAll(it, pid, "🌐 서버의 최신 마스터 파일"); return true; }
     const ms = this._stampOf(st);
     if (!fs || (ms && fs <= ms)) return false;
     try { if (AppStore.getItem(this.SKIP_KEY) === fs) return false; } catch (e) {}
@@ -902,7 +902,7 @@ var WorkerPick = {
     if (p && p.stamp === fs) return false;
     this._suspend();
     ProjectTransfer.writeUsersLocal(pid, it.users);
-    AppStore.setItem(this.PENDING_KEY, JSON.stringify({ pid, name: it.name, file: "🌐 서버의 최신 종합본", stamp: fs, item: it, server: true }));
+    AppStore.setItem(this.PENDING_KEY, JSON.stringify({ pid, name: it.name, file: "🌐 서버의 최신 마스터 파일", stamp: fs, item: it, server: true }));
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
     await AppStore.reload();
     return true;
@@ -920,8 +920,8 @@ var WorkerPick = {
     if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
     try { AppStore.removeItem(this.PENDING_KEY); } catch (err) {}
-    try { AppStore.setItem("PPRJMGMT_START_MSG", `${label || "📥 종합본"} [${it.name}]으로 시작합니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`); } catch (err) {}
-    showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`);
+    try { AppStore.setItem("PPRJMGMT_START_MSG", `${label || "📥 마스터 파일"} [${it.name}]으로 시작합니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 멤버 ID + 123!).`); } catch (err) {}
+    showToast(`📥 [${it.name}] 마스터 파일을 이 브라우저에 넣었습니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 멤버 ID + 123!).`);
     setTimeout(() => AppStore.reload(), 900);
   },
   _pending() { try { return JSON.parse(AppStore.getItem(this.PENDING_KEY) || "null"); } catch (e) { return null; } },
@@ -930,10 +930,10 @@ var WorkerPick = {
     const box = this._box(), p = this._pending();
     if (!box || this._pkg) return;
     if (!p) { box.style.display = "none"; box.innerHTML = ""; return; }
-    box.innerHTML = `<div class="pkg-info">📥 ${p.server ? "새 종합본이 올라와 있습니다" : "받아 둔 종합본"}: <b>${escapeHtml(p.file)}</b> [${escapeHtml(p.name)}] (${escapeHtml(p.stamp || "버전 표시 없음")})<br>이 프로젝트로 작업자를 고르면 반영됩니다 (내 담당 서브시스템은 이 PC 작업 유지).</div><div class="pkg-btns"><button type="button" class="btn btn-sm" data-click="WorkerPick.cancelPending">이번 종합본은 반영하지 않기</button></div>`;
+    box.innerHTML = `<div class="pkg-info">📥 ${p.server ? "새 마스터 파일이 올라와 있습니다" : "받아 둔 마스터 파일"}: <b>${escapeHtml(p.file)}</b> [${escapeHtml(p.name)}] (${escapeHtml(p.stamp || "버전 표시 없음")})<br>이 프로젝트로 멤버를 고르면 반영됩니다 (내 담당 서브시스템은 이 PC 작업 유지).</div><div class="pkg-btns"><button type="button" class="btn btn-sm" data-click="WorkerPick.cancelPending">이번 마스터 파일은 반영하지 않기</button></div>`;
     box.style.display = "block";
   },
-  cancelPending() { const p = this._pending(); try { if (p && p.server) AppStore.setItem(this.SKIP_KEY, p.stamp); AppStore.removeItem(this.PENDING_KEY); } catch (e) {} this.showPending(); showToast("받아 둔 종합본을 취소했습니다. 이 PC 자료를 그대로 씁니다."); },
+  cancelPending() { const p = this._pending(); try { if (p && p.server) AppStore.setItem(this.SKIP_KEY, p.stamp); AppStore.removeItem(this.PENDING_KEY); } catch (e) {} this.showPending(); showToast("받아 둔 마스터 파일을 취소했습니다. 이 PC 자료를 그대로 씁니다."); },
   // 작업자 선택 뒤 (app-boot afterLogin): 받아 둔 종합본을 지금 프로젝트에 반영
   applyPending() {
     const p = this._pending();
@@ -942,7 +942,7 @@ var WorkerPick = {
     // PM · 관리자는 전부 바뀌므로 서버 종합본은 한 번 묻고 반영 (아니오 = 이번 버전은 반영 안 함)
     if (p.server && Permission.canEditAllSubsystems()) {
       try { AppStore.setItem(this.SKIP_KEY, p.stamp); } catch (e) {}
-      return openConfirmDialog(`🌐 서버에 이 PC 보다 새 종합본(${p.stamp})이 있습니다.\nPM · 관리자는 프로젝트 자료 전체가 종합본으로 바뀝니다 (바꾸기 전에 복원 지점을 만듦). 반영할까요?\n(취소하면 이번 종합본은 다시 묻지 않습니다.)`, () => SmartMergeCenter.applyConsolidated(p.item, p.file));
+      return openConfirmDialog(`🌐 서버에 이 PC 보다 새 마스터 파일(${p.stamp})이 있습니다.\nPM · 관리자는 프로젝트 자료 전체가 마스터 파일로 바뀝니다 (바꾸기 전에 스냅샷을 만듦). 반영할까요?\n(취소하면 이번 마스터 파일은 다시 묻지 않습니다.)`, () => SmartMergeCenter.applyConsolidated(p.item, p.file));
     }
     SmartMergeCenter.applyConsolidated(p.item, p.file);
   },
