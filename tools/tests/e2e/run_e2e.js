@@ -593,8 +593,8 @@ async function localMain() {
     check("System settings > All users: every user with project roles in one table (admin2 present)", ua1.rows === ua1.all && ua1.all >= 9 && ua1.admin2 && ua1.chip.includes("·") && ua1.sum.includes("시스템관리자 2명"), JSON.stringify(ua1));
     check("All users: add a user with a project role (LEAD of W1 becomes the template owner), then delete", ua2.saved && ua2.inProject && ua2.lead === "통합 사용자" && ua3.gone, JSON.stringify({ ua2, ua3 }));
 
-    const heads = await page.evaluate(() => [...document.querySelectorAll(".tab-pane")].map(p => { const h = p.querySelector(":scope > .sub-header-bar.neo-ph"); return [p.id, !!h && !!h.querySelector(".neo-ph-main .sub-title") && !!h.querySelector(".neo-ph-desc"), p.querySelectorAll(".sync-toolbar-state").length <= 1 && (!p.querySelector(".sync-toolbar-state") || !!h.querySelector(".sync-toolbar-state"))]; }).filter(x => !(x[1] && x[2])));
-    check("Neo: every screen has the unified header (title + description + save status on the right)", heads.length === 0, JSON.stringify(heads));
+    const heads = await page.evaluate(() => [...document.querySelectorAll(".tab-pane")].map(p => { const h = p.querySelector(":scope > .sub-header-bar.neo-ph"); return [p.id, !!h && !!h.querySelector(".neo-ph-main .sub-title") && !h.querySelector(".neo-ph-desc"), p.querySelectorAll(".sync-toolbar-state").length <= 1 && (!p.querySelector(".sync-toolbar-state") || !!h.querySelector(".sync-toolbar-state"))]; }).filter(x => !(x[1] && x[2])));
+    check("Neo: every screen has the unified header (title, no description line, save status on the right)", heads.length === 0, JSON.stringify(heads));
 
     await page.evaluate(() => GShell.go("tab-weekly-report")); await page.waitForTimeout(600);
     await page.click('#tab-weekly-report .neo-dd[data-dd="down"] .neo-dd-btn'); await page.waitForTimeout(200);
