@@ -186,6 +186,41 @@ var WbsWeight = {
     showToast(`⚖️ 가중치 오류 ${n}건을 계획 기간 비율로 다시 나눴습니다 (소수점 1자리).${left ? ` 남은 오류 ${left}건` : " 오류 없음"}`);
   },
 
+  // ---- S-커브용: 최하위 Task 비중 · 날짜 시점의 계획 · 실적 ----
+  // tops: Map(행 → 전체 안 비중) → Map(최하위 행 → 비중), 가중치 비율로 아래로 나눔 (모두 0 이면 같은 비율)
+  leafShares(tops) {
+    const data = typeof wbsData !== "undefined" ? wbsData : [], out = new Map();
+    const walk = (i, share) => {
+      const kids = this.childIdx(data, i);
+      if (!kids.length) { out.set(data[i], (out.get(data[i]) || 0) + share); return; }
+      const ws = kids.map(j => this.wOf(data[j])), tot = ws.reduce((a, b) => a + b, 0);
+      kids.forEach((j, k) => walk(j, share * (tot > 0 ? ws[k] / tot : 1 / kids.length)));
+    };
+    tops.forEach((share, row) => { const i = data.indexOf(row); if (i !== -1) walk(i, share); });
+    return out;
+  },
+  _d(s) { return new Date(String(s).slice(0, 10) + "T00:00:00"); },
+  // 날짜(iso) 시점 계획 진척률 (달력 일수)
+  planAt(t, iso) {
+    if (!t.pStart || !t.pEnd) return 0;
+    if (iso < t.pStart) return 0;
+    if (iso >= t.pEnd) return 100;
+    const s = this._d(t.pStart), e = this._d(t.pEnd), x = this._d(iso);
+    return Math.min(100, Math.max(0, (x - s) / Math.max(1, e - s) * 100));
+  },
+  // 날짜(iso) 시점 실적 진척률 — 실적 날짜로 되짚음: 실적완료일 이후 = 지금 실적, 실적시작 전 = 0,
+  // 그 사이 = 실적시작일 ~ 실적완료일(없으면 기준일) 동안 지금 실적까지 고르게 올라간 것으로 봄
+  actualAt(t, iso, rep) {
+    const a = parseFloat(t.aProg) || 0;
+    if (!rep || iso >= rep) return a;
+    if (t.aEnd && t.aEnd <= iso) return a;
+    if (!t.aStart || t.aStart > iso) return 0;
+    const endIso = t.aEnd && t.aEnd < rep ? t.aEnd : rep;
+    const s = this._d(t.aStart), e = this._d(endIso), x = this._d(iso);
+    const tot = (e - s) / 86400000 + 1, el = (x - s) / 86400000 + 1;
+    return tot > 0 ? Math.min(a, a * el / tot) : a;
+  },
+
   // ---- 예전 자료 전환 (한 번) ----
   //  예전에는 가중치가 형제끼리의 비율이었고 L1 가중치 = 서브시스템 가중치였음
   //  → 서브시스템마다 L1 = 100 으로 두고 아래로 같은 비율로 나눔 (비율이 그대로라 진척률은 바뀌지 않음)

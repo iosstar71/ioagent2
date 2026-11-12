@@ -107,7 +107,7 @@ var SubTabs = {
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
     if (group === "master") {
-      if (name === "holiday") ProgressBasisManager.render();
+      if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); }
       if (name === "users") renderProjectUsersTable();
       if (name === "basic") { MilestoneManager.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
       if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();
@@ -198,6 +198,26 @@ var MilestoneManager = {
     this.render();
     renderGantt();
     persistChanges();
+  }
+};
+
+// 판정 기준: 지연 판정 차이(%p) · 확인할 일 마감 임박 일수 — [적용] 시 전체 다시 계산
+var JudgeRules = {
+  render() {
+    const g = document.getElementById("cfgDelayGap"), d = document.getElementById("cfgDueDays");
+    if (g) g.value = WBSEngine.delayGap();
+    if (d) d.value = WBSEngine.dueDays();
+  },
+  apply() {
+    const g = parseFloat((document.getElementById("cfgDelayGap") || {}).value);
+    const d = parseInt((document.getElementById("cfgDueDays") || {}).value, 10);
+    if (isNaN(g) || g < 0 || g > 100) return showToast("⚠️ 지연 판정 차이는 0 ~ 100 사이 숫자로 입력하세요.");
+    if (isNaN(d) || d < 1 || d > 90) return showToast("⚠️ 마감 임박 일수는 1 ~ 90 사이로 입력하세요.");
+    projectConfig.delayGap = Math.round(g * 10) / 10;
+    projectConfig.dueDays = d;
+    rebuildAll();
+    this.render();
+    showToast(`🚦 판정 기준을 적용했습니다: 지연 = 계획보다 ${projectConfig.delayGap}%p 이상 늦거나 계획종료일 경과 미완료 · 확인할 일 = ${d}일 안 마감`);
   }
 };
 

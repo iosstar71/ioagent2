@@ -193,7 +193,7 @@ var WeeklyExport = {
     };
     // 4. 이슈 · 요구사항 · VOC
     const reqBySys = {};
-    (d.reqs || []).filter(r => inScope(r.system)).forEach(r => {
+    (d.reqs || []).filter(r => inScope(r.system) && r.status !== "삭제").forEach(r => {   // 삭제 건은 완료율에서 뺌
       const o = reqBySys[r.system] = reqBySys[r.system] || { tot: 0, done: 0, prog: 0, hold: 0 };
       o.tot++; if (r.status === "완료") o.done++; else if (r.status === "진행") o.prog++; else if (r.status === "보류") o.hold++;
     });

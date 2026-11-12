@@ -85,27 +85,24 @@ const DashboardChart = {
     const achieveRates = [];
     const pastWeeks = weeks.filter(wk => wk.start <= repDate);
 
+    // 최하위 Task 기준으로 주차마다 계획 · 실적을 다시 계산 (실적은 실적시작 · 완료일로 되짚음 — 지난 주 실제 흐름)
+    const leaves = WbsWeight.leafShares(new Map(targetTasks.map(t => [t, share(t)])));
+    const isoOf = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+    const repIso = isoOf(repDate);
+    void pastWeeks;
     weeks.forEach((wk, idx) => {
+      const endIso = isoOf(wk.end);
       let pSum = 0;
-      targetTasks.forEach(task => {
-        const s = new Date(task.pStart || minDate);
-        const e = new Date(task.pEnd || maxDate);
-        let prog = 0;
-        if (wk.end < s) prog = 0;
-        else if (wk.end >= e) prog = 100;
-        else {
-          const tot = Math.max(1, (e - s) / (1000 * 60 * 60 * 24));
-          const el = Math.max(0, (wk.end - s) / (1000 * 60 * 60 * 24));
-          prog = Math.min(100, Math.round((el / tot) * 100));
-        }
-        pSum += prog * share(task);
-      });
+      leaves.forEach((s, t) => { pSum += WbsWeight.planAt(t, endIso) * s; });
       const weekPlan = Math.round(pSum);
       planCurve.push(weekPlan);
+      void idx;
 
       if (wk.start <= repDate) {
-        const ratio = (idx + 1) / Math.max(1, pastWeeks.length);
-        const actVal = Math.min(currentActual, Math.round(currentActual * Math.pow(ratio, 1.1)));
+        const at = endIso < repIso ? endIso : repIso;
+        let aSum = 0;
+        leaves.forEach((s, t) => { aSum += WbsWeight.actualAt(t, at, repIso) * s; });
+        const actVal = at === repIso ? currentActual : Math.min(currentActual, Math.round(aSum));
         actualCurve.push(actVal);
         const rate = weekPlan > 0 ? Math.min(150, Math.round((actVal / weekPlan) * 100)) : 100;
         achieveRates.push(rate);

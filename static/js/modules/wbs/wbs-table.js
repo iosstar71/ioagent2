@@ -20,6 +20,10 @@ function renderWbsTable() {
   const stFilterEl = document.getElementById("wbsStatusFilter");
   const stFilter = stFilterEl ? stFilterEl.value : "ALL";
   const leafOnly = stFilter !== "ALL";
+  // 단계별 조회: 조회 범위 서브시스템들의 단계 목록 → 고른 단계에 해당하는 Task 와 그 상위 Task
+  const scopeSystems = (subsystemsMeta || []).map(m => m.name).filter(n => (sysFilter === "ALL" || n === sysFilter) && (dFilter === "ALL" || WBSEngine.getSubsystemDomain(n) === dFilter));
+  const phase = WbsPhase.fill(scopeSystems);
+  const phaseSet = phase !== "ALL" ? WbsPhase.matchSet(wbsData, phase) : null;
   const delayCnt = wbsData.filter(t => t.isLeaf && t.status === "지연" && (sysFilter === "ALL" || t.system === sysFilter)).length;
   const dc = document.getElementById("wbsDelayedCount");
   if (dc) dc.textContent = delayCnt;
@@ -40,6 +44,7 @@ function renderWbsTable() {
     // 서브시스템 필터 및 레벨 접기 필터 적용 (해당 레벨 이하는 표시 안 함)
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
+    if (phaseSet && !phaseSet.has(row)) return;
     // 상태 조회는 최하위 Task(Leaf) 기준 — 레벨 접기와 무관하게 해당 상태의 최하위 과업만 표시
     if (leafOnly) {
       if (!row.isLeaf || row.status !== stFilter) return;
@@ -53,6 +58,7 @@ function renderWbsTable() {
     tr.classList.add(`task-state-${status.code}`);
 
     const indent = (row.level - 1) * 12;
+    const pRev = isDateReversed(row.pStart, row.pEnd), aRev = isDateReversed(row.aStart, row.aEnd);
     const isLeaf = row.isLeaf;
 
     const isStartHoliday = WBSEngine.isHoliday(row.pStart, projectConfig.holidays);
@@ -94,8 +100,8 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.pStart || ""}" data-dow="${pStartDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${pStartOutOfRange ? "date-out-of-range" : ""} ${isStartHoliday ? "holiday-date-highlight" : ""}"
-                 title="${pStartOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isStartHoliday ? "휴일(주말/공휴일) 경고" : "")}"
+                 class="${pStartOutOfRange ? "date-out-of-range" : ""} ${isStartHoliday ? "holiday-date-highlight" : ""} ${pRev ? "date-reversed" : ""}"
+                 title="${pRev ? "⚠️ 계획시작일이 계획종료일보다 늦습니다 (일정 역전)" : (pStartOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isStartHoliday ? "휴일(주말/공휴일) 경고" : ""))}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pStart", "$value", "rebuildAll")}">
           <span class="wbs-dow ${pStartDay === "토" ? "day-sat" : (pStartDay === "일" ? "day-sun" : "")}">${pStartDay || ""}</span>
         </div>
@@ -104,8 +110,8 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.pEnd || ""}" data-dow="${pEndDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${pEndOutOfRange ? "date-out-of-range" : ""} ${isEndHoliday ? "holiday-date-highlight" : ""}"
-                 title="${pEndOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isEndHoliday ? "휴일(주말/공휴일) 경고" : "")}"
+                 class="${pEndOutOfRange ? "date-out-of-range" : ""} ${isEndHoliday ? "holiday-date-highlight" : ""} ${pRev ? "date-reversed" : ""}"
+                 title="${pRev ? "⚠️ 계획시작일이 계획종료일보다 늦습니다 (일정 역전)" : (pEndOutOfRange ? "⚠️ 프로젝트 기간 이탈 오류" : (isEndHoliday ? "휴일(주말/공휴일) 경고" : ""))}"
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "pEnd", "$value", "rebuildAll")}">
           <span class="wbs-dow ${pEndDay === "토" ? "day-sat" : (pEndDay === "일" ? "day-sun" : "")}">${pEndDay || ""}</span>
         </div>
@@ -114,7 +120,7 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.aStart || ""}" data-dow="${aStartDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${aStartOutOfRange ? "date-out-of-range" : ""}"
+                 class="${aStartOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실적시작일이 실적종료일보다 늦습니다 (일정 역전)"` : ""}
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aStart", "$value", "rebuildAll")}">
           <span class="wbs-dow ${aStartDay === "토" ? "day-sat" : (aStartDay === "일" ? "day-sun" : "")}">${aStartDay || ""}</span>
         </div>
@@ -123,7 +129,7 @@ function renderWbsTable() {
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.aEnd || ""}" data-dow="${aEndDay || ""}" ${isLeaf ? "" : "readonly"}
-                 class="${aEndOutOfRange ? "date-out-of-range" : ""}"
+                 class="${aEndOutOfRange ? "date-out-of-range" : ""} ${aRev ? "date-reversed" : ""}"${aRev ? ` title="⚠️ 실적시작일이 실적종료일보다 늦습니다 (일정 역전)"` : ""}
                  data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aEnd", "$value", "rebuildAll")}">
           <span class="wbs-dow ${aEndDay === "토" ? "day-sat" : (aEndDay === "일" ? "day-sun" : "")}">${aEndDay || ""}</span>
         </div>
@@ -163,6 +169,43 @@ function renderWbsTable() {
     }
   }
 }
+
+// 단계별 조회 (📶) — 서브시스템의 SDLC 단계(개선 타입은 개선 공정 단계)로 걸러 봄
+var WbsPhase = {
+  phasesOf(sys) {
+    const spec = WBSEngine.getSubsystemSdlcSpec(sys);
+    if (spec) return spec.phases || [];
+    return (projectConfig && projectConfig.reqSdlcPhases) || [];
+  },
+  // 단계 이름 목록 (조회 범위 서브시스템 순서대로, 겹치는 이름은 한 번)
+  names(systems) {
+    const out = [];
+    (systems || []).forEach(s => this.phasesOf(s).forEach(p => { if (p && p.name && !out.includes(p.name)) out.push(p.name); }));
+    return out;
+  },
+  fill(systems) {
+    const sel = document.getElementById("wbsPhaseFilter");
+    if (!sel) return "ALL";
+    const keep = sel.value || "ALL";
+    const names = this.names(systems);
+    sel.innerHTML = `<option value="ALL">전체 단계</option>` + names.map(n => `<option value="${escapeAttr(n)}">${escapeHtml(n)}</option>`).join("");
+    sel.value = names.includes(keep) ? keep : "ALL";
+    return sel.value;
+  },
+  // 그 단계에 해당하는 행(L2 이하) + 상위 행
+  matchSet(data, name) {
+    const set = new Set();
+    data.forEach((t, i) => {
+      if ((t.level || 1) < 2) return;
+      const ph = this.phasesOf(t.system).find(p => p.name === name);
+      if (!ph || !WBSEngine.matchTaskToPhase(t, ph, data)) return;
+      set.add(t);
+      let j = i;
+      while ((j = WbsWeight.parentIdx(data, j)) !== -1) set.add(data[j]);
+    });
+    return set;
+  }
+};
 
 // 특정 과업 하위 트리 끝 인덱스 계산 및 계층/순서 조작
 function getSubtreeEndIndex(startIdx) {
@@ -474,20 +517,24 @@ function autoAdjustWbsHolidays() {
   }
 }
 
-// [요건 5 신규] 개별 행(Task) 단위 계획 ➔ 실적 즉시 반영
-// [v1.0.8] 계획 → 실적 반영 공통 규칙
-//  - 실적 진척률 = 계획 진척률, 실적시작일 미입력 시 계획시작일
-//  - 100% 가 되면 실적완료일: 계획완료일이 기준일과 같은 주차이면 계획완료일, 아니면 기준일
-//  - 실적시작일이 실적완료일보다 미래이면 실적시작일 = 실적완료일
+// 계획 → 실적 반영 공통 규칙 (기준일이 속한 주차 = 기준 주차)
+//  - 실적 진척률 = 계획 진척률 (이미 실적이 계획보다 앞서 있으면 그대로)
+//  - 실적시작일 (비어 있을 때만): 계획시작일이 기준 주차보다 앞이면 기준 주차 시작일, 기준 주차 안이면 계획시작일
+//  - 실적종료일 (100% 이고 비어 있을 때만): 계획종료일이 기준 주차 안이면 계획종료일, 기준 주차보다 앞이면 기준일
+//  - 이미 입력된 실적시작 · 종료일은 바꾸지 않음 (시작 > 종료로 뒤집히면 표에 색으로 표시)
 function applyPlanToActual(task) {
   const rep = projectConfig.reportDate;
-  if (task.pStart && !task.aStart) task.aStart = task.pStart;
-  task.aProg = task.pProg;
-  if (task.aProg >= 100) {
-    const wk = WBSEngine.getWeekRange(rep, projectConfig.weekStartDay);
-    task.aEnd = task.pEnd && task.pEnd >= wk.start && task.pEnd <= wk.end ? task.pEnd : rep;
-    if (task.aStart && task.aStart > task.aEnd) task.aStart = task.aEnd;
-  }
+  const wk = WBSEngine.getWeekRange(rep, projectConfig.weekStartDay);
+  const p = parseFloat(task.pProg) || 0;
+  if (p > (parseFloat(task.aProg) || 0)) task.aProg = p;
+  const a = parseFloat(task.aProg) || 0;
+  if (a > 0 && !task.aStart && task.pStart) task.aStart = task.pStart < wk.start ? wk.start : task.pStart;
+  if (a >= 100 && !task.aEnd) task.aEnd = task.pEnd && task.pEnd >= wk.start && task.pEnd <= wk.end ? task.pEnd : rep;
+}
+// 시작일이 종료일보다 늦은 (뒤집힌) 일정
+function isDateReversed(s, e) { return Boolean(s && e && s > e); }
+function countReversedDates(list) {
+  return (list || wbsData).filter(t => t.isLeaf && (isDateReversed(t.aStart, t.aEnd) || isDateReversed(t.pStart, t.pEnd))).length;
 }
 
 function fillRowActualFromPlan(idx) {
@@ -498,7 +545,7 @@ function fillRowActualFromPlan(idx) {
   showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${task.aProg >= 100 ? ` (실적완료일 ${task.aEnd})` : ""}`);
 }
 
-// 서브시스템(또는 전체)에서 기준일 현재 진행 중이거나 기준일에 끝나는 과업만 반영 (과거 완료 과업은 보존)
+// [실적 일괄 반영] 서브시스템(또는 전체)에서 계획 진척률이 0 보다 큰 최하위 Task 를 모두 반영 (규칙은 applyPlanToActual)
 function fillActualFromPlan() {
   const repDateStr = projectConfig.reportDate;
   const sysFilterEl = document.getElementById("wbsSubsystemFilter");
@@ -507,13 +554,13 @@ function fillActualFromPlan() {
   wbsData.forEach(task => {
     if (!task.isLeaf) return;
     if (sysFilter !== "ALL" && task.system !== sysFilter) return;
-    if (!task.pStart || !task.pEnd) return;
-    if (task.pStart <= repDateStr && task.pEnd >= repDateStr) {
-      applyPlanToActual(task);
-      updatedCount++;
-    }
+    if (!((parseFloat(task.pProg) || 0) > 0)) return;
+    const before = [task.aProg, task.aStart, task.aEnd].join("|");
+    applyPlanToActual(task);
+    if ([task.aProg, task.aStart, task.aEnd].join("|") !== before) updatedCount++;
   });
   rebuildAll();
   const scopeLabel = sysFilter === "ALL" ? "전체 서브시스템" : `[${sysFilter}]`;
-  showToast(`${scopeLabel}에서 기준일(${repDateStr}) 현재 진행 중이거나 완료되는 과업 ${updatedCount}건의 실적을 반영했습니다. (과거 일정 과업은 보존)`);
+  const rev = countReversedDates(wbsData.filter(t => sysFilter === "ALL" || t.system === sysFilter));
+  showToast(`${scopeLabel}에서 계획 진척률이 있는 과업 ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준, 이미 입력된 실적일은 그대로).${rev ? ` ⚠️ 시작 · 종료일이 뒤집힌 과업 ${rev}건 (보라색 칸)` : ""}`);
 }

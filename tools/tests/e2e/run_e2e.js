@@ -292,6 +292,46 @@ async function main() {
     const p2 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name, max: Math.max(...wbsData.map(t => t.level)) }));
     check("Detail panel: [+ 하위] opens the new child, and [◀ 레벨 올리기] moves it back up (follows the Task after renumbering)",
       p1.lv === 4 && /하위과업/.test(p1.name) && p2.lv === 3 && p2.name === p1.name && p2.max <= 5, JSON.stringify({ p1, p2 }));
+    // 실적 일괄 반영 규칙 · 일정 역전 색 · 단계별 조회 · 판정 기준
+    console.log("\n[Actual apply rules, stage filter, judgement rules]");
+    await wc.evaluate(() => {
+      NeoDetail.close();
+      projectConfig.reportDate = "2026-11-18"; projectConfig.weekStartDay = 1;   // 기준 주차 11-16(월) ~ 11-22
+      subsystemsMeta = [{ domain: "기본분야", code: "A", name: "A", type: "SDLC", sdlcCode: "SDLC_WATERFALL", weight: 100, pm: "" }];
+      wbsData = [{ level: 1, system: "A", name: "A 구축", weight: 100 },
+        { level: 2, system: "A", name: "분석", weight: 50 },
+        { level: 3, system: "A", name: "t1", weight: 25, pStart: "2026-11-02", pEnd: "2026-11-10" },
+        { level: 3, system: "A", name: "t2", weight: 25, pStart: "2026-11-17", pEnd: "2026-11-19" },
+        { level: 2, system: "A", name: "설계", weight: 50 },
+        { level: 3, system: "A", name: "t3", weight: 20, pStart: "2026-11-10", pEnd: "2026-11-17" },
+        { level: 3, system: "A", name: "t4", weight: 15, pStart: "2026-11-25", pEnd: "2026-11-30" },
+        { level: 3, system: "A", name: "t5", weight: 15, pStart: "2026-11-01", pEnd: "2026-11-12", aStart: "2026-11-20" }];
+      rebuildAll(true); GShell.go("tab-wbs");
+      const f = document.getElementById("wbsSubsystemFilter"); if (f) f.value = "ALL";
+    });
+    await wc.waitForTimeout(800);
+    await wc.evaluate(() => fillActualFromPlan());
+    await wc.waitForTimeout(500);
+    const ap = await wc.evaluate(() => { const g = n => { const t = wbsData.find(x => x.name === n); return [t.aProg, t.aStart || "", t.aEnd || ""].join("|"); };
+      return { t1: g("t1"), t2: g("t2"), t3: g("t3"), t4: g("t4"), t5: g("t5"), rev: document.querySelectorAll("#wbsTableBody input.date-reversed").length }; });
+    check("Bulk actual apply: every Task with plan > 0; start = week start if planned earlier (else plan start); end = plan end in the week, else the report date",
+      ap.t1 === "100|2026-11-16|2026-11-18" && ap.t2 === "50|2026-11-17|" && ap.t3 === "100|2026-11-16|2026-11-17" && /^0?\|\|$/.test(ap.t4), JSON.stringify(ap));
+    check("Existing actual dates are kept; a start later than the end is coloured as reversed", ap.t5 === "100|2026-11-20|2026-11-18" && ap.rev === 2, JSON.stringify(ap));
+    await wc.selectOption("#wbsPhaseFilter", "설계"); await wc.waitForTimeout(300);
+    const ph = await wc.evaluate(() => ({ opts: [...document.querySelectorAll("#wbsPhaseFilter option")].map(o => o.value).join(), rows: [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]")].map(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).name).join() }));
+    await wc.selectOption("#wbsPhaseFilter", "ALL"); await wc.waitForTimeout(200);
+    check("WBS stage filter (top of the filters) shows only that stage's Tasks with their upper Tasks", ph.opts.startsWith("ALL,분석,설계") && ph.rows === "A 구축,설계,t3,t4,t5", JSON.stringify(ph));
+    const jr = await wc.evaluate(() => {
+      const st = (p, a, pEnd) => WBSEngine.getTaskStatus({ pProg: p, aProg: a, pEnd }, "2026-11-18").label;
+      const r = { gap3: st(50, 47, "2026-12-01"), gap5: st(50, 45, "2026-12-01"), overdue: st(100, 97, "2026-11-10") };
+      projectConfig.delayGap = 2; r.gap3b = st(50, 47, "2026-12-01"); delete projectConfig.delayGap;
+      const W = (t) => WeeklyReportManager.isTaskInWeek(Object.assign({ isLeaf: true }, t), "2026-11-16", "2026-11-22");
+      r.wk = [W({ pStart: "2026-11-20", pEnd: "2026-11-30" }), W({ pStart: "2026-10-01", pEnd: "2026-12-31", aStart: "2026-10-01" }), W({ pStart: "2026-12-01", pEnd: "2026-12-05" }), W({ pStart: "2026-10-01", pEnd: "2026-10-05", aEnd: "2026-10-05", aProg: 100 })].join();
+      r.due = NeoTodo.DUE_DAYS; projectConfig.dueDays = 14; r.due2 = NeoTodo.DUE_DAYS; delete projectConfig.dueDays;
+      return r;
+    });
+    check("Status: delayed when actual trails plan by ≥ the set gap (default 5%p) or the plan end has passed; this-week list and due-days follow the settings",
+      jr.gap3 !== "지연" && jr.gap5 === "지연" && jr.overdue === "지연" && jr.gap3b === "지연" && jr.wk === "true,true,false,false" && jr.due === 7 && jr.due2 === 14, JSON.stringify(jr));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);
