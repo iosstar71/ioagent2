@@ -880,6 +880,7 @@ var WorkerPick = {
   //   - 같거나 오래된 버전 · 파일 없음: 아무것도 안 함
   //   반환 true = 화면을 다시 불러오는 중
   async checkServerPackage() {
+    if (location.protocol === "file:") return false;   // 폴더의 index.html 을 바로 열었을 때는 배포 폴더가 없음
     let text;
     try {
       const r = await fetch(this.SERVER_PKG_URL + "?t=" + Date.now(), { cache: "no-store" });

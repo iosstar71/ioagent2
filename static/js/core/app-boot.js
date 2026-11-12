@@ -119,6 +119,7 @@ var AppBoot = {
     this.initUi();
     AuthManager.init();
     if (typeof WorkerPick !== "undefined") WorkerPick.startMessage();
+    this.versionNotice();
   },
 
   // 작업자 선택 성공 후 호출 (DB 서버 모드: 서버 데이터 로드)
@@ -140,6 +141,13 @@ var AppBoot = {
     if (typeof GShell !== "undefined") { GShell.refresh(); GShell.syncSettings(); }
     if (SyncManager.isLocal() && typeof WorkerPick !== "undefined") WorkerPick.applyPending();
     this.backupReminder();
+  },
+
+  // 새 버전으로 바뀌었으면 한 번 알림 (자료는 그대로)
+  versionNotice() {
+    let prev = null;
+    try { prev = AppStore.getItem("PPRJMGMT_APP_VERSION"); AppStore.setItem("PPRJMGMT_APP_VERSION", APP_VERSION.version); } catch (e) {}
+    if (prev && prev !== APP_VERSION.version) setTimeout(() => showToast(`🆕 ${APP_VERSION.product} v${APP_VERSION.version} 로 바뀌었습니다 (이전 v${prev}). 이 브라우저의 자료는 그대로입니다.`), 1200);
   },
 
   // [Local] 자료는 이 브라우저에만 있으므로, 7일 넘게 파일로 받지 않았으면 알림

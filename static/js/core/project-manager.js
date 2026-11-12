@@ -227,6 +227,7 @@ var ProjectManager = {
           <div class="pm-summary-actions">
             ${canManage ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 열기</button>' : ""}
             ${canCreate ? '<button class="btn btn-sm" data-btn="add" data-click="ProjectManager.openNew">➕ 새 프로젝트 등록</button>' : ""}
+            ${canCreate && typeof SampleProject !== "undefined" && SyncManager.isLocal() ? '<button class="btn btn-sm" data-click="SampleProject.add" title="교육 · 시연용 샘플 프로젝트를 새 프로젝트로 추가 (지금 프로젝트는 그대로)">🧪 샘플 프로젝트 추가</button>' : ""}
             ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 관리자 또는 PM만 할 수 있습니다.</span>' : ""}
           </div>
         </div>${rows}`;

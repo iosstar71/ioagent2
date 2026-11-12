@@ -126,12 +126,14 @@ function renderVocTable() {
 
   const dFilter = document.getElementById("vocDomainFilter") ? document.getElementById("vocDomainFilter").value : "ALL";
   const sysFilter = document.getElementById("vocSubsystemFilter") ? document.getElementById("vocSubsystemFilter").value : "ALL";
+  const typeFilter = document.getElementById("vocTypeFilter") ? document.getElementById("vocTypeFilter").value : "ALL";
   let statTotal = 0, statReady = 0, statProg = 0, statComp = 0, statExcl = 0, statHold = 0, statDel = 0;
 
   const chipScope = [];
   vocData.forEach((row, idx) => {
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
+    if (typeFilter !== "ALL" && (row.vocType || "VOC") !== typeFilter) return;   // 구분 (목록에서만, 대시보드 · 주간보고는 VOC 로 통합)
     chipScope.push(row);
     if (typeof StatusChips !== "undefined" && !StatusChips.match("voc", row)) return;
 
@@ -156,6 +158,11 @@ function renderVocTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.id)}</strong></td>
+      <td>
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "vocType", "$value", "renderVocTable", "persistChanges")}">
+          ${["VOC", "버그", "이슈"].map(v => `<option value="${v}" ${(row.vocType || "VOC") === v ? "selected" : ""}>${v}</option>`).join("")}
+        </select>
+      </td>
       <td>
         <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "system", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
@@ -221,6 +228,7 @@ function addNewVoc() {
   vocData.push({
     id: newVocId,
     system: defaultSys,
+    vocType: (document.getElementById("vocTypeFilter") && document.getElementById("vocTypeFilter").value !== "ALL") ? document.getElementById("vocTypeFilter").value : "VOC",
     title: "신규 VOC 요청사항",
     priority: "중",
     requester: "요청부서",

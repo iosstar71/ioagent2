@@ -112,6 +112,7 @@ const ExcelSync = {
     ],
     voc: [
       { key: "id", label: "VOC ID", width: 14 },
+      { key: "vocType", label: "구분", width: 10 },
       { key: "system", label: "서브시스템", width: 16 },
       { key: "priority", label: "우선순위", width: 12 },
       { key: "title", label: "요청제목", width: 36 },
@@ -197,6 +198,7 @@ const ExcelSync = {
     },
     voc: {
       id: ["voc id", "vocid", "id"],
+      vocType: ["구분", "유형", "type"],
       system: ["서브시스템", "서브시스템명", "system"],
       priority: ["우선순위", "중요도", "priority"],
       title: ["요청제목", "요청 제목 / 이슈 내용", "제목", "이슈내용", "title"],
@@ -1335,6 +1337,7 @@ const ExcelSync = {
 
       return {
         id: id || `VOC-${String(index + 1).padStart(2, "0")}`,
+        vocType: ["VOC", "버그", "이슈"].indexOf(String(raw.vocType || "").trim()) !== -1 ? String(raw.vocType).trim() : (/bug|버그|결함/i.test(String(raw.vocType || "")) ? "버그" : (/issue|이슈/i.test(String(raw.vocType || "")) ? "이슈" : "VOC")),
         system: String(raw.system || "서브시스템A").trim(),
         priority: String(raw.priority || "중").trim(),
         title: title || id,

@@ -35,6 +35,11 @@
           <select id="inputLoginProject" class="login-input" data-change="WorkerPick.load"></select>
         </div>
         <div class="login-hint" id="loginProjectHint">관리자는 프로젝트를 고르지 않아도 됩니다.</div>
+        <label class="login-label" for="inputLoginLang">언어 / Language:</label>
+        <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
+          <option value="ko">한국어 (Korean)</option>
+          <option value="en">English</option>
+        </select>
         <label class="login-label" for="inputSecurityEmpNo">② 멤버 (목록에서 고르거나 멤버 ID 입력):</label>
         <input type="text" id="inputSecurityEmpNo" value="" list="workerPickList" placeholder="멤버 선택 (처음: admin)" autocomplete="off" class="login-input"
                data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
@@ -1027,6 +1032,12 @@
             <option value="ALL">전체 서브시스템 보기</option>
           </select>
         </div>
+        <div class="filter-item">
+          <label style="font-weight:bold;">🏷️ 구분:</label>
+          <select id="vocTypeFilter" data-change="renderVocTable" title="VOC: 고객 개선 요청 · 버그: 수정 요청 · 이슈: 고객 · 내부 문제 제기">
+            <option value="ALL">전체</option><option value="VOC">VOC</option><option value="버그">버그</option><option value="이슈">이슈</option>
+          </select>
+        </div>
         <div class="filter-item"><span class="neo-chips" id="vocStatusChips" role="group" aria-label="상태 필터"></span></div>
         <div class="status-summary-bar" style="margin-bottom:0; margin-left:auto; align-items:center;">
           <span class="status-badge-chip chip-total">전체: <b id="tab-voc-stat-total">0</b></span>
@@ -1047,6 +1058,7 @@
           <thead>
             <tr>
               <th style="width: 90px;">VOC ID</th>
+              <th style="width: 76px;" title="VOC: 고객 개선 요청 · 버그: 수정 요청 · 이슈: 고객 · 내부 문제 제기">구분</th>
               <th style="width: 135px;">서브시스템</th>
               <th style="width: 80px;">우선순위</th>
               <th style="min-width: 240px;">요청 제목 / 이슈 내용</th>
@@ -3086,6 +3098,7 @@
   <script src="static/js/core/app-store.js"></script>
   <script src="static/js/core/week-format.js"></script>
   <script src="static/js/common/ui-events.js"></script>
+  <script src="static/js/common/i18n-en.js"></script>
   <script src="static/js/common/i18n.js"></script>
   <script src="static/js/core/initial-data.js"></script>
   <script src="static/js/modules/wbs/wbs-engine.js"></script>
@@ -3129,6 +3142,8 @@
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
   <script src="static/js/core/project-transfer.js"></script>
+  <script src="static/js/core/sample-snapshot.js"></script>
+  <script src="static/js/core/sample-project.js"></script>
   <script src="static/js/core/system-backup.js"></script>
   <script src="static/js/core/data-admin.js"></script>
   <script src="static/js/modules/admin/user-admin.js"></script>

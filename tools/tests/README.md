@@ -1,4 +1,4 @@
-# Project Mgmt (협업) Local — 자동 테스트
+# PM Hub (IOSTAR-PM Standalone) — 자동 테스트
 
 | 구분 | 실행 | 내용 |
 |---|---|---|

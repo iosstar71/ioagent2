@@ -105,7 +105,7 @@ async function main() {
     check("Local: picking a worker with the initial password does not force a password change", !PWD.admin && await pm.evaluate(() => !!(AuthManager.currentUser && AuthManager.currentUser.empNo === "admin")), JSON.stringify(PWD));
     const st = await pm.evaluate(() => ({ ver: document.getElementById("headerVersionBadge").textContent, title: document.title, mode: DbConnector.config.mode, wbs: wbsData.length, subs: subsystemsMeta.length,
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
-      gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat, typeof WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
+      gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
       st.ver === "Standalone v1.0.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
@@ -365,12 +365,32 @@ async function main() {
       !!od && od.status === "지연" && /계획종료 2026-09-10/.test(od.detail) && /일 경과/.test(od.detail), JSON.stringify(od));
     check("Status: delayed when actual trails plan by ≥ the set gap (default 5%p) or the plan end has passed; this-week list and due-days follow the settings",
       jr.gap3 !== "지연" && jr.gap5 === "지연" && jr.overdue === "지연" && jr.gap3b === "지연" && jr.wk === "true,true,false,false" && jr.due === 7 && jr.due2 === 14, JSON.stringify(jr));
+    // 메뉴 · 첫 화면 · 영어 화면 · VOC 구분 · 샘플 프로젝트
+    console.log("\n[Menus, English UI, VOC type, sample project]");
+    const mn = await wc.evaluate(() => ({ groups: [...document.querySelectorAll(".g-group")].map(g => g.textContent.trim()).join("|"), land: HomeScreenManager.landingTab(),
+      mw: !!document.querySelector("#tab-mywork #homeTodoContainer") && !!document.querySelector("#tab-mywork #homePortalContainer"), sw: !!document.querySelector(".home-style-switch") }));
+    check("Menus: My Work · Dashboard(Summary · Dashboard · Phase) · 일정 · 요구 · VOC · 산출물 · 보고 · 소통; admin lands on Summary; My Work holds check list + own Tasks",
+      /My Work/.test(mn.groups) && /Dashboard/.test(mn.groups) && /요구 · VOC · 산출물/.test(mn.groups) && /보고 · 소통/.test(mn.groups) && mn.land === "tab-home" && mn.mw && !mn.sw, JSON.stringify(mn));
+    await wc.evaluate(() => { vocData = [{ id: "VOC-1", system: "A", title: "v", status: "대기" }, { id: "VOC-2", system: "A", title: "b", status: "착수전", vocType: "버그" }];
+      DataRegistry.normalizeTerms({ vocData }); GShell.go("tab-voc"); });
+    await wc.selectOption("#vocTypeFilter", "버그"); await wc.waitForTimeout(300);
+    const vt = await wc.evaluate(() => ({ rows: document.querySelectorAll("#vocTableBody tr").length, st: vocData[1].status, dash: (() => { renderDashboard(); return document.getElementById("voc-stat-total") ? document.getElementById("voc-stat-total").textContent : "" })() }));
+    await wc.selectOption("#vocTypeFilter", "ALL");
+    check("VOC 구분 (VOC / 버그 / 이슈) filters the list only; old 착수전 reads as 대기", vt.rows === 1 && vt.st === "대기", JSON.stringify(vt));
+    await wc.evaluate(() => SampleProject.add()); await wc.waitForTimeout(300); await wc.click("#confirmDialogOkBtn"); await wc.waitForTimeout(1200);
+    const sp = await wc.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); const st = p ? LocalBackend._read(p.id) : null; return { has: !!p, wbs: st ? (st.wbsData || []).length : 0 }; });
+    check("[🧪 샘플 프로젝트 추가] adds a separate sample project", sp.has && sp.wbs > 20, JSON.stringify(sp));
+    const en = await newPage();
+    await en.goto(web.url); await en.waitForTimeout(1500);
+    await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);
+    const enT = await en.evaluate(() => ({ title: document.getElementById("lockModalTitle").textContent, btn: document.getElementById("btnLockSubmit").textContent.trim() }));
+    check("English UI is available on the member selection screen", /Choose member/.test(enT.title) && /Start/.test(enT.btn), JSON.stringify(enT));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);
     check("Data management shows browser storage usage", usage.includes("IndexedDB"), usage);
     check("No requests outside /pprjmgmt (no server, no external calls) and no page errors",
-      pm.external.length + wa.external.length + wb.external.length + wc.external.length === 0 && pm.errors.length + wa.errors.length + wb.errors.length + wc.errors.length === 0, pm.external.concat(wa.external, wb.external, wc.external, pm.errors, wa.errors, wb.errors, wc.errors).slice(0, 4).join(" | "));
+      pm.external.length + wa.external.length + wb.external.length + wc.external.length + en.external.length === 0 && pm.errors.length + wa.errors.length + wb.errors.length + wc.errors.length + en.errors.length === 0, pm.external.concat(wa.external, wb.external, wc.external, pm.errors, wa.errors, wb.errors, wc.errors).slice(0, 4).join(" | "));
     void pkg2;
   } finally {
     web.stop();
