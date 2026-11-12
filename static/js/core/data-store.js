@@ -58,7 +58,7 @@ var DataRegistry = {
       case "processTypes": return typeof ProcessLib !== "undefined" ? ProcessLib.raw : null;
       case "theme":  // [v3.8.0] 시스템 기본 테마 (프로젝트 테마는 projectConfig.uiTheme)
         if (typeof ThemeScope !== "undefined") {
-          if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "electric";
+          if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "urban-slate";
           return ThemeScope.global;
         }
         return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "urban-slate");

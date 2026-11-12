@@ -104,7 +104,11 @@ window.ConnState = ConnState;
 var AppBoot = {
   uiReady: false,
 
+  // 저장된 테마를 적용한 뒤에 화면을 보여 줌 (처음 그린 기본 테마 색이 잠깐 보였다 바뀌지 않도록)
   async start() {
+    try { await this._start(); } finally { document.body.classList.add("theme-ready"); }
+  },
+  async _start() {
     ProjectContext.init();
     DbConnector.init();
     if (typeof ButtonStandard !== "undefined") ButtonStandard.init();

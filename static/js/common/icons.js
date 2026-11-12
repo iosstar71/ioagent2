@@ -195,14 +195,15 @@ var Icons = {
   init() {
     if (this._obs) return;
     this.apply(document.body);
-    let queue = new Set(), timer = null;
-    const flush = () => { timer = null; const q = queue; queue = new Set(); q.forEach(x => { if (x.isConnected) this.apply(x); }); };
+    // 화면을 그리기 전에(같은 마이크로태스크 안에서) 바로 바꿈 — 이모지가 잠깐 보였다가 아이콘으로 바뀌며 흔들리지 않도록
     this._obs = new MutationObserver(muts => {
+      const q = new Set();
       muts.forEach(m => {
-        if (m.type === "characterData") queue.add(m.target);
-        else m.addedNodes.forEach(x => queue.add(x));
+        if (m.type === "characterData") q.add(m.target);
+        else m.addedNodes.forEach(x => q.add(x));
       });
-      if (!timer) timer = setTimeout(flush, 0);
+      q.forEach(x => { if (x.isConnected) this.apply(x); });
+      this._obs.takeRecords();
     });
     this._obs.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
@@ -212,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => Icons.init());
 
 // 테마에 맞춘 탭 아이콘(favicon): 밝은 머리말 테마(Urban Slate · Nordic Sage)는 무채색 아이콘
 var ThemeLogo = {
-  MONO: ["urban-slate", "nordic-sage"],
+  MONO: ["urban-slate", "nordic-sage", "brown"],
   sync() {
     const link = document.querySelector('link[rel="icon"]');
     if (!link) return;

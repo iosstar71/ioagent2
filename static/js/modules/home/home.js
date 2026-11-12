@@ -240,13 +240,13 @@ var HomeScreenManager = {
     if (heroBadge) {
       if (achieveNum >= 90) {
         heroBadge.textContent = "🟢 정상 공정 궤도";
-        heroBadge.style.background = "#22c55e";
+        heroBadge.style.cssText += "background:rgba(34,197,94,0.16); color:#86EFAC; border:1px solid rgba(134,239,172,0.45);";
       } else if (achieveNum >= 70) {
         heroBadge.textContent = "🟡 주의 및 경계 관리";
-        heroBadge.style.background = "#eab308";
+        heroBadge.style.cssText += "background:rgba(234,179,8,0.16); color:#FDE68A; border:1px solid rgba(253,230,138,0.45);";
       } else {
         heroBadge.textContent = "🔴 공정 지연 리스크";
-        heroBadge.style.background = "#ef4444";
+        heroBadge.style.cssText += "background:rgba(239,68,68,0.18); color:#FCA5A5; border:1px solid rgba(252,165,165,0.5);";
       }
     }
 
