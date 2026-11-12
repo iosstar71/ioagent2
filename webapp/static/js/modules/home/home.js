@@ -231,9 +231,9 @@ var HomeScreenManager = {
 
     // 1. Calculate overall metrics
     const rootItems = (wbsData || []).filter(d => d.level === 1);
-    const totalWeight = rootItems.reduce((acc, d) => acc + (parseFloat(d.weight) || 1), 0) || 1;
-    const totalPlan = Math.round(rootItems.reduce((acc, d) => acc + (d.pProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
-    const totalActual = Math.round(rootItems.reduce((acc, d) => acc + (d.aProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
+    const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
+    const totalPlan = wp.plan;
+    const totalActual = wp.actual;
     const gap = totalActual - totalPlan;
     const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
     const achieveNum = parseFloat(achieveRate);
@@ -405,9 +405,12 @@ var HomeScreenManager = {
         const dSubs = (subsystemsMeta || []).filter(s => s.domain === dName).map(s => s.name);
         const dTasks = (wbsData || []).filter(t => dSubs.includes(t.system) && t.isLeaf);
         const dRoots = (wbsData || []).filter(t => dSubs.includes(t.system) && t.level === 1);
-        const dWeight = dRoots.reduce((acc, t) => acc + (parseFloat(t.weight) || 1), 0);
-        const dPlan = dWeight > 0 ? Math.round(dRoots.reduce((acc, t) => acc + (t.pProg * (parseFloat(t.weight) || 1)), 0) / dWeight) : 0;
-        const dActual = dWeight > 0 ? Math.round(dRoots.reduce((acc, t) => acc + (t.aProg * (parseFloat(t.weight) || 1)), 0) / dWeight) : 0;
+        const dwp = dRoots.length ? WBSEngine.weightedProgress(dRoots) : { plan: 0, actual: 0 };
+        // 분야 비중 = 그 분야 서브시스템 가중치 합 / 전체 서브시스템 가중치 합
+        const allSw = (subsystemsMeta || []).reduce((acc, m) => acc + WBSEngine.sysWeight(m.name), 0);
+        const dWeight = allSw > 0 ? Math.round(dSubs.reduce((acc, n) => acc + WBSEngine.sysWeight(n), 0) / allSw * 1000) / 10 : 0;
+        const dPlan = dwp.plan;
+        const dActual = dwp.actual;
         const dRate = dPlan > 0 ? Math.round((dActual / dPlan) * 100) : 100;
 
         const tr = document.createElement("tr");

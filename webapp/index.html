@@ -930,6 +930,8 @@
         </div>
         <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="btn btn-sm wbs-fold-btn" id="btnWbsFold" data-click="WbsFold.toggle" title="가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다">◀ 가중치·REQ·담당자·산출물 접기</button>
+          <span id="wbsWeightErrChip" class="weight-err-chip" style="display:none;" title="하위 가중치 합이 상위 가중치와 다른 묶음 수 (경고색 칸)"></span>
+          <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 오류 보정</button>
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
             🗓️ 휴일 자동보정
           </button>
@@ -3538,6 +3540,7 @@
   <script src="static/js/common/i18n-en.js"></script>
   <script src="static/js/core/initial-data.js"></script>
   <script src="static/js/modules/wbs/wbs-engine.js"></script>
+  <script src="static/js/modules/wbs/wbs-weight.js"></script>
   <script src="static/js/modules/progress/dashboard-chart.js"></script>
   <script src="static/js/modules/wbs/gantt-renderer.js"></script>
   <script src="static/js/modules/dataio/excel-sync.js"></script>

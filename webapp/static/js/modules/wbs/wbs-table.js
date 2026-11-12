@@ -23,6 +23,9 @@ function renderWbsTable() {
   const delayCnt = wbsData.filter(t => t.isLeaf && t.status === "지연" && (sysFilter === "ALL" || t.system === sysFilter)).length;
   const dc = document.getElementById("wbsDelayedCount");
   if (dc) dc.textContent = delayCnt;
+  // 가중치 경고 (하위 합 ≠ 상위) — 자료에서 매번 계산하므로 고칠 때까지 계속 표시
+  const wWarn = typeof WbsWeight !== "undefined" ? WbsWeight.warnMap(wbsData) : new Map();
+  if (typeof WbsWeight !== "undefined") WbsWeight.renderBadge();
 
   wbsData.forEach((row, idx) => {
     const pStartOutOfRange = WBSEngine.isDateOutOfRange(row.pStart, projectConfig.projectStartDate, projectConfig.projectEndDate);
@@ -85,7 +88,7 @@ function renderWbsTable() {
         </div>
       </td>
       <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td class="col-fold"><input type="number" min="0" value="${row.weight}" style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "weight", "$num", "rebuildAll")}"></td>
+      <td class="col-fold"><input type="number" min="0" step="0.1" value="${row.weight === undefined || row.weight === null ? "" : row.weight}" style="width:52px; padding:2px 3px;"${wWarn.has(row) ? ` class="weight-warn" title="${escapeAttr(wWarn.get(row))}"` : ` title="가중치 (서브시스템 100 기준, 상위 = 하위 합, 소수점 1자리)"`} data-change="WbsWeight.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td class="col-fold"><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
@@ -253,12 +256,13 @@ function addChildTask(idx) {
   }
   const childLevel = parent.level + 1;
   const insertPos = getSubtreeEndIndex(idx);
+  const childW = WbsWeight.newWeight(wbsData, idx, WbsWeight.childIdx(wbsData, idx));
   const newTask = {
     id: "",
     level: childLevel,
     system: parent.system,
     name: `${parent.name} - 하위과업`,
-    weight: Math.max(1, Math.round((parent.weight || 10) / 2)),
+    weight: childW,
     reqId: parent.reqId || "",
     owner: parent.owner || "",
     pStart: WBSEngine.getNextWorkingDay(parent.pStart || projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate),
@@ -279,12 +283,14 @@ function addSiblingTask(idx) {
   if (!target) return;
   const sibLevel = target.level === 1 ? 2 : target.level;
   const insertPos = getSubtreeEndIndex(idx);
+  const pIdx = target.level === 1 ? idx : WbsWeight.parentIdx(wbsData, idx);
+  const sibW = WbsWeight.newWeight(wbsData, pIdx, pIdx >= 0 ? WbsWeight.childIdx(wbsData, pIdx) : []);
   const newTask = {
     id: "",
     level: sibLevel,
     system: target.system,
     name: `신규 L${sibLevel} 단위과업`,
-    weight: target.level === 1 ? 10 : (target.weight || 5),
+    weight: sibW,
     reqId: target.reqId || "",
     owner: WbsOwner.parentOwner(idx, sibLevel),
     pStart: WBSEngine.getNextWorkingDay(target.pStart || projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate),
@@ -414,12 +420,14 @@ function addNewRow() {
   const validStart = WBSEngine.getNextWorkingDay(projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate);
   const validEnd = WBSEngine.getNextWorkingDay(projectConfig.projectEndDate, projectConfig.holidays, projectConfig.projectEndDate);
 
+  const rootIdx = wbsData.findIndex(t => (t.system || "").trim() === defaultSys && t.level === 1);
+  const newW = rootIdx >= 0 ? WbsWeight.newWeight(wbsData, rootIdx, WbsWeight.childIdx(wbsData, rootIdx)) : 0;
   wbsData.push({
     id: "",
     level: 2,
     system: defaultSys,
     name: "신규 단위과업",
-    weight: 5,
+    weight: newW,
     reqId: "REQ-NEW",
     pStart: validStart,
     pEnd: validEnd,

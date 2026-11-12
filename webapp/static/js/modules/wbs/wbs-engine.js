@@ -485,18 +485,50 @@ const WBSEngine = {
             if (allCompleted && aEnds.length > 0) item.aEnd = aEnds[aEnds.length - 1];
             else item.aEnd = "";
 
-            const totalW = children.reduce((acc, c) => acc + (parseFloat(c.weight) || 1), 0);
-            const sumP = children.reduce((acc, c) => acc + ((parseFloat(c.pProg) || 0) * (parseFloat(c.weight) || 1)), 0);
-            const sumA = children.reduce((acc, c) => acc + ((parseFloat(c.aProg) || 0) * (parseFloat(c.weight) || 1)), 0);
-
-            item.pProg = Math.round(sumP / (totalW || 1));
-            item.aProg = Math.round(sumA / (totalW || 1));
+            // 하위 가중치 비율로 합산 (모두 0 이면 같은 비율)
+            const ws = children.map(c => this.wOf(c));
+            const totalW = ws.reduce((a, b) => a + b, 0);
+            const wf = (i) => totalW > 0 ? ws[i] / totalW : 1 / children.length;
+            item.pProg = Math.round(children.reduce((acc, c, i) => acc + (parseFloat(c.pProg) || 0) * wf(i), 0));
+            item.aProg = Math.round(children.reduce((acc, c, i) => acc + (parseFloat(c.aProg) || 0) * wf(i), 0));
           }
         }
       }
     }
     if (typeof projectConfig !== "undefined" && projectConfig.reportDate) this.applyStatus(data, projectConfig.reportDate);
     return data;
+  },
+
+  // ---- 가중치 ----
+  // 과업 가중치 (비어 있으면 1 — 예전 자료 호환, 0 은 0)
+  wOf(t) { const v = parseFloat(t && t.weight); return isNaN(v) ? 1 : Math.max(0, v); },
+  // 기준정보의 서브시스템 가중치 (없으면 0)
+  sysWeight(sys) {
+    const m = (typeof subsystemsMeta !== "undefined" ? subsystemsMeta : []).find(s => s.name === sys || s.code === sys);
+    const v = parseFloat(m && m.weight);
+    return isNaN(v) ? 0 : Math.max(0, v);
+  },
+  // L1 행마다 전체 안의 비중 (합 1) = 서브시스템 가중치 비율 × 그 서브시스템 안의 L1 가중치 비율
+  //  (서브시스템 가중치가 모두 0 이면 서브시스템끼리 같은 비율)
+  rootShares(roots) {
+    const bySys = new Map();
+    (roots || []).forEach(r => { const k = String(r.system || "").trim(); if (!bySys.has(k)) bySys.set(k, []); bySys.get(k).push(r); });
+    const keys = [...bySys.keys()];
+    let sw = keys.map(k => this.sysWeight(k));
+    let st = sw.reduce((a, b) => a + b, 0);
+    if (st <= 0) { sw = keys.map(() => 1); st = keys.length || 1; }
+    const out = new Map();
+    keys.forEach((k, i) => {
+      const rs = bySys.get(k), rw = rs.map(r => this.wOf(r)), rt = rw.reduce((a, b) => a + b, 0);
+      rs.forEach((r, j) => out.set(r, (sw[i] / st) * (rt > 0 ? rw[j] / rt : 1 / rs.length)));
+    });
+    return out;
+  },
+  // 프로젝트(또는 고른 범위) 종합 계획 · 실적 = 서브시스템별 진척률 × 서브시스템 가중치
+  weightedProgress(roots) {
+    let p = 0, a = 0;
+    this.rootShares(roots).forEach((f, r) => { p += (parseFloat(r.pProg) || 0) * f; a += (parseFloat(r.aProg) || 0) * f; });
+    return { plan: Math.round(p), actual: Math.round(a) };
   },
 
   // [v1.0.8] 과업 상태 판정

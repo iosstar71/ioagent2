@@ -201,12 +201,16 @@ function renderPhaseMatrix() {
           const phTasks = sysTasks.filter(t => WBSEngine.matchTaskToPhase(t, ph, wbsData));
           let pAvg = 0, aAvg = 0, wSum = 0;
           if (phTasks.length > 0) {
-            wSum = phTasks.reduce((acc, t) => acc + (t.weight || 1), 0);
-            pAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.pProg * (t.weight || 1)), 0) / (wSum || 1));
-            aAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.aProg * (t.weight || 1)), 0) / (wSum || 1));
-            totalStats[ph.key].p += pAvg * wSum;
-            totalStats[ph.key].a += aAvg * wSum;
-            totalStats[ph.key].w += wSum;
+            wSum = phTasks.reduce((acc, t) => acc + WBSEngine.wOf(t), 0);
+            const ew = t => wSum > 0 ? WBSEngine.wOf(t) : 1;
+            const eSum = wSum > 0 ? wSum : phTasks.length;
+            pAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.pProg * ew(t)), 0) / eSum);
+            aAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.aProg * ew(t)), 0) / eSum);
+            // 단계 합계는 서브시스템 가중치를 곱해 합침 (서브시스템 안은 100 기준 점수)
+            const sf = WBSEngine.sysWeight(sys) || 1;
+            totalStats[ph.key].p += pAvg * eSum * sf;
+            totalStats[ph.key].a += aAvg * eSum * sf;
+            totalStats[ph.key].w += eSum * sf;
           }
           const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
           phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "#15803d" : (rate >= 70 ? "#b45309" : "#b91c1c")}">${rate}%</td>`;
@@ -220,9 +224,11 @@ function renderPhaseMatrix() {
         const rootA = sysRoot ? sysRoot.aProg : (sysTotalW > 0 ? Math.round(sysTotalA / sysTotalW) : 0);
         const rootRate = rootP > 0 ? Math.round((rootA / rootP) * 100) : 100;
 
-        totalStats.all.p += rootP * (sysRoot ? sysRoot.weight : 1);
-        totalStats.all.a += rootA * (sysRoot ? sysRoot.weight : 1);
-        totalStats.all.w += sysRoot ? sysRoot.weight : 1;
+        // 전체 = 서브시스템 진척률 × 서브시스템 가중치 (기준정보)
+        const sysW = WBSEngine.sysWeight(sys) || 1;
+        totalStats.all.p += rootP * sysW;
+        totalStats.all.a += rootA * sysW;
+        totalStats.all.w += sysW;
 
         groupRowsHtml += `
           <tr>

@@ -774,6 +774,8 @@ var SyncManager = {
       this._archivedNotified = true;
       return { ok: false, archived: true };
     }
+    // 가중치 오류가 남아 있으면 알리고 그대로 저장 (경고색은 고칠 때까지 계속 표시)
+    if (opts.notify && typeof WbsWeight !== "undefined" && (!keys || keys.includes("wbsData"))) WbsWeight.notify("💾 저장합니다 — ");
     const scopeKeys = keys || DataRegistry.KEYS;
     const d = this.diff(scopeKeys);
     const blockedList = this.blockedSummary(d);

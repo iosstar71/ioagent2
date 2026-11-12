@@ -1243,7 +1243,7 @@ const ExcelSync = {
         level: level,
         system: sys || "미분류",
         name: name || "단위과업",
-        weight: isNaN(weightNum) ? 1 : Math.max(0, weightNum),
+        weight: isNaN(weightNum) ? 1 : Math.round(Math.max(0, weightNum) * 10) / 10,
         reqId: String(raw.reqId || "").trim(),
         pStart: this.normalizeDate(raw.pStart),
         pEnd: this.normalizeDate(raw.pEnd),
@@ -1357,7 +1357,7 @@ const ExcelSync = {
           level: 1,
           system: sys,
           name: `${sys} 사업 총괄`,
-          weight: meta ? meta.weight : 20,
+          weight: 100,
           reqId: "",
           pStart: projectConfig.projectStartDate,
           pEnd: projectConfig.projectEndDate,
@@ -1375,7 +1375,7 @@ const ExcelSync = {
           code: sys,
           name: sys,
           type: "SDLC",
-          weight: l1 && l1.weight ? l1.weight : 20,
+          weight: 10,
           pm: "담당PM",
           desc: `${sys} 과업`
         });
