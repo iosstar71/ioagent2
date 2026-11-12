@@ -327,6 +327,17 @@ async function main() {
     check("Bulk actual apply: every Task with plan > 0; start = week start if planned earlier (else plan start); end = plan end in the week, else the report date",
       ap.t1 === "100|2026-11-16|2026-11-18" && ap.t2 === "50|2026-11-17|" && ap.t3 === "100|2026-11-16|2026-11-17" && /^0?\|\|$/.test(ap.t4), JSON.stringify(ap));
     check("Existing actual dates are kept; a start later than the end is coloured as reversed", ap.t5 === "100|2026-11-20|2026-11-18" && ap.rev === 2, JSON.stringify(ap));
+    const chips = await wc.evaluate(() => {
+      wbsData.find(t => t.name === "t4").pStart = "2026-11-28";   // 토요일 → 휴일
+      wbsData.find(t => t.name === "t3").weight = 25;              // 가중치 합 오류
+      rebuildAll(true);
+      const c = id => { const e = document.getElementById(id); return getComputedStyle(e).display === "none" ? "" : e.textContent; };
+      const col = sel => { const e = document.querySelector(sel); return e ? getComputedStyle(e).borderTopColor : ""; };
+      return { w: c("wbsWeightErrChip"), h: c("wbsHolidayErrChip"), d: c("wbsDateErrChip"), banner: !!document.querySelector(".holiday-alert-banner"),
+        same: new Set([col("#wbsTableBody input.weight-warn"), col("#wbsTableBody input.holiday-date-highlight"), col("#wbsTableBody input.date-reversed")]).size };
+    });
+    check("WBS errors: one colour for weight / holiday / date, counts shown in front of the buttons, no schedule notice banner",
+      /가중치 \d/.test(chips.w) && chips.h === "⚠️ 휴일 2" && chips.d === "⚠️ 날짜 1" && !chips.banner && chips.same === 1, JSON.stringify(chips));
     await wc.selectOption("#wbsPhaseFilter", "설계"); await wc.waitForTimeout(300);
     const ph = await wc.evaluate(() => ({ opts: [...document.querySelectorAll("#wbsPhaseFilter option")].map(o => o.value).join(), rows: [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]")].map(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).name).join() }));
     await wc.selectOption("#wbsPhaseFilter", "ALL"); await wc.waitForTimeout(200);

@@ -125,7 +125,6 @@ var WbsWeight = {
     const n = this.childIdx(wbsData, idx).length ? this.cascade(wbsData, idx) : 0;
     rebuildAll();
     if (n) showToast(`⚖️ [${row.id}] 가중치 ${v} — 하위 Task ${n}건을 같은 비율로 자동 조정했습니다.`);
-    this.notify();
   },
   // 경고가 있으면 알림 (입력 · 저장 때)
   notify(prefix) {
@@ -248,13 +247,13 @@ var WbsWeight = {
     return true;
   },
 
-  // 표 위 오류 표시 (가중치 칸을 접어도 보이도록)
-  renderBadge() {
+  // 표 위 오류 건수 (가중치 칸을 접어도 보이도록) — 조회 범위 서브시스템만
+  renderBadge(inScope) {
     const el = document.getElementById("wbsWeightErrChip");
     if (!el) return;
-    const c = this.count();
+    const c = this.check(wbsData).groups.filter(g => !inScope || inScope(g.sys)).length;
     el.style.display = c ? "inline-flex" : "none";
-    el.textContent = `⚠️ 가중치 오류 ${c}건`;
+    el.textContent = `⚠️ 가중치 ${c}`;
   }
 };
 window.WbsWeight = WbsWeight;

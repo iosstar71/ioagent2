@@ -8,7 +8,7 @@ function renderProjectPeriodLabels() {
   if (sTag) sTag.innerText = `(${startDay})`;
   if (eTag) eTag.innerText = `(${endDay})`;
   const periodStr = `${projectConfig.projectStartDate} (${startDay}) ~ ${projectConfig.projectEndDate} (${endDay})`;
-  ["dashProjPeriodText", "wbsBannerPeriodText"].forEach(id => {
+  ["dashProjPeriodText"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerText = periodStr;
   });

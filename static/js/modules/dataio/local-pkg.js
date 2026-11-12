@@ -24,20 +24,19 @@ var LocalPkg = {
       <div class="g-menu-row g-pkg-ver">이 PC 종합본 버전: <b>${escapeHtml(stamp || "없음")}</b>${cfg.packageBy ? ` <span class="g-pkg-hint">(${escapeHtml(cfg.packageBy)})</span>` : ""}</div>`;
     if (this._pm()) {
       html += `<div class="g-menu-sep"></div><div class="g-menu-title">PM · 관리자 → 작업자</div>`
-        + item("SmartMergeCenter.downloadMasterPackage", '["JSON"]', "📥 종합본 내려받기 (JSON)", "작업자에게 보낼 파일")
+        + item("SmartMergeCenter.downloadMasterPackage", '["JSON"]', "📥 종합본 내려받기 (JSON)", "")
         + item("SmartMergeCenter.downloadMasterPackage", '["EXCEL"]', "📥 종합본 내려받기 (엑셀)", "")
-        + item("SmartMergeCenter.downloadMasterPackage", '["SERVER"]', "🌐 배포용 latest.json 내려받기", "배포 폴더 shared/ 에 넣어 올리면 작업자가 자동으로 받음")
+        + item("SmartMergeCenter.downloadMasterPackage", '["SERVER"]', "🌐 배포용 latest.json 내려받기", "배포 폴더 shared/ 에 넣으면 자동 배포")
         + `<div class="g-menu-sep"></div><div class="g-menu-title">작업자 → PM</div>`
-        + item("LocalPkg.mergeWorker", "", "📋 작업자 자료 받아 합치기", "받은 엑셀 / JSON → 미리 보기 후 반영");
+        + item("LocalPkg.mergeWorker", "", "📋 작업자 자료 받아 합치기", "");
     }
     html += `<div class="g-menu-sep"></div><div class="g-menu-title">${this._pm() ? "그 밖에" : "PM 이 보낸 종합본 받기"}</div>`
       + item("UiH.clickEl", '["consolidateInput"]', "📤 받은 종합본 가져오기", this._pm() ? "PM · 관리자는 전부 종합본으로 바뀜" : `내 담당${own && own !== "ALL" ? `(${escapeHtml(own)})` : ""} 작업은 그대로, 나머지만 최신으로`);
     if (!this._pm()) {
       html += `<div class="g-menu-sep"></div><div class="g-menu-title">내 자료 PM 에게 보내기</div>`
-        + item("LocalPkg.sendMine", '["EXCEL"]', "📤 내 자료 내려받기 (엑셀)", "어느 종합본 기준인지 · 보낸 사람이 파일에 들어감")
+        + item("LocalPkg.sendMine", '["EXCEL"]', "📤 내 자료 내려받기 (엑셀)", "")
         + item("LocalPkg.sendMine", '["JSON"]', "📤 내 자료 내려받기 (JSON)", "");
     }
-    html += `<div class="g-menu-hint">작업자는 [내 자료 내려받기] 파일을 PM 에게, PM 은 합친 뒤 [종합본]을 작업자에게 (또는 배포용 latest.json 을 배포 폴더에). 같은 기능이 [🔀 스마트 병합]에도 있습니다.</div>`;
     m.innerHTML = html;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
   },
