@@ -3168,3 +3168,11 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 }
 .weight-err-chip, .wbs-err-chip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 9px; border-radius: 999px; background: #fff1f2; color: #be123c; border: 1px solid #e11d48; font-size: var(--fs-xs, 11px); font-weight: bold; white-space: nowrap; align-self: center; }
 [data-theme="dark"] .weight-err-chip, [data-theme="dark"] .wbs-err-chip { background: rgba(225,29,72,0.18); color: #fda4af; border-color: #fb7185; }
+
+/* 화면 제목 옆 한 줄 설명 */
+.neo-ph-main { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 14px; }
+.neo-ph-main .neo-ph-desc { flex: 1 1 280px; min-width: 0; }
+/* WBS 오류 건수 묶음 (단추와 따로) */
+.wbs-err-group { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 3px 8px 3px 10px; border-left: 2px solid #e11d48; }
+.wbs-err-label { font-size: var(--fs-xs, 11px); font-weight: 800; color: #be123c; white-space: nowrap; }
+[data-theme="dark"] .wbs-err-label { color: #fda4af; }

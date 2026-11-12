@@ -253,7 +253,7 @@ var WbsWeight = {
     if (!el) return;
     const c = this.check(wbsData).groups.filter(g => !inScope || inScope(g.sys)).length;
     el.style.display = c ? "inline-flex" : "none";
-    el.textContent = `⚠️ 가중치 ${c}`;
+    el.textContent = `가중치 ${c}건`;
   }
 };
 window.WbsWeight = WbsWeight;
