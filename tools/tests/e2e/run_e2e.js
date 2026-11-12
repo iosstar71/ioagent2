@@ -330,6 +330,17 @@ async function main() {
       r.due = NeoTodo.DUE_DAYS; projectConfig.dueDays = 14; r.due2 = NeoTodo.DUE_DAYS; delete projectConfig.dueDays;
       return r;
     });
+    const od = await wc.evaluate(() => {
+      const old = { level: 3, system: "A", name: "오래 밀린 일", id: "9.9.9", isLeaf: true, pStart: "2026-09-01", pEnd: "2026-09-10", pProg: 100, aProg: 20, weight: 0 };
+      wbsData.push(old);
+      try {
+        const rep = WeeklyReportManager.buildReport(WeeklyReportManager.findWeekForDate("2026-11-18"), "SYS", "A");
+        const it = (rep.currentWeekTasks || []).find(x => x.wbsId === "9.9.9");
+        return it ? { status: it.status, detail: it.detail } : null;
+      } finally { wbsData.splice(wbsData.indexOf(old), 1); }
+    });
+    check("Weekly report: a long-overdue unfinished Task is listed this week as 지연 with days overdue",
+      !!od && od.status === "지연" && /계획종료 2026-09-10/.test(od.detail) && /일 경과/.test(od.detail), JSON.stringify(od));
     check("Status: delayed when actual trails plan by ≥ the set gap (default 5%p) or the plan end has passed; this-week list and due-days follow the settings",
       jr.gap3 !== "지연" && jr.gap5 === "지연" && jr.overdue === "지연" && jr.gap3b === "지연" && jr.wk === "true,true,false,false" && jr.due === 7 && jr.due2 === 14, JSON.stringify(jr));
     // 데이터 관리: 브라우저 저장 용량

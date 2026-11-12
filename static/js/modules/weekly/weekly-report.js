@@ -80,17 +80,26 @@ var WeeklyReportManager = {
   },
 
   // 금주 주간보고 표시 태스크 (최하위 Task):
-  //  a) 계획 기간이 금주에 걸치고 금주 전에 끝나지 않은 Task  b) 지연 Task (미완료)
+  //  a) 계획 기간이 금주에 걸치고 금주 전에 끝나지 않은 Task
+  //  b) 지연 Task (미완료) — 계획종료일이 금주보다 앞인데 미완료인 오래 밀린 Task 포함
   //  c) 실적 진행 중 (금주까지 시작, 미완료)  d) 금주에 실적 완료
   isTaskInWeek(task, wStart, wEnd) {
     if (!task || !task.isLeaf) return false;
     const aE = (task.aEnd || "").trim();
     const doneBefore = Boolean(aE && aE < wStart);
     const condA = Boolean(task.pStart && task.pEnd && task.pStart <= wEnd && task.pEnd >= wStart && !doneBefore);
-    const condB = Boolean(!aE && task.status === "지연");
+    const condB = Boolean(!aE && (task.status === "지연" || this.isOverdue(task, wStart)));
     const condC = Boolean(task.aStart && task.aStart <= wEnd && !aE);
     const condD = Boolean(aE && aE >= wStart && aE <= wEnd);
     return condA || condB || condC || condD;
+  },
+
+  // 오래 밀린 Task: 계획종료일이 그 주 시작보다 앞인데 미완료
+  isOverdue(task, wStart) {
+    return Boolean(task && !String(task.aEnd || "").trim() && (parseFloat(task.aProg) || 0) < 100 && task.pEnd && wStart && task.pEnd < wStart);
+  },
+  overdueDays(task, wEnd) {
+    return Math.max(0, Math.round((new Date(wEnd + "T00:00:00") - new Date(task.pEnd + "T00:00:00")) / 86400000));
   },
 
   // 차주 표시 태스크: 계획시작일이 차주까지이고 금주까지 실적 미완료
@@ -125,9 +134,12 @@ var WeeklyReportManager = {
     systems.forEach(sys => {
       wbsData.filter(t => t.system === sys && t.isLeaf).forEach(t => {
         if (this.isTaskInWeek(t, weekObj.startDate, weekObj.endDate)) {
-          const st = t.aProg >= 100 ? "완료" : (t.aProg > 0 ? "진행중" : "계획");
+          const late = this.isOverdue(t, weekObj.startDate);
+          const st = t.aProg >= 100 ? "완료" : (late || t.status === "지연" ? "지연" : (t.aProg > 0 ? "진행중" : "계획"));
           let detail = st === "완료"
             ? `${t.name} 완료 (${t.output || "과업 완료"})`
+            : late ? `⚠️ ${t.name} 지연 — 계획종료 ${t.pEnd} (${this.overdueDays(t, weekObj.endDate)}일 경과), 현재 진척률 ${parseFloat(t.aProg) || 0}%`
+            : st === "지연" ? `${t.name} 지연 (계획 ${t.pProg}% · 실적 ${parseFloat(t.aProg) || 0}%)`
             : (st === "진행중" ? `${t.name} 진행 중 (현재 진척률 ${t.aProg}%)` : `${t.name} 착수 준비`);
           const sub = subDetail.get("C" + t.id);
           curTasks.push({
