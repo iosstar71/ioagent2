@@ -317,7 +317,17 @@ var ProjectTransfer = {
       await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
       return;
     }
-    // 로컬 저장소 방식
+    this.writeLocal(pid, item, data);
+    await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
+  },
+
+  // 로컬 저장소에 바로 씀 (화면 자료는 건드리지 않음 — 작업자 선택 전 [종합본으로 시작]에서도 씀)
+  writeLocal(pid, item, data) {
+    if (!data) {
+      data = this._c(item.data);
+      data.projectConfig = Object.assign({}, data.projectConfig || {}, { projectName: item.name });
+      delete data.projectConfig.uiTheme;
+    }
     const st = LocalBackend._read(pid) || {};
     const revs = LocalBackend._readRevs(pid);
     const now = new Date().toLocaleString();
@@ -342,7 +352,6 @@ var ProjectTransfer = {
     drevs.projectUsers = drevs.projectUsers || {};
     (item.users || []).forEach(u => { const r = drevs.projectUsers[u.empNo]; drevs.projectUsers[u.empNo] = { rev: ((r && r.rev) || 0) + 1, by: "import", at: now }; });
     LocalBackend._write(ProjectContext.DEFAULT, dst, drevs);
-    await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
   }
 };
 window.ProjectTransfer = ProjectTransfer;

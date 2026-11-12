@@ -3034,3 +3034,4 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
 [data-theme="dark"] .lk-bar[data-state="free"] { background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.4); }
 [data-theme="dark"] .lk-bar[data-state="mine"] { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.45); }
 [data-theme="dark"] .lk-bar[data-state="other"] { background: rgba(220,38,38,0.12); border-color: rgba(248,113,113,0.45); }
+.local-start { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-color, #cbd5e1); text-align: center; }

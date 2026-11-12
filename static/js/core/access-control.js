@@ -131,10 +131,10 @@ var AuthManager = {
   // 보안 정책
   // ---------------------------------------------------------------------------
   getAuthPolicy() {
-    try { return localStorage.getItem(this.STORAGE_POLICY_KEY) || "STARTUP_ONLY"; } catch (e) { return "STARTUP_ONLY"; }
+    try { return AppStore.getItem(this.STORAGE_POLICY_KEY) || "STARTUP_ONLY"; } catch (e) { return "STARTUP_ONLY"; }
   },
   setAuthPolicy(policy) {
-    try { localStorage.setItem(this.STORAGE_POLICY_KEY, policy); } catch (e) {}
+    try { AppStore.setItem(this.STORAGE_POLICY_KEY, policy); } catch (e) {}
     const labels = {
       STARTUP_ONLY: "최초 접속(작업자 선택) 시 1회 인증 (권장)",
       STARTUP_AND_CONFIG: "최초 접속 시 + 권한 메뉴 진입 시 재인증",
@@ -145,13 +145,13 @@ var AuthManager = {
   },
   getAutoLockMinutes() {
     try {
-      const v = localStorage.getItem(this.STORAGE_AUTOLOCK_KEY);
+      const v = AppStore.getItem(this.STORAGE_AUTOLOCK_KEY);
       return v !== null ? parseInt(v, 10) : 15;
     } catch (e) { return 15; }
   },
   setAutoLockMinutes(mins) {
     const m = parseInt(mins, 10) || 0;
-    try { localStorage.setItem(this.STORAGE_AUTOLOCK_KEY, String(m)); } catch (e) {}
+    try { AppStore.setItem(this.STORAGE_AUTOLOCK_KEY, String(m)); } catch (e) {}
     this.resetIdleTimer();
     showToast(m > 0 ? `${m}분간 미사용 시 자동 잠금이 작동하도록 설정되었습니다.` : "미사용 자동 잠금이 해제되었습니다.");
   },
@@ -436,7 +436,7 @@ var AuthManager = {
       if (res.ok && Array.isArray(res.projects)) list = res.projects;
     }
     let last = "";
-    try { last = localStorage.getItem(this.LOGIN_PROJECT_KEY) || ""; } catch (e) {}
+    try { last = AppStore.getItem(this.LOGIN_PROJECT_KEY) || ""; } catch (e) {}
     const pick = list.some(p => p.id === last) ? last : (list.some(p => p.id === ProjectContext.current) ? ProjectContext.current : "");
     sel.innerHTML = `<option value="">— 프로젝트 선택 —</option>` + list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === pick ? "selected" : ""}>${escapeHtml(p.name || p.id)}</option>`).join("");
     if (typeof I18N !== "undefined") I18N.translateTree(sel.parentNode);
@@ -452,7 +452,7 @@ var AuthManager = {
     const inputHash = await this.hashPassword(pwd);
     let target = u.pwdHash;
     if (!target && String(u.empNo).toLowerCase() === "admin") {
-      try { target = localStorage.getItem(this.LEGACY_ADMIN_HASH_KEY) || ""; } catch (e) {}
+      try { target = AppStore.getItem(this.LEGACY_ADMIN_HASH_KEY) || ""; } catch (e) {}
     }
     if (!target) target = await this.hashPassword("1234");
     return inputHash === target ? { ok: true, user: u } : { ok: false, message: "암호가 일치하지 않습니다." };
@@ -522,7 +522,7 @@ var AuthManager = {
     this.failedAttempts = 0;
     pwdEl.value = "";
     const landing = this.lockMode === "CONFIG" ? this.pendingTabId : null;
-    if (project) { try { localStorage.setItem(this.LOGIN_PROJECT_KEY, project); } catch (e) {} }
+    if (project) { try { AppStore.setItem(this.LOGIN_PROJECT_KEY, project); } catch (e) {} }
     if (result.mustChange) {
       this._forced = { user: result.user, lang, landing, oldPwd: pwd, project };
       this.showPwdChange(true, true);
@@ -547,7 +547,7 @@ var AuthManager = {
       ProjectContext.set(opts.project);
       try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
       showToast("🗂️ 선택한 프로젝트로 들어갑니다...");
-      setTimeout(() => window.location.reload(), 200);
+      setTimeout(() => AppStore.reload(), 200);
       return;
     }
 
@@ -560,7 +560,7 @@ var AuthManager = {
       this._saveSession();
       try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
       showToast(`👤 계정 전환: ${next.name}(${next.empNo}) — 권한을 다시 적용합니다...`);
-      setTimeout(() => window.location.reload(), 300);
+      setTimeout(() => AppStore.reload(), 300);
       return;
     }
 
@@ -617,7 +617,7 @@ var AuthManager = {
 
   // 작업자 언어 설정 저장 (본인 계정)
   async _rememberUserLang(empNo, lang) {
-    try { localStorage.setItem(this.LAST_LANG_KEY, lang); } catch (e) {}
+    try { AppStore.setItem(this.LAST_LANG_KEY, lang); } catch (e) {}
     const u = this.findUser(empNo);
     if (!u || u.lang === lang) return;
     u.lang = lang;
@@ -681,7 +681,7 @@ var AuthManager = {
       if (!res.ok) return this._err("pcErrorMessage", res.error || "변경 실패");
       DataRegistry.set("projectUsers", res.data.projectUsers);
       SyncManager.setBaseline(["projectUsers"], res.revs);
-      if (String(row.empNo).toLowerCase() === "admin") { try { localStorage.removeItem(this.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
+      if (String(row.empNo).toLowerCase() === "admin") { try { AppStore.removeItem(this.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
     } else {
       const res = await ServerBackend.request("/api/auth/change-password", { empNo, oldHash: await this.hashPassword(oldPwd), newHash });
       if (!res.ok) return this._err("pcErrorMessage", res.network ? "DB 서버에 연결할 수 없습니다." : (res.message || "변경 실패"));
@@ -806,6 +806,35 @@ var WorkerPick = {
       if (res.ok && Array.isArray(res.workers)) workers = res.workers;
     }
     list.innerHTML = workers.map(w => `<option value="${escapeAttr(w.empNo)}">${escapeHtml(w.name || w.empNo)}</option>`).join("");
+  },
+
+  // [Local] 처음 쓰는 PC: PM 이 보낸 종합본으로 프로젝트 · 작업자 목록을 이 브라우저에 넣음
+  async startFromPackage(e) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (e && e.target) e.target.value = "";
+    if (!file) return;
+    let items;
+    try { items = await ProjectTransfer.parse(file); } catch (err) { return AuthManager._err("lockErrorMessage", "파일을 읽지 못했습니다: " + err.message); }
+    const it = items && items[0];
+    if (!it || !it.users || !it.users.length) return AuthManager._err("lockErrorMessage", "PM 이 보낸 종합본(작업자 목록 포함) 파일이 아닙니다.");
+    const list = ProjectContext.localList();
+    const norm = s => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+    let pid = (list.find(p => norm(p.name) === norm(it.name)) || {}).id;
+    if (!pid) {
+      const def = LocalBackend._read(ProjectContext.DEFAULT) || {};
+      const empty = !(def.subsystemsMeta || []).length && !(def.wbsData || []).length;
+      pid = empty ? ProjectContext.DEFAULT : await ProjectTransfer.create(it.name, it.data.projectConfig || {});
+    }
+    // 화면의 빈 자료가 자동 저장되어 덮어쓰지 않도록 자동 저장을 멈추고 저장소에만 씀 → 다시 불러옴
+    SyncManager._suspendAuto = true;
+    if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
+    ProjectTransfer.writeLocal(pid, it);
+    const l2 = ProjectContext.localList();
+    const row = l2.find(p => p.id === pid);
+    if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
+    try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
+    showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호 1234).`);
+    setTimeout(() => AppStore.reload(), 900);
   }
 };
 window.WorkerPick = WorkerPick;

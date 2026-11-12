@@ -24,24 +24,19 @@ const DbConnector = {
     return "";
   },
 
-  loadConfig() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(this.CONFIG_STORAGE_KEY) || "null");
-      if (saved && (saved.mode === "LOCAL" || saved.mode === "SQLITE")) this.config.mode = saved.mode;
-    } catch (e) {}
-  },
+  loadConfig() { this.config.mode = "LOCAL"; },  // [Local] 서버 방식 없음
   saveConfig() {
-    try { localStorage.setItem(this.CONFIG_STORAGE_KEY, JSON.stringify({ mode: this.config.mode })); } catch (e) {}
+    try { AppStore.setItem(this.CONFIG_STORAGE_KEY, JSON.stringify({ mode: this.config.mode })); } catch (e) {}
   },
   // ModeGuard 가 주소에 맞춰 바꿈 (서버 주소 → SQLITE, 파일 → LOCAL)
   selectMode(mode) {
-    if (mode !== "LOCAL" && mode !== "SQLITE") return;
+    if (mode !== "LOCAL") return;
     this.config.mode = mode;
     this.saveConfig();
   },
 
   getConnectionSummaryHtml() {
-    if (!this.isServerMode()) return `<b>현재 방식:</b> 브라우저 로컬 저장소 (파일로 직접 연 시험용 — 이 PC 에만 저장)`;
+    if (!this.isServerMode()) return `<b>현재 방식:</b> Local — 이 PC 브라우저(IndexedDB)에 저장. 다른 사람과는 종합본 · 담당 자료 파일로 주고받습니다. 사용량 약 ${(AppStore.usageBytes() / 1048576).toFixed(2)}MB`;
     const st = this.config.connected
       ? `<span class="status-tag tag-completed">🟢 서버 연결됨 (${escapeHtml(this.getApiBase())})</span>`
       : `<span class="status-tag tag-ready">⚪ 연결 대기</span>`;

@@ -37,13 +37,13 @@ var TodoCenter = {
   // 내 담당만 (작업자별 기억) — 기본: 담당 서브시스템이 정해진 작업자는 켬
   mine() {
     try {
-      const v = localStorage.getItem(this.KEY_MINE + this.me());
+      const v = AppStore.getItem(this.KEY_MINE + this.me());
       if (v === "1" || v === "0") return v === "1";
     } catch (e) {}
     return !!NeoTodo.ownSystem();
   },
   toggleMine() {
-    try { localStorage.setItem(this.KEY_MINE + this.me(), this.mine() ? "0" : "1"); } catch (e) {}
+    try { AppStore.setItem(this.KEY_MINE + this.me(), this.mine() ? "0" : "1"); } catch (e) {}
     this.render();
     this.updateCounts();
   },

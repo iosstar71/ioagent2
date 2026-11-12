@@ -189,9 +189,9 @@ var NoticeCommManager = {
   },
 
   init() {
-    const savedSubTab = localStorage.getItem("WBS_COMM_SUB_TAB");
+    const savedSubTab = AppStore.getItem("WBS_COMM_SUB_TAB");
     if (savedSubTab) this.currentSubTab = savedSubTab;
-    const savedMode = localStorage.getItem("WBS_COMM_VIEW_MODE");
+    const savedMode = AppStore.getItem("WBS_COMM_VIEW_MODE");
     if (savedMode) this.viewMode = savedMode;
     this.switchSubTab(this.currentSubTab, false);
     this.updateHeaderBadge();
@@ -199,7 +199,7 @@ var NoticeCommManager = {
 
   switchSubTab(tabName, persist = true) {
     this.currentSubTab = tabName;
-    if (persist) localStorage.setItem("WBS_COMM_SUB_TAB", tabName);
+    if (persist) AppStore.setItem("WBS_COMM_SUB_TAB", tabName);
 
     // subtab buttons
     ["NOTICES", "FEED"].forEach(t => {
@@ -233,7 +233,7 @@ var NoticeCommManager = {
 
   setViewMode(mode) {
     this.viewMode = mode;
-    localStorage.setItem("WBS_COMM_VIEW_MODE", mode);
+    AppStore.setItem("WBS_COMM_VIEW_MODE", mode);
     this.renderCommunications();
     this.updateModeButtons();
     showToast(`소통 UI 뷰가 [${mode === "FEED" ? "💬 채널 피드형" : (mode === "KANBAN" ? "📋 칸반 보드형" : "⏱️ 데일리 스탠드업형")}]으로 전환되었습니다.`);

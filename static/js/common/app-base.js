@@ -5,10 +5,12 @@
 // =============================================================================
 // [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
 const APP_VERSION = (function () {
-  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "Project Mgmt", version: "1.0.0", edition: "COLLAB", editionName: "협업" };
+  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "Project Mgmt", version: "1.0.0", edition: "LOCAL", editionName: "협업", variant: "Local" };
   const edName = c.editionName || "";
-  // 제품 이름: Project Mgmt (협업)
-  return { version: c.version, name: `${c.productName}${edName ? " (" + edName + ")" : ""}`, title: `${c.productName}${edName ? " (" + edName + ")" : ""} ver${c.version}`, edition: c.edition || "COLLAB", editionName: edName };
+  const variant = c.variant || "";
+  // 제품 이름: Project Mgmt (협업) · 판 표시: Local
+  const name = `${c.productName}${edName ? " (" + edName + ")" : ""}`;
+  return { version: c.version, variant, name, title: `${name}${variant ? " " + variant : ""} ver${c.version}`, edition: c.edition || "LOCAL", editionName: edName };
 })();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼

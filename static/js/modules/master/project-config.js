@@ -157,7 +157,7 @@ function renderProjectTitles() {
   // Standard·Neo: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
   if (hSys) hSys.textContent = APP_VERSION.name;
   const hVer = document.getElementById("headerVersionBadge");
-  if (hVer) hVer.textContent = "v" + APP_VERSION.version;
+  if (hVer) hVer.textContent = (APP_VERSION.variant ? APP_VERSION.variant + " " : "") + "v" + APP_VERSION.version;
   if (hProj) hProj.textContent = projName;
   if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 

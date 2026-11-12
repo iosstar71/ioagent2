@@ -89,7 +89,7 @@ var GShell = {
     const g = this.GROUPS.find(x => x.key === key);
     if (!g) return;
     let last = "";
-    try { last = localStorage.getItem(this.KEY_LAST + key) || ""; } catch (e) {}
+    try { last = AppStore.getItem(this.KEY_LAST + key) || ""; } catch (e) {}
     const target = (last && g.tabs.indexOf(last) !== -1 && this.allowed(last)) ? last : g.tabs.find(t => this.allowed(t));
     this.go(target);
   },
@@ -145,13 +145,13 @@ var GShell = {
   sync(tabId) {
     this.current = tabId;
     const g = this.groupOf(tabId);
-    if (g) { try { localStorage.setItem(this.KEY_LAST + g.key, tabId); } catch (e) {} }
+    if (g) { try { AppStore.setItem(this.KEY_LAST + g.key, tabId); } catch (e) {} }
     this.renderNav();
   },
 
   // ---- 즐겨찾기 ----
   favorites() {
-    try { return (JSON.parse(localStorage.getItem(this.KEY_FAV) || "[]") || []).filter(t => this.LABELS[t]); } catch (e) { return []; }
+    try { return (JSON.parse(AppStore.getItem(this.KEY_FAV) || "[]") || []).filter(t => this.LABELS[t]); } catch (e) { return []; }
   },
   toggleFavorite() {
     let favs = this.favorites();
@@ -161,7 +161,7 @@ var GShell = {
       if (favs.length >= this.MAX_FAV) favs.shift();
       favs.push(t);
     }
-    try { localStorage.setItem(this.KEY_FAV, JSON.stringify(favs)); } catch (e) {}
+    try { AppStore.setItem(this.KEY_FAV, JSON.stringify(favs)); } catch (e) {}
     this.renderNav();
   },
 

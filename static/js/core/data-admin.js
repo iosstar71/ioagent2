@@ -47,7 +47,14 @@ var DataAdmin = {
       + (pct >= 75 ? ` — ⚠️ 한도에 가깝습니다. 끝난 프로젝트를 백업(💾 백업 · 복원)한 뒤 지우고 [🧹 DB 정리]를 누르세요.` : "");
   },
   async usage(silent) {
-    if (!this.isServer()) return this._showUsage(null);
+    if (!this.isServer()) {
+      // [Local] 이 브라우저 저장소 사용량
+      const el = document.getElementById("daUsage");
+      let quota = "";
+      try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); quota = e.quota ? ` · 브라우저 허용량 약 ${this.size(e.quota)}` : ""; } } catch (err) {}
+      if (el) el.innerHTML = `이 브라우저(IndexedDB "pprjmgmt")에 저장된 자료 약 <b>${this.size(AppStore.usageBytes())}</b>${quota}. 자료는 이 PC 에만 있으니 정기적으로 💾 백업 · 복원에서 내려받으세요.`;
+      return;
+    }
     const res = await ServerBackend.request("/api/admin/usage", {});
     this._showUsage(res);
     if (!silent && res.ok) showToast(`💽 사용 용량 ${this.size(res.total)}`);

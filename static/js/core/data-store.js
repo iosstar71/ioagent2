@@ -287,13 +287,13 @@ var ProjectContext = {
 
   init() {
     let pid = "";
-    try { pid = sessionStorage.getItem(this.KEY) || localStorage.getItem(this.KEY) || ""; } catch (e) {}
+    try { pid = sessionStorage.getItem(this.KEY) || AppStore.getItem(this.KEY) || ""; } catch (e) {}
     this.current = /^[A-Za-z0-9_-]{1,32}$/.test(pid) ? pid : this.DEFAULT;
     return this.current;
   },
   set(pid) {
     this.current = pid || this.DEFAULT;
-    try { sessionStorage.setItem(this.KEY, this.current); localStorage.setItem(this.KEY, this.current); } catch (e) {}
+    try { sessionStorage.setItem(this.KEY, this.current); AppStore.setItem(this.KEY, this.current); } catch (e) {}
   },
   isGlobal(key) { return this.GLOBAL_KEYS.indexOf(key) !== -1; },
   isDefault() { return this.current === this.DEFAULT; },
@@ -302,14 +302,14 @@ var ProjectContext = {
   // 로컬 저장소 모드의 프로젝트 목록
   localList() {
     let list = [];
-    try { list = JSON.parse(localStorage.getItem(this.REG_KEY) || "[]") || []; } catch (e) { list = []; }
+    try { list = JSON.parse(AppStore.getItem(this.REG_KEY) || "[]") || []; } catch (e) { list = []; }
     if (!list.some(p => p.id === this.DEFAULT)) {
       list.unshift({ id: this.DEFAULT, name: (typeof projectConfig !== "undefined" && projectConfig.projectName) || "기본 프로젝트", status: "ACTIVE", restricted: false, members: [], createdAt: "", createdBy: "system" });
     }
     return list;
   },
   saveLocalList(list) {
-    try { localStorage.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
+    try { AppStore.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
   },
 
   // ---- [v3.0.0] 작업자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
@@ -341,7 +341,7 @@ var ProjectContext = {
   MIGRATE_KEY: "IOSTAR_MEMBERSHIP_V3",
   migrateLocalUsers(list) {
     let done = false;
-    try { done = localStorage.getItem(this.MIGRATE_KEY) === "1"; } catch (e) {}
+    try { done = AppStore.getItem(this.MIGRATE_KEY) === "1"; } catch (e) {}
     if (done || !Array.isArray(list)) return false;
     const projects = this.localList();
     let changed = false;
@@ -359,7 +359,7 @@ var ProjectContext = {
       });
       u.projectRoles = pr;
     });
-    try { localStorage.setItem(this.MIGRATE_KEY, "1"); } catch (e) {}
+    try { AppStore.setItem(this.MIGRATE_KEY, "1"); } catch (e) {}
     return changed;
   },
 
@@ -402,16 +402,16 @@ var LocalBackend = {
 
   _read(pid = ProjectContext.current) {
     try {
-      const raw = localStorage.getItem(this._skey(pid));
+      const raw = AppStore.getItem(this._skey(pid));
       return raw ? JSON.parse(raw) : null;
     } catch (e) { return null; }
   },
   _readRevs(pid = ProjectContext.current) {
-    try { return JSON.parse(localStorage.getItem(this._rkey(pid)) || "{}") || {}; } catch (e) { return {}; }
+    try { return JSON.parse(AppStore.getItem(this._rkey(pid)) || "{}") || {}; } catch (e) { return {}; }
   },
   _write(pid, stored, revs) {
-    localStorage.setItem(this._skey(pid), JSON.stringify(stored));
-    localStorage.setItem(this._rkey(pid), JSON.stringify(revs));
+    AppStore.setItem(this._skey(pid), JSON.stringify(stored));
+    AppStore.setItem(this._rkey(pid), JSON.stringify(revs));
   },
   hasData() { return !!this._read(ProjectContext.current); },
 
@@ -424,19 +424,8 @@ var LocalBackend = {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
         if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
-        // [v3.7.0] 관리자 계정 하나 더 (admin2 / 초기 암호 1234) — 없을 때 한 번만 추가
-        if (localStorage.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
-          localStorage.setItem("IOSTAR_SECOND_ADMIN", "1");
-          if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
-            const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
-            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
-            const rv = this._readRevs(ProjectContext.DEFAULT);
-            if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
-            this._write(ProjectContext.DEFAULT, st, rv);
-          }
-        }
       } else {
-        localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
+        AppStore.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
       }
     } catch (e) {}
     (keys || DataRegistry.KEYS).forEach(k => {
@@ -502,7 +491,7 @@ var LocalBackend = {
   replaceAll(data) {
     const now = new Date().toLocaleString();
     // [v3.0.0] 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 작업자 규칙을 따름 (1회 이관 불필요)
-    try { localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); } catch (e) {}
+    try { AppStore.setItem(ProjectContext.MIGRATE_KEY, "1"); } catch (e) {}
     const groups = {};
     DataRegistry.KEYS.forEach(k => {
       const pid = this._pidFor(k);
@@ -537,15 +526,15 @@ var LocalBackend = {
   },
   removeProjectStore(pid) {
     if (pid === ProjectContext.DEFAULT) return;
-    try { localStorage.removeItem(this._skey(pid)); localStorage.removeItem(this._rkey(pid)); } catch (e) {}
+    try { AppStore.removeItem(this._skey(pid)); AppStore.removeItem(this._rkey(pid)); } catch (e) {}
   },
 
   usageBytes() {
     try {
       let n = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.indexOf(this.STORAGE_KEY) === 0) n += new Blob([localStorage.getItem(k) || ""]).size;
+      for (let i = 0; i < AppStore.length; i++) {
+        const k = AppStore.key(i);
+        if (k && k.indexOf(this.STORAGE_KEY) === 0) n += new Blob([AppStore.getItem(k) || ""]).size;
       }
       return n;
     } catch (e) { return 0; }
@@ -604,13 +593,11 @@ var ServerBackend = {
   async load(keys) {
     const res = await this.request("/api/db/load", { keys: keys || null });
     if (!res.ok) return { ok: false, error: res.message || "DB 조회 실패", network: res.network, authRequired: res.authRequired };
-    if (res.locks && typeof LockManager !== "undefined") LockManager.update(res.locks);  // [Workgroup] 잠금 현황을 함께 받음
     return { ok: true, data: res.data || {}, revs: res.revs || {} };
   },
 
   async save(changes, force, who, opts = {}) {
     const res = await this.request("/api/db/save", { changes, force: !!force, lockBypass: !!opts.lockBypass }, "POST", 20000);
-    if (res.locks && typeof LockManager !== "undefined") LockManager.update(res.locks);
     // [Workgroup] 체크아웃 잠금으로 막힘 — 아무것도 저장되지 않음
     if (res.httpStatus === 423 || res.locked) return { ok: false, locked: res.locked || [] };
     if (res.httpStatus === 409 || res.conflict) return { ok: false, conflict: true, conflicts: res.conflicts || [] };
@@ -812,10 +799,6 @@ var SyncManager = {
     } finally {
       this._busy = false;
     }
-    if (res.locked && typeof LockManager !== "undefined") {
-      this.setStatus("저장 안 됨 (체크아웃)", "warn");
-      return LockManager.onBlocked(changes, res.locked, opts);
-    }
     if (res.conflict) {
       this.setStatus("저장 충돌", "warn");
       return this.handleConflict(changes, res.conflicts, opts);
@@ -828,7 +811,6 @@ var SyncManager = {
     const savedKeys = Object.keys(res.data || {});
     DataRegistry.apply(res.data, savedKeys);
     this.afterDataApplied(savedKeys, false, res.revs);
-    if (typeof LockManager !== "undefined" && LockManager.active()) LockManager.afterSave();
     if (res.blocked && res.blocked.length) {
       showToast(`⛔ 서버 권한 검증: ${res.blocked.join(", ")} 변경은 저장되지 않았습니다.`);
     }
@@ -992,7 +974,6 @@ var SyncManager = {
     }
     DataRegistry.apply(res.data);
     this.afterDataApplied(DataRegistry.KEYS, false, res.revs);
-    if (typeof LockManager !== "undefined") LockManager.restoreHeld();  // [Workgroup] 보류한 변경 다시 올림
     return { ok: true };
   },
 
@@ -1119,7 +1100,6 @@ var SyncUI = {
     if (mode && all > 0 && !SyncManager._busy) mode.innerText = local ? "자동저장 대기" : `미저장 ${all}건`;
     // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
     if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
-    if (typeof LockManager !== "undefined") LockManager.renderBadge();
   },
 
   // 범용 선택 모달 → Promise<choiceId>

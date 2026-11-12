@@ -103,6 +103,7 @@ const SmartMergeCenter = {
     rows.push({ category: "BASIC", key: "projectEndDate", value: projectConfig.projectEndDate || "", extra1: "", extra2: "종료일", extra3: "" });
     rows.push({ category: "BASIC", key: "reportDate", value: projectConfig.reportDate || "", extra1: "", extra2: "보고기준일", extra3: "" });
     rows.push({ category: "BASIC", key: "weekStartDay", value: String(projectConfig.weekStartDay ?? 5), extra1: "금요일=5, 월요일=1", extra2: "주차시작요일", extra3: "" });
+    if (projectConfig.packageStamp) rows.push({ category: "BASIC", key: "packageStamp", value: projectConfig.packageStamp, extra1: projectConfig.packageBy || "", extra2: "종합본버전", extra3: "" });
     if (projectConfig.weekNumbering) { const w = projectConfig.weekNumbering; rows.push({ category: "BASIC", key: "weekNumbering", value: `${w.basis}|${w.multiYear}|${w.format}`, extra1: "ANNUAL·PROJECT | PREFIX·CONTINUE | 형식", extra2: "주차표시", extra3: "" }); }
     rows.push({ category: "BASIC", key: "maxDeliverableRounds", value: String(projectConfig.maxDeliverableRounds ?? 2), extra1: "최대 4회차", extra2: "산출물운영회차", extra3: "" });
 
@@ -195,6 +196,7 @@ const SmartMergeCenter = {
         if (k === "projectEndDate" && val) projectConfig.projectEndDate = ExcelSync.normalizeDate(val);
         if (k === "reportDate" && val) projectConfig.reportDate = ExcelSync.normalizeDate(val);
         if (k === "weekStartDay" && val) projectConfig.weekStartDay = parseInt(val, 10) || 5;
+        if (k === "packageStamp" && val) { projectConfig.packageStamp = String(val); projectConfig.packageBy = String(r.extra1 || ""); }
         if (k === "weekNumbering" && val) { const [basis, multiYear, ...f] = String(val).split("|"); projectConfig.weekNumbering = { basis: basis === "PROJECT" ? "PROJECT" : "ANNUAL", multiYear: multiYear === "CONTINUE" ? "CONTINUE" : "PREFIX", format: f.join("|") || '"W"w' }; }
         if (k === "maxDeliverableRounds" && val) projectConfig.maxDeliverableRounds = Math.min(4, Math.max(1, parseInt(val, 10) || 2));
       } else if (cat === "DOMAIN" && val) {
@@ -437,7 +439,15 @@ const SmartMergeCenter = {
   },
 
   // 3) 상단 마스터 통합 패키지 다운로드 (JSON / EXCEL)
+  // [Local] 종합본 = 여러 사람이 나눠 쓰는 기준 파일: 만들 때마다 버전(시각)을 찍음 → 오래된 종합본 기준 파일을 올리면 경고
+  stampPackage() {
+    projectConfig.packageStamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+    projectConfig.packageBy = (AuthManager.getCurrentUser() || {}).name || "";
+    if (typeof persistChanges === "function") persistChanges(true);
+    return projectConfig.packageStamp;
+  },
   downloadMasterPackage(format) {
+    this.stampPackage();
     const sel = document.getElementById("masterPkgSubsysSelect");
     const scope = sel ? sel.value : "ALL";
     const repDate = projectConfig.reportDate || "2027-06-01";
@@ -454,14 +464,17 @@ const SmartMergeCenter = {
         wbsData: isAll ? wbsData : wbsData.filter(d => d.system === scope),
         deliverablesData: isAll ? deliverablesData : deliverablesData.filter(d => d.system === scope),
         reqMasterData: isAll ? reqMasterData : reqMasterData.filter(r => r.system === scope),
-        vocData: isAll ? vocData : vocData.filter(v => v.system === scope)
+        vocData: isAll ? vocData : vocData.filter(v => v.system === scope),
+        projectName: ProjectData.currentName(),
+        packageStamp: projectConfig.packageStamp,
+        projectUsers: this._projectUserRows(false)
       };
       Object.keys(this.COLLAB_DEFS).forEach(k => {
         const def = this.COLLAB_DEFS[k];
         payload[def.dataKey] = this._collabRecords(k, scope);
       });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("기준정보묶음", [scope], "json");
+      const filename = ExcelSync.stdName("종합본", [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
       showToast(`[통합 JSON 내려받기 완료] ${filename}`);
       return;
@@ -473,7 +486,7 @@ const SmartMergeCenter = {
       return;
     }
     const blob = ExcelSync._buildXlsxBlob(this.buildPackageSheets());
-    const filename = ExcelSync.stdName("전체데이터", [], "xlsx");
+    const filename = ExcelSync.stdName("종합본", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
     showToast(`[전체 통합 엑셀 내려받기 완료] ${filename}`);
   },
@@ -731,7 +744,7 @@ const SmartMergeCenter = {
     const mine = sys => keep.includes(String(sys || ""));
     openConfirmDialog(`📥 [종합본 가져오기] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 종합본으로 맞춥니다.\n` +
       (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 자료를 그대로 둡니다.\n` : "· 모든 서브시스템을 종합본 내용으로 바꿉니다.\n") +
-      `· 작업자 계정은 바꾸지 않습니다. 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
+      `· 종합본의 작업자 목록을 추가 · 갱신합니다 (내 암호는 그대로). 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
       BackupHistoryManager.createBackupSnapshot("종합본가져오기직전백업", "ALL", false);
       const cur = ProjectData.collect();
       const by = (k, f) => (src[k] || []).filter(r => !f(r)).concat((cur[k] || []).filter(f));
@@ -743,6 +756,7 @@ const SmartMergeCenter = {
       if (src.projectConfig) projectConfig = Object.assign({}, projectConfig, src.projectConfig, { projectName: keepName });
       if (Array.isArray(src.subsystemsMeta) && src.subsystemsMeta.length) subsystemsMeta = src.subsystemsMeta;
       if (Array.isArray(src.standardDeliverablesMeta)) standardDeliverablesMeta = src.standardDeliverablesMeta;
+      if (Array.isArray(items[0].users) && items[0].users.length) this._mergeUsersList(items[0].users);
       StorageManager._afterBulkReplace(`✅ 종합본을 가져왔습니다.${keep.length ? ` (내 담당 ${own} 자료는 그대로)` : ""} (${ProjectData.countText(ProjectData.collect())})`);
     });
   },

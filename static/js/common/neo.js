@@ -20,8 +20,8 @@ var NeoUtil = {
   status(t) { return WBSEngine.getTaskStatus(t, this.rep()); },
   store(key, val) {
     try {
-      if (val === undefined) return localStorage.getItem(key);
-      localStorage.setItem(key, val);
+      if (val === undefined) return AppStore.getItem(key);
+      AppStore.setItem(key, val);
     } catch (e) { return null; }
     return val;
   },
@@ -651,7 +651,7 @@ var UiScale = {
   _key() { const u = (typeof AuthManager !== "undefined" && AuthManager.currentUser) || {}; return this.KEY + (u.empNo || "_"); },
   get() {
     let v = 1;
-    try { v = parseFloat(localStorage.getItem(this._key()) || localStorage.getItem(this.KEY + "_") || "1"); } catch (e) {}
+    try { v = parseFloat(AppStore.getItem(this._key()) || AppStore.getItem(this.KEY + "_") || "1"); } catch (e) {}
     return this.STEPS.indexOf(v) === -1 ? 1 : v;
   },
   apply(v) {
@@ -667,7 +667,7 @@ var UiScale = {
   set(v) {
     v = parseFloat(v);
     if (this.STEPS.indexOf(v) === -1) v = 1;
-    try { localStorage.setItem(this._key(), String(v)); localStorage.setItem(this.KEY + "_", String(v)); } catch (e) {}
+    try { AppStore.setItem(this._key(), String(v)); AppStore.setItem(this.KEY + "_", String(v)); } catch (e) {}
     this.apply(v);
   },
   pickTheme(t) {
@@ -694,12 +694,12 @@ var WbsFold = {
   _key() { const u = (typeof AuthManager !== "undefined" && AuthManager.currentUser) || {}; return this.KEY + (u.empNo || "_"); },
   isFolded() {
     let v = null;
-    try { v = localStorage.getItem(this._key()); } catch (e) {}
+    try { v = AppStore.getItem(this._key()); } catch (e) {}
     return v === null ? window.innerWidth < 1600 : v === "1";
   },
   toggle() {
     const next = !this.isFolded();
-    try { localStorage.setItem(this._key(), next ? "1" : "0"); } catch (e) {}
+    try { AppStore.setItem(this._key(), next ? "1" : "0"); } catch (e) {}
     this.apply();
   },
   apply() {

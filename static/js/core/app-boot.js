@@ -61,36 +61,13 @@ var InitialDataLoader = {
 window.InitialDataLoader = InitialDataLoader;
 
 // =============================================================================
-// 접속 방식에 맞춘 저장소 (ModeGuard)
-//  - 서버 주소(예: https://xxx.com/pprjmgmt/)로 열면 서버 방식 — 서버가 응답하지 않으면 그 사실을 알림
-//  - index.html 을 파일로 직접 열면 브라우저 로컬 저장소 (시험용)
+// 저장 방식 (ModeGuard) — Local 판은 항상 브라우저 저장소
 // =============================================================================
 var ModeGuard = {
-  accessType() {
-    const p = window.location.protocol;
-    return p === "http:" || p === "https:" ? "SERVER_URL" : "FILE";
-  },
-  async pingServer() {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-    try {
-      const res = await fetch(DbConnector.getApiBase() + "/api/db/ping", { cache: "no-store", signal: controller.signal });
-      clearTimeout(timer);
-      const json = res.ok ? await res.json().catch(() => ({})) : {};
-      return !!json.ok;
-    } catch (e) {
-      clearTimeout(timer);
-      return false;
-    }
-  },
+  // [Local] 서버 없이 항상 이 브라우저에 저장 (정적 파일만 올리는 전사 시스템 하위 주소용)
   async check() {
-    if (this.accessType() === "FILE") {
-      DbConnector.selectMode("LOCAL");
-      this.loginNotice = "<div>📁 파일로 직접 열었습니다. 이 PC 브라우저에만 저장하는 시험용 방식으로 실행합니다.</div>";
-      return;
-    }
-    DbConnector.selectMode("SQLITE");
-    if (!(await this.pingServer())) this.loginNotice = "⚠️ 서버가 응답하지 않습니다. 잠시 뒤 다시 열어 주세요. (관리자: 서버 실행 여부 확인)";
+    DbConnector.selectMode("LOCAL");
+    this.loginNotice = "";
   }
 };
 window.ModeGuard = ModeGuard;
@@ -157,6 +134,16 @@ var AppBoot = {
       HomeScreenManager.render();
     }
     if (typeof GShell !== "undefined") { GShell.refresh(); GShell.syncSettings(); }
+    this.backupReminder();
+  },
+
+  // [Local] 자료는 이 브라우저에만 있으므로, 7일 넘게 파일로 받지 않았으면 알림
+  backupReminder() {
+    if (!SyncManager.isLocal() || !(wbsData.length || subsystemsMeta.length)) return;
+    const last = parseInt(AppStore.getItem("PPRJMGMT_LAST_FILE_SAVE") || "0", 10);
+    const days = last ? Math.floor((Date.now() - last) / 86400000) : null;
+    if (days !== null && days < 7) return;
+    setTimeout(() => showToast(`💾 ${days === null ? "아직 자료를 파일로 받은 적이 없습니다." : `마지막으로 자료 파일을 받은 지 ${days}일 지났습니다.`} 자료는 이 브라우저에만 있으니 [🔀 스마트 병합 > 💾 백업 · 복원]에서 프로젝트 백업을 내려받아 두세요.`), 2500);
   },
 
   initUi() {
@@ -184,4 +171,5 @@ var AppBoot = {
   }
 };
 window.AppBoot = AppBoot;
-window.addEventListener("DOMContentLoaded", () => AppBoot.start());
+// [Local] 브라우저 저장소(IndexedDB)를 다 읽은 뒤 시작
+window.addEventListener("DOMContentLoaded", () => AppStore.ready().then(() => AppBoot.start()));

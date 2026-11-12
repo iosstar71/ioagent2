@@ -10,7 +10,7 @@ const BackupHistoryManager = {
 
   init() {
     try {
-      const raw = localStorage.getItem(this.STORAGE_KEY);
+      const raw = AppStore.getItem(this.STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) this.snapshots = parsed.slice(0, 15);
@@ -90,12 +90,12 @@ const BackupHistoryManager = {
     if (this.snapshots.length > 12) this.snapshots = this.snapshots.slice(0, 12);
 
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.snapshots));
+      AppStore.setItem(this.STORAGE_KEY, JSON.stringify(this.snapshots));
     } catch (e) {
       // 용량 초과 시 최신 5개만 유지
       try {
         this.snapshots = this.snapshots.slice(0, 5);
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.snapshots));
+        AppStore.setItem(this.STORAGE_KEY, JSON.stringify(this.snapshots));
       } catch (_) {}
     }
 
@@ -122,10 +122,10 @@ const BackupHistoryManager = {
 
   AUTO_DL_KEY: "IOSTAR_BACKUP_AUTO_DOWNLOAD",
   autoDownload() {
-    try { return localStorage.getItem(this.AUTO_DL_KEY) === "1"; } catch (e) { return false; }
+    try { return AppStore.getItem(this.AUTO_DL_KEY) === "1"; } catch (e) { return false; }
   },
   setAutoDownload(on) {
-    try { localStorage.setItem(this.AUTO_DL_KEY, on ? "1" : "0"); } catch (e) {}
+    try { AppStore.setItem(this.AUTO_DL_KEY, on ? "1" : "0"); } catch (e) {}
     showToast(on ? "💾 올리기 전 자동 백업을 JSON 파일로도 내려받습니다." : "💾 올리기 전 자동 백업은 브라우저 스냅샷으로만 남깁니다. (파일 내려받기 안 함)");
   },
   syncAutoDownloadBox() {

@@ -67,12 +67,12 @@ var StorageManager = {
       AuthManager.STORAGE_POLICY_KEY, AuthManager.STORAGE_AUTOLOCK_KEY]);
     try {
       const rm = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
+      for (let i = 0; i < AppStore.length; i++) {
+        const k = AppStore.key(i);
         // 프로젝트 데이터(모든 프로젝트)·프로젝트 목록은 보존
         if (k && !keep.has(k) && k.indexOf(LocalBackend.STORAGE_KEY) !== 0 && k.indexOf(LocalBackend.REVS_KEY) !== 0 && k !== ProjectContext.REG_KEY && k !== ProjectContext.KEY) rm.push(k);
       }
-      rm.forEach(k => localStorage.removeItem(k));
+      rm.forEach(k => AppStore.removeItem(k));
     } catch (e) {}
     this.closeResetModal();
     this.updateUsageInfo();
@@ -82,8 +82,8 @@ var StorageManager = {
   resetAllStorage() {
     this.closeResetModal();
     openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 처음 상태(빈 프로젝트, admin 하나)로 돌아갑니다. 계속하시겠습니까?", () => {
-      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
-      location.reload();
+      try { AppStore.clear(); } catch (e) {}
+      AppStore.reload();
     });
   },
 
@@ -188,8 +188,8 @@ var StorageManager = {
           { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "", pwdHash: "", lang: "ko" }
         ]);
         try {
-          localStorage.removeItem(AuthManager.STORAGE_POLICY_KEY);
-          localStorage.removeItem(AuthManager.STORAGE_AUTOLOCK_KEY);
+          AppStore.removeItem(AuthManager.STORAGE_POLICY_KEY);
+          AppStore.removeItem(AuthManager.STORAGE_AUTOLOCK_KEY);
         } catch (e) {}
         DataRegistry.set("theme", defaultTheme());
         this._afterBulkReplace("✅ [완전 초기화 완료] 모든 설정, 기준정보 및 업무 데이터가 초기 상태로 초기화되었습니다.");

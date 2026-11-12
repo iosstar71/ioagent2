@@ -69,7 +69,7 @@ var SystemBackup = {
         const res = await r.json().catch(() => ({}));
         if (!res.ok) return showToast("❌ 복원 실패: " + (res.message || ""));
         showToast("✅ 시스템을 복원했습니다. (복원 전 상태는 방금 내려받은 파일) 화면을 다시 불러옵니다...");
-        setTimeout(() => window.location.reload(), 1500);
+        setTimeout(() => AppStore.reload(), 1500);
       } catch (err) { showToast("❌ 복원 오류: " + err.message); }
     });
   },
@@ -78,8 +78,8 @@ var SystemBackup = {
   LOCAL_SCHEMA: "IOSTAR_LOCAL_SYSTEM_v1",
   _localKeys() {
     const keys = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
+    for (let i = 0; i < AppStore.length; i++) {
+      const k = AppStore.key(i);
       if (k && k !== BackupHistoryManager.STORAGE_KEY) keys.push(k);
     }
     return keys;
@@ -87,7 +87,7 @@ var SystemBackup = {
   exportLocal() {
     if (!ProjectData.isAdmin()) return showToast("🚫 관리자만 할 수 있습니다.");
     const items = {};
-    this._localKeys().forEach(k => { items[k] = localStorage.getItem(k); });
+    this._localKeys().forEach(k => { items[k] = AppStore.getItem(k); });
     const payload = { schemaVersion: this.LOCAL_SCHEMA, appVersion: APP_VERSION.version, exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo,
       projects: ProjectContext.localList().map(p => p.name), items };
     ExcelSync._triggerDownload(new Blob([JSON.stringify(payload)], { type: "application/json;charset=utf-8" }), ExcelSync.stdName("시스템전체백업", [], "json", ProjectData._stamp()));
@@ -102,10 +102,10 @@ var SystemBackup = {
     if (!j || j.schemaVersion !== this.LOCAL_SCHEMA || !j.items) return showToast("⚠️ 시스템 전체 백업(JSON) 파일이 아닙니다. 프로젝트 하나는 [① 프로젝트 백업 · 복원]에서 올리세요.");
     openConfirmDialog(`⚠️ [시스템 전체 복원] ${file.name}\n이 브라우저의 모든 프로젝트(${(j.projects || []).join(", ")}) · 작업자 · 설정을 백업 시점으로 바꿉니다. 지금 상태는 복원 지점에 남깁니다. 계속할까요?`, () => {
       BackupHistoryManager.createBackupSnapshot("시스템복원직전백업", "ALL", false);
-      this._localKeys().forEach(k => localStorage.removeItem(k));
-      Object.keys(j.items).forEach(k => { try { localStorage.setItem(k, j.items[k]); } catch (err) {} });
+      this._localKeys().forEach(k => AppStore.removeItem(k));
+      Object.keys(j.items).forEach(k => { try { AppStore.setItem(k, j.items[k]); } catch (err) {} });
       showToast("✅ 시스템 전체를 복원했습니다. 화면을 다시 불러옵니다...");
-      setTimeout(() => window.location.reload(), 1200);
+      setTimeout(() => AppStore.reload(), 1200);
     });
   }
 };

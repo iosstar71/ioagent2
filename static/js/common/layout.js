@@ -12,8 +12,8 @@ var LayoutManager = {
   DENSITIES: ["standard", "compact"],
 
   init() {
-    const savedLayout = (projectConfig && projectConfig.layoutType) || localStorage.getItem("WBS_LAYOUT_TYPE") || "top-nav";
-    const savedDensity = (projectConfig && projectConfig.uiDensity) || localStorage.getItem("WBS_UI_DENSITY") || "standard";
+    const savedLayout = (projectConfig && projectConfig.layoutType) || AppStore.getItem("WBS_LAYOUT_TYPE") || "top-nav";
+    const savedDensity = (projectConfig && projectConfig.uiDensity) || AppStore.getItem("WBS_UI_DENSITY") || "standard";
     this.setLayout(savedLayout, false);
     this.setDensity(savedDensity, false);
     this.syncThemeSelect();
@@ -37,7 +37,7 @@ var LayoutManager = {
     const valid = this.LAYOUT_LABELS[layoutType] ? layoutType : "top-nav";
     document.body.setAttribute("data-layout", valid);
     if (projectConfig) projectConfig.layoutType = valid;
-    try { localStorage.setItem("WBS_LAYOUT_TYPE", valid); } catch (e) {}
+    try { AppStore.setItem("WBS_LAYOUT_TYPE", valid); } catch (e) {}
 
     // 상단 헤더 드롭다운 및 설정 탭 드롭다운 동기화
     const hdrSel = document.getElementById("headerLayoutSelector");
@@ -78,7 +78,7 @@ var LayoutManager = {
     const valid = this.DENSITIES.includes(densityMode) ? densityMode : "standard";
     document.body.setAttribute("data-density", valid);
     if (projectConfig) projectConfig.uiDensity = valid;
-    try { localStorage.setItem("WBS_UI_DENSITY", valid); } catch (e) {}
+    try { AppStore.setItem("WBS_UI_DENSITY", valid); } catch (e) {}
 
     const cfgDen = document.getElementById("cfgDensitySelect");
     if (cfgDen) cfgDen.value = valid;

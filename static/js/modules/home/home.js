@@ -100,7 +100,7 @@ var HomeScreenManager = {
     return this.STYLE_KEY + String((u && u.empNo) || "guest").toLowerCase();
   },
   userStyle() {
-    try { const v = localStorage.getItem(this._styleKey()); return this.STYLES.indexOf(v) !== -1 ? v : null; } catch (e) { return null; }
+    try { const v = AppStore.getItem(this._styleKey()); return this.STYLES.indexOf(v) !== -1 ? v : null; } catch (e) { return null; }
   },
   getEffectiveMode() {
     return this.userStyle() || this.roleDefault();
@@ -114,8 +114,8 @@ var HomeScreenManager = {
   setStyle(mode) {
     if (this.STYLES.indexOf(mode) === -1) return;
     try {
-      if (mode === this.roleDefault()) localStorage.removeItem(this._styleKey());
-      else localStorage.setItem(this._styleKey(), mode);
+      if (mode === this.roleDefault()) AppStore.removeItem(this._styleKey());
+      else AppStore.setItem(this._styleKey(), mode);
     } catch (e) {}
     this.render();
   },

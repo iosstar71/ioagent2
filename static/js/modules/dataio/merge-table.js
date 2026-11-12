@@ -35,7 +35,7 @@ var MergeTable = {
   _plan: null,
 
   item(k) { return this.ITEMS.find(i => i.k === k); },
-  _lockOn() { return typeof LockManager !== "undefined" && LockManager.active(); },
+  _lockOn() { return false; },  // Local 판: 체크아웃 잠금 없음 (담당 서브시스템 배정으로 대신)
   scope() { const el = document.getElementById("workDataSubsysSelect"); return el && el.value ? el.value : "ALL"; },
   _sysOf(r) { return String((r && r.system) || "").trim(); },
   _inSys(r, scope) { const s = this._sysOf(r); return s === scope || (typeof WBSEngine !== "undefined" && WBSEngine.getSubsystemCode(s) === scope); },
@@ -117,7 +117,8 @@ var MergeTable = {
     const tag = keys.length === this.ITEMS.length ? "ALL" : keys.join("_").toUpperCase();
     if (format === "JSON") {
       const payload = { schemaVersion: `AX_PMYS_${APP_VERSION.version}_MERGE`, exportCategory: "MERGE_TABLE", projectId: ProjectContext.current,
-        projectName: ProjectData.currentName(), targetScope: scope, selectedItems: keys, exportedAt: new Date().toISOString() };
+        projectName: ProjectData.currentName(), targetScope: scope, selectedItems: keys, exportedAt: new Date().toISOString(),
+        basedOn: projectConfig.packageStamp || "", exportedBy: (AuthManager.getCurrentUser() || {}).name || "" };
       keys.forEach(k => {
         if (k === "config") { payload.projectConfig = projectConfig; payload.standardDeliverablesMeta = standardDeliverablesMeta; }
         else if (k === "users") payload.projectUsers = SmartMergeCenter._projectUserRows(false);
@@ -231,6 +232,10 @@ var MergeTable = {
     });
     if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 내려받은 양식(엑셀 / JSON)을 쓰세요.`);
     this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
+    // [Local] 오래된 종합본을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
+    const based = parsed.json && parsed.json.basedOn, cur = projectConfig.packageStamp;
+    const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 종합본(${based})을 받아 작업한 것입니다. 지금 종합본은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
+    const who = parsed.json && parsed.json.exportedBy ? `보낸 사람: ${parsed.json.exportedBy} · ` : "";
     const checked = opts.checked && opts.checked.length ? opts.checked : keys;
     document.getElementById("mpTitle").textContent = `${opts.title || "📤 올리기"} — 미리 보기`;
     document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
@@ -243,7 +248,7 @@ var MergeTable = {
         <td class="mt-desc">${escapeHtml(p.how)}</td>
       </tr>`).join("");
     const auto = typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.autoDownload && BackupHistoryManager.autoDownload();
-    document.getElementById("mpNote").textContent = `[반영]을 누르면 지금 상태를 복원 지점으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 내려받음)" : ""}. 체크한 자료만 반영합니다.`;
+    document.getElementById("mpNote").textContent = `${stale}${who}[반영]을 누르면 지금 상태를 복원 지점으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 내려받음)" : ""}. 체크한 자료만 반영합니다.`;
     const m = document.getElementById("mergePreviewModal");
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
     m.style.display = "flex";

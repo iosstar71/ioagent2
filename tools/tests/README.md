@@ -1,8 +1,7 @@
-# Project Mgmt (협업) — 자동 테스트
+# Project Mgmt (협업) Local — 자동 테스트
 
 | 구분 | 실행 | 내용 |
 |---|---|---|
-| 서버 API | `python tools/tests/test_server_api.py` | 인증 · 권한 · 충돌 · 프로젝트 분리 · 작업자 관리 · 초기화 · 체크아웃 잠금 · 하위 주소 · 뺀 기능(404) · 백업 내려받기/복원 · 사용 용량 · 오류만 로그 · 배포 크기 |
-| 브라우저 E2E | `node tools/tests/e2e/run_e2e.js` | 배포 zip 을 풀어 `/pprjmgmt` 아래에서: 빈 상태 시작 · 작업자 선택 화면 · 뺀 기능 · 모든 화면 · 용량 · 백업 · 주기 통신 없음 · 두 작업자 체크아웃 흐름 |
+| 브라우저 E2E | `node tools/tests/e2e/run_e2e.js` | 배포 zip 을 만들어 풀고 정적 서버(`python -m http.server`)로 `/pprjmgmt/` 아래에서: 정적 파일만 · 작업자 선택 화면 · 빈 상태 시작(IndexedDB, 전사 localStorage 안 건드림) · 모든 화면 · PM 종합본 → 작업자 시작 → 작업자 내 자료 → PM 병합 · 이전 종합본 경고 · 새 종합본 가져오기(내 작업 유지) · 다시 불러오기 · 용량 · 외부 요청 없음 |
 
-시험 자료(작업자 · 서브시스템)는 `tools/tests/fixtures/sample_initial_data.json` — 시험에만 쓰며 배포 묶음에는 들어가지 않습니다.
+서버 프로그램이 없으므로 API 시험은 없습니다. Playwright 가 필요합니다.

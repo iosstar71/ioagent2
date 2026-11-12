@@ -52,7 +52,7 @@ var ProjectManager = {
       if (!ProjectContext.isDefault()) {
         showToast("⚠️ 선택했던 프로젝트에 접근할 수 없어 기본 프로젝트로 전환합니다.");
         ProjectContext.set(ProjectContext.DEFAULT);
-        if (!this.isServer()) { setTimeout(() => window.location.reload(), 400); return false; }
+        if (!this.isServer()) { setTimeout(() => AppStore.reload(), 400); return false; }
       }
     }
     this.renderSelector();
@@ -121,7 +121,7 @@ var ProjectManager = {
     } catch (e) {}
     ProjectContext.set(pid);
     showToast("🗂️ 프로젝트를 전환합니다...");
-    window.location.reload();
+    AppStore.reload();
   },
 
   // ---- 관리 창 ----
@@ -340,7 +340,7 @@ var ProjectManager = {
           persistChanges();
         } else {
           const st = LocalBackend._read(pid);
-          if (st && st.projectConfig) { st.projectConfig.projectName = patch.name; localStorage.setItem(LocalBackend._skey(pid), JSON.stringify(st)); }
+          if (st && st.projectConfig) { st.projectConfig.projectName = patch.name; AppStore.setItem(LocalBackend._skey(pid), JSON.stringify(st)); }
         }
       }
     }

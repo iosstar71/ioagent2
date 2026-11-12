@@ -39,7 +39,7 @@ var I18N = {
     this.lang = next;
     document.documentElement.setAttribute("lang", next);
     if (!noRemember) {
-      try { localStorage.setItem(this.LAST_LANG_KEY, next); } catch (e) {}
+      try { AppStore.setItem(this.LAST_LANG_KEY, next); } catch (e) {}
     }
     if (next === "en") {
       this.translateTree(document.body);
