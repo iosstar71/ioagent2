@@ -76,6 +76,7 @@ function syncGlobalDate(newDate) {
 
 // 전체 재계산 + 전 화면 재렌더링 (변경 알림 포함)
 function rebuildAll(forceImmediateSave = false) {
+  if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) forceImmediateSave = true;   // 예전 가중치 자료 한 번 전환
   MasterSyncEngine.syncAll(false, "rebuildAll", forceImmediateSave);
   if (typeof HomeScreenManager !== "undefined") HomeScreenManager.render();
 }

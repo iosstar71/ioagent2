@@ -186,6 +186,33 @@ var WbsWeight = {
     showToast(`⚖️ 가중치 오류 ${n}건을 계획 기간 비율로 다시 나눴습니다 (소수점 1자리).${left ? ` 남은 오류 ${left}건` : " 오류 없음"}`);
   },
 
+  // ---- 예전 자료 전환 (한 번) ----
+  //  예전에는 가중치가 형제끼리의 비율이었고 L1 가중치 = 서브시스템 가중치였음
+  //  → 서브시스템마다 L1 = 100 으로 두고 아래로 같은 비율로 나눔 (비율이 그대로라 진척률은 바뀌지 않음)
+  //  PM · 관리자(모든 서브시스템을 저장할 수 있는 사람)가 열 때 한 번, projectConfig.weightModel 로 표시
+  MODEL: "sys100",
+  migrate(data) {
+    const bySys = new Map();
+    data.forEach((t, i) => { if ((t.level || 1) === 1) { const k = this._sys(t); if (!bySys.has(k)) bySys.set(k, []); bySys.get(k).push(i); } });
+    let n = 0;
+    bySys.forEach(idxs => {
+      const vals = this._split(this.ROOT_TOTAL, idxs.map(j => this.wOf(data[j])));
+      idxs.forEach((j, k) => { data[j].weight = vals[k]; n += 1 + this.cascade(data, j); });
+    });
+    return n;
+  },
+  migrateIfNeeded() {
+    if (typeof projectConfig === "undefined" || !projectConfig || projectConfig.weightModel === this.MODEL) return false;
+    if (typeof AuthManager !== "undefined" && !AuthManager.currentUser) return false;
+    if (typeof Permission !== "undefined" && Permission.canEditAllSubsystems && !Permission.canEditAllSubsystems()) return false;
+    const data = typeof wbsData !== "undefined" ? wbsData : [];
+    const need = data.length > 0 && this.count(data) > 0;
+    if (need) this.migrate(data);
+    projectConfig.weightModel = this.MODEL;
+    if (need) setTimeout(() => showToast("⚖️ WBS 가중치를 서브시스템 100 기준으로 바꿨습니다 (기존 비율 그대로라 진척률은 같음). 서브시스템 사이 비중은 [기준정보]의 서브시스템 가중치로 계산합니다."), 900);
+    return true;
+  },
+
   // 표 위 오류 표시 (가중치 칸을 접어도 보이도록)
   renderBadge() {
     const el = document.getElementById("wbsWeightErrChip");
