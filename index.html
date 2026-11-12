@@ -114,6 +114,11 @@
         <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (기준정보 다시 적용)</button>
       </div>
     </div>
+    <!-- [Local] 종합본(최신 자료 파일) 내려받기 · 가져오기 — 자주 쓰므로 상단에 -->
+    <div class="g-menu-wrap">
+      <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="종합본(최신 자료 파일) 내려받기 · 가져오기 · 내 자료 보내기">📦 종합본 ▾</button>
+      <div class="g-menu g-menu-right g-pkg-menu" id="gPkgMenu" hidden></div>
+    </div>
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
     <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <!-- [v3.1.0] 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
@@ -3042,7 +3047,7 @@
       </div>
       <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
       <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
-      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(작업자 ID + 123!)으로 되돌림 — 다음 작업자 선택 때 새 암호로 바꿔야 함</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(작업자 ID + 123!)으로 되돌림 — 바꾸고 싶으면 작업자가 [🔑 암호 변경]에서 바꿈</label>
       <div class="ua-sub-title">프로젝트별 권한</div>
       <div class="pm-hint" id="uaAdminNote" style="display:none;">관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
       <div class="table-container" style="max-height: 300px;">
@@ -3200,6 +3205,7 @@
   <script src="static/js/common/layout.js"></script>
   <script src="static/js/modules/requirement/req-phase.js"></script>
   <script src="static/js/modules/dataio/smart-merge.js"></script>
+  <script src="static/js/modules/dataio/local-pkg.js"></script>
   <script src="static/js/core/storage.js"></script>
   <script src="static/js/modules/weekly/weekly-report.js"></script>
   <script src="static/js/modules/home/home.js"></script>

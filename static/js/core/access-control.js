@@ -130,7 +130,8 @@ var AuthManager = {
     return "";
   },
   // 초기 암호 사용 중이거나 관리자가 지정한 임시 암호이면 첫 작업자 선택 때 변경 필수
-  mustChangeLocal(u) { return !!u && (!u.pwdHash || !!u.pwdTemp); },
+  // [Local] 작업자 선택 때 암호 변경을 강제하지 않음 (초기 암호 = 작업자 ID + 123! 그대로 써도 됨, 바꾸려면 [🔑 암호 변경])
+  mustChangeLocal(u) { void u; return false; },
 
   // ---------------------------------------------------------------------------
   // 보안 정책

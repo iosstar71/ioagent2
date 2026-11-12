@@ -3049,3 +3049,11 @@ input.weight-warn { background: #fef3c7 !important; border-color: #f59e0b !impor
 /* 시작일 > 종료일 (일정 역전) */
 input.date-reversed { background: #ede9fe !important; border-color: #7c3aed !important; color: #5b21b6 !important; font-weight: bold; }
 [data-theme="dark"] input.date-reversed { background: rgba(124,58,237,0.25) !important; color: #c4b5fd !important; }
+
+/* [Local] 상단 📦 종합본 메뉴 */
+.g-pkg-btn { background: #f59e0b !important; color: #1f2937 !important; border-color: #d97706 !important; font-weight: 800; white-space: nowrap; }
+.g-pkg-btn:hover { background: #fbbf24 !important; }
+.g-pkg-menu { min-width: 320px; }
+.g-pkg-menu .g-menu-item { display: block; text-align: left; }
+.g-pkg-hint { display: block; font-size: var(--fs-2xs, 10px); color: var(--text-muted, #64748b); font-weight: normal; margin-top: 1px; }
+.g-pkg-ver { font-size: var(--fs-xs, 11px); }

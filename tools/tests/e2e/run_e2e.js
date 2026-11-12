@@ -102,6 +102,7 @@ async function main() {
       noReuse: !!AuthManager.validateNewPassword("hong123!", "hong"), ok: AuthManager.validateNewPassword("Hong2026x", "hong") === "" }));
     check("Initial password is worker ID + 123! (old 1234 rejected; cannot be kept as the new password)", /일치하지/.test(pw.err) && pw.hint.includes("123!") && pw.noReuse && pw.ok, JSON.stringify(pw));
     await pickWorker(pm, "admin", PWD);
+    check("Local: picking a worker with the initial password does not force a password change", !PWD.admin && await pm.evaluate(() => !!(AuthManager.currentUser && AuthManager.currentUser.empNo === "admin")), JSON.stringify(PWD));
     const st = await pm.evaluate(() => ({ ver: document.getElementById("headerVersionBadge").textContent, title: document.title, mode: DbConnector.config.mode, wbs: wbsData.length, subs: subsystemsMeta.length,
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat, typeof WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
@@ -138,6 +139,15 @@ async function main() {
     check("Worker PC: [start from 종합본] brings in the project and the worker list", wl.workers.includes("wg_a") && wl.proj.includes(j1.projectName), JSON.stringify(wl));
     await pickWorker(wa, "wg_a", PWD);
     const wst = await wa.evaluate(() => ({ subs: subsystemsMeta.length, wbs: wbsData.length, own: Permission.ownSubsystem(), stamp: projectConfig.packageStamp }));
+    await pm.click("#gPkgBtn"); await pm.waitForTimeout(200);
+    const pmMenu = await pm.evaluate(() => ({ open: !document.getElementById("gPkgMenu").hidden, items: [...document.querySelectorAll("#gPkgMenu .g-menu-item")].map(b => b.textContent.split(/\s{2,}|작업자에게|배포 폴더|받은 엑셀|PM ·|내 담당|어느/)[0].trim()) }));
+    await pm.click("#gPkgBtn"); await wa.click("#gPkgBtn"); await wa.waitForTimeout(200);
+    const waMenu = await wa.evaluate(() => [...document.querySelectorAll("#gPkgMenu .g-menu-item")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join());
+    await wa.click("#gPkgBtn");
+    const viaMenu = await grab(wa, 'LocalPkg.sendMine("JSON")');
+    check("Top [📦 종합본] menu: PM gets package / latest.json / merge; a worker gets import + send-my-data, and it downloads only the own subsystem",
+      pmMenu.open && pmMenu.items.length === 5 && /latest\.json/.test(pmMenu.items.join()) && /consolidateInput/.test(waMenu) && /sendMine\["EXCEL"\]/.test(waMenu) && !/SERVER/.test(waMenu)
+      && !!viaMenu && JSON.parse(viaMenu.text).targetScope === "W1", JSON.stringify({ pmMenu, waMenu, n: viaMenu && viaMenu.name }));
     check("Worker sees the same project data (own subsystem W1) and the package version", wst.subs === 2 && wst.wbs === 4 && wst.own === "W1" && wst.stamp === j1.packageStamp, JSON.stringify(wst));
     // 작업자: 담당 자료 고치고 파일로 내려받기
     await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 수정)"; rebuildAll(true); persistChanges(true); });
