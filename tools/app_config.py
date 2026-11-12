@@ -10,8 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULTS = {
-    "product_name": "IOSTAR-PM", "edition": "KR", "version": "0.0.0", "default_lang": "ko",
-    "default_ui": "standard", "allow_ui_switch": "1", "default_theme": "electric",
+    "product_name": "IOSTAR-PM", "display_name": "", "edition": "KR", "version": "0.0.0", "default_lang": "ko",
+    "default_ui": "standard", "allow_ui_switch": "1", "default_theme": "urban-slate",
     "host": "0.0.0.0", "port": "8080", "db_file": "wbs_enterprise.db", "log_dir": "logs",
     "cert_file": "certs/server.crt", "key_file": "certs/server.key",
 }
@@ -54,13 +54,13 @@ def load(root=None):
         cfg["edition_name"] = EDITION_NAMES.get(cfg["edition"], cfg["edition"])
     cfg["default_ui"] = "neo" if str(cfg.get("default_ui", "")).lower() == "neo" else "standard"
     cfg["allow_ui_switch"] = "0" if str(cfg.get("allow_ui_switch", "1")).strip() in ("0", "false", "no") else "1"
-    cfg["default_theme"] = cfg.get("default_theme", "electric").lower() if cfg.get("default_theme", "").lower() in ("electric", "navy", "green", "brown", "matte", "dark") else "electric"
+    cfg["default_theme"] = cfg.get("default_theme", "").lower() if cfg.get("default_theme", "").lower() in ("urban-slate", "nordic-sage", "brown", "electric", "classic", "dark") else "urban-slate"
     return cfg
 
 
 def client_config(c):
     """화면용 설정 값 (서버의 /js/app-config.js 와 같은 내용)"""
-    return {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
+    return {"productName": c["product_name"], "brand": c["product_name"], "displayName": c.get("display_name", ""), "edition": c["edition"], "editionName": c["edition_name"],
             "version": c["version"], "defaultLang": c["default_lang"],
             "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"], **features(c)}
 

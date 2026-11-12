@@ -272,12 +272,12 @@ var LockManager = {
     this.KEYS.forEach(k => { out[k] = (DataRegistry.get(k) || []).filter(r => systems.includes(String(r.system || ""))); });
     const name = ExcelSync.stdName("내변경백업", [systems.join("_")], "json");
     ExcelSync._triggerDownload(new Blob([JSON.stringify(out, null, 2)], { type: "application/json;charset=utf-8" }), name);
-    showToast(`💾 내 변경을 내려받았습니다: ${name}`);
+    showToast(`💾 내 변경을 다운로드했습니다: ${name}`);
   },
 
   // ---- 3자 비교 ----
   rowKey(k, r) { return k === "deliverablesData" ? `${r.round || ""}|${r.phase || ""}|${r.name || ""}` : String(r.id || ""); },
-  rowLabel(k, r) { return k === "deliverablesData" ? `${r.phase || ""} · ${r.name || ""} (${r.round || ""}회차)` : `${r.id || ""} ${r.name || r.title || ""}`; },
+  rowLabel(k, r) { return k === "deliverablesData" ? `${r.phase || ""} · ${r.name || ""} (${r.round || ""}차)` : `${r.id || ""} ${r.name || r.title || ""}`; },
   LABEL: { wbsData: "WBS", reqMasterData: "요구사항", deliverablesData: "산출물", vocData: "VOC" },
   _cmpRows(items) {
     const rows = [];
@@ -453,7 +453,7 @@ var LockManager = {
     if (!body) return;
     const note = document.getElementById("lkBoardNote");
     if (!this.active()) {
-      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px;">${SyncManager.isLocal() ? "로컬 저장소 방식에서는 체크아웃을 쓰지 않습니다. 담당 서브시스템만 스마트 병합으로 올릴 수 있습니다." : "체크아웃 기능이 꺼져 있습니다. (conf/app.ini [lock] lock_mode)"}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px;">${SyncManager.isLocal() ? "로컬 저장소 방식에서는 체크아웃을 쓰지 않습니다. 담당 서브시스템만 Import · Export으로 올릴 수 있습니다." : "체크아웃 기능이 꺼져 있습니다. (conf/app.ini [lock] lock_mode)"}</td></tr>`;
       if (note) note.textContent = "";
       return;
     }

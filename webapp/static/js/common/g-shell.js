@@ -11,21 +11,22 @@
 // =============================================================================
 var GShell = {
   GROUPS: [
-    { key: "ov", label: "개요", icon: "🧭", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
+    { key: "mw", label: "My Work", icon: "🙋", tabs: ["tab-mywork"] },
+    { key: "ov", label: "Dashboard", icon: "📊", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
     { key: "sc", label: "일정", icon: "🗓️", tabs: ["tab-wbs", "tab-gantt"] },
-    { key: "sq", label: "범위·품질", icon: "🎯", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
-    { key: "co", label: "보고·협업", icon: "🤝", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
+    { key: "sq", label: "요구 · VOC · 산출물", icon: "🎯", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
+    { key: "co", label: "보고 · 소통", icon: "🤝", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
   ],
   ADMIN_TABS: ["tab-master", "tab-merge", "tab-config"],
   LABELS: {
-    "tab-home": "홈", "tab-dashboard": "대시보드", "tab-matrix": "단계별 진척",
-    "tab-wbs": "WBS 공정", "tab-gantt": "간트차트",
-    "tab-req": "요구사항", "tab-voc": "VOC·이슈", "tab-deliverables": "산출물",
-    "tab-weekly-report": "주간보고", "tab-meeting": "회의관리", "tab-notices": "공지·소통",
-    "tab-master": "기준정보", "tab-merge": "스마트 병합", "tab-config": "시스템 설정"
+    "tab-mywork": "My Work", "tab-home": "Summary", "tab-dashboard": "Dashboard", "tab-matrix": "Phase 진척",
+    "tab-wbs": "WBS", "tab-gantt": "Gantt",
+    "tab-req": "요구사항", "tab-voc": "VOC · 이슈", "tab-deliverables": "산출물",
+    "tab-weekly-report": "주간보고", "tab-meeting": "회의", "tab-notices": "게시판 · 채팅",
+    "tab-master": "프로젝트 설정", "tab-merge": "Import · Export", "tab-config": "Admin"
   },
   ICONS: {
-    "tab-home": "🏠", "tab-dashboard": "📊", "tab-matrix": "📈", "tab-wbs": "📋", "tab-gantt": "🗓️",
+    "tab-mywork": "🙋", "tab-home": "🧭", "tab-dashboard": "📊", "tab-matrix": "📈", "tab-wbs": "📋", "tab-gantt": "🗓️",
     "tab-req": "📌", "tab-voc": "📣", "tab-deliverables": "📑", "tab-weekly-report": "📝", "tab-meeting": "📅",
     "tab-notices": "📢", "tab-master": "🗂️", "tab-merge": "🔀", "tab-config": "⚙️"
   },
@@ -234,7 +235,7 @@ var GShell = {
     p.hidden = true;
     p.innerHTML = `
       <div class="g-palette" role="dialog" aria-label="검색">
-        <input type="text" id="gPaletteInput" placeholder="화면 이름, WBS ID·Task명, 요구사항·VOC 번호, 사용자 이름으로 검색" autocomplete="off"
+        <input type="text" id="gPaletteInput" placeholder="화면 이름, WBS ID·Task명, 요구사항·VOC 번호, 멤버 이름으로 검색" autocomplete="off"
           data-input="GShell.searchPalette" data-input-args='["$value"]' data-keydown="GShell.paletteKey" data-keydown-args='["$event"]'>
         <div class="g-palette-list" id="gPaletteList"></div>
         <div class="g-palette-hint">↑↓ 이동 · Enter 열기 · Esc 닫기</div>
@@ -268,7 +269,7 @@ var GShell = {
     (typeof wbsData !== "undefined" ? wbsData : []).forEach(t => items.push({ kind: "WBS", text: `${t.id} ${t.name || ""}`, sub: t.system || "", act: () => this.reveal("tab-wbs", t.name || t.id) }));
     (typeof reqMasterData !== "undefined" ? reqMasterData : []).forEach(r => items.push({ kind: "요구사항", text: `${r.id} ${r.name || ""}`, sub: r.system || "", act: () => this.reveal("tab-req", r.id) }));
     (typeof vocData !== "undefined" ? vocData : []).forEach(v => items.push({ kind: "VOC", text: `${v.id} ${v.title || ""}`, sub: v.system || "", act: () => this.reveal("tab-voc", v.id) }));
-    (typeof projectUsers !== "undefined" ? projectUsers : []).forEach(u => items.push({ kind: "사용자", text: `${u.name || ""} (${u.empNo})`, sub: u.dept || "", act: () => { this.go("tab-master"); setTimeout(() => { try { MasterSubTabs.show("users"); } catch (e) {} this.reveal(null, u.empNo); }, 200); } }));
+    (typeof projectUsers !== "undefined" ? projectUsers : []).forEach(u => items.push({ kind: "멤버", text: `${u.name || ""} (${u.empNo})`, sub: u.dept || "", act: () => { this.go("tab-master"); setTimeout(() => { try { MasterSubTabs.show("users"); } catch (e) {} this.reveal(null, u.empNo); }, 200); } }));
     return items;
   },
   searchPalette(q) {

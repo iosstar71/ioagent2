@@ -148,7 +148,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def _send_app_config(self):
         """app.ini 를 바꾸면 화면 빌드 없이 바로 반영되도록 화면 설정을 즉시 만들어 보냄"""
         c = load_app_config(BASE_DIR)
-        data = {"productName": c["product_name"], "edition": c["edition"], "editionName": c["edition_name"],
+        data = {"productName": c["product_name"], "brand": c["product_name"], "displayName": c.get("display_name", ""), "edition": c["edition"], "editionName": c["edition_name"],
                 "version": c["version"], "defaultLang": c["default_lang"],
                 "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"],
                 "selfReset": str(c.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no"), **app_features(c)}

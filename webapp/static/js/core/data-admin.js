@@ -10,11 +10,11 @@
 var DataAdmin = {
   ALL: "__ALL__",
   ACTIONS: {
-    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)", keep: "프로젝트 기본정보 · 기준정보 · 사용자", all: true },
-    project: { label: "⚠️ 프로젝트 전체 초기화", what: "기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 사용자" },
-    sample: { label: "🔄 제조 샘플 복원", what: "프로젝트 자료 전체를 2027 스마트공장 제조 샘플로 (샘플 담당자는 참여자로 추가)", keep: "프로젝트 이름 · 다른 사용자" },
+    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)", keep: "프로젝트 기본정보 · 프로젝트 설정 · 멤버", all: true },
+    project: { label: "⚠️ 프로젝트 전체 초기화", what: "프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 멤버" },
+    sample: { label: "🔄 제조 샘플 복원", what: "프로젝트 자료 전체를 2027 스마트공장 제조 샘플로 (샘플 담당자는 참여자로 추가)", keep: "프로젝트 이름 · 다른 멤버" },
     chat: { label: "💬 채팅 기록 초기화", what: "그 프로젝트의 실시간 채팅 기록", keep: "업무 자료 전체", server: true },
-    factory: { label: "⚠️ 완전 초기화 (사용자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 사용자 목록을 처음 상태로 (admin · admin2 · pm, 비밀번호 1234)", keep: "다른 프로젝트 자료", current: true }
+    factory: { label: "⚠️ 완전 초기화 (멤버 포함)", what: "지금 프로젝트의 프로젝트 설정 · 업무 자료 + 멤버 목록을 처음 상태로 (admin · admin2 · pm, 비밀번호 1234)", keep: "다른 프로젝트 자료", current: true }
   },
   isAdmin() { return typeof ProjectData !== "undefined" && ProjectData.isAdmin(); },
   isServer() { return typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
@@ -108,7 +108,7 @@ var DataAdmin = {
     if (!a) return;
     if (t.all && !a.all) return;
     const lines = [`대상: ${t.name}${t.current ? " (지금 프로젝트)" : ""}`, `· 지우는 것: ${a.what}`, `· 그대로: ${a.keep}`,
-      this.isServer() ? "바꾸기 전 자료는 복원 지점(서버)에 남기고, Task 정보는 서버 data/backups 에도 남깁니다." : "바꾸기 전 자료는 복원 지점(이 브라우저)에 남깁니다.",
+      this.isServer() ? "바꾸기 전 자료는 스냅샷(서버)에 남기고, Task 정보는 서버 data/backups 에도 남깁니다." : "바꾸기 전 자료는 스냅샷(이 브라우저)에 남깁니다.",
       "되돌리기 어렵습니다. 확인을 위해 아래에 대상 이름을 그대로 입력하세요."];
     this.ask(`${a.label} — ${t.name}`, lines, t.name, () => this._do(action, t));
   },

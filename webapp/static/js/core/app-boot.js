@@ -61,7 +61,7 @@ var InitialDataLoader = {
 window.InitialDataLoader = InitialDataLoader;
 
 // =============================================================================
-// [v1.0.8] 접속 방식과 저장소 모드 불일치 방지 (ModeGuard)
+// [v1.0.8] 접속 방식 안내 (ModeGuard) — [Workgroup 0.4] 서버 DB 만
 //  - 서버 주소(http://IP:8080)로 접속 + 로컬 저장소 모드 → "서버 DB 모드로 전환하시겠습니까?"
 //      · 이 브라우저에서 저장소 모드를 한 번도 고른 적이 없으면 서버 DB 모드를 기본값으로 사용
 //  - index.html 파일을 직접 열어 접속(file://) → 로컬 저장소 모드로 실행하고 서버 주소 접속 방법 안내
@@ -99,54 +99,49 @@ var ModeGuard = {
     DbConnector.updateHeaderBadge();
   },
 
+  // [Workgroup 0.4] 서버 DB 만 — 로컬 저장소 모드 없음 (서버 없이 쓰려면 IOSTAR-PM Standalone)
   async check() {
-    const access = this.accessType();
-    const mode = DbConnector.config.mode;
-
-    if (access === "FILE") {
-      if (mode !== "LOCAL") this._setMode("LOCAL");
-      // [v1.2.0] 문장 단위로 작성 (영어 화면에서 문장 전체가 번역되도록 문장 안에 굵게 표시 등을 넣지 않음)
-      this.loginNotice = "<div>📁 index.html 파일을 직접 열어 실행했습니다. 로컬 저장소 모드(이 PC 브라우저에만 저장)로 로그인합니다.</div>" +
-        "<div>여러 사용자가 함께 쓰는 서버 DB 모드는 서버에서 run_server.bat 을 실행한 뒤 브라우저 주소창에 서버 주소(예: http://서버IP:8080)를 입력하여 접속하세요.</div>";
-      if (mode !== "LOCAL") {
-        await SyncUI.ask("📁 로컬 저장소 모드로 실행합니다",
-          "index.html 파일을 직접 열어 접속했기 때문에 서버 DB 를 사용할 수 없습니다.\n" +
-          "이번 접속은 로컬 저장소 모드(이 PC 브라우저에만 저장)로 전환하여 로그인합니다.\n\n" +
-          "서버 DB 모드로 사용하려면 서버 PC 에서 run_server.bat 을 실행한 뒤, 브라우저 주소창에 http://서버IP:8080 으로 접속하세요.",
-          [{ id: "ok", label: "확인 (로컬 저장소 모드로 로그인)", cls: "btn-primary" }]);
-      }
+    if (DbConnector.config.mode !== "SQLITE") this._setMode("SQLITE");
+    if (this.accessType() === "FILE") {
+      this.loginNotice = "<div>📁 index.html 파일을 직접 열었습니다. Workgroup 은 서버 판이라 서버 주소(예: http://서버IP:8080)로 접속해야 합니다.</div>" +
+        "<div>서버 없이 쓰려면 IOSTAR-PM Standalone 을 쓰세요.</div>";
+      await SyncUI.ask("🗄️ 서버 주소로 접속하세요",
+        "Workgroup 은 서버 DB 를 함께 쓰는 판입니다. 파일로 직접 열면 동작하지 않습니다.\n" +
+        "서버 PC 에서 run_server.bat 을 실행한 뒤, 브라우저 주소창에 http://서버IP:8080 으로 접속하세요.\n\n" +
+        "서버 없이 혼자 · 파일로 쓰려면 IOSTAR-PM Standalone 을 쓰세요.",
+        [{ id: "ok", label: "확인", cls: "btn-primary" }]);
       return;
     }
-
-    // 서버 주소로 접속
-    if (mode !== "LOCAL") return;
     const alive = await this.pingServer();
-    if (!alive) {
-      this.loginNotice = "⚠️ 서버 주소로 접속했지만 DB 서버 응답이 없어 로컬 저장소 모드로 실행합니다. (입력한 내용은 이 PC 브라우저에만 저장)";
-      return;
-    }
-    if (!this._hasSavedChoice()) {
-      this._setMode("SQLITE");
-      this.loginNotice = "🗄️ 서버 주소로 접속하여 서버 DB 모드로 시작합니다. (여러 사용자가 같은 데이터를 함께 사용)";
-      return;
-    }
-    const choice = await SyncUI.ask("🗄️ 서버 DB 모드로 전환하시겠습니까?",
-      `서버 주소(${window.location.host})로 접속했지만 현재 저장소 모드가 [로컬 저장소] 입니다.\n` +
-      "로컬 저장소 모드에서는 입력한 내용이 이 PC 브라우저에만 저장되어 다른 사용자와 공유되지 않고, 서버를 꺼도 화면이 계속 동작합니다.\n\n" +
-      "※ 이 브라우저에 로컬로만 저장한 데이터가 있다면 전환 전에 [데이터 가져오기·내보내기 > ④ 전체 일괄 > JSON 내려받기]로 받아 두었다가 서버 모드에서 올리세요.",
-      [
-        { id: "server", label: "🗄️ 서버 DB 모드로 전환 (권장)", cls: "btn-primary" },
-        { id: "local", label: "로컬 저장소 모드로 계속", cls: "btn-secondary" }
-      ]);
-    if (choice === "server") {
-      this._setMode("SQLITE");
-      this.loginNotice = "🗄️ 서버 DB 모드로 전환했습니다. 로그인하면 서버 데이터를 불러옵니다.";
-    } else {
-      this.loginNotice = "💻 로컬 저장소 모드로 계속합니다. 입력한 내용은 이 PC 브라우저에만 저장됩니다.";
-    }
+    if (!alive) this.loginNotice = "⚠️ DB 서버가 응답하지 않습니다. 서버가 켜져 있는지 확인한 뒤 화면을 다시 불러오세요.";
   }
 };
 window.ModeGuard = ModeGuard;
+
+// [Workgroup 0.4] 새 버전 안내 — 주기적으로 묻지 않고, 화면을 열 때 · 창으로 돌아올 때(최소 10분 간격)만 서버 버전을 확인
+var VersionWatch = {
+  KEY: "IOSTAR_WG_APP_VERSION",
+  _last: 0, _shown: false,
+  init() {
+    let prev = null;
+    try { prev = localStorage.getItem(this.KEY); localStorage.setItem(this.KEY, APP_VERSION.version); } catch (e) {}
+    if (prev && prev !== APP_VERSION.version) setTimeout(() => showToast(`🆕 ${APP_VERSION.product} v${APP_VERSION.version} 로 바뀌었습니다 (이전 v${prev}). 자료는 서버 DB 에 그대로 있습니다.`), 1500);
+    window.addEventListener("focus", () => this.check());
+  },
+  async check() {
+    if (this._shown || Date.now() - this._last < 600000) return;
+    this._last = Date.now();
+    try {
+      const r = await fetch(window.location.origin + "/api/db/ping", { cache: "no-store" });
+      const j = await r.json();
+      if (j && j.version && j.version !== APP_VERSION.version) {
+        this._shown = true;
+        showToast(`🆕 서버가 새 버전(v${j.version})으로 바뀌었습니다. 저장한 뒤 화면을 새로고침(F5)하세요.`);
+      }
+    } catch (e) {}
+  }
+};
+window.VersionWatch = VersionWatch;
 
 // =============================================================================
 // [v1.0.8] 서버 연결 감시 (DB 서버 모드): 20초마다 서버 응답 확인
@@ -196,7 +191,11 @@ window.ServerHeartbeat = ServerHeartbeat;
 var AppBoot = {
   uiReady: false,
 
+  // 저장된 테마를 적용한 뒤에 화면을 보여 줌 (처음 그린 기본 테마 색이 잠깐 보였다 바뀌지 않도록)
   async start() {
+    try { await this._start(); } finally { document.body.classList.add("theme-ready"); }
+  },
+  async _start() {
     ProjectContext.init();
     DbConnector.init();
     if (typeof ButtonStandard !== "undefined") ButtonStandard.init();
@@ -209,6 +208,7 @@ var AppBoot = {
     }
     this.initUi();
     AuthManager.init();
+    VersionWatch.init();
   },
 
   // 로그인 성공 후 호출 (DB 서버 모드: 서버 데이터 로드)

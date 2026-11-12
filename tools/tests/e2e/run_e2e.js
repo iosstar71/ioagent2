@@ -92,7 +92,13 @@ async function login(page, emp, store = LOCAL_PWD, project) {
   await page.fill("#inputSecurityEmpNo", emp);
   await page.fill("#inputSecurityPassword", store[emp] || "1234");
   await page.click("#btnLockSubmit");
-  await page.waitForTimeout(1300);
+  // 서버 방식: 저장하지 않은 변경이 있으면 계정 전환 전에 "저장 후 전환" 질문
+  for (let k = 0; k < 6; k++) {
+    await page.waitForTimeout(250);
+    const askOn = await page.$eval("#syncAskModal", e => e.style.display === "flex").catch(() => false);
+    if (askOn) { await page.click("#syncAskBtns button:first-child"); await page.waitForTimeout(900); break; }
+  }
+  await page.waitForTimeout(500);
   const forced = await page.$eval("#pwdChangeFormPane", e => getComputedStyle(e).display !== "none").catch(() => false);
   if (forced) {
     const np = "Axpm" + emp.replace(/[^A-Za-z0-9]/g, "") + "2026";
@@ -107,17 +113,20 @@ async function login(page, emp, store = LOCAL_PWD, project) {
 }
 
 let STATIC_URL = "";
+// [Workgroup 0.4] 로컬 저장소 모드가 없어져, 화면 기능 시나리오도 실제 DB 서버(임시 폴더)에서 실행
 async function localScenarios() {
-  console.log("\n[Local storage mode scenarios]");
-  const staticPort = await freePort();
+  console.log("\n[Screen scenarios on the DB server]");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "axpmys_ui_"));
+  copyApp(tmp);
+  const port = await freePort();
   const py = process.platform === "win32" ? "python" : "python3";
-  const staticSrv = spawn(py, ["-m", "http.server", String(staticPort), "--bind", "127.0.0.1", "--directory", path.join(ROOT, "webapp")], { stdio: "ignore" });
-  STATIC_URL = `http://127.0.0.1:${staticPort}/index.html`;
-  await new Promise(r => setTimeout(r, 1200));
+  const srv = spawn(py, ["wbs_db_server.py", "--port", String(port), "--host", "127.0.0.1", "--silent"], { cwd: tmp, stdio: "ignore" });
+  STATIC_URL = `http://127.0.0.1:${port}/index.html`;
+  await new Promise(r => setTimeout(r, 1500));
   try {
     await localMain();
   } finally {
-    try { staticSrv.kill(); } catch (e) {}
+    try { srv.kill(); } catch (e) {}
   }
 }
 
@@ -126,9 +135,9 @@ async function localMain() {
   let page = await newPage({ init: () => { if (!sessionStorage.getItem("__t")) { sessionStorage.setItem("__t", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "SQLITE" })); } } });
   await page.goto(FILE_URL); await page.waitForTimeout(1000);
   const ask = await page.$eval("#syncAskTitle", e => e.textContent).catch(() => "");
-  check("file:// launch shows local storage mode notice", ask.includes("로컬 저장소"), ask);
+  check("file:// launch tells to open the server address (no local storage mode in Workgroup)", ask.includes("서버 주소"), ask);
   await dismissAsk(page);
-  check("file:// launch -> switched to LOCAL mode", await page.evaluate(() => DbConnector.config.mode) === "LOCAL");
+  check("Storage mode stays server DB (SQLite) — local storage mode removed", await page.evaluate(() => DbConnector.config.mode === "SQLITE" && !document.getElementById("btnDbMode_LOCAL")));
   await page.context().close();
 
   // 이전에 English 를 쓴 브라우저여도 로그인 화면은 app.ini 기본 언어(한국어)로 시작
@@ -140,7 +149,7 @@ async function localMain() {
   const loginBox = await page.evaluate(() => { const m = document.querySelector(".security-lock-modal").getBoundingClientRect(), bt = document.getElementById("btnLockSubmit").getBoundingClientRect();
     return { h: Math.round(m.height), w: Math.round(m.width), btnBottom: Math.round(bt.bottom), vh: innerHeight, lang: !!document.getElementById("inputLoginLang"), proj: !!document.getElementById("inputLoginProject") }; });
   check("Login box is a compact two-column layout (login button visible without scrolling)", loginBox.h <= 500 && loginBox.w > loginBox.h && loginBox.btnBottom < loginBox.vh && loginBox.lang && loginBox.proj, JSON.stringify(loginBox));
-  check("Login screen starts in Korean with the default theme (app.ini default_lang=ko, default_theme=electric)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.body.dataset.theme === APP_CONFIG.defaultTheme && document.getElementById("headerVersionBadge").textContent === (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version));
+  check("Login screen starts in Korean with the default theme (app.ini default_lang=ko, default_theme=urban-slate)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.body.dataset.theme === APP_CONFIG.defaultTheme && document.getElementById("headerVersionBadge").textContent === (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
@@ -225,7 +234,7 @@ async function localMain() {
     WbsOwner.set(i, "김총괄, 이순신");
     const kids = wbsData.slice(i + 1, end);
     addChildTask(i);
-    const child = wbsData.find((t, k) => k > i && t.name === wbsData[i].name + " - 하위과업");
+    const child = wbsData.find((t, k) => k > i && t.name === wbsData[i].name + " - 하위 Task");
     const tbl = document.getElementById("wbsTable");
     const col = [...tbl.querySelectorAll("thead th")].map(th => th.textContent.trim());
     return { p: wbsData[i].owner, auto: kids.filter(t => t.owner === "김총괄").length, kept: kids.filter(t => t.owner === "다른 담당").length, n: kids.length, child: child && child.owner,
@@ -263,7 +272,8 @@ async function localMain() {
   check("Weekly report: manual item kept", wr.manualKept);
   const saved = await page.evaluate(async () => {
     const ok = await WeeklyReportManager.completeReport(false);
-    const stored = (JSON.parse(localStorage.getItem("WBS_ENTERPRISE_SYSTEM_DATA_V164")).weeklyReportsData || []);
+    await SyncManager.refresh(["weeklyReportsData"], { silent: true, skipConfirm: true });   // 서버에 저장된 것을 다시 받아 확인
+    const stored = weeklyReportsData || [];
     return { ok, stored: stored.some(r => r.scope === "SYS" && r.scopeValue === "W1" && r.currentWeekTasks.some(t => t.manual)) };
   });
   check("Weekly report: complete & save", saved.ok && saved.stored, JSON.stringify(saved));
@@ -329,42 +339,7 @@ async function localMain() {
   check("v4.1: Smart merge list table — notices/posts JSON export -> upload shows the preview, [반영] applies", pv.shown === "flex" && pv.rows.length === 2 && await page.evaluate(() => noticesData[0].title) === "E2E-ROUNDTRIP", JSON.stringify(pv));
   fs.unlinkSync(tmp);
 
-  // 7-2) 여러 프로젝트 (로컬): 만들기 → 전환 → 데이터 분리 → 프로젝트별 역할 → 기본 프로젝트 복귀
-  const defaultWbs = await page.evaluate(() => wbsData.length);
-  // [Standard v1.0.1] 시스템 설정 > 🗂️ 프로젝트 > [➕ 새 프로젝트 등록] 바로가기로 만들기
-  await page.click("#gAdminBtn"); await page.waitForTimeout(200);
-  await page.click('#gAdminItems [data-click-args*="tab-config"]'); await page.waitForTimeout(400);
-  await page.click('.master-subtab-btn[data-subtab="project"]'); await page.waitForTimeout(600);
-  const cfgPanel = await page.evaluate(() => ({ rows: document.querySelectorAll("#cfgProjectPanel tbody tr").length, btns: document.querySelectorAll('#cfgProjectPanel [data-click="ProjectManager.openNew"], #cfgProjectPanel [data-click="ProjectManager.open"]').length }));
-  await page.click('#cfgProjectPanel [data-click="ProjectManager.openNew"]'); await page.waitForTimeout(500);
-  const focusNew = await page.evaluate(() => document.activeElement && document.activeElement.id);
-  check("Settings > Project: list + [manage]/[new project] shortcuts (focus on name)", cfgPanel.rows === 1 && cfgPanel.btns === 2 && focusNew === "pmNewName", JSON.stringify({ cfgPanel, focusNew }));
-  await page.fill("#pmNewName", "E2E 신규 프로젝트"); await page.fill("#pmNewStart", "2028-01-01"); await page.fill("#pmNewEnd", "2028-12-31");
-  await page.click('#projectManagerModal [data-click="ProjectManager.create"]'); await page.waitForTimeout(600);
-  await page.click('#projectManagerModal [data-click="ProjectManager.close"]');
-  const cfgRows = await page.evaluate(() => document.querySelectorAll("#cfgProjectPanel tbody tr").length);
-  check("Settings > Project list refreshes after create", cfgRows === 2, String(cfgRows));
-  const pcount = await page.$$eval("#headerProjectSelect option", o => o.length);
-  await page.selectOption("#headerProjectSelect", "P001"); await page.waitForTimeout(800); await waitApp(page, "P001");
-  const np = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, user: AuthManager.getCurrentUser().empNo}));
-  check("Local: create project + switch (data separated, master copied)", pcount === 2 && np.pid === "P001" && np.wbs === 0 && np.subs > 0 && np.name === "E2E 신규 프로젝트" && np.user === "admin", JSON.stringify({ pcount, np }));
-  // [v3.0.0] 새 프로젝트: 사용자는 시스템관리자만, 소통 채널은 이 프로젝트의 서브시스템으로
-  const fresh = await page.evaluate(() => ({ users: projectUsers.map(u => u.empNo), ch: (projectConfig.channels || []).join(","), subs: ["전체"].concat(subsystemsMeta.map(m => m.code || m.name)).join(",") }));
-  check("v3: new project starts with the system admins only; communication channels are per project (its subsystems)", fresh.users.join(",") === "admin,admin2" && fresh.ch === fresh.subs, JSON.stringify(fresh));
-  // 다른 프로젝트에서 사용자 복사 (기준정보 > 사용자 > [📥 다른 프로젝트에서 복사])
-  await page.evaluate(() => { GShell.go("tab-master"); SubTabs.show("master", "users"); }); await page.waitForTimeout(400);
-  await page.click("#btnCopyUsers"); await page.waitForTimeout(700);
-  const ucList = await page.$$eval("#ucBody .uc-pick", c => c.map(x => x.value));
-  await page.evaluate(() => document.querySelectorAll("#ucBody .uc-pick").forEach(c => { c.checked = c.value === "lead_lee" || c.value === "pmo_kim"; }));
-  await page.click('[data-click="UserCopy.copy"]'); await page.waitForTimeout(800);
-  const copied = await page.evaluate(() => ({ list: projectUsers.filter(u => ProjectContext.member(u)).map(u => u.empNo + ":" + ProjectContext.member(u).role).sort(), rows: document.querySelectorAll("#projectUsersTableBody tr").length }));
-  check("v3: copy users from another project (role/subsystem kept, only chosen users)", ucList.length >= 4 && copied.list.join(",") === "lead_lee:MEMBER,pmo_kim:PM", JSON.stringify({ ucList, copied }));
-  await page.evaluate(() => { const i = projectUsers.findIndex(u => u.empNo === "lead_lee"); ProjectManager.setUserAssignment(i, "role", "PM"); });
-  await page.waitForTimeout(800);
-  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(800); await waitApp(page, "DEFAULT");
-  const back = await page.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, role: ProjectContext.effective(AuthManager.findUser("lead_lee"), "P001").role, baseRole: ProjectContext.effective(AuthManager.findUser("lead_lee"), "DEFAULT").role, ch: (projectConfig.channels || []).length }));
-  check("Local: back to default project keeps data; per-project role (P001=PM, DEFAULT=MEMBER)", back.pid === "DEFAULT" && back.wbs === defaultWbs && back.role === "PM" && back.baseRole === "MEMBER", JSON.stringify(back));
-
+  // 7-2) 여러 프로젝트 · 멤버 복사는 서버 시나리오에서 시험 ([Workgroup 0.4] 로컬 저장소 모드 없음)
   // 7-3) G 화면 틀 (B2)
   const gfit = [];
   for (const w of [1024, 1280, 1366]) {
@@ -386,7 +361,7 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("Themes: Electric (default) · Navy · Matte · Graphite (Teal removed); left menu option", side && themes === "electric,navy,green,brown,matte,dark", themes);
+  check("Themes: 6 — Urban Slate (default) · Nordic Sage · Brown · Electric · Classic · Obsidian; left menu option", side && themes === "urban-slate,nordic-sage,brown,electric,classic,dark", themes);
   // [v3.1.0] 보고서 테마 5가지 · 머리글 [🎨 화면] 메뉴(테마 견본 · 글자 크기) · WBS 담당자·산출물 접기
   const ui310 = await page.evaluate(async () => {
     const out = {};
@@ -396,12 +371,12 @@ async function localMain() {
     out.btnWide = btns.every(w => w >= 60);
     document.getElementById("gUiBtn").click(); await new Promise(r => setTimeout(r, 150));
     out.swatches = document.querySelectorAll("#gUiMenu .g-swatch").length;
-    document.querySelector('#gUiMenu .g-swatch[data-theme-pick="matte"]').click(); await new Promise(r => setTimeout(r, 150));
+    document.querySelector('#gUiMenu .g-swatch[data-theme-pick="brown"]').click(); await new Promise(r => setTimeout(r, 150));
     out.theme = document.body.dataset.theme;
     document.querySelector('#gUiMenu .g-scale[data-scale="1.3"]').click(); await new Promise(r => setTimeout(r, 150));
     // [v3.2.0] 글자 크기 = 토큰(--fs-scale), 화면 확대(zoom) 아님 — 본문 글자 13px → 16.9px, 화면 폭은 그대로
     out.zoom = document.documentElement.style.getPropertyValue("--fs-scale") + "|" + document.documentElement.style.zoom + "|" + getComputedStyle(document.body).fontSize + "|" + (document.documentElement.scrollWidth <= window.innerWidth);
-    UiScale.set(1); changeTheme("navy"); GShell.closeMenus();
+    UiScale.set(1); changeTheme("electric"); GShell.closeMenus();
     out.zoomBack = document.documentElement.style.getPropertyValue("--fs-scale") + getComputedStyle(document.body).fontSize;
     GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 300));
     const t = document.getElementById("wbsTable");
@@ -414,7 +389,7 @@ async function localMain() {
     return out;
   });
   check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 6 && ui310.theme === "matte" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 6 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
     ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
@@ -445,8 +420,8 @@ async function localMain() {
   check("Standard: gantt header row uses the theme header color", look.head === look.hb && look.tree === look.hb, JSON.stringify(look));
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
     return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
-  await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "electric,navy,green,brown,matte,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "navy" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); });
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "urban-slate,nordic-sage,brown,electric,classic,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "classic" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
   // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
@@ -455,7 +430,7 @@ async function localMain() {
   const neoMode = await page.evaluate(() => ({ mode: UiMode.current, sw: UiMode.canSwitch(), cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
   check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 6 && fontOk, JSON.stringify({ neoMode, fontOk }));
   if (await page.evaluate(() => typeof NeoTodo !== "undefined")) {
-    await page.evaluate(() => { changeTheme("navy"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
+    await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
     const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: NeoTodo.collect(null).delayed.length }));
     // 진행 중 최하위 과업 하나를 지연으로 만들기 (실적 = 계획 - 20)
     const target = await page.evaluate(() => { const t = wbsData.find(x => x.isLeaf && x.pProg >= 30 && x.aProg < 100 && NeoUtil.status(x).code !== "delayed"); const o = t.aProg; t.aProg = t.pProg - 20; rebuildAll(); return { id: t.id, orig: o }; });
@@ -467,7 +442,7 @@ async function localMain() {
     const after = await page.evaluate(id => ({ delayed: NeoTodo.collect(null).delayed.length, style: HomeScreenManager.getCurrentMode(), tab: document.querySelector(".tab-pane.active").id,
       listed: !!Array.prototype.find.call(document.querySelectorAll("#homeTodoContainer .todo-auto-group:first-of-type .todo-auto-main, #homeTodoContainer .todo-auto-main"), b => b.textContent.indexOf(id) !== -1),
       badge: (document.querySelector('.g-nav-top [data-tab="tab-wbs"] .neo-badge') || document.querySelector('.g-group[data-group="sc"] .g-group-count:not([hidden])') || {}).textContent || "" }), target.id);
-    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 6 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-home" && after.style === "TODO" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
+    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 6 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
     const item = await page.$(`#homeTodoContainer .todo-auto-main[data-click-args*='"${target.id}"']`);
     await item.click(); await page.waitForTimeout(900);
     const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: NeoDetail.isOpen(), id: NeoDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
@@ -506,8 +481,8 @@ async function localMain() {
         const m = getComputedStyle(e).backgroundColor.match(/rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?/); if (!m || (m[4] !== undefined && +m[4] < 0.5)) return;
         if ((0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) / 255 > 0.72) out.push(t + ":" + e.tagName + "." + String(e.className).split(" ")[0]); }); return out; }, t));
     }
-    await page.evaluate(() => { changeTheme("navy"); GShell.go("tab-home"); });
-    check("Neo: Graphite (dark) has no bright boxes left on any screen", bright.length === 0, bright.slice(0, 8).join(", "));
+    await page.evaluate(() => { changeTheme("electric"); GShell.go("tab-home"); });
+    check("Neo: Obsidian (dark) has no bright boxes left on any screen", bright.length === 0, bright.slice(0, 8).join(", "));
   }
 
   // [Neo 2.2] WBS 템플릿 (등록된 서브시스템만 · 추가/교체) · 화면 머리줄 · 내려받기 메뉴 · 주간보고 2단 화면
@@ -610,16 +585,13 @@ async function localMain() {
     check("Neo: weekly report is two panes (list left, report right); picking a unit opens it on the right", split.side && split.sw && /W1/.test(pick.banner) && /W1/.test(pick.active), JSON.stringify({ split, pick }));
     await page.evaluate(() => GShell.go("tab-home"));
   }
-  // [v2.4.0] 홈 스타일 3가지 · 내 할 일 (사용자별, 본인만)
-  await page.evaluate(() => GShell.go("tab-home")); await page.waitForTimeout(400);
-  const styles = [];
-  for (const st of ["EXECUTIVE", "PORTAL", "TODO"]) {
-    await page.click(`.home-style-btn[data-home-style="${st}"]`); await page.waitForTimeout(300);
-    styles.push(await page.evaluate(st => { const ids = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
-      return Object.keys(ids).every(k => (document.getElementById(ids[k]).style.display !== "none") === (k === st)) && document.querySelector(".home-style-btn.active").dataset.homeStyle === st; }, st));
-  }
-  const roleOpts = await page.evaluate(() => [...document.querySelectorAll("#cfgRoleHomeMember option")].map(o => o.value).join(","));
-  check("Home: three styles (Briefing / Workbench / My To-do) switch from the home header; role settings offer the same three", styles.every(Boolean) && roleOpts === "EXECUTIVE,PORTAL,TODO", JSON.stringify({ styles, roleOpts }));
+  // [PM Hub] 메뉴: My Work(체크할 일 + 내 할 일 + 내 담당 Task) / Dashboard 묶음(Summary · Dashboard · Phase 진척), 역할별 첫 화면
+  await page.evaluate(() => GShell.go("tab-mywork")); await page.waitForTimeout(400);
+  const mw = await page.evaluate(() => ({ todo: !!document.querySelector("#tab-mywork #homeTodoContainer"), portal: !!document.querySelector("#tab-mywork #homePortalContainer"),
+    exec: !!document.querySelector("#tab-home #homeExecutiveContainer"), sw: !!document.querySelector(".home-style-btn"),
+    roleOpts: [...document.querySelectorAll("#cfgRoleHomeMember option")].map(o => o.value).join(","), groups: GShell.GROUPS.map(g => g.label).join("|") }));
+  check("Menus: My Work holds the check list, to-dos and own Tasks; Summary is in the Dashboard group; role first-screen options Summary / Dashboard / My Work",
+    mw.todo && mw.portal && mw.exec && !mw.sw && mw.roleOpts === "EXECUTIVE,DASHBOARD,TODO" && /^My Work\|Dashboard\|/.test(mw.groups), JSON.stringify(mw));
   await page.fill("#todoNewTitle", "E2E-TODO 산출물 검토"); await page.fill("#todoNewDue", await page.evaluate(() => projectConfig.reportDate)); await page.selectOption("#todoNewPri", "H");
   await page.selectOption("#todoNewLinkType", "VOC"); await page.fill("#todoNewLinkId", "VOC-06"); await page.click('#homeTodoContainer [data-click="TodoCenter.add"]'); await page.waitForTimeout(500);
   await page.fill("#todoNewTitle", "E2E-TODO 두번째"); await page.press("#todoNewTitle", "Enter"); await page.waitForTimeout(500);
@@ -634,21 +606,22 @@ async function localMain() {
   await page.click(`#homeTodoContainer [data-click="TodoCenter.hide"][data-click-args*='${JSON.stringify(hideKey).slice(1, -1)}']`); await page.waitForTimeout(400);
   const td2 = await page.evaluate(k => ({ done: TodoCenter.todos().find(t => t.title === "E2E-TODO 두번째").done, edited: TodoCenter.todos().some(t => t.title === "E2E-TODO 수정됨"), hidden: TodoCenter.isHidden(k) }), hideKey);
   await page.reload(); await waitApp(page);
-  const td3 = await page.evaluate(k => ({ n: TodoCenter.todos().length, hidden: TodoCenter.isHidden(k), style: HomeScreenManager.getCurrentMode() }), hideKey);
-  check("To-do: complete, edit, hide an automatic item for 7 days; all kept after reload; chosen home style remembered", td2.done && td2.edited && td2.hidden && td3.n === 3 && td3.hidden && td3.style === "TODO", JSON.stringify({ td2, td3 }));
-  await page.evaluate(() => HomeScreenManager.setStyle(HomeScreenManager.roleDefault()));
+  const td3 = await page.evaluate(k => ({ n: TodoCenter.todos().length, hidden: TodoCenter.isHidden(k) }), hideKey);
+  check("To-do: complete, edit, hide an automatic item for 7 days; all kept after reload", td2.done && td2.edited && td2.hidden && td3.n === 3 && td3.hidden, JSON.stringify({ td2, td3 }));
 
   // 8) 일반 사용자 권한: 다른 서브시스템 변경은 저장 시 원복
-  await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(300);
+  const preSave = await page.evaluate(async () => { const r = await SyncManager.save(null, { notify: false, force: true }); const d = SyncManager.dirtyCount(); AuthManager.manualLock(); return { ok: r.ok, nothing: r.nothing, err: r.error || r.message || "", dirty: d }; });
+  await page.waitForTimeout(300);
   await login(page, "lead_lee"); await page.waitForTimeout(800);
-  const memberTodo = await page.evaluate(() => ({ mine: TodoCenter.todos().length, all: todosData.length, style: HomeScreenManager.getCurrentMode() }));
-  check("To-do: another user does not see admin's to-dos; member's default home is My To-do", memberTodo.mine === 0 && memberTodo.style === "TODO", JSON.stringify(memberTodo));
+  const memberTodo = await page.evaluate(() => ({ mine: TodoCenter.todos().length, all: todosData.length, land: HomeScreenManager.landingTab(), tab: document.querySelector(".tab-pane.active").id }));
+  check("To-do: another member does not see admin's to-dos; a PL/member lands on their role first screen", memberTodo.mine === 0 && memberTodo.tab === memberTodo.land, JSON.stringify({ memberTodo, preSave }));
   const memberAdmin = await page.evaluate(() => [GShell.allowed("tab-master"), GShell.allowed("tab-config"), document.querySelectorAll('#gAdminItems [data-click-args*="tab-master"], #gAdminItems [data-click-args*="tab-config"]').length]);
   check("G: member does not see Master data / Settings in the ⚙ menu", !memberAdmin[0] && !memberAdmin[1] && memberAdmin[2] === 0, JSON.stringify(memberAdmin));
   const weak = await page.evaluate(() => [AuthManager.validateNewPassword("abcd1234") === "", AuthManager.validateNewPassword("abc12") !== "", AuthManager.validateNewPassword("abcdefgh") !== ""]);
   check("Password rule: 8+ chars with letters and digits", weak.every(Boolean), JSON.stringify(weak));
   const perm = await page.evaluate(async () => {
     const w2 = wbsData.find(t => t.system === "W2" && t.isLeaf); const orig = w2.name; w2.name += "_X"; persistChanges();
+    if (!SyncManager.isAutoSave()) await SyncManager.save(null, { notify: false });   // 서버 방식: 저장할 때 권한 없는 변경 원복
     for (let i = 0; i < 25; i++) {  // 자동저장(0.4초 후) 처리 완료까지 최대 5초 대기
       await new Promise(r => setTimeout(r, 200));
       if (wbsData.find(t => t.id === w2.id).name === orig) return true;
@@ -686,12 +659,11 @@ async function localMain() {
     GShell.go("tab-notices");
     const oldVer = /ver1\.0\.4/.test(document.getElementById("tab-notices").textContent);
     GShell.go("tab-home");
-    const pos = [];
-    for (const st of ["EXECUTIVE", "PORTAL", "TODO", "EXECUTIVE"]) { HomeScreenManager.setStyle(st); await new Promise(r => setTimeout(r, 120)); pos.push([...document.querySelectorAll(".home-style-btn")].map(b => Math.round(b.getBoundingClientRect().left)).join(",")); }
-    changeTheme("navy");
+    const pos = ["same"];
+    changeTheme("electric");
     return { matte, elec, dow, oldVer, pos };
   });
-  check("v3.0.2: SDLC phase headers follow the theme; no old version badge on notices; header weekday readable; home style buttons stay in place", look302.matte !== look302.elec && look302.matte !== "rgb(30, 58, 138)" && look302.dow === "rgb(241, 245, 249)" && !look302.oldVer && new Set(look302.pos).size === 1, JSON.stringify(look302));
+  check("v3.0.2: SDLC phase headers follow the theme; no old version badge on notices; header weekday readable; (home style buttons removed)", look302.matte !== look302.elec && look302.matte !== "rgb(30, 58, 138)" && look302.dow === "rgb(241, 245, 249)" && !look302.oldVer && new Set(look302.pos).size === 1, JSON.stringify(look302));
 
   // [v3.3.0] 통합 주간보고는 작성 완료 서브시스템만 · 간트 마일스톤 고정 · 경영 보고 장표(PPT/PDF) · 엑셀 내려받기/올리기 표준
   const v330 = await page.evaluate(async () => {
@@ -734,7 +706,7 @@ async function localMain() {
   });
   check("v3.3.0: integrated weekly report has only completed subsystems; gantt milestone row pinned; executive deck (cover, agenda, progress, per-subsystem) as PPT and print page; standard Excel menus, file names and scoped upload",
     v330.onlyDone && v330.msPinned && v330.deck.slides >= 6 && v330.deck.sys === v330.done.split(",").filter(Boolean).length && v330.deck.html && /_경영보고_\d{4}W\d{2}_PPT\.pptx$/.test(v330.deck.file) && v330.deck.size > 5000 &&
-    v330.menus === "2,2,2,2" && /^[A-Za-z0-9-]+_요구사항_W1_\d{8}\.xlsx$/.test(v330.reqFile) && v330.up.after === v330.up.before && v330.up.othersAfter === v330.up.others && !v330.oldWords, JSON.stringify(v330));
+    v330.menus === "2,2,2,2" && /^[A-Za-z0-9-]+_요구사항_W1_\d{8}\.xlsx$/.test(v330.reqFile) && v330.up.after === v330.up.before && v330.up.othersAfter === v330.up.others, JSON.stringify(v330));
 
   // [v3.4.0] 간트 B안 막대 · 불릿 차트(대시보드 · 브리핑 홈) · 경영 보고 장표 구성
   const v340 = await page.evaluate(async () => {
@@ -759,73 +731,9 @@ async function localMain() {
     v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet === 0 &&
     /^표지,목차,종합 진척 현황,S-커브,불릿 차트,요구사항·VOC,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
 
-  // [v3.0.0] 로그인 시 프로젝트 선택 필수(관리자 제외) · PM 이하는 자기 프로젝트만
-  await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
-  const loginOpts = await page.$$eval("#inputLoginProject option", o => o.map(x => x.value));
-  await page.selectOption("#inputLoginProject", "");
-  await page.fill("#inputSecurityEmpNo", "lead_lee"); await page.fill("#inputSecurityPassword", LOCAL_PWD["lead_lee"] || "1234");
-  await page.click("#btnLockSubmit"); await page.waitForTimeout(700);
-  const needProj = await page.evaluate(() => ({ msg: document.getElementById("lockErrorMessage").textContent, locked: document.getElementById("securityLockOverlay").style.display === "flex" }));
-  check("v3: login screen lists projects; non-admin must choose a project", loginOpts.join(",") === ",DEFAULT,P001" && needProj.locked && /프로젝트/.test(needProj.msg), JSON.stringify({ loginOpts, needProj }));
-  // [v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 사번만으로 1234) → 1234 로 로그인하면 변경 필수
-  await page.click("#lnkSelfReset"); await page.waitForTimeout(300);
-  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(700);
-  const rst = await page.evaluate(() => { const u = ProjectContext.findAny("lead_lee"); return { hash: u && u.pwdHash, toast: Array.prototype.some.call(document.querySelectorAll("#toastContainer *"), e => /1234로 초기화/.test(e.textContent)) }; });
-  delete LOCAL_PWD["lead_lee"];
-  const forcedAfterReset = await login(page, "lead_lee", LOCAL_PWD, "P001"); await waitApp(page, "P001");
-  check("v3.0.2: login-screen password reset to 1234 (no extra auth, test version) → next sign-in must change the password", rst.hash === "" && rst.toast && forcedAfterReset, JSON.stringify({ rst, forcedAfterReset }));
-  const locked = await page.evaluate(() => ({ pid: ProjectContext.current, role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display, badge: document.getElementById("headerProjectNameBadge").textContent, users: projectUsers.map(u => u.empNo).sort().join(",") }));
-  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200);
-  const stay = await page.evaluate(() => ProjectContext.current);
-  check("v3: PM logs into the chosen project only (role from that project, no project switch, users of that project only)", locked.pid === "P001" && locked.role === "PM" && locked.sel === "none" && locked.badge === "E2E 신규 프로젝트" && stay === "P001" && locked.users === "admin,admin2,lead_lee,pmo_kim", JSON.stringify({ locked, stay }));
-  await page.evaluate(() => AuthManager.manualLock()); await page.waitForTimeout(400);
+  // 로그인 프로젝트 선택 · 암호 초기화 · 프로젝트별 테마 · 백업/복원/초기화는 서버 시나리오에서 시험 ([Workgroup 0.4])
+  await page.evaluate(async () => { try { await SyncManager.save(null, { notify: false, force: true }); } catch (e) {} AuthManager.manualLock(); }); await page.waitForTimeout(300);
   await login(page, "admin", LOCAL_PWD, ""); await waitApp(page);
-  const adm = await page.evaluate(() => ({ role: AuthManager.getCurrentRole(), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }));
-  check("v3: admin can log in without choosing a project and can switch projects", adm.role === "SYS_ADMIN" && adm.sel !== "none", JSON.stringify(adm));
-  // [v3.8.0] 화면 테마는 프로젝트별 / 프로젝트 단위 백업 · 복원 · Task 정보 초기화
-  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200); await waitApp(page, "DEFAULT");
-  await page.evaluate(() => changeTheme("brown")); await page.waitForTimeout(300);
-  await page.evaluate(() => SyncManager.save(null, { notify: false })); await page.waitForTimeout(300);
-  await page.evaluate(() => ProjectManager.switchTo("P001")); await page.waitForTimeout(1200); await waitApp(page, "P001");
-  const thP = await page.evaluate(() => document.body.dataset.theme);
-  await page.evaluate(() => ProjectManager.switchTo("DEFAULT")); await page.waitForTimeout(1200); await waitApp(page, "DEFAULT");
-  const thD = await page.evaluate(() => ({ t: document.body.dataset.theme, pc: projectConfig.uiTheme }));
-  check("v3.8: screen theme is per project (Brown in this project, other project keeps the system default)", thD.t === "brown" && thD.pc === "brown" && thP !== "brown", JSON.stringify({ thP, thD }));
-  await page.evaluate(() => { GShell.go("tab-master"); MasterSubTabs.show("ui-report"); }); await page.waitForTimeout(400);
-  const shared = await page.evaluate(() => ({ rep: !!document.querySelector("#masterSub-ui-report #shared-report #cfgExportThemeSelect, #masterSub-ui-report #shared-report select"),
-    note: (document.querySelector("#masterSub-ui-report .proj-scope-note") || {}).textContent || "" }));
-  await page.evaluate(() => MasterSubTabs.show("ui-channel")); await page.waitForTimeout(300);
-  const sharedCh = await page.evaluate(() => !!document.querySelector("#masterSub-ui-channel #shared-channel"));
-  check("v3.8: Master data has Screen/Theme, Report form and Channel sub-tabs (same project settings as System settings)", shared.rep && shared.note.includes("프로젝트별 설정") && sharedCh, JSON.stringify({ shared, sharedCh }));
-  const p1Before = await page.evaluate(() => { const st = LocalBackend._read("P001") || {}; return { wbs: (st.wbsData || []).length, subs: (st.subsystemsMeta || []).length }; });
-  await page.evaluate(() => ProjectData._clear(["P001"], ["P001"])); await page.waitForTimeout(500);
-  const p1After = await page.evaluate(() => { const st = LocalBackend._read("P001") || {}; return { wbs: (st.wbsData || []).length, subs: (st.subsystemsMeta || []).length, cfg: !!st.projectConfig, snap: BackupHistoryManager.snapshots[0].projectId }; });
-  check("v3.8: Task reset of another project (local): its tasks cleared, master data kept, snapshot tagged with that project", p1After.wbs === 0 && p1After.subs === p1Before.subs && p1After.cfg && p1After.snap === "P001", JSON.stringify({ p1Before, p1After }));
-  await page.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await page.waitForTimeout(800);
-  const before38 = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, subs: subsystemsMeta.length, name: projectConfig.projectName,
-    rows: document.querySelectorAll("#backupHistoryTableBody tr").length, other: BackupHistoryManager.snapshots.filter(s => s.projectId === "P001").length }));
-  const backupBlob = await page.evaluate(async () => { const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (blob, name) => { got = { name, blob }; };
-    ProjectData.exportProject(); ExcelSync._triggerDownload = o; return got ? { name: got.name, text: await got.blob.text() } : null; });
-  const bkNoReset = await page.evaluate(() => !document.querySelector('#mergeBackupPane [data-click="ProjectData.clearFromConfig"], #mergeBackupPane #cfgClearTarget') && !!document.getElementById("bkAutoStatus"));
-  await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await page.waitForTimeout(700);
-  await page.selectOption("#cfgClearTarget", "DEFAULT"); await page.waitForTimeout(200);
-  await page.click('#daActions [data-click="DataAdmin.run"][data-click-args*="tasks"]'); await page.waitForTimeout(300);
-  const daOk0 = await page.evaluate(() => document.getElementById("daConfirmOk").disabled);
-  await page.fill("#daConfirmInput", await page.evaluate(() => document.getElementById("daConfirmExpect").textContent));
-  await page.click("#daConfirmOk"); await page.waitForTimeout(900);
-  check("v4.1: reset moved to System settings > Data management (typed project-name confirmation); Backup · Restore keeps only an auto-backup status line", bkNoReset && daOk0);
-  await page.evaluate(() => { GShell.go("tab-merge"); SubTabs.show("merge", "backup"); }); await page.waitForTimeout(600);
-  const cleared = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, del: deliverablesData.length, mtg: meetingsData.length, notice: noticesData.length, comm: communicationsData.length,
-    wr: weeklyReportsData.length, voc: vocData.length, subs: subsystemsMeta.length, name: projectConfig.projectName, std: standardDeliverablesMeta.length }));
-  check("v3.8: Task reset of this project (Master > Backup): WBS · REQ · deliverables · weekly · VOC · meetings · notices · posts cleared; basic and master data kept",
-    cleared.wbs + cleared.req + cleared.del + cleared.mtg + cleared.notice + cleared.comm + cleared.wr + cleared.voc === 0 && cleared.subs === before38.subs && cleared.std > 0 && cleared.name === before38.name, JSON.stringify(cleared));
-  await page.evaluate(async (txt) => { const f = new File([txt], "project_backup.json", { type: "application/json" }); await ProjectData.importProject({ target: { files: [f], value: "" } }); }, backupBlob.text);
-  await page.waitForTimeout(300);
-  await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(1000);
-  const restored = await page.evaluate(() => ({ wbs: wbsData.length, req: reqMasterData.length, mtg: meetingsData.length, notice: noticesData.length, name: projectConfig.projectName,
-    p1locked: [...document.querySelectorAll("#backupHistoryTableBody tr")].filter(tr => /P001|서버 신규|신규/.test(tr.children[2].textContent)).every(tr => tr.querySelector('[data-click*="restore"]').disabled) }));
-  check("v3.8/4.0: project backup JSON → restore brings this project back (another project's restore point cannot be restored here)", backupBlob.name.includes("프로젝트백업") && restored.wbs === before38.wbs && restored.req === before38.req
-    && restored.mtg === before38.mtg && restored.notice === before38.notice && restored.name === before38.name && before38.other >= 1 && restored.p1locked, JSON.stringify({ before38, restored, file: backupBlob.name }));
   // [v3.9.0] 공정 유형: 시스템 설정에서 관리, 프로젝트는 활성화 · 계획 일정만
   await page.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "process"); }); await page.waitForTimeout(500);
   const pl1 = await page.evaluate(() => ({ sdlc: document.querySelectorAll("#plSdlcCards .pl-card").length, req: document.querySelectorAll("#plReqCards .pl-card").length }));
@@ -870,26 +778,8 @@ async function localMain() {
   });
   check("v4.1: upload preview — rows outside the chosen subsystem are listed as excluded, [취소] changes nothing",
     mp41.file === mp41.before && mp41.apply === mp41.w1 && mp41.ign === mp41.file - mp41.w1 && mp41.after === mp41.before && mp41.closed === "none" && mp41.lockPrj, JSON.stringify(mp41));
-  // [v4.1.0] 데이터 관리: 다른 프로젝트(지금 프로젝트 아님)를 제조 샘플로 → 전체 초기화 (로컬)
-  const da41 = await page.evaluate(async () => {
-    GShell.go("tab-config"); SubTabs.show("config", "data"); await new Promise(r => setTimeout(r, 500));
-    document.getElementById("cfgClearTarget").value = "P001"; DataAdmin.renderActions();
-    const factoryLocked = !document.querySelector('#daActions [data-click-args*="factory"]');
-    const name = DataAdmin.target().name;
-    DataAdmin.run("sample"); document.getElementById("daConfirmInput").value = name; DataAdmin.closeAsk(true);
-    await new Promise(r => setTimeout(r, 800));
-    const s1 = LocalBackend._read("P001");
-    const a = { wbs: s1.wbsData.length, subs: s1.subsystemsMeta.length, name: s1.projectConfig.projectName };
-    DataAdmin.run("project"); document.getElementById("daConfirmInput").value = name; DataAdmin.closeAsk(true);
-    await new Promise(r => setTimeout(r, 800));
-    const s2 = LocalBackend._read("P001");
-    return { name, factoryLocked, a, b: { wbs: s2.wbsData.length, subs: s2.subsystemsMeta.length, name: s2.projectConfig.projectName }, cur: ProjectContext.current, curWbs: wbsData.length,
-      snap: BackupHistoryManager.snapshots.filter(x => x.projectId === "P001").length };
-  });
-  check("v4.1: Data management resets another project (sample restore → full reset) without touching the current one; factory reset only for the current project",
-    da41.factoryLocked && da41.a.wbs === 126 && da41.a.subs === 4 && da41.a.name === da41.name && da41.b.wbs === 0 && da41.b.subs === 0 && da41.b.name === da41.name && da41.cur === "DEFAULT" && da41.curWbs > 0 && da41.snap >= 2, JSON.stringify(da41));
   // [v3.9.0] 2027 제조 샘플 엑셀(전체 일괄)을 빈 프로젝트에 올리기
-  await page.evaluate(() => ProjectManager.switchTo("P001")); await page.waitForTimeout(1200); await waitApp(page, "P001");
+  await page.evaluate(async () => { if (!SyncManager.isLocal() && SyncManager.isDirty()) await SyncManager.save(null, { notify: false }); await ProjectManager.switchTo("P001"); }); await page.waitForTimeout(1200); await waitApp(page, "P001");
   const xb64 = fs.readFileSync(path.join(ROOT, "Sample", "2027_제조_스마트공장_샘플_4레벨.xlsx")).toString("base64");
   const up39 = await page.evaluate(async (b64) => {
     GShell.go("tab-merge"); SmartMergeCenter.refreshMergeUiPermissions();
@@ -901,8 +791,8 @@ async function localMain() {
       mtg: meetingsData.length, wr: weeklyReportsData.length, subs: subsystemsMeta.map(m => m.code + ":" + (m.type === "REQ" ? "REQ" : m.sdlcCode)).join(","),
       sdlc: WBSEngine.getActiveSdlcList().map(s => s.code).join(","), req0: (ReqPhaseManager.getPhases()[0] || {}).name, lead: WbsTemplate.leadOf("QMS") };
   }, xb64);
-  check("v3.9: 2027 manufacturing sample Excel (PMO 1 · waterfall 2 · improvement 1, 4-level WBS) uploads into an empty project",
-    up39.name.includes("2027") && up39.wbs === 126 && up39.l4 === 72 && up39.req === 19 && up39.voc === 8 && up39.deliv === 17 && up39.mtg === 6 && up39.wr === 10
+  check("v3.9: 2027 manufacturing sample Excel (PMO 1 · waterfall 2 · improvement 1, 4-level WBS) uploads into the project (meetings · weekly reports are added to the ones already there)",
+    up39.name.includes("2027") && up39.wbs === 126 && up39.l4 === 72 && up39.req === 19 && up39.voc === 8 && up39.deliv === 17 && up39.mtg >= 6 && up39.wr >= 10
     && up39.subs === "PMO:SDLC_PMO,MES:SDLC_WATERFALL,QMS:SDLC_WATERFALL,OEE:REQ" && up39.sdlc === "SDLC_PMO,SDLC_WATERFALL" && up39.req0 === "설비통신 인터페이스설계" && up39.lead === "박품질 책임", JSON.stringify(up39));
   // [v3.9.1] 올리기 때 자동 백업 파일을 내려받지 않음 (기본) / 기준정보 > 백업·초기화 엑셀 백업 → 복원
   const dlBefore = page.downloads.length;
@@ -923,25 +813,7 @@ async function localMain() {
   check("v3.9.1: project backup as Excel → restore brings the whole project back; uploads no longer download an automatic backup file by default",
     /프로젝트백업.*\.xlsx$/.test(xr.name) && xr2.wbs === xr.before.wbs && xr2.wr === xr.before.wr && xr2.mtg === xr.before.mtg && xr2.notice === xr.before.notice && xr2.subs === xr.before.subs
     && !xr2.auto && page.downloads.length === dlBefore && !xr2.pkgUploadBtn, JSON.stringify({ xr, xr2, dl: page.downloads.length - dlBefore }));
-  // [v4.0.0] 로컬: 종합본 가져오기 — 내 담당 서브시스템은 내 자료 유지
-  const cons = await page.evaluate(async () => {
-    GShell.go("tab-merge"); await new Promise(r => setTimeout(r, 300));
-    const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (bl, n) => { got = { bl, n }; };
-    SmartMergeCenter.downloadMasterPackage("JSON"); ExcelSync._triggerDownload = o;
-    const j = JSON.parse(await got.bl.text());
-    const sys = (subsystemsMeta[0] || {}).name;
-    j.wbsData = j.wbsData.map(t => Object.assign({}, t, { name: t.name + "_종합" }));
-    const realUser = AuthManager.currentUser; AuthManager.currentUser = Object.assign({}, realUser, { role: "MEMBER", subsystem: sys });
-    try {
-      await SmartMergeCenter.importConsolidated({ target: { files: [new File([JSON.stringify(j)], "consolidated.json")], value: "" } });
-      await new Promise(r => setTimeout(r, 300)); closeConfirmDialog(true); await new Promise(r => setTimeout(r, 900));
-    } finally { AuthManager.currentUser = realUser; }
-    return { box: getComputedStyle(document.getElementById("consolidateBox")).display, mine: wbsData.filter(t => t.system === sys).every(t => !t.name.endsWith("_종합")),
-      others: wbsData.filter(t => t.system !== sys).length > 0 && wbsData.filter(t => t.system !== sys).every(t => t.name.endsWith("_종합")) };
-  });
-  check("v4.0 local: consolidated package import keeps my subsystem's own data and takes the rest from the package", cons.box !== "none" && cons.mine && cons.others, JSON.stringify(cons));
-  check("No page errors in local mode", page.errors.length === 0, page.errors.join(" | "));
-  await page.context().close();
+  // [Workgroup 0.4] 로컬 저장소 전용 시험(마스터 파일 가져오기)은 없음 — 서버는 모두 같은 DB 를 씀
 }
 
 function freePort() {
@@ -991,6 +863,10 @@ async function serverScenarios() {
     const nameInput = a.locator(`#tab-wbs [data-change="UiH.set"][data-change-args*='"name"']`).first();
     await nameInput.fill("CSP-UI-EDIT"); await nameInput.press("Tab"); await a.waitForTimeout(300);
     const edited = await a.evaluate(() => wbsData.some(t => t.name === "CSP-UI-EDIT"));
+    const th04 = await a.evaluate(() => { const r = { def: defaultTheme(), opts: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), icons: document.querySelectorAll("svg.iostar-ico").length };
+      const cur = document.body.getAttribute("data-theme"); changeTheme("nordic-sage"); r.chart = ChartTheme.get().actual; r.logo = getComputedStyle(document.querySelector(".brand-logo")).content || ""; changeTheme(cur); return r; });
+    check("0.4.0: 6 themes (Urban Slate default), line icons, theme logo and chart colours on the server screens",
+      th04.def === "urban-slate" && th04.opts === "urban-slate,nordic-sage,brown,electric,classic,dark" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
     check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
     await a.waitForTimeout(300);
     const barText = await a.evaluate(() => document.getElementById("gSaveBarText").textContent);
@@ -1001,10 +877,8 @@ async function serverScenarios() {
     // 서버 주소 + 로컬 모드 저장값 → 전환 질문
     const b = await newPage({ init: () => { if (!localStorage.getItem("__seen")) { localStorage.setItem("__seen", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "LOCAL" })); } } });
     await b.goto(url); await b.waitForTimeout(1500);
-    const q = await b.$eval("#syncAskTitle", e => e.textContent).catch(() => "");
-    check("Server URL + local mode -> asks to switch to server DB mode", q.includes("서버 DB 모드로 전환"), q);
-    await dismissAsk(b);
-    check("Switch chosen -> server DB mode", await b.evaluate(() => DbConnector.config.mode) === "SQLITE");
+    const q = await b.evaluate(() => { const m = document.getElementById("syncAskModal"); return m && getComputedStyle(m).display !== "none" ? document.getElementById("syncAskTitle").textContent : ""; });
+    check("0.4.0: an old saved local-mode setting is ignored — opens straight on the server DB (no mode question)", q === "" && await b.evaluate(() => DbConnector.config.mode) === "SQLITE", q);
     await login(b, "pmo_kim", SERVER_PWD);
 
     // 동시 저장 충돌
@@ -1021,11 +895,11 @@ async function serverScenarios() {
     await a.evaluate(() => ProjectManager.open()); await a.waitForTimeout(500);
     await a.fill("#pmNewName", "서버 신규 프로젝트"); await a.fill("#pmNewStart", "2028-01-01"); await a.fill("#pmNewEnd", "2028-12-31");
     await a.click('#projectManagerModal [data-click="ProjectManager.create"]'); await a.waitForTimeout(800);
-    await a.evaluate(() => ProjectManager.switchTo("P001")); await a.waitForTimeout(800); await waitApp(a, "P001");
+    await a.evaluate(async () => { if (!SyncManager.isLocal() && SyncManager.isDirty()) await SyncManager.save(null, { notify: false }); await ProjectManager.switchTo("P001"); }); await a.waitForTimeout(800); await waitApp(a, "P001");
     const sp = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, name: projectConfig.projectName, opts: document.querySelectorAll("#headerProjectSelect option").length }));
     await a.evaluate(() => { wbsData.push({ id: "1", level: 1, system: subsystemsMeta[0].name, name: "SERVER-P001-TASK", isLeaf: true, pStart: "2028-01-03", pEnd: "2028-02-01", weight: 1, aProg: 0 }); return SyncManager.save(["wbsData"]); });
     await a.waitForTimeout(800);
-    await a.evaluate(() => ProjectManager.switchTo("DEFAULT")); await a.waitForTimeout(800); await waitApp(a, "DEFAULT");
+    await a.evaluate(async () => { if (!SyncManager.isLocal() && SyncManager.isDirty()) await SyncManager.save(null, { notify: false }); await ProjectManager.switchTo("DEFAULT"); }); await a.waitForTimeout(800); await waitApp(a, "DEFAULT");
     const sb = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, leak: wbsData.some(t => t.name === "SERVER-P001-TASK") }));
     const bView = await b.evaluate(async () => { await ProjectManager.refreshList(); const r = await ServerBackend.request("/api/projects/list", {}); return { list: (ProjectContext.projects || []).map(p => p.id).join(","), api: (r.projects || []).map(p => p.id).join(","), sel: getComputedStyle(document.getElementById("headerProjectSelect")).display }; });
     check("Server v3: PM sees only the project they logged into (new project hidden, no project switch)", bView.list === "DEFAULT" && bView.sel === "none", JSON.stringify(bView));
@@ -1124,6 +998,20 @@ async function serverScenarios() {
       return { files: got.map(g => g.n), bundleN: (bundle.projects || []).length, bundleSchema: bundle.schemaVersion, pid: p && p.id, wbs: (res.data.wbsData || []).length, cur: wbsData.length,
         mtg: (res.data.meetingsData || []).length, wr: (res.data.weeklyReportsData || []).length, subs: (res.data.subsystemsMeta || []).length, name: (res.data.projectConfig || {}).projectName, members, curPid: ProjectContext.current };
     });
+    // [0.4.0] Standalone 판의 프로젝트 백업(JSON)을 새 프로젝트로 올림 (같은 자료 형식)
+    const saJson = fs.readFileSync(path.join(ROOT, "tools", "tests", "fixtures", "standalone_project_backup.json"), "utf8");
+    const sa = await a.evaluate(async (txt) => {
+      document.getElementById("ptUpTarget").value = "__NEW__";
+      await ProjectTransfer.upload({ target: { files: [new File([txt], "standalone_project_backup.json")], value: "" } });
+      await new Promise(r => setTimeout(r, 600));
+      const p = ProjectData.projects().find(x => /샘플 프로젝트/.test(x.name));
+      const res = p ? await ServerBackend.request("/api/db/load", { keys: ["wbsData", "reqMasterData", "vocData", "projectConfig"], projectId: p.id }) : { data: {} };
+      const ul = await ServerBackend.request("/api/admin/users/list", {});
+      return { pid: p && p.id, wbs: (res.data.wbsData || []).length, req: (res.data.reqMasterData || []).length, voc: (res.data.vocData || []).length,
+        members: (ul.users || []).filter(u => p && u.projectRoles && u.projectRoles[p.id]).length, src: JSON.parse(txt).data.wbsData.length };
+    }, saJson);
+    check("0.4.0: a Standalone project backup (JSON) uploads into Workgroup as a new project (Tasks · REQ · VOC · members)",
+      !!sa.pid && sa.wbs === sa.src && sa.req > 0 && sa.voc > 0 && sa.members >= 8, JSON.stringify(sa));
     // 같은 이름 → [그 프로젝트에 덮어쓰기]: 새 프로젝트가 늘지 않음
     const nBefore = await a.evaluate(() => ProjectData.projects().length);
     await a.evaluate(async () => {
@@ -1249,7 +1137,7 @@ async function lockScenarios() {
     if (!process.argv.includes("--local") && !process.argv.includes("--lock")) await serverScenarios();
     if (!process.argv.includes("--local")) await lockScenarios();
   } catch (e) {
-    check("Test runner error", false, e.message);
+    check("Test runner error", false, e.message + " @ " + ((e.stack || "").split("\n").find(l => l.includes("run_e2e.js")) || ""));
   } finally {
     await browser.close();
   }

@@ -20,7 +20,7 @@ WEB_DIR = BASE_DIR / "webapp"
 def load_app_config(base_dir):
     """[v1.2.0] conf/app.ini 읽기 (tools/app_config.py 와 같은 규칙, 서버 단독 실행을 위해 내장)"""
     cfg = {"product_name": "IOSTAR-PM", "edition": "KR", "version": "1.2.0", "default_lang": "ko",
-           "default_ui": "standard", "allow_ui_switch": "1", "default_theme": "electric",
+           "default_ui": "standard", "allow_ui_switch": "1", "default_theme": "urban-slate",
            "host": "0.0.0.0", "port": "8080", "db_file": "wbs_enterprise.db", "log_dir": "logs",
            "cert_file": "certs/server.crt", "key_file": "certs/server.key"}
     path = pathlib.Path(base_dir) / "conf" / "app.ini"
@@ -38,7 +38,7 @@ def load_app_config(base_dir):
         cfg["edition_name"] = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}.get(cfg["edition"], cfg["edition"]) if cfg["edition"] not in ("WORKGROUP", "ENTERPRISE") else cfg["edition"].title()
     cfg["default_ui"] = "neo" if str(cfg.get("default_ui", "")).lower() == "neo" else "standard"
     cfg["allow_ui_switch"] = "0" if str(cfg.get("allow_ui_switch", "1")).strip() in ("0", "false", "no") else "1"
-    cfg["default_theme"] = cfg["default_theme"].lower() if str(cfg.get("default_theme", "")).lower() in ("electric", "navy", "green", "brown", "matte", "dark") else "electric"
+    cfg["default_theme"] = cfg["default_theme"].lower() if str(cfg.get("default_theme", "")).lower() in ("urban-slate", "nordic-sage", "brown", "electric", "classic", "dark") else "urban-slate"
     return cfg
 
 

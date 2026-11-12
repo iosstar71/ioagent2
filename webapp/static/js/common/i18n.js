@@ -66,9 +66,23 @@ var I18N = {
     return lead + out + tail;
   },
 
+  // 아이콘(Icons)이 맨 앞 이모지를 SVG 로 바꾼 뒤 남는 글자도 찾도록, 이모지를 뺀 사전
+  _EMO: /^(?:[\u2190-\u2BFF\u2600-\u27BF\u2B00-\u2BFF\u2713\u2714\u2716]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDD00-\uDFFF])[\uFE0F\u200D]*\s*/,
+  _bare() {
+    if (this._bareMap) return this._bareMap;
+    const d = this.dict(), out = Object.create(null);
+    Object.keys(d).forEach(k => {
+      const kb = k.replace(this._EMO, "");
+      if (kb !== k && kb && !(kb in out)) out[kb] = String(d[k]).replace(this._EMO, "");
+    });
+    return (this._bareMap = out);
+  },
+
   _lookup(s) {
     const d = this.dict();
     if (Object.prototype.hasOwnProperty.call(d, s)) return d[s];
+    const b = this._bare();
+    if (b[s] !== undefined && !/^[\s\S]*[가-힣][\s\S]*$/.test(b[s])) return b[s];
     for (const [re, rep] of this.patterns()) {
       if (re.test(s)) return s.replace(re, rep);
     }

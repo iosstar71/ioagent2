@@ -20,7 +20,7 @@ function renderReqMasterTable() {
     if (typeof StatusChips !== "undefined" && !StatusChips.match("req", row)) return;
 
     statTotal++;
-    if (row.status === "착수전") statReady++;
+    if (row.status === "대기") statReady++;
     else if (row.status === "진행") statProg++;
     else if (row.status === "완료") statComp++;
     else if (row.status === "보류") statHold++;
@@ -75,7 +75,7 @@ function renderReqMasterTable() {
       <td style="text-align:right;"><b>${avgProg}%</b></td>
       <td>
         <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "status", "$value", "renderReqMasterTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
-          <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
+          <option value="대기" ${row.status === "대기" ? "selected" : ""}>대기</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
           <option value="보류" ${row.status === "보류" ? "selected" : ""}>보류</option>
@@ -108,7 +108,7 @@ function addNewReq() {
     type: "기능",
     priority: "중",
     accept: "수용",
-    status: "착수전"
+    status: "대기"
   });
   renderReqMasterTable();
   renderDashboard();
@@ -126,17 +126,19 @@ function renderVocTable() {
 
   const dFilter = document.getElementById("vocDomainFilter") ? document.getElementById("vocDomainFilter").value : "ALL";
   const sysFilter = document.getElementById("vocSubsystemFilter") ? document.getElementById("vocSubsystemFilter").value : "ALL";
+  const typeFilter = document.getElementById("vocTypeFilter") ? document.getElementById("vocTypeFilter").value : "ALL";
   let statTotal = 0, statReady = 0, statProg = 0, statComp = 0, statExcl = 0, statHold = 0, statDel = 0;
 
   const chipScope = [];
   vocData.forEach((row, idx) => {
     if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(row.system) !== dFilter) return;
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
+    if (typeFilter !== "ALL" && (row.vocType || "VOC") !== typeFilter) return;   // 구분 (목록에서만, 대시보드 · 주간보고는 VOC 로 통합)
     chipScope.push(row);
     if (typeof StatusChips !== "undefined" && !StatusChips.match("voc", row)) return;
 
     statTotal++;
-    if (row.status === "착수전") statReady++;
+    if (row.status === "대기") statReady++;
     else if (row.status === "진행") statProg++;
     else if (row.status === "완료") statComp++;
     else if (row.status === "제외") statExcl++;
@@ -156,6 +158,11 @@ function renderVocTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.id)}</strong></td>
+      <td>
+        <select data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "vocType", "$value", "renderVocTable", "persistChanges")}">
+          ${["VOC", "버그", "이슈"].map(v => `<option value="${v}" ${(row.vocType || "VOC") === v ? "selected" : ""}>${v}</option>`).join("")}
+        </select>
+      </td>
       <td>
         <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "system", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
@@ -185,7 +192,7 @@ function renderVocTable() {
       </td>
       <td>
         <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "status", "$value", "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
-          <option value="착수전" ${row.status === "착수전" ? "selected" : ""}>착수전</option>
+          <option value="대기" ${row.status === "대기" ? "selected" : ""}>대기</option>
           <option value="진행" ${row.status === "진행" ? "selected" : ""}>진행</option>
           <option value="완료" ${row.status === "완료" ? "selected" : ""}>완료</option>
           <option value="제외" ${row.status === "제외" ? "selected" : ""}>제외</option>
@@ -221,12 +228,13 @@ function addNewVoc() {
   vocData.push({
     id: newVocId,
     system: defaultSys,
+    vocType: (document.getElementById("vocTypeFilter") && document.getElementById("vocTypeFilter").value !== "ALL") ? document.getElementById("vocTypeFilter").value : "VOC",
     title: "신규 VOC 요청사항",
     priority: "중",
     requester: "요청부서",
     reqDate: WBSEngine.getNextWorkingDay(projectConfig.reportDate, projectConfig.holidays, projectConfig.projectEndDate),
     targetDate: "",
-    status: "착수전",
+    status: "대기",
     action: ""
   });
   renderVocTable();

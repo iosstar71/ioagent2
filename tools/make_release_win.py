@@ -52,7 +52,7 @@ def make(python_pkg: Path, out_dir: Path) -> Path:
     missing = [r for r in REQUIRED if r not in have]
     if missing:
         raise SystemExit(f"[ERROR] Not a Windows Python package (missing {missing}): {python_pkg}")
-    base = make_release.make(out_dir)  # 일반 배포 zip (Standalone/매뉴얼/법적 고지 다시 빌드 포함)
+    base = make_release.make(out_dir)  # 일반 배포 zip (매뉴얼/법적 고지 다시 빌드 포함)
     pkg = make_release.PKG
     out = out_dir / f"{pkg}_win64.zip"
     with zipfile.ZipFile(base) as src, zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:

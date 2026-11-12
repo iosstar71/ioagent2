@@ -57,7 +57,7 @@ var TodoCenter = {
   autoGroups() {
     const c = NeoTodo.collect(null, this.mine());
     const g = [
-      { key: "delay", icon: "🔴", title: "지연 과업", items: c.delayed.map(x => ({ k: `WBS:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: `${x.t.system || ""} · 계획 ${x.t.pProg}% / 실적 ${x.t.aProg}%`, due: x.t.pEnd, tag: `-${Math.round(x.gap)}%p` })) },
+      { key: "delay", icon: "🔴", title: "지연 Task", items: c.delayed.map(x => ({ k: `WBS:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: `${x.t.system || ""} · 계획 ${x.t.pProg}% / 실적 ${x.t.aProg}%`, due: x.t.pEnd, tag: `-${Math.round(x.gap)}%p` })) },
       { key: "soon", icon: "⏰", title: `${NeoTodo.DUE_DAYS}일 안 마감`, items: c.dueSoon.map(t => ({ k: `WBS:${t.id}`, type: "WBS", id: t.id, title: `${t.id} ${t.name || ""}`, sub: `${t.system || ""} · 실적 ${t.aProg}%`, due: t.pEnd })) },
       { key: "voc", icon: "📣", title: "미조치 VOC", items: c.vocs.map(v => ({ k: `VOC:${v.id}`, type: "VOC", id: v.id, title: `${v.id} ${v.title || ""}`, sub: `${v.system || ""} · ${v.priority || ""} · ${v.status || ""}`, due: v.targetDate })) },
       { key: "deliv", icon: "📑", title: "확인할 산출물", items: c.delivs.map(d => ({ k: `DLV:${d.id}`, type: "DLV", id: d.name, title: d.name || "", sub: `${d.system || ""} · ${d.round || ""} · ${d.status || ""}`, due: d.pDate })) },
@@ -184,8 +184,7 @@ var TodoCenter = {
     if (type === "MTG") return GShell.go("tab-meeting");
   },
   openHome() {
-    GShell.go("tab-home");
-    if (typeof HomeScreenManager !== "undefined") HomeScreenManager.setStyle("TODO");
+    GShell.go("tab-mywork");
   },
 
   // 홈 단추 · 메뉴 배지용: 기한 지남 + 오늘 마감 (내가 등록한 할 일)
@@ -248,7 +247,7 @@ var TodoCenter = {
           ${tile(`${NeoTodo.DUE_DAYS}일 안 마감`, s.soon, "")}
           ${tile("남은 할 일", s.open, "")}
           ${tile("이번 주 완료", s.doneWeek, "ok")}
-          ${tile("확인할 일 (자동)", autoTotal, autoTotal ? "auto" : "")}
+          ${tile("체크할 일 (자동)", autoTotal, autoTotal ? "auto" : "")}
         </div>
         <div class="todo-grid">
           <section class="card todo-panel">
@@ -260,7 +259,7 @@ var TodoCenter = {
               </div>
             </div>
             <div class="todo-form">
-              <input type="text" id="todoNewTitle" maxlength="200" placeholder="할 일을 입력하고 Enter (예: 2회차 산출물 검토 의견 회신)" aria-label="할 일 내용" data-keypress="TodoCenter.add" data-keypress-key="Enter">
+              <input type="text" id="todoNewTitle" maxlength="200" placeholder="할 일을 입력하고 Enter (예: 2차 산출물 검토 의견 회신)" aria-label="할 일 내용" data-keypress="TodoCenter.add" data-keypress-key="Enter">
               <input type="date" id="todoNewDue" aria-label="마감일" title="마감일">
               <select id="todoNewPri" aria-label="중요도" title="중요도">${priOpts("M")}</select>
               <select id="todoNewLinkType" aria-label="연결할 항목 종류" title="연결할 항목 (선택)">
@@ -275,7 +274,7 @@ var TodoCenter = {
           </section>
           <section class="card todo-panel">
             <div class="todo-head">
-              <h3>🔔 확인할 일 <small>(자동)</small></h3>
+              <h3>🔔 체크할 일 <small>(자동)</small></h3>
               <label class="todo-mine"><input type="checkbox" data-change="TodoCenter.toggleMine" ${this.mine() ? "checked" : ""}> 내 담당만${own ? ` (${escapeHtml(own)})` : ""}</label>
             </div>
             <div class="todo-auto-hint">기준일 ${escapeHtml(this.rep())} · 마감 ${NeoTodo.DUE_DAYS}일 이내 · 원본 데이터가 처리되면 자동으로 사라집니다.

@@ -7,7 +7,7 @@ let projectConfig = {
   systemTitle: APP_VERSION.title,
   projectName: "27년 가동률 시스템 개선",
   domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
-  channels: [], // [v3.0.0] 소통 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
+  channels: [], // [v3.0.0] 게시판 · 채팅 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
   customSdlcTypes: [ // SDLC 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
     {
       code: "SDLC_PMO",
@@ -146,7 +146,7 @@ let projectConfig = {
 function renderProjectTitles() {
   // 저장된 시스템 명칭의 버전 표기는 현재 프로그램 버전으로 표시
   // [v1.0.10] 시스템 명칭 변경(IOSTAR-PM): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
-  if (/AX[ _]Project[ _]Management|AX_PMYS/i.test(projectConfig.systemTitle || "")) projectConfig.systemTitle = APP_VERSION.title;
+  if (/AX[ _]Project[ _]Management|AX_PMYS|^IOSTAR-PM/i.test(projectConfig.systemTitle || "")) projectConfig.systemTitle = APP_VERSION.title;
   const sysTitle = String(projectConfig.systemTitle || APP_VERSION.title).replace(/ver\d+\.\d+\.\d+/, "ver" + APP_VERSION.version);
   const projName = projectConfig.projectName || "차세대 통합 구축 프로젝트";
 
@@ -154,7 +154,7 @@ function renderProjectTitles() {
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
   // Standard·Neo: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
-  if (hSys) hSys.textContent = APP_VERSION.edition !== "KR" ? sysTitle.replace(/\s*ver\d+(\.\d+)*.*$/, "") : sysTitle;
+  if (hSys) { hSys.textContent = APP_VERSION.name; hSys.title = APP_VERSION.product; }
   const hVer = document.getElementById("headerVersionBadge");
   if (hVer) hVer.textContent = (APP_VERSION.editionName ? APP_VERSION.editionName + " " : "") + "v" + APP_VERSION.version;
   if (hProj) hProj.textContent = projName;
@@ -193,7 +193,7 @@ function updateMaxDeliverableRounds(newMax) {
   renderStandardDeliverablesMetaTable();
   renderDeliverablesTable();
   rebuildAll();
-  showToast(`[산출물 제출 회차 설정] 1회차 ~ ${maxR}회차 운영으로 동기화되었습니다. (초과 회차 비선택 초기화 완료)`);
+  showToast(`[산출물 제출 차수 설정] 1차 ~ ${maxR}차 운영으로 동기화되었습니다. (초과 차수 비선택 초기화 완료)`);
 }
 
 function updateProjectTitles() {
@@ -340,7 +340,7 @@ function applyIdPrefixSettings(reNumberAll = false) {
   if (reNumberAll) {
     showToast("WBS · 요구사항(REQ) · VOC · Action Item 전체 ID에 설정된 접두어(Prefix) 및 서브시스템 코드 규칙이 일괄 적용되었습니다.");
   } else {
-    showToast("ID 채번 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)");
+    showToast("ID 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)");
   }
 }
 

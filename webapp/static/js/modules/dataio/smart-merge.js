@@ -12,7 +12,7 @@ const SmartMergeCenter = {
   },
 
   // [v1.0.7] 업무·협업 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더
-  ITEM_LABEL: { wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", config: "기준정보", subsystems: "서브시스템" },
+  ITEM_LABEL: { wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", config: "프로젝트 설정", subsystems: "서브시스템" },
   canBulkWork() {
     return Permission.canEditAllSubsystems();
   },
@@ -30,10 +30,10 @@ const SmartMergeCenter = {
       const who = `${escapeHtml(curUser.name || curUser.empNo)} (${AuthManager.roleLabel(normRole)})`;
       badge.className = "status-badge-chip " + (isPrivileged ? "chip-completed" : bulk ? "chip-progress" : "chip-ready");
       badge.innerHTML = isPrivileged
-        ? `👑 ${who} — 모든 자료 올리기 가능`
+        ? `👑 ${who} — 모든 자료 업로드 가능`
         : bulk
-          ? `⭐ ${who} — 서브시스템 단위 자료 전체 올리기 (프로젝트 단위 자료는 내려받기만)`
-          : `👤 ${who} — 담당 서브시스템(${escapeHtml(Permission.ownSubsystem())}) 자료만 올리기`;
+          ? `⭐ ${who} — 서브시스템 단위 자료 전체 업로드 (프로젝트 단위 자료는 다운로드만)`
+          : `👤 ${who} — 담당 서브시스템(${escapeHtml(Permission.ownSubsystem())}) 자료만 업로드`;
     }
 
     // 분야 드롭다운 갱신
@@ -42,7 +42,7 @@ const SmartMergeCenter = {
       const dSel = document.getElementById(dId);
       if (!dSel) return;
       const curD = dSel.value || "ALL";
-      dSel.innerHTML = `<option value="ALL">전체 분야 (${domains.length}개)</option>` +
+      dSel.innerHTML = `<option value="ALL">전체 도메인 (${domains.length}개)</option>` +
         domains.map(d => `<option value="${escapeHtml(d)}" ${d === curD ? "selected" : ""}>🗂️ ${escapeHtml(d)}</option>`).join("");
     });
 
@@ -56,8 +56,8 @@ const SmartMergeCenter = {
       const allOpt = document.createElement("option");
       allOpt.value = "ALL";
       allOpt.textContent = bulk
-        ? `🌐 전체 서브시스템 (${list.length}개 · 내려받기/올리기)`
-        : `🌐 전체 서브시스템 (내려받기 전용 · 올릴 때는 담당 서브시스템 선택)`;
+        ? `🌐 전체 서브시스템 (${list.length}개 · 다운로드/업로드)`
+        : `🌐 전체 서브시스템 (다운로드 전용 · 올릴 때는 담당 서브시스템 선택)`;
       sSel.appendChild(allOpt);
 
       list.forEach(sys => {
@@ -104,10 +104,10 @@ const SmartMergeCenter = {
     rows.push({ category: "BASIC", key: "reportDate", value: projectConfig.reportDate || "", extra1: "", extra2: "보고기준일", extra3: "" });
     rows.push({ category: "BASIC", key: "weekStartDay", value: String(projectConfig.weekStartDay ?? 5), extra1: "금요일=5, 월요일=1", extra2: "주차시작요일", extra3: "" });
     if (projectConfig.weekNumbering) { const w = projectConfig.weekNumbering; rows.push({ category: "BASIC", key: "weekNumbering", value: `${w.basis}|${w.multiYear}|${w.format}`, extra1: "ANNUAL·PROJECT | PREFIX·CONTINUE | 형식", extra2: "주차표시", extra3: "" }); }
-    rows.push({ category: "BASIC", key: "maxDeliverableRounds", value: String(projectConfig.maxDeliverableRounds ?? 2), extra1: "최대 4회차", extra2: "산출물운영회차", extra3: "" });
+    rows.push({ category: "BASIC", key: "maxDeliverableRounds", value: String(projectConfig.maxDeliverableRounds ?? 2), extra1: "최대 4차", extra2: "산출물운영차수", extra3: "" });
 
     (projectConfig.domains || []).forEach((d, idx) => {
-      rows.push({ category: "DOMAIN", key: `DOMAIN_${idx + 1}`, value: d, extra1: String(idx + 1), extra2: "상위 분야", extra3: "" });
+      rows.push({ category: "DOMAIN", key: `DOMAIN_${idx + 1}`, value: d, extra1: String(idx + 1), extra2: "상위 도메인", extra3: "" });
     });
 
     // [v3.9.0] 이 프로젝트에서 활성화한 SDLC 유형만 + 개선과제(REQ) 단계
@@ -164,7 +164,7 @@ const SmartMergeCenter = {
     });
     rows.push({ category: "BASIC", key: "progressBasis", value: projectConfig.progressBasis || "CALENDAR", extra1: "CALENDAR=달력일수, BUSINESS=영업일", extra2: "계획 진척률 산정 기준", extra3: "" });
     rows.push({ category: "BASIC", key: "delayGap", value: String(WBSEngine.delayGap()), extra1: "%p", extra2: "지연 판정: 계획보다 실적이 이 값 이상 적으면 지연", extra3: "" });
-    rows.push({ category: "BASIC", key: "dueDays", value: String(WBSEngine.dueDays()), extra1: "일", extra2: "확인할 일: 이 일수 안에 마감되는 과업 · 산출물", extra3: "" });
+    rows.push({ category: "BASIC", key: "dueDays", value: String(WBSEngine.dueDays()), extra1: "일", extra2: "체크할 일: 이 일수 안에 마감되는 Task · 산출물", extra3: "" });
 
     (projectConfig.milestones || []).forEach(m => {
       rows.push({ category: "MILESTONE", key: m.scope || "ALL", value: m.name || "", extra1: m.date || "", extra2: m.desc || "", extra3: m.id || "" });
@@ -311,7 +311,7 @@ const SmartMergeCenter = {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
       const filename = ExcelSync.stdName(SmartMergeCenter.ITEM_LABEL[itemType] || itemType, [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[${itemType.toUpperCase()} JSON 내려받기 완료] ${filename}`);
+      showToast(`[${itemType.toUpperCase()} JSON 다운로드 완료] ${filename}`);
       return;
     }
 
@@ -353,7 +353,7 @@ const SmartMergeCenter = {
     ]);
     const filename = ExcelSync.stdName(SmartMergeCenter.ITEM_LABEL[itemType] || itemType, [scope], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[${itemType.toUpperCase()} 엑셀 내려받기 완료] ${filename}`);
+    showToast(`[${itemType.toUpperCase()} 엑셀 다운로드 완료] ${filename}`);
   },
 
   _extractRowsFromSheets(sheets, targetTabKey) {
@@ -465,9 +465,9 @@ const SmartMergeCenter = {
         payload[def.dataKey] = this._collabRecords(k, scope);
       });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-      const filename = ExcelSync.stdName("기준정보묶음", [scope], "json");
+      const filename = ExcelSync.stdName("프로젝트 설정묶음", [scope], "json");
       ExcelSync._triggerDownload(blob, filename);
-      showToast(`[통합 JSON 내려받기 완료] ${filename}`);
+      showToast(`[통합 JSON 다운로드 완료] ${filename}`);
       return;
     }
 
@@ -479,7 +479,7 @@ const SmartMergeCenter = {
     const blob = ExcelSync._buildXlsxBlob(this.buildPackageSheets());
     const filename = ExcelSync.stdName("전체데이터", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`[전체 통합 엑셀 내려받기 완료] ${filename}`);
+    showToast(`[전체 통합 엑셀 다운로드 완료] ${filename}`);
   },
 
   // 4) 상단 마스터 통합 패키지 업로드 (JSON / EXCEL)
@@ -490,7 +490,7 @@ const SmartMergeCenter = {
 
     const sel = document.getElementById("masterPkgSubsysSelect");
     const targetScope = sel ? sel.value : "ALL";
-    const isPrivileged = this.isAdminOrPm(); // 기준정보 반영 권한
+    const isPrivileged = this.isAdminOrPm(); // 프로젝트 설정 반영 권한
 
     if (targetScope === "ALL" && !isPrivileged) {
       showToast("🚫 [권한 제한] 전체(ALL) 통합 업로드는 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다. 개별 서브시스템을 선택해주세요.");
@@ -587,7 +587,7 @@ const SmartMergeCenter = {
       inScope: (r, sc) => r.system === sc || r.system === "ALL"
     },
     notices: {
-      dataKey: "noticesData", sheet: "9_공지사항", label: "공지사항",
+      dataKey: "noticesData", sheet: "9_공지", label: "공지",
       cols: [["id", "공지ID"], ["title", "제목"], ["priority", "중요도"], ["author", "작성자"], ["date", "등록일"], ["isPinned", "상단고정"], ["content", "내용"]],
       inScope: () => true
     },
@@ -694,7 +694,7 @@ const SmartMergeCenter = {
     deliverables: "3_산출물관리",
     req: "4_요구사항REQ",
     voc: "5_VOC이슈관리",
-    users: "6_사용자목록"
+    users: "6_멤버목록"
   },
 
   updateCountBadges() {
@@ -724,19 +724,19 @@ const SmartMergeCenter = {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
     if (!file) return;
-    if (!SyncManager.isLocal()) return showToast("ℹ️ DB 서버 방식은 모두 같은 저장소를 쓰므로 종합본 가져오기가 필요 없습니다.");
+    if (!SyncManager.isLocal()) return showToast("ℹ️ DB 서버 방식은 모두 같은 저장소를 쓰므로 마스터 파일 적용가 필요 없습니다.");
     let items;
     try { items = await ProjectTransfer.parse(file); } catch (err) { return showToast("⚠️ 파일을 읽지 못했습니다: " + err.message); }
-    if (!items.length) return showToast("⚠️ 종합본(④ 전체 내려받기) 파일이 아닙니다.");
+    if (!items.length) return showToast("⚠️ 마스터 파일(④ 전체 다운로드) 파일이 아닙니다.");
     const src = items[0].data;
     const all = Permission.canEditAllSubsystems();
     const own = Permission.ownSubsystem();
     const keep = all ? [] : [own];
     const mine = sys => keep.includes(String(sys || ""));
-    openConfirmDialog(`📥 [종합본 가져오기] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 종합본으로 맞춥니다.\n` +
-      (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 자료를 그대로 둡니다.\n` : "· 모든 서브시스템을 종합본 내용으로 바꿉니다.\n") +
-      `· 사용자 계정은 바꾸지 않습니다. 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
-      BackupHistoryManager.createBackupSnapshot("종합본가져오기직전백업", "ALL", false);
+    openConfirmDialog(`📥 [마스터 파일 적용] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 마스터 파일로 맞춥니다.\n` +
+      (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 작업 파일을 그대로 둡니다.\n` : "· 모든 서브시스템을 마스터 파일 내용으로 바꿉니다.\n") +
+      `· 멤버 계정은 바꾸지 않습니다. 바꾸기 전에 스냅샷을 만듭니다. 계속할까요?`, () => {
+      BackupHistoryManager.createBackupSnapshot("마스터 파일가져오기직전백업", "ALL", false);
       const cur = ProjectData.collect();
       const by = (k, f) => (src[k] || []).filter(r => !f(r)).concat((cur[k] || []).filter(f));
       ["wbsData", "reqMasterData", "deliverablesData", "vocData"].forEach(k => DataRegistry.set(k, by(k, r => mine(r.system))));
@@ -747,7 +747,7 @@ const SmartMergeCenter = {
       if (src.projectConfig) projectConfig = Object.assign({}, projectConfig, src.projectConfig, { projectName: keepName });
       if (Array.isArray(src.subsystemsMeta) && src.subsystemsMeta.length) subsystemsMeta = src.subsystemsMeta;
       if (Array.isArray(src.standardDeliverablesMeta)) standardDeliverablesMeta = src.standardDeliverablesMeta;
-      StorageManager._afterBulkReplace(`✅ 종합본을 가져왔습니다.${keep.length ? ` (내 담당 ${own} 자료는 그대로)` : ""} (${ProjectData.countText(ProjectData.collect())})`);
+      StorageManager._afterBulkReplace(`✅ 마스터 파일을 가져왔습니다.${keep.length ? ` (내 담당 ${own} 자료는 그대로)` : ""} (${ProjectData.countText(ProjectData.collect())})`);
     });
   },
 
@@ -809,7 +809,7 @@ const SmartMergeCenter = {
       let row = list.find(u => String(u.empNo || "").toLowerCase() === key);
       if (!row) {
         const other = ProjectContext.findAny(key);
-        if (other && !ProjectContext.isAdminUser(other) && !ProjectManager.isAdmin()) return; // 다른 프로젝트 사용자: 시스템관리자만
+        if (other && !ProjectContext.isAdminUser(other) && !ProjectManager.isAdmin()) return; // 다른 프로젝트 멤버: 시스템관리자만
         row = other || { empNo: inU.empNo, name: inU.name || inU.empNo, role: "MEMBER", pwdHash: "", lang: "ko" };
         list.push(row);
       }
@@ -836,7 +836,7 @@ const SmartMergeCenter = {
       if (
         (targetKey === "config" && (sName.includes("프로젝트기준") || sName.includes("기본정보") || sName.includes("config"))) ||
         (targetKey === "subsystems" && (sName.includes("서브시스템") || sName.includes("subsystem"))) ||
-        (targetKey === "users" && (sName.includes("사용자") || sName.includes("인력") || sName.includes("user"))) ||
+        (targetKey === "users" && (sName.includes("작업자") || sName.includes("사용자") || sName.includes("멤버") || sName.includes("인력") || sName.includes("user"))) ||
         sheets.length === 1
       ) {
         matched = true;

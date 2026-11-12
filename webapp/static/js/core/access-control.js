@@ -20,15 +20,15 @@ var AuthManager = {
   ROLES: ["SYS_ADMIN", "PM", "LEAD", "MEMBER"],
   ROLE_LABELS: {
     SYS_ADMIN: "시스템관리자",
-    PM: "프로젝트관리자",
-    LEAD: "총괄리더",
-    MEMBER: "일반사용자"
+    PM: "PM",
+    LEAD: "PL",
+    MEMBER: "멤버"
   },
   ROLE_DESCS: {
     SYS_ADMIN: "👑 시스템 관리자 (전체 메뉴·시스템설정)",
-    PM: "🛡️ 프로젝트 관리자 (기준정보·스마트병합·전체 데이터)",
-    LEAD: "⭐ 총괄 리더 (담당 서브시스템 — 담당을 ALL 로 지정하면 프로젝트 전체)",
-    MEMBER: "👤 일반 사용자 (담당 서브시스템 데이터만 저장)"
+    PM: "🛡️ 프로젝트 관리자 (프로젝트 설정·Import · Export·전체 데이터)",
+    LEAD: "⭐ PL (담당 서브시스템 — 담당을 ALL 로 지정하면 프로젝트 전체)",
+    MEMBER: "👤 멤버 (담당 서브시스템 데이터만 저장)"
   },
   // 여기에 없는 탭은 모든 사용자 접근 가능
   TAB_POLICY: {
@@ -207,8 +207,8 @@ var AuthManager = {
 
   getTabMeta(tabId) {
     const metas = {
-      "tab-config": { name: "⚙️ 시스템 설정", reqRoleLabel: "시스템 관리자(SYS_ADMIN)", defaultEmpNo: "admin" },
-      "tab-master": { name: "🗂️ 기준정보", reqRoleLabel: "프로젝트 관리자(PM) 또는 시스템 관리자(SYS_ADMIN)", defaultEmpNo: "pm" }
+      "tab-config": { name: "⚙️ Admin", reqRoleLabel: "시스템 관리자(SYS_ADMIN)", defaultEmpNo: "admin" },
+      "tab-master": { name: "🗂️ 프로젝트 설정", reqRoleLabel: "프로젝트 관리자(PM) 또는 시스템 관리자(SYS_ADMIN)", defaultEmpNo: "pm" }
     };
     return metas[tabId] || { name: "관리 메뉴", reqRoleLabel: "관리자", defaultEmpNo: "admin" };
   },
@@ -450,7 +450,7 @@ var AuthManager = {
 
   async _verifyLocal(empNo, pwd) {
     const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
-    if (!u) return { ok: false, message: `등록되지 않은 사번(${empNo})입니다. 신규 사용자 등록을 이용하세요.` };
+    if (!u) return { ok: false, message: `등록되지 않은 사번(${empNo})입니다. 신규 멤버 등록을 이용하세요.` };
     const inputHash = await this.hashPassword(pwd);
     let target = u.pwdHash;
     if (!target && String(u.empNo).toLowerCase() === "admin") {
@@ -483,7 +483,7 @@ var AuthManager = {
       result = await this._verifyLocal(empNo, pwd);
       if (result.ok && !ProjectContext.isAdminUser(result.user)) {
         if (!project) result = { ok: false, message: "로그인할 프로젝트를 선택하세요.", noCount: true };
-        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 사용자가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
+        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 멤버가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
       }
       if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
     } else {
@@ -547,7 +547,7 @@ var AuthManager = {
       this.sessionAuthenticated = true;
       this._saveSession();
       ProjectContext.set(opts.project);
-      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
+      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || (typeof HomeScreenManager !== "undefined" ? HomeScreenManager.landingTab() : "tab-home")); } catch (e) {}
       showToast("🗂️ 선택한 프로젝트로 들어갑니다...");
       setTimeout(() => window.location.reload(), 200);
       return;
@@ -560,7 +560,7 @@ var AuthManager = {
       this.currentUser = next;
       this.sessionAuthenticated = true;
       this._saveSession();
-      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
+      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || (typeof HomeScreenManager !== "undefined" ? HomeScreenManager.landingTab() : "tab-home")); } catch (e) {}
       showToast(`👤 계정 전환: ${next.name}(${next.empNo}) — 권한을 다시 적용합니다...`);
       setTimeout(() => window.location.reload(), 300);
       return;
@@ -738,8 +738,8 @@ var AuthManager = {
   async showRegister(show) {
     this._showPane(show ? "registerFormPane" : "loginFormPane");
     if (!show) return;
-    this._setText("lockModalTitle", "👤 신규 사용자 등록");
-    this._setText("lockModalDesc", "등록 후 바로 로그인할 수 있습니다. (기본 권한: 일반 사용자)");
+    this._setText("lockModalTitle", "👤 신규 멤버 등록");
+    this._setText("lockModalDesc", "등록 후 바로 로그인할 수 있습니다. (기본 권한: 멤버)");
     this._err("regErrorMessage", "");
     // [v3.0.0] 로그인 화면에서 고른 프로젝트의 사용자로 등록
     const pid = this.loginProject();
@@ -800,7 +800,7 @@ var AuthManager = {
       const res = await ServerBackend.request("/api/auth/register", { user: newUser, projectId: pid });
       if (!res.ok) return this._err("regErrorMessage", res.message || "등록 실패");
     }
-    showToast(`✅ [${name}(${empNo})] 사용자 등록 완료 — 일반 사용자 권한(${subsystem})으로 로그인하세요.`);
+    showToast(`✅ [${name}(${empNo})] 멤버 등록 완료 — 멤버 권한(${subsystem})으로 로그인하세요.`);
     ["regEmpNo", "regName", "regDept", "regPwd", "regPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;

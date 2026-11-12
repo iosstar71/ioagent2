@@ -1,9 +1,8 @@
 ================================================================================
-⚡ IOSTAR-PM Workgroup v0.3.0 (폐쇄망 100명 규모 · SQLite / 로컬 저장소 · 동시 작업 체크아웃)
-   - 프로그램 공식 명칭: IOSTAR-PM (In-situ Operations & Smart Tasks for Accurate Resources — Project Manager)
-   - 이 브랜치: iostar-pm-workgroup (IOSTAR-PM v4.1.0 에서 분기한 서브 브랜드, 최종 확정 전까지 0.x)
-   - 통합판 v4.1.0 은 iostar-pm-unified 브랜치에 보존 / 유료판(Enterprise) 계획: docs/ENTERPRISE_ROADMAP.md
-   - 이전 분리판 브랜치(iostar-pm-standard, iostar-pm-neo)는 이력으로 보존, 국내판 v1.2.0 은 개발 종료
+PM Hub — IOSTAR-PM Workgroup v0.4.0 (사내망 서버 판 · SQLite DB · 서브시스템 체크아웃)
+   - 브랜드: IOSTAR-PM · 판: Standalone (DB · 서버 없음) / Workgroup (서버 DB, 이 판) / Enterprise (전사)
+   - 사내 표시 이름: PM Hub · 브랜치: iostar-pm-workgroup (정식 1.0 전까지 0.x)
+   - 화면 언어: 한국어 / English (멤버마다 기억)
    - 공식 크레딧: Developed & Designed by Iostar
 ================================================================================
 
@@ -15,15 +14,53 @@
   핵심 강점: 폐쇄망 완전 자립(Zero-dependency, 경량 SQLite) · 핵심 리소스 정밀 추적(S-Curve, 크리티컬 패스)
             · 순수 바이트스트림 산출물 생성(DOCX 보고서, 다중 시트 XLSX)
 
-■ [빠른 시작]
-  1) 압축 해제 후 Standalone.html (또는 webapp/index.html) 더블클릭 → 로컬 저장소(LocalStorage) 모드로 실행
-     - 최초 실행 시 data/initial_data.json 초기 데이터가 브라우저 로컬 저장소에 설정됨
-     - 로그인: 기본 관리자 admin / 1234 (시스템관리자는 프로젝트를 고르지 않아도 됨)
-     - 그 밖의 사용자는 로그인 화면에서 프로젝트를 골라 들어감 ([👤 신규 사용자 등록]도 고른 프로젝트에 일반 사용자로 가입)
-     - 로그인 화면에서 언어(한국어 / English) 선택
-  2) 다중 사용자 공유: run_server.bat 실행 → http://<서버IP>:8080 접속
-     → admin 로그인 후 [⚙️ 시스템 설정 > DB 연동]에서 [🪶 SQLite 파일 DB] 선택 → 화면 재로드 후 서버 로그인
-     - 서버는 로그인 토큰 인증 필수 (기존 v1.0.5 DB는 최초 기동 시 자동 이관)
+■ [빠른 시작] — 서버에서만 실행 (0.4.0 부터 브라우저 단독 · 로컬 저장소 모드 없음)
+  1) 서버 PC 에서 run_server.bat 실행 (설정: conf/app.ini [server] — 기본 포트 8080, DB data/wbs_enterprise.db)
+  2) 각 PC 브라우저로 http://<서버IP>:8080 접속 (index.html 파일을 직접 열면 "서버 주소로 접속하세요" 안내)
+  3) 처음 관리자: admin / 1234 → 로그인 후 암호 변경. 멤버는 로그인 화면에서 프로젝트를 골라 들어감
+  * HTTPS: make_cert.bat 로 인증서를 만들면 다음 기동부터 자동 HTTPS
+  * 시험: run_tests.bat (서버 API 시험 + 브라우저 시험)
+
+■ [업그레이드 · 초기화]
+  - 새 버전: 서버를 멈추고 zip 을 같은 폴더에 덮어쓴 뒤 다시 실행. data/ (DB) · conf/app.ini · upload/ 는 그대로
+    → 멤버가 화면을 열면(또는 창으로 돌아오면) 서버 버전이 바뀐 것을 알아채고 "새 버전" 을 한 번 알림
+  - 덮어쓰기 전 data/wbs_enterprise.db 를 복사해 두면 그대로 되돌릴 수 있음
+  - 처음 상태로: 서버를 멈추고 data/wbs_enterprise.db 를 지우고 다시 실행 (admin / 1234 하나만 남음)
+    또는 관리자로 [Admin > 🗄️ 데이터 관리]에서 프로젝트별 초기화
+  - 암호만 처음으로: 관리자 · PM 이 [프로젝트 설정 > 멤버 정보]에서 [🔄 초기화]
+
+■ [메뉴]
+  🙋 My Work      내 체크할 일(지연 · 마감 임박 · 미조치 VOC · 산출물 · Action Item) + 내 담당 Task + 내 할 일
+  📊 Dashboard    Summary(한 화면 요약) · Dashboard(그래프 · 통계) · Phase 진척
+  🗓️ 일정         WBS · Gantt (서브시스템 체크아웃 · 체크인)
+  🎯 요구 · VOC · 산출물   요구사항(REQ) · VOC · 이슈(구분: VOC / 버그 / 이슈) · 산출물
+  🤝 보고 · 소통   주간보고 · 회의 · 게시판 · 채팅
+  ⚙ 관리          프로젝트 설정 · 파일 Merge · Admin
+  - 로그인 후 첫 화면: 관리자 · PM · PL = Summary, 멤버 = My Work ([Admin > 화면 · 테마 > 역할별 첫 화면])
+
+■ [화면 · 테마]
+  - 테마 6가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
+    최신 무광: Urban Slate(기본, 회청색) · Nordic Sage(세이지) · Brown(따뜻한 브라운)
+    튀는 색: Electric(먹색 + 시안 · 바이올렛)   전통: Classic(네이비 + 흰 바탕)   어두운 화면: Obsidian
+    예전 테마는 자동으로 가까운 테마로: Navy → Classic, Matte → Urban Slate, Green → Nordic Sage, Graphite → Obsidian
+  - 로고: 밝은 머리말 테마(Urban Slate · Nordic Sage · Brown)는 무채색 로고, 나머지는 색 로고 (탭 아이콘도 같이)
+  - 아이콘: 화면의 그림 문자는 모두 같은 모양의 선 아이콘으로 그림. 차트(S-curve · 불릿)도 테마 색을 따름
+  - 기본 테마: conf/app.ini [ui] default_theme (urban-slate)
+
+■ [Standalone 판과의 관계]
+  - 같은 화면 · 같은 자료 형식. Standalone 의 프로젝트 백업(JSON)을 [Admin > 프로젝트]에서 올리면 새 프로젝트로,
+    Workgroup 의 프로젝트 백업(JSON)을 Standalone 에 올려도 같은 방식으로 들어감
+  - Workgroup 에만 있는 기능: 서버 DB 공유, 서브시스템 체크아웃 · 체크인, 채팅
+
+■ [Workgroup v0.4.0] — PM Hub 이름 · 용어 · 메뉴 · 서버 전용 · 디자인
+1. 이름: 브랜드 IOSTAR-PM, 사내 표시 PM Hub, 판 Standalone / Workgroup / Enterprise
+2. 용어: Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 프로젝트 설정 · 스냅샷 · Phase · 실제 시작/종료 ·
+   대기(예전 착수전) · N차(예전 N회차) 등 — 예전 자료의 값은 불러올 때 자동으로 바뀜
+3. 메뉴: My Work / Dashboard(Summary · Dashboard · Phase 진척) 묶음, 역할별 첫 화면
+4. VOC 구분(VOC / 버그 / 이슈): 목록 · 필터에만 (대시보드 · 주간보고는 VOC 하나로 집계)
+5. 서버 전용: 로컬 저장소 모드 · Standalone.html · 저장 방식 선택 삭제. 시험도 모두 서버로 실행
+6. 새 버전 알림: 서버 버전이 바뀌면 화면에 한 번 알림
+7. 디자인: 선 아이콘, 테마 6가지(Urban Slate 기본), 테마별 로고 · 차트 색, 메뉴 전환 · 시작 때 깜박임 없음
 
 ■ [Workgroup v0.3.0] — 실적 일괄 반영 규칙, 단계별 조회, 판정 기준
 1. [⚡ 실적 자동반영]: 계획 진척률이 있는 최하위 Task 모두 (기준일이 속한 주차 = 기준 주차)

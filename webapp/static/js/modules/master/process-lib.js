@@ -153,7 +153,7 @@ var ProcessLib = {
       rebuildAll(true);
       return showToast(`📅 [${t.name}] 단계별 계획 일정을 저장했습니다.`);
     }
-    if (!this.isAdmin()) return showToast("🚫 공정 유형은 시스템관리자만 바꿀 수 있습니다.");
+    if (!this.isAdmin()) return showToast("🚫 SDLC 유형은 시스템관리자만 바꿀 수 있습니다.");
     if (!/^[A-Za-z0-9_-]{2,40}$/.test(code)) return showToast("⚠️ 유형 코드는 영문 · 숫자 · _ - 로 2~40자여야 합니다.");
     if (!name) return showToast("⚠️ 유형 이름을 입력하세요.");
     if (!_editingSdlcPhasesTemp.length) return showToast("⚠️ 단계를 1개 이상 등록하세요.");
@@ -166,7 +166,7 @@ var ProcessLib = {
     closeCustomSdlcModal();
     this.renderAdmin();
     persistChanges();
-    showToast(`💾 [${name}] ${this.KIND[mode.kind]}을 저장했습니다. 프로젝트에는 [기준정보 > 공정단계정보]에서 활성화하거나 [🔄 최신 반영]으로 적용됩니다.`);
+    showToast(`💾 [${name}] ${this.KIND[mode.kind]}을 저장했습니다. 프로젝트에는 [프로젝트 설정 > Phase 설정]에서 활성화하거나 [🔄 최신 반영]으로 적용됩니다.`);
   },
   remove(kind, idx) {
     if (!this.isAdmin()) return;
@@ -183,7 +183,7 @@ var ProcessLib = {
   },
   resetDefaults() {
     if (!this.isAdmin()) return;
-    openConfirmDialog("공정 유형 라이브러리를 기본 유형(PMO · 스마트제조 · 폭포수 · 애자일 · 패키지 · 인프라 / 개선과제 4종)으로 되돌릴까요?\n이미 쓰고 있는 프로젝트는 복사해 둔 단계로 계속 동작합니다.", () => {
+    openConfirmDialog("SDLC 유형 라이브러리를 기본 유형(PMO · 스마트제조 · 폭포수 · 애자일 · 패키지 · 인프라 / 개선과제 4종)으로 되돌릴까요?\n이미 쓰고 있는 프로젝트는 복사해 둔 단계로 계속 동작합니다.", () => {
       const keep = projectConfig.customSdlcTypes;
       projectConfig.customSdlcTypes = [];
       const reqKeep = projectConfig.customReqPresets;
@@ -193,7 +193,7 @@ var ProcessLib = {
       projectConfig.customReqPresets = reqKeep;
       this.renderAdmin();
       persistChanges();
-      showToast("🔄 공정 유형 라이브러리를 기본 유형으로 되돌렸습니다.");
+      showToast("🔄 SDLC 유형 라이브러리를 기본 유형으로 되돌렸습니다.");
     });
   },
   renderAdmin() {

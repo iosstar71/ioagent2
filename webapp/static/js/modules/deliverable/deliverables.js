@@ -77,13 +77,13 @@ function addNewDeliverable() {
   const sysFilter = document.getElementById("delivSubsystemFilter") ? document.getElementById("delivSubsystemFilter").value : "ALL";
   const roundFilter = document.getElementById("delivRoundFilter") ? document.getElementById("delivRoundFilter").value : "ALL";
   const defaultSys = sysFilter !== "ALL" ? sysFilter : (subsystemsMeta[0] ? subsystemsMeta[0].name : "PMO");
-  const defaultRound = roundFilter !== "ALL" ? roundFilter : "1회차";
+  const defaultRound = roundFilter !== "ALL" ? roundFilter : "1차";
 
   deliverablesData.push({
     id: deliverablesData.length + 1,
     round: defaultRound,
     system: defaultSys,
-    phase: defaultRound === "2회차" ? "구현단계" : "분석설계단계",
+    phase: defaultRound === "2차" ? "구현단계" : "분석설계단계",
     name: "신규 산출물",
     pDate: WBSEngine.getNextWorkingDay(projectConfig.reportDate, projectConfig.holidays, projectConfig.projectEndDate),
     aDate: "",
@@ -105,7 +105,7 @@ function closeBulkDeliverableModal() {
   document.getElementById("bulkDeliverableModal").style.display = "none";
 }
 
-// [요건 7] 설정 탭의 표준산출물관리(standardDeliverablesMeta) 정보를 기반으로 서브시스템별·회차별 자동생성
+// [요건 7] 설정 탭의 표준산출물관리(standardDeliverablesMeta) 정보를 기반으로 서브시스템별·차수별 자동생성
 function generateStandardDeliverables() {
   const targetSysVal = document.getElementById("bulkDelivTargetSystem") ? document.getElementById("bulkDelivTargetSystem").value : "ALL";
   const targetRoundVal = document.getElementById("bulkDelivTargetRound") ? document.getElementById("bulkDelivTargetRound").value : "ALL";
@@ -139,7 +139,7 @@ function generateStandardDeliverables() {
             id: deliverablesData.length + 1,
             round: rnd,
             system: sys,
-            phase: std.phase || (rnd === "2회차" ? "구현단계" : "분석설계단계"),
+            phase: std.phase || (rnd === "2차" ? "구현단계" : "분석설계단계"),
             name: std.name,
             pDate: validPDate,
             aDate: "",
@@ -158,5 +158,5 @@ function generateStandardDeliverables() {
   renderDashboard();
   renderPhaseMatrix();
   persistChanges();
-  showToast(`설정 탭의 표준산출물 기준정보를 바탕으로 총 ${createdCount}건의 산출물이 자동 생성되었습니다.`);
+  showToast(`설정 탭의 표준산출물 프로젝트 설정을 바탕으로 총 ${createdCount}건의 산출물이 자동 생성되었습니다.`);
 }

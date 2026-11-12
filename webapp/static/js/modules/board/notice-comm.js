@@ -91,7 +91,7 @@ var NoticeCommManager = {
     this.renderNotices();
     this.updateHeaderBadge();
     persistChanges();
-    showToast("✅ 공지사항이 성공적으로 수정되었습니다.");
+    showToast("✅ 공지이 성공적으로 수정되었습니다.");
   },
 
   openEditCommPost(id) {
@@ -101,7 +101,7 @@ var NoticeCommManager = {
       showToast("⚠️ 본인이 작성한 게시글이거나 관리자/PM 권한만 수정할 수 있습니다.", "warning");
       return;
     }
-    const newContent = prompt("수정할 소통 피드 내용을 입력하세요:", post.content);
+    const newContent = prompt("수정할 게시판 내용을 입력하세요:", post.content);
     if (newContent !== null && newContent.trim()) {
       post.content = newContent.trim();
       persistChanges();
@@ -433,21 +433,21 @@ var NoticeCommManager = {
   },
 
   clearAllCommunications() {
-    openConfirmDialog("⚠️ 작성된 모든 업무 소통 피드 및 답글을 완전히 초기화하시겠습니까? (삭제된 데이터는 복구할 수 없습니다)", () => {
+    openConfirmDialog("⚠️ 작성된 모든 업무 게시판 및 답글을 완전히 초기화하시겠습니까? (삭제된 데이터는 복구할 수 없습니다)", () => {
       communicationsData = [];
       this.renderCommunications();
       persistChanges();
-      showToast("🧹 모든 업무 소통 피드가 초기화(삭제)되었습니다.");
+      showToast("🧹 모든 업무 게시판가 초기화(삭제)되었습니다.");
     });
   },
 
   clearAllNotices() {
-    openConfirmDialog("⚠️ 등록된 모든 프로젝트 공지사항을 완전히 초기화하시겠습니까?", () => {
+    openConfirmDialog("⚠️ 등록된 모든 프로젝트 공지을 완전히 초기화하시겠습니까?", () => {
       noticesData = [];
       this.renderNotices();
       this.updateHeaderBadge();
       persistChanges();
-      showToast("🧹 모든 공지사항이 초기화(삭제)되었습니다.");
+      showToast("🧹 모든 공지이 초기화(삭제)되었습니다.");
     });
   },
 
@@ -469,7 +469,7 @@ var NoticeCommManager = {
     listEl.innerHTML = "";
 
     if (!Array.isArray(noticesData) || noticesData.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:var(--fs-base, 13px);">등록된 공지사항이 없습니다. 상단 [➕ 신규 공지사항 등록] 버튼을 눌러 등록하세요.</div>';
+      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8; font-size:var(--fs-base, 13px);">등록된 공지이 없습니다. 상단 [➕ 신규 공지 등록] 버튼을 눌러 등록하세요.</div>';
       return;
     }
 
@@ -488,7 +488,7 @@ var NoticeCommManager = {
     });
 
     if (sorted.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:var(--fs-base, 13px);">검색 조건에 일치하는 공지사항이 없습니다.</div>';
+      listEl.innerHTML = '<div style="text-align:center; padding:30px; color:#94a3b8; font-size:var(--fs-base, 13px);">검색 조건에 일치하는 공지이 없습니다.</div>';
       return;
     }
 
@@ -541,7 +541,7 @@ var NoticeCommManager = {
     container.innerHTML = "";
 
     if (!Array.isArray(communicationsData) || communicationsData.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">작성된 소통 글이 없습니다. 상단에서 첫 번째 업무 소통 피드를 게시해보세요.</div>';
+      container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">작성된 소통 글이 없습니다. 상단에서 첫 번째 업무 게시판를 게시해보세요.</div>';
       return;
     }
 
@@ -611,12 +611,12 @@ var NoticeCommManager = {
         <button class="btn btn-danger btn-sm" style="padding:2px 7px; font-size:calc(10.5px * var(--fs-scale, 1));" data-click="NoticeCommManager.deleteCommPost" data-click-args="${UiEvents.args(String(post.id))}">🗑️ 삭제</button>
       ` : "";
 
-      const displayTitle = post.title || (post.taskId ? `[과업 #${post.taskId}] ${post.content.slice(0, 30)}...` : (post.content.length > 30 ? post.content.slice(0, 30) + "..." : post.content));
+      const displayTitle = post.title || (post.taskId ? `[Task #${post.taskId}] ${post.content.slice(0, 30)}...` : (post.content.length > 30 ? post.content.slice(0, 30) + "..." : post.content));
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="badge" style="background:#0284c7; color:#fff; font-size:var(--fs-2xs, 10px);">#${escapeHtml(post.channel || "전체")}</span>
-            ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:var(--fs-2xs, 10px);">과업 #WBS-${escapeHtml(post.taskId)}</span>` : ""}
+            ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:var(--fs-2xs, 10px);">Task #WBS-${escapeHtml(post.taskId)}</span>` : ""}
             <strong style="color:#0f172a; font-size:calc(13.5px * var(--fs-scale, 1));">${escapeHtml(post.author)}</strong>
             <span style="font-size:var(--fs-xs, 11px); color:#64748b;">(${escapeHtml(post.role || "")})</span>
           </div>
@@ -688,13 +688,13 @@ var NoticeCommManager = {
         itemCard.style.borderRadius = "6px";
         itemCard.style.padding = "12px";
         itemCard.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
-        const cardTitle = post.title || (post.taskId ? `[과업 #${post.taskId}] ${post.content.slice(0, 25)}...` : (post.content.length > 25 ? post.content.slice(0, 25) + "..." : post.content));
+        const cardTitle = post.title || (post.taskId ? `[Task #${post.taskId}] ${post.content.slice(0, 25)}...` : (post.content.length > 25 ? post.content.slice(0, 25) + "..." : post.content));
         itemCard.innerHTML = `
           <div style="border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
                 <span class="badge" style="background:#0284c7; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1)); padding:2px 6px;">#${escapeHtml(post.channel || "전체")}</span>
-                ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9px * var(--fs-scale, 1)); padding:2px 6px;">과업 #${escapeHtml(post.taskId)}</span>` : ""}
+                ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9px * var(--fs-scale, 1)); padding:2px 6px;">Task #${escapeHtml(post.taskId)}</span>` : ""}
               </div>
               <span style="font-size:calc(10.5px * var(--fs-scale, 1)); color:#94a3b8;">${escapeHtml((post.date || "").split(" ")[0])}</span>
             </div>
@@ -813,7 +813,7 @@ var NoticeCommManager = {
     const isPinned = document.getElementById("noticePinnedCheckbox")?.checked || false;
 
     if (!title || !content) {
-      showToast("공지사항 제목과 상세 내용을 모두 입력해주세요.", "warning");
+      showToast("공지 제목과 상세 내용을 모두 입력해주세요.", "warning");
       return;
     }
 
@@ -839,7 +839,7 @@ var NoticeCommManager = {
     this.renderNotices();
     this.updateHeaderBadge();
     persistChanges();
-    showToast("📢 신규 공지사항이 등록되었습니다.");
+    showToast("📢 신규 공지이 등록되었습니다.");
   },
 
   togglePinNotice(id) {
@@ -849,17 +849,17 @@ var NoticeCommManager = {
       this.renderNotices();
       this.updateHeaderBadge();
       persistChanges();
-      showToast(target.isPinned ? "📌 공지사항이 상단에 고정되었습니다." : "공지사항 상단 고정이 해제되었습니다.");
+      showToast(target.isPinned ? "📌 공지이 상단에 고정되었습니다." : "공지 상단 고정이 해제되었습니다.");
     }
   },
 
   deleteNotice(id) {
-    openConfirmDialog("해당 공지사항을 삭제하시겠습니까?", () => {
+    openConfirmDialog("해당 공지을 삭제하시겠습니까?", () => {
       noticesData = noticesData.filter(n => n.id !== id);
       this.renderNotices();
       this.updateHeaderBadge();
       persistChanges();
-      showToast("공지사항이 삭제되었습니다.");
+      showToast("공지이 삭제되었습니다.");
     });
   },
 
@@ -869,7 +869,7 @@ var NoticeCommManager = {
     const taskId = (document.getElementById("commPostTaskIdInput")?.value || "").trim();
 
     if (!content) {
-      showToast("소통 피드 내용을 입력해주세요.", "warning");
+      showToast("게시판 내용을 입력해주세요.", "warning");
       return;
     }
 
@@ -899,7 +899,7 @@ var NoticeCommManager = {
     if (input) input.value = "";
     this.renderCommunications();
     persistChanges();
-    showToast("💬 소통 피드가 게시되었습니다.");
+    showToast("💬 게시판가 게시되었습니다.");
   },
 
   addReply(postId) {

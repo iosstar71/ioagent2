@@ -25,7 +25,6 @@ SHARED = [
     "run_server.bat",
     "make_cert.bat",
     "run_tests.bat",
-    "build_standalone.bat",
     "tools/app_config.py",
     "tools/check_shared_files.py",
     "tools/make_cert.py",

@@ -785,14 +785,14 @@ window.AX_INITIAL_DATA = {
     "scope": "ALL",
     "name": "1단계 분석설계 감리",
     "date": "2027-05-31",
-    "desc": "5월말 1회차 표준 산출물 감리"
+    "desc": "5월말 1차 표준 산출물 감리"
    },
    {
     "id": "MS-03",
     "scope": "ALL",
     "name": "2단계 종료 감리",
     "date": "2027-10-29",
-    "desc": "10월말 2회차 표준 산출물 감리"
+    "desc": "10월말 2차 표준 산출물 감리"
    },
    {
     "id": "MS-04",
@@ -827,7 +827,7 @@ window.AX_INITIAL_DATA = {
    "sdlcCode": "SDLC_PMO",
    "weight": 10,
    "pm": "김총괄 수석PM",
-   "desc": "[PMO 사업관리 총괄] 사업 총괄 공정률 관리, 1·2회차 표준 산출물 검수, 보안점검 및 인수인계"
+   "desc": "[PMO 사업관리 총괄] 사업 총괄 공정률 관리, 1·2차 표준 산출물 검수, 보안점검 및 인수인계"
   },
   {
    "domain": "개선공정",
@@ -899,7 +899,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-10-15",
-   "remarks": "1회차 착수본 / 2회차 중간본 / 4회차 최종본"
+   "remarks": "1차 착수본 / 2차 중간본 / 4차 최종본"
   },
   {
    "phase": "요구사항정의단계",
@@ -909,7 +909,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-10-30",
-   "remarks": "전 회차(1~4회차) 변경이력 관리 산출물"
+   "remarks": "전 차수(1~4차) 변경이력 관리 산출물"
   },
   {
    "phase": "분석설계단계",
@@ -919,7 +919,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-11-06",
-   "remarks": "1회차 초안 / 2회차 확정 / 4회차 현행화"
+   "remarks": "1차 초안 / 2차 확정 / 4차 현행화"
   },
   {
    "phase": "분석설계단계",
@@ -929,7 +929,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-11-12",
-   "remarks": "1회차 논리·물리설계 / 4회차 최종본"
+   "remarks": "1차 논리·물리설계 / 4차 최종본"
   },
   {
    "phase": "분석설계단계",
@@ -939,7 +939,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-11-12",
-   "remarks": "1·2회차 대내외 인터페이스 설계"
+   "remarks": "1·2차 대내외 인터페이스 설계"
   },
   {
    "phase": "구현단계",
@@ -949,7 +949,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-12-10",
-   "remarks": "2·3회차 구현단계 검증 산출물"
+   "remarks": "2·3차 구현단계 검증 산출물"
   },
   {
    "phase": "통합테스트단계",
@@ -959,7 +959,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-12-22",
-   "remarks": "3회차 통합테스트 / 4회차 최종검증"
+   "remarks": "3차 통합테스트 / 4차 최종검증"
   },
   {
    "phase": "이행안정화단계",
@@ -969,7 +969,7 @@ window.AX_INITIAL_DATA = {
    "round3": false,
    "round4": false,
    "defaultDate": "2026-12-30",
-   "remarks": "4회차 이행 및 안정화 최종 산출물"
+   "remarks": "4차 이행 및 안정화 최종 산출물"
   }
  ],
  "projectUsers": [
@@ -1251,7 +1251,7 @@ window.AX_INITIAL_DATA = {
    "id": "1.2.2",
    "level": 3,
    "system": "PMO",
-   "name": "1·2회차 표준 산출물 품질검수 및 감리 대응",
+   "name": "1·2차 표준 산출물 품질검수 및 감리 대응",
    "weight": 2.5,
    "reqId": "REQ-PMO-02",
    "pStart": "2027-05-07",
@@ -1827,7 +1827,7 @@ window.AX_INITIAL_DATA = {
    "id": "2.3.3.1",
    "level": 4,
    "system": "W1",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-W1-03",
    "pStart": "2027-09-27",
@@ -2387,7 +2387,7 @@ window.AX_INITIAL_DATA = {
    "id": "3.3.3.1",
    "level": 4,
    "system": "W2",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-W2-03",
    "pStart": "2027-09-27",
@@ -2947,7 +2947,7 @@ window.AX_INITIAL_DATA = {
    "id": "4.3.3.1",
    "level": 4,
    "system": "P1",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-P1-03",
    "pStart": "2027-09-27",
@@ -3507,7 +3507,7 @@ window.AX_INITIAL_DATA = {
    "id": "5.3.3.1",
    "level": 4,
    "system": "A1",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-A1-03",
    "pStart": "2027-09-27",
@@ -4067,7 +4067,7 @@ window.AX_INITIAL_DATA = {
    "id": "6.3.3.1",
    "level": 4,
    "system": "A2",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-A2-03",
    "pStart": "2027-09-27",
@@ -4627,7 +4627,7 @@ window.AX_INITIAL_DATA = {
    "id": "7.3.3.1",
    "level": 4,
    "system": "S1",
-   "name": "추가요구사항 통합 연동 시험 수행 및 2회차 산출물 제출",
+   "name": "추가요구사항 통합 연동 시험 수행 및 2차 산출물 제출",
    "weight": 0.5,
    "reqId": "REQ-S1-03",
    "pStart": "2027-09-27",
@@ -4771,7 +4771,7 @@ window.AX_INITIAL_DATA = {
  "deliverablesData": [
   {
    "id": 1,
-   "round": "1회차",
+   "round": "1차",
    "system": "PMO",
    "phase": "착수분석단계",
    "name": "사업수행계획서 및 WBS 통합공정표",
@@ -4783,7 +4783,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 2,
-   "round": "1회차",
+   "round": "1차",
    "system": "PMO",
    "phase": "착수분석단계",
    "name": "1단계 분석설계 산출물 감리 검수 보고서",
@@ -4795,7 +4795,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 3,
-   "round": "1회차",
+   "round": "1차",
    "system": "W1",
    "phase": "분석설계단계",
    "name": "W1 가공1라인 과제요구사항 분석설계서",
@@ -4807,7 +4807,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 4,
-   "round": "1회차",
+   "round": "1차",
    "system": "W2",
    "phase": "분석설계단계",
    "name": "W2 가공2라인 CNC 텔레메트리 연계설계서",
@@ -4819,7 +4819,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 5,
-   "round": "1회차",
+   "round": "1차",
    "system": "P1",
    "phase": "분석설계단계",
    "name": "P1 도장공정 센서 인터페이스 정의서",
@@ -4831,7 +4831,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 6,
-   "round": "1회차",
+   "round": "1차",
    "system": "A1",
    "phase": "분석설계단계",
    "name": "A1 조립1라인 데이터 수집 상세설계서",
@@ -4843,7 +4843,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 7,
-   "round": "1회차",
+   "round": "1차",
    "system": "A2",
    "phase": "분석설계단계",
    "name": "A2 조립2라인 미소정지 분석 알고리즘 설계서",
@@ -4855,7 +4855,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 8,
-   "round": "1회차",
+   "round": "1차",
    "system": "S1",
    "phase": "분석설계단계",
    "name": "S1 출하시험공정 인터페이스 매핑정의서",
@@ -4867,7 +4867,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 9,
-   "round": "2회차",
+   "round": "2차",
    "system": "PMO",
    "phase": "구현테스트단계",
    "name": "2단계 구현테스트 산출물 감리 검수 보고서",
@@ -4879,7 +4879,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 10,
-   "round": "2회차",
+   "round": "2차",
    "system": "W1",
    "phase": "구현테스트단계",
    "name": "W1 가공1라인 단위 및 통합테스트 결과서",
@@ -4891,7 +4891,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 11,
-   "round": "2회차",
+   "round": "2차",
    "system": "W2",
    "phase": "구현테스트단계",
    "name": "W2 가공2라인 단위 및 통합테스트 결과서",
@@ -4903,7 +4903,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 12,
-   "round": "2회차",
+   "round": "2차",
    "system": "P1",
    "phase": "구현테스트단계",
    "name": "P1 도장공정 연동시험 결과서",
@@ -4915,7 +4915,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 13,
-   "round": "2회차",
+   "round": "2차",
    "system": "A1",
    "phase": "구현테스트단계",
    "name": "A1 조립1라인 단위 및 통합테스트 결과서",
@@ -4927,7 +4927,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 14,
-   "round": "2회차",
+   "round": "2차",
    "system": "A2",
    "phase": "구현테스트단계",
    "name": "A2 조립2라인 알고리즘 검증 결과서",
@@ -4939,7 +4939,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 15,
-   "round": "2회차",
+   "round": "2차",
    "system": "S1",
    "phase": "구현테스트단계",
    "name": "S1 출하시험공정 자동연계 시험성적서",
@@ -4951,7 +4951,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 16,
-   "round": "3회차",
+   "round": "3차",
    "system": "PMO",
    "phase": "이행안정화단계",
    "name": "시스템 보안점검 조치 및 운영인수인계서",
@@ -4963,7 +4963,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": 17,
-   "round": "3회차",
+   "round": "3차",
    "system": "PMO",
    "phase": "종료단계",
    "name": "사업완료보고서 및 최종 준공계",
@@ -5072,7 +5072,7 @@ window.AX_INITIAL_DATA = {
    "type": "화면",
    "priority": "중",
    "accept": "수용",
-   "status": "착수전"
+   "status": "대기"
   },
   {
    "id": "REQ-A1-01",
@@ -5099,7 +5099,7 @@ window.AX_INITIAL_DATA = {
    "type": "기능",
    "priority": "중",
    "accept": "수용",
-   "status": "착수전"
+   "status": "대기"
   },
   {
    "id": "REQ-A2-01",
@@ -5126,7 +5126,7 @@ window.AX_INITIAL_DATA = {
    "type": "화면",
    "priority": "중",
    "accept": "수용",
-   "status": "착수전"
+   "status": "대기"
   },
   {
    "id": "REQ-S1-01",
@@ -5153,7 +5153,7 @@ window.AX_INITIAL_DATA = {
    "type": "기능",
    "priority": "중",
    "accept": "수용",
-   "status": "착수전"
+   "status": "대기"
   }
  ],
  "vocData": [
@@ -5272,7 +5272,7 @@ window.AX_INITIAL_DATA = {
   {
    "id": "NOT-01",
    "title": "📢 [필독] 2026년 상반기 분석설계 중간 품질감리 수검 일정 안내",
-   "content": "■ 일시: 2026-06-19(금) 14:00\n■ 장소: 본관 4층 대회의실 및 화상회의실\n■ 대상: 1·2회차 산출물 확정본(요구사항정의서, UI스토리보드, ERD, API명세서, 인터페이스정의서)\n■ 요청사항: 각 서브시스템 PL께서는 검토의견 조치표를 6/16(화)까지 PMO로 제출 바랍니다.",
+   "content": "■ 일시: 2026-06-19(금) 14:00\n■ 장소: 본관 4층 대회의실 및 화상회의실\n■ 대상: 1·2차 산출물 확정본(요구사항정의서, UI스토리보드, ERD, API명세서, 인터페이스정의서)\n■ 요청사항: 각 서브시스템 PL께서는 검토의견 조치표를 6/16(화)까지 PMO로 제출 바랍니다.",
    "author": "김총괄 수석PM",
    "authorEmpNo": "pmo_kim",
    "date": "2026-06-10",
@@ -5293,7 +5293,7 @@ window.AX_INITIAL_DATA = {
   },
   {
    "id": "NOT-03",
-   "title": "📋 3회차 구현단계 단위테스트 시나리오(JUnit/UI) 표준 양식 배포",
+   "title": "📋 3차 구현단계 단위테스트 시나리오(JUnit/UI) 표준 양식 배포",
    "content": "■ 배포 위치: template/WBS_Master_Form.csv 및 산출물 양식함\n■ 공통 유틸리티 및 단위 컴포넌트 테스트 시나리오 작성 시 코드 커버리지 80% 이상 충족 요망\n■ 문의: PMO 품질보증팀 한품질 선임",
    "author": "한품질 선임",
    "authorEmpNo": "qa_tester",

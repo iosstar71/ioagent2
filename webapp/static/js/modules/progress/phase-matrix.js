@@ -31,13 +31,13 @@ function renderPhaseMatrix() {
       const roundThs = activeRounds.map(r => `<th>${r}(완료/전체)</th>`).join("");
       thead.innerHTML = `
         <tr>
-          <th rowspan="2" style="width: 105px;">분야</th>
+          <th rowspan="2" style="width: 105px;">도메인</th>
           <th rowspan="2" style="width: 130px;">서브시스템</th>
           <th rowspan="2" style="width: 110px;">관리유형</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
-          <th colspan="4" style="background:#f0fdf4; color:#166534;">🎯 요구사항(REQ) 진척</th>
-          <th colspan="${activeRounds.length + 2}" style="background:#eff6ff; color:#1e40af;">📑 산출물 제출 진척 (${activeRounds.length}회차 운영)</th>
-          <th colspan="5" style="background:#fef3c7; color:#92400e;">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
+          <th colspan="4" style="background:var(--tint-ok); color:var(--tint-ok-text);">🎯 요구사항(REQ) 진척</th>
+          <th colspan="${activeRounds.length + 2}" style="background:var(--tint-info); color:var(--tint-info-text);">📑 산출물 제출 진척 (${activeRounds.length}차 운영)</th>
+          <th colspan="5" style="background:var(--tint-warn); color:var(--tint-warn-text);">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
         </tr>
         <tr>
           <th>계획</th><th>실적</th><th>달성률</th>
@@ -90,7 +90,7 @@ function renderPhaseMatrix() {
 
     // VOC: 대기와 진행중 분리
     const sVocs = vocData.filter(v => v.system === sys && v.status !== "삭제");
-    const vWait = sVocs.filter(v => v.status === "착수전" || v.status === "대기" || v.status === "보류").length;
+    const vWait = sVocs.filter(v => v.status === "대기" || v.status === "대기" || v.status === "보류").length;
     const vProg = sVocs.filter(v => v.status === "진행").length;
     const vDone = sVocs.filter(v => v.status === "완료" || v.status === "제외").length;
     const vRate = sVocs.length > 0 ? Math.round((vDone / sVocs.length) * 100) : 0;
@@ -103,24 +103,24 @@ function renderPhaseMatrix() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+      <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
       <td><strong>${escapeHtml(sys)}</strong></td>
       <td>${typeBadge}</td>
       <td>${wP}%</td>
       <td><strong>${wA}%</strong></td>
-      <td style="font-weight:bold; color:${wRate >= 90 ? "#15803d" : (wRate >= 70 ? "#b45309" : "#b91c1c")}">${wRate}%</td>
+      <td style="font-weight:bold; color:${wRate >= 90 ? "var(--chart-good-text)" : (wRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${wRate}%</td>
       <td>${sReqs.length}건</td>
       <td>${rPrg}건</td>
       <td><strong>${rCmp}건</strong></td>
-      <td style="font-weight:bold; color:#166534;">${rRate}%</td>
+      <td style="font-weight:bold; color:var(--tint-ok-text);">${rRate}%</td>
       ${roundTds}
       <td>${dIng}건</td>
-      <td style="font-weight:bold; color:#1e40af;">${dRate}%</td>
+      <td style="font-weight:bold; color:var(--tint-info-text);">${dRate}%</td>
       <td>${sVocs.length}건</td>
-      <td style="color:#b45309;">${vWait}건</td>
-      <td style="color:#2563eb;">${vProg}건</td>
+      <td style="color:var(--chart-warn-text);">${vWait}건</td>
+      <td style="color:var(--primary);">${vProg}건</td>
       <td><strong>${vDone}건</strong></td>
-      <td style="font-weight:bold; color:#92400e;">${vRate}%</td>
+      <td style="font-weight:bold; color:var(--tint-warn-text);">${vRate}%</td>
     `;
     intTbody.appendChild(tr);
   });
@@ -143,15 +143,15 @@ function renderPhaseMatrix() {
     <td><b>${sumReqTot}건</b></td>
     <td><b>${sumReqPrg}건</b></td>
     <td><b>${sumReqCmp}건</b></td>
-    <td style="color:#166534;"><b>${totRRate}%</b></td>
+    <td style="color:var(--tint-ok-text);"><b>${totRRate}%</b></td>
     ${sumRoundTds}
     <td><b>${sumDIng}건</b></td>
-    <td style="color:#1e40af;"><b>${totDRate}%</b></td>
+    <td style="color:var(--tint-info-text);"><b>${totDRate}%</b></td>
     <td><b>${sumVocTot}건</b></td>
-    <td style="color:#b45309;"><b>${sumVocWait}건</b></td>
-    <td style="color:#2563eb;"><b>${sumVocProg}건</b></td>
+    <td style="color:var(--chart-warn-text);"><b>${sumVocWait}건</b></td>
+    <td style="color:var(--primary);"><b>${sumVocProg}건</b></td>
     <td><b>${sumVocDone}건</b></td>
-    <td style="color:#92400e;"><b>${totVRate}%</b></td>
+    <td style="color:var(--tint-warn-text);"><b>${totVRate}%</b></td>
   `;
   intTbody.appendChild(sumRow);
 
@@ -171,7 +171,7 @@ function renderPhaseMatrix() {
   let sdlcTablesHtml = "";
   if (mappedSdlcSpecs.length === 0) {
     sdlcTablesHtml = `
-      <div style="text-align:center; color:var(--text-muted); padding:20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px;">
+      <div style="text-align:center; color:var(--text-muted); padding:20px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:6px;">
         ℹ️ 현재 조회 조건에 매핑된 SDLC 폭포수형 서브시스템이 없습니다. (개선과제형 REQ 또는 다른 서브시스템을 조회하세요)
       </div>
     `;
@@ -213,7 +213,7 @@ function renderPhaseMatrix() {
             totalStats[ph.key].w += eSum * sf;
           }
           const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
-          phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "#15803d" : (rate >= 70 ? "#b45309" : "#b91c1c")}">${rate}%</td>`;
+          phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`;
           sysTotalP += pAvg * wSum;
           sysTotalA += aAvg * wSum;
           sysTotalW += wSum;
@@ -232,12 +232,12 @@ function renderPhaseMatrix() {
 
         groupRowsHtml += `
           <tr>
-            <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+            <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
             <td><strong>${escapeHtml(sys)}</strong></td>
             ${phTds}
             <td class="col-total">${rootP}%</td>
             <td class="col-total"><strong>${rootA}%</strong></td>
-            <td class="col-total" style="color:${rootRate >= 90 ? "#15803d" : (rootRate >= 70 ? "#b45309" : "#b91c1c")}">${rootRate}%</td>
+            <td class="col-total" style="color:${rootRate >= 90 ? "var(--chart-good-text)" : (rootRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rootRate}%</td>
           </tr>
         `;
       });
@@ -249,7 +249,7 @@ function renderPhaseMatrix() {
         const totP = Math.round(totalStats[ph.key].p / totW);
         const totA = Math.round(totalStats[ph.key].a / totW);
         const totRate = totP > 0 ? Math.round((totA / totP) * 100) : 100;
-        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td style="color:#b45309;font-weight:bold;">${totRate}%</td>`;
+        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td style="color:var(--chart-warn-text);font-weight:bold;">${totRate}%</td>`;
       });
       const allW = totalStats.all.w || 1;
       const allP = Math.round(totalStats.all.p / allW);
@@ -277,7 +277,7 @@ function renderPhaseMatrix() {
             <table class="matrix-table">
               <thead>
                 <tr>
-                  <th rowspan="2" style="width: 105px;">분야</th>
+                  <th rowspan="2" style="width: 105px;">도메인</th>
                   <th rowspan="2" style="width: 130px;">서브시스템</th>
                   ${topThs}
                   <th colspan="3" class="col-total sdlc-ph-total">그룹 합계</th>
@@ -326,15 +326,15 @@ function renderPhaseMatrix() {
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+          <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
           <td><strong>${escapeHtml(sys)}</strong></td>
           <td><span class="lvl-badge lvl-3">${escapeHtml(req.id)}</span></td>
           <td>${escapeHtml(req.name)}</td>
           <td style="text-align:center;"><b>${taskCount}</b>개</td>
           <td style="text-align:right;">${pAvg}%</td>
           <td style="text-align:right;"><strong>${aAvg}%</strong></td>
-          <td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "#15803d" : (rate >= 70 ? "#b45309" : "#b91c1c")}">${rate}%</td>
-          <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "착수전")}</span></td>
+          <td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>
+          <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
         `;
         enhTbody.appendChild(row);
       });
@@ -369,18 +369,18 @@ function renderSubsystemCards(systems) {
     card.innerHTML = `
       <div class="card-title">
         <span>
-          <span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
+          <span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
           <b>${escapeHtml(sys)}</b>
           <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"} · 가중치 ${meta.weight}% · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
         <span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:var(--fs-sm, 12px);">
-        <span>계획 진척율: <b>${pVal}%</b></span>
-        <span>실행 과업: <b>${leafTasks.length}개</b></span>
-        <span>실적 진척율: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
+        <span>계획 진척률: <b>${pVal}%</b></span>
+        <span>실행 Task: <b>${leafTasks.length}개</b></span>
+        <span>실적 진척률: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
       </div>
-      <div style="background:#e2e8f0; height:8px; border-radius:4px; overflow:hidden;">
+      <div style="background:var(--track); height:8px; border-radius:4px; overflow:hidden;">
         <div style="background:var(--success); width:${Math.min(100, aVal)}%; height:100%;"></div>
       </div>
     `;

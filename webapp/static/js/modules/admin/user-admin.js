@@ -46,7 +46,7 @@ var UserAdmin = {
     if (!this.allowed()) return;
     if (this.isServer()) {
       const res = await ServerBackend.request("/api/admin/users/list", {});
-      if (!res.ok) { showToast("⚠️ " + (res.message || "사용자 목록을 불러오지 못했습니다.")); return; }
+      if (!res.ok) { showToast("⚠️ " + (res.message || "멤버 목록을 불러오지 못했습니다.")); return; }
       this._apply(res);
     } else {
       this._apply({
@@ -120,7 +120,7 @@ var UserAdmin = {
       return true;
     });
     const admins = this.users.filter(u => u.sysAdmin).length;
-    document.getElementById("uaSummary").textContent = `등록 사용자 ${this.users.length}명 · 시스템관리자 ${admins}명 · 프로젝트 ${this.projects.length}개 — 표시 ${rows.length}명`;
+    document.getElementById("uaSummary").textContent = `등록 멤버 ${this.users.length}명 · 시스템관리자 ${admins}명 · 프로젝트 ${this.projects.length}개 — 표시 ${rows.length}명`;
     body.innerHTML = rows.map(u => {
       const chips = u.sysAdmin
         ? `<span class="ua-chip ua-admin">모든 프로젝트 · 시스템관리자</span>`
@@ -139,7 +139,7 @@ var UserAdmin = {
           <button class="btn btn-danger btn-sm" data-click="UserAdmin.remove" data-click-args="${UiEvents.args(u.empNo)}">삭제</button>
         </td>
       </tr>`;
-    }).join("") || `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 맞는 사용자가 없습니다.</td></tr>`;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 맞는 멤버가 없습니다.</td></tr>`;
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("uaPane"));
   },
 
@@ -159,7 +159,7 @@ var UserAdmin = {
     adm.disabled = String(u.empNo).toLowerCase() === "admin";
     document.getElementById("uaPwdReset").checked = false;
     document.getElementById("uaPwdResetRow").style.display = isNew ? "none" : "";
-    document.getElementById("uaEditTitle").textContent = isNew ? "👤 사용자 추가" : `👤 사용자 편집 — ${u.name || ""} (${u.empNo})`;
+    document.getElementById("uaEditTitle").textContent = isNew ? "👤 멤버 추가" : `👤 멤버 편집 — ${u.name || ""} (${u.empNo})`;
     document.getElementById("uaProjectRows").innerHTML = this.projects.map(p => {
       const a = (u.projectRoles || {})[p.id];
       const subs = ["ALL"].concat(p.subsystems || []);
@@ -209,18 +209,18 @@ var UserAdmin = {
     if (err) return showToast("⚠️ " + err);
     this.closeEdit();
     this.render();
-    showToast(req.isNew ? `✅ 사용자 [${req.name}(${req.empNo})]를 등록했습니다. 초기 비밀번호는 1234 입니다.` : `✅ 사용자 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
+    showToast(req.isNew ? `✅ 멤버 [${req.name}(${req.empNo})]를 등록했습니다. 초기 비밀번호는 1234 입니다.` : `✅ 멤버 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
     if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
   },
 
   remove(empNo) {
     const u = this.users.find(x => x.empNo === empNo);
     if (!u) return;
-    openConfirmDialog(`사용자 [${u.name || ""}(${u.empNo})] 계정을 삭제할까요? 모든 프로젝트에서 빠지며 되돌릴 수 없습니다.`, async () => {
+    openConfirmDialog(`멤버 [${u.name || ""}(${u.empNo})] 계정을 삭제할까요? 모든 프로젝트에서 빠지며 되돌릴 수 없습니다.`, async () => {
       const err = await this._delete(empNo);
       if (err) return showToast("⚠️ " + err);
       this.render();
-      showToast(`🗑 사용자 [${u.name || ""}(${u.empNo})] 계정을 삭제했습니다.`);
+      showToast(`🗑 멤버 [${u.name || ""}(${u.empNo})] 계정을 삭제했습니다.`);
       if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
     });
   }

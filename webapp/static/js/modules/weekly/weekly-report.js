@@ -10,7 +10,7 @@ var WeeklyReportManager = {
   _draftBase: "",
   selectedHistoryIdx: 0,
   selectedWeek: null,
-  scope: null,            // "ALL" (통합) | "DOMAIN" (분야) | "SYS" (서브시스템)
+  scope: null,            // "ALL" (통합) | "DOMAIN" (도메인) | "SYS" (서브시스템)
   scopeValue: "",
 
   // -------------------------------------------------------------------------
@@ -28,7 +28,7 @@ var WeeklyReportManager = {
     return "ALL";
   },
   scopeLabel(scope, value) {
-    if (scope === "DOMAIN") return `분야: ${value}`;
+    if (scope === "DOMAIN") return `도메인: ${value}`;
     if (scope === "SYS") return `서브시스템: ${value}`;
     return "통합 (전체)";
   },
@@ -137,7 +137,7 @@ var WeeklyReportManager = {
           const late = this.isOverdue(t, weekObj.startDate);
           const st = t.aProg >= 100 ? "완료" : (late || t.status === "지연" ? "지연" : (t.aProg > 0 ? "진행중" : "계획"));
           let detail = st === "완료"
-            ? `${t.name} 완료 (${t.output || "과업 완료"})`
+            ? `${t.name} 완료 (${t.output || "Task 완료"})`
             : late ? `⚠️ ${t.name} 지연 — 계획종료 ${t.pEnd} (${this.overdueDays(t, weekObj.endDate)}일 경과), 현재 진척률 ${parseFloat(t.aProg) || 0}%`
             : st === "지연" ? `${t.name} 지연 (계획 ${t.pProg}% · 실적 ${parseFloat(t.aProg) || 0}%)`
             : (st === "진행중" ? `${t.name} 진행 중 (현재 진척률 ${t.aProg}%)` : `${t.name} 착수 준비`);
@@ -177,7 +177,7 @@ var WeeklyReportManager = {
       author: u.name || "",
       authorEmpNo: u.empNo || "",
       currentWeekSummary: joinSub("currentWeekSummary") || `${weekObj.weekNum}주차 WBS 계획 대비 실적 정상 추진`,
-      nextWeekSummary: joinSub("nextWeekSummary") || "차주 계획 과업 착수 및 공정률 관리 예정",
+      nextWeekSummary: joinSub("nextWeekSummary") || "차주 계획 Task 착수 및 공정률 관리 예정",
       issuesNotes: joinSub("issuesNotes") || "특이사항 없음",
       currentWeekTasks: curTasks,
       nextWeekTasks: nxtTasks,
@@ -442,7 +442,7 @@ var WeeklyReportManager = {
     if (format === "EXCEL") this.exportExcel(false, rep);
     else this.exportDocx(format !== "WORD_TEXT", rep);
     const f = rep.integratedFrom || {};
-    if (f.auto) showToast(`ℹ️ ${rep.weekLabel}: 작성 완료된 주간보고가 없어 WBS 기준 자동 생성본으로 내려받았습니다.`);
+    if (f.auto) showToast(`ℹ️ ${rep.weekLabel}: 작성 완료된 주간보고가 없어 WBS 기준 자동 생성본으로 다운로드했습니다.`);
   },
 
   onListWeekChanged() {
@@ -558,7 +558,7 @@ var WeeklyReportManager = {
       const sel = document.getElementById(id);
       if (!sel || !this.currentWeekReport) return;
       const cands = this._candidateTasks(kind);
-      sel.innerHTML = `<option value="">-- 추가할 WBS 과업 선택 (${cands.length}건) --</option>` +
+      sel.innerHTML = `<option value="">-- 추가할 WBS Task 선택 (${cands.length}건) --</option>` +
         cands.map(t => `<option value="${escapeHtml(t.id)}">[${escapeHtml(t.system)}] ${escapeHtml(t.id)} ${escapeHtml(t.name)}</option>`).join("");
     });
   },
@@ -566,7 +566,7 @@ var WeeklyReportManager = {
     if (!this._checkSize(400)) return;
     const sel = document.getElementById(kind === "cur" ? "wrAddCurWbsSelect" : "wrAddNxtWbsSelect");
     const t = sel && sel.value ? wbsData.find(x => x.id === sel.value) : null;
-    if (!t) { showToast("⚠️ 추가할 WBS 과업을 먼저 선택하세요."); return; }
+    if (!t) { showToast("⚠️ 추가할 WBS Task를 먼저 선택하세요."); return; }
     this.readInputsIntoCurrentReport();
     const list = this._listOf(kind);
     if (kind === "cur") {
@@ -619,7 +619,7 @@ var WeeklyReportManager = {
     el.innerHTML = `📝 <b>${escapeHtml(rep.weekLabel)}</b> · 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b>
       · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:#d97706; font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
       ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
-      ${rep.snapshot ? `<span class="wr-basis snap" title="지표·요구사항·VOC·회의·Action Item 은 작성 완료 시점 자료로 표시·내려받기 합니다.">📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})</span>`
+      ${rep.snapshot ? `<span class="wr-basis snap" title="지표·요구사항·VOC·회의·Action Item 은 작성 완료 시점 자료로 표시·다운로드 합니다.">📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})</span>`
         : `<span class="wr-basis live" title="작성 완료하면 그 시점의 자료가 보고서와 함께 저장됩니다.">⏱ 현재 자료 기준</span>`}
       <div class="wr-docno">문서 번호 <code>${escapeHtml(WeeklyExport.docNo(rep))}</code></div>`;
     const btn = document.getElementById("btnWrComplete");
@@ -700,7 +700,7 @@ var WeeklyReportManager = {
       curTbody.innerHTML = "";
       const tasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        curTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
+        curTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
         tasks.forEach(t => curTbody.appendChild(this._taskRow("cur", t)));
       }
@@ -711,7 +711,7 @@ var WeeklyReportManager = {
       nxtTbody.innerHTML = "";
       const tasks = (rep.nextWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        nxtTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 차주 계획 항목이 없습니다. [➕ WBS 과업 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
+        nxtTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 차주 계획 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
         tasks.forEach(t => nxtTbody.appendChild(this._taskRow("nxt", t)));
       }
@@ -790,7 +790,7 @@ var WeeklyReportManager = {
     this.readInputsIntoCurrentReport();
     const rep = this.currentWeekReport;
     if (!this.canWrite(rep)) {
-      showToast(`⛔ 저장 권한 없음: 일반 사용자는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
+      showToast(`⛔ 저장 권한 없음: 멤버는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
       return false;
     }
     if (!this._checkSize()) return false;
@@ -879,7 +879,7 @@ var WeeklyReportManager = {
     this.currentWeekReport = freshReport; // 저장은 [작성 완료] 시 반영
 
     this.render();
-    showToast("🔄 [WBS 과업 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
+    showToast("🔄 [WBS Task 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
   },
 
   openHistoryModal() {
@@ -974,7 +974,7 @@ var WeeklyReportManager = {
       <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <h4 style="margin:0; font-size:var(--fs-md, 14px); color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
-          <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:var(--fs-xs, 11px);">과업: 금주 ${cCount}건 / 차주 ${nCount}건</span>
+          <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:var(--fs-xs, 11px);">Task: 금주 ${cCount}건 / 차주 ${nCount}건</span>
         </div>
         <div style="font-size:var(--fs-xs, 11px); color:#475569; display:flex; gap:16px;">
           <span><b>작성자:</b> ${escapeHtml(r.author || "PM")}</span>

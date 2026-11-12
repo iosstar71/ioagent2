@@ -82,7 +82,7 @@ var AttachManager = {
   // 📎 단추 (산출물 표 · 공지 · 게시물 · 회의록) — 파일 수는 updateBadges 로 다시 그림
   btnHtml(type, ref, row, label) {
     const n = this.countOf(row, type);
-    return `<button type="button" class="btn btn-sm attach-btn${n ? " has-files" : ""}" data-atype="${type}" data-aref="${escapeAttr(String(ref))}" data-alabel="${escapeAttr(label || "")}" data-click="AttachManager.open" data-click-args="${UiEvents.args(type, ref)}" title="첨부파일 ${n ? n + "개" : "없음"} — 눌러서 올리기 · 내려받기">📎${label ? " " + escapeHtml(label) : ""}${n ? `<b>${n}</b>` : ""}</button>`;
+    return `<button type="button" class="btn btn-sm attach-btn${n ? " has-files" : ""}" data-atype="${type}" data-aref="${escapeAttr(String(ref))}" data-alabel="${escapeAttr(label || "")}" data-click="AttachManager.open" data-click-args="${UiEvents.args(type, ref)}" title="첨부파일 ${n ? n + "개" : "없음"} — 눌러서 올리기 · 다운로드">📎${label ? " " + escapeHtml(label) : ""}${n ? `<b>${n}</b>` : ""}</button>`;
   },
   updateBadges() {
     document.querySelectorAll(".attach-btn[data-atype]").forEach(btn => {
@@ -93,7 +93,7 @@ var AttachManager = {
       const label = btn.dataset.alabel || "";
       btn.classList.toggle("has-files", !!n);
       btn.innerHTML = `📎${label ? " " + escapeHtml(label) : ""}${n ? `<b>${n}</b>` : ""}`;
-      btn.title = `첨부파일 ${n ? n + "개" : "없음"} — 눌러서 올리기 · 내려받기`;
+      btn.title = `첨부파일 ${n ? n + "개" : "없음"} — 눌러서 올리기 · 다운로드`;
     });
   },
 
@@ -199,7 +199,7 @@ var AttachManager = {
       const acts = c.trash
         ? `<button class="btn btn-sm btn-secondary" data-click="AttachManager.restore" data-click-args="${UiEvents.args(f.id)}">되살리기</button>
            <button class="btn btn-sm btn-danger" data-click="AttachManager.purge" data-click-args="${UiEvents.args(f.id)}">완전 삭제</button>`
-        : `<button class="btn btn-sm btn-primary" data-click="AttachManager.download" data-click-args="${UiEvents.args(f.id)}">내려받기</button>
+        : `<button class="btn btn-sm btn-primary" data-click="AttachManager.download" data-click-args="${UiEvents.args(f.id)}">다운로드</button>
            ${writable && (c.type === "deliverable" || this.isManager() || this.isMine(f)) ? `<button class="btn btn-sm btn-danger" data-click="AttachManager.remove" data-click-args="${UiEvents.args(f.id)}">삭제</button>` : ""}`;
       return `<tr class="${isLatest ? "" : "attach-old"}">
         <td class="attach-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</td>
@@ -301,12 +301,12 @@ var AttachManager = {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        showToast("⚠️ " + (j.message || "내려받지 못했습니다."));
+        showToast("⚠️ " + (j.message || "다운로드하지 못했습니다."));
         return;
       }
       ExcelSync._triggerDownload(await res.blob(), f.name);
     } catch (err) {
-      showToast("⚠️ 내려받기 오류: " + (err.message || "서버 연결 실패"));
+      showToast("⚠️ 다운로드 오류: " + (err.message || "서버 연결 실패"));
     }
   },
 
@@ -337,7 +337,7 @@ var AttachManager = {
     });
   },
 
-  // 엑셀 올리기로 산출물 행이 바뀌어도 첨부 연결(fileKey)이 끊기지 않게 (서브시스템 + 회차 + 산출물명으로 이어 붙임)
+  // 엑셀 올리기로 산출물 행이 바뀌어도 첨부 연결(fileKey)이 끊기지 않게 (서브시스템 + 차수 + 산출물명으로 이어 붙임)
   _rowKey(r) { return [r.system, r.round, r.name].map(v => String(v || "").trim()).join("|"); },
   rememberKeys() {
     const map = {};

@@ -541,14 +541,14 @@ const WBSEngine = {
   //  - 완료  : 실적 100%
   //  - 지연  : 계획 진척률보다 실적이 지연 기준(기본 5%p) 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료
   //  - 진행중: 실적이 있거나 실적시작일이 기준일 이전
-  //  - 착수전: 그 외
+  //  - 대기: 그 외
   getTaskStatus(task, reportDateStr) {
     const aProg = parseFloat(task.aProg) || 0;
     const pProg = parseFloat(task.pProg) || 0;
     if (aProg >= 100) return { code: "completed", label: "완료", cssClass: "tag-completed" };
     if (pProg - aProg >= this.delayGap() || (task.pEnd && reportDateStr && task.pEnd < reportDateStr)) return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
     if (aProg > 0 || (task.aStart && task.aStart <= reportDateStr)) return { code: "progress", label: "진행중", cssClass: "tag-progress" };
-    return { code: "ready", label: "착수전", cssClass: "tag-ready" };
+    return { code: "ready", label: "대기", cssClass: "tag-ready" };
   },
 
   // 판정한 상태를 데이터(task.status)에 저장 — 엑셀/DB/주간보고에서 동일 상태 사용

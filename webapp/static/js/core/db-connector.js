@@ -11,7 +11,7 @@ const DbConnector = {
   CONFIG_STORAGE_KEY: "WBS_DB_CONNECTOR_CONFIG_2026_V1_1",
 
   config: {
-    mode: "LOCAL", // LOCAL | SQLITE | ORACLE | EXCEL_ACCESS
+    mode: "SQLITE", // [Workgroup 0.4] 서버 DB 만 (서버 없이 쓰려면 IOSTAR-PM Standalone) — SQLITE | ORACLE | EXCEL_ACCESS
     apiBaseUrl: "http://127.0.0.1:8080",
     connected: false,
     lastSyncTime: "-",
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS TB_WBS_REQ (
   REQ_TYPE TEXT DEFAULT '기능',
   PRIORITY TEXT DEFAULT '중',
   ACCEPT_YN TEXT DEFAULT '수용',
-  STATUS TEXT DEFAULT '착수전',
+  STATUS TEXT DEFAULT '대기',
   SORT_ORDER INTEGER DEFAULT 0
 );
 
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS TB_WBS_VOC (
   REQUESTER TEXT,
   REQ_DATE TEXT,
   TARGET_DATE TEXT,
-  STATUS TEXT DEFAULT '착수전',
+  STATUS TEXT DEFAULT '대기',
   ACTION_NOTE TEXT,
   SORT_ORDER INTEGER DEFAULT 0
 );`,
@@ -174,7 +174,7 @@ CREATE TABLE TB_WBS_REQ (
   REQ_TYPE VARCHAR2(50) DEFAULT '기능',
   PRIORITY VARCHAR2(30) DEFAULT '중',
   ACCEPT_YN VARCHAR2(30) DEFAULT '수용',
-  STATUS VARCHAR2(50) DEFAULT '착수전',
+  STATUS VARCHAR2(50) DEFAULT '대기',
   SORT_ORDER NUMBER(6) DEFAULT 0
 );
 
@@ -186,7 +186,7 @@ CREATE TABLE TB_WBS_VOC (
   REQUESTER VARCHAR2(100),
   REQ_DATE VARCHAR2(10),
   TARGET_DATE VARCHAR2(10),
-  STATUS VARCHAR2(50) DEFAULT '착수전',
+  STATUS VARCHAR2(50) DEFAULT '대기',
   ACTION_NOTE VARCHAR2(1000),
   SORT_ORDER NUMBER(6) DEFAULT 0
 );`,
@@ -297,7 +297,7 @@ CREATE TABLE TB_WBS_VOC (
         ["sqlite", "oracle", "excelAccess"].forEach(k => {
           if (saved[k]) this.config[k] = Object.assign({}, this.config[k], saved[k]);
         });
-        // 이전 버전에서 Oracle / Excel·Access 를 선택해 둔 경우 SQLite 서버 모드로 전환 (실제 저장소는 원래 SQLite)
+        // 이전 버전에서 로컬 저장소 · Oracle · Excel/Access 를 골라 둔 경우도 서버 DB(SQLite)로
         if (!this.SUPPORTED_MODES.includes(this.config.mode)) this.config.mode = "SQLITE";
       }
     } catch (e) {}
@@ -313,7 +313,7 @@ CREATE TABLE TB_WBS_VOC (
   },
 
   // 저장 모드 변경: 로컬 저장소 ↔ DB 서버 (변경 후 재로그인/재조회를 위해 화면을 다시 불러옴)
-  SUPPORTED_MODES: ["LOCAL", "SQLITE"], // v1.0.8: Oracle / Excel·Access 비활성화
+  SUPPORTED_MODES: ["SQLITE"], // [Workgroup 0.4] 로컬 저장소 모드 없음 · Oracle / Excel·Access 비활성화
 
   selectMode(mode) {
     // [Workgroup] Oracle · Excel/Access 는 app.ini [features] 로 켜기 전에는 선택 불가 (Enterprise 판 예정)

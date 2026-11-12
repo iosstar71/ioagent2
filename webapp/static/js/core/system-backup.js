@@ -26,7 +26,7 @@ var BackupPane = {
     const note = document.getElementById("bkRoleNote");
     if (note) note.innerHTML = admin
       ? "👑 <b>시스템관리자</b> — 모든 프로젝트와 시스템 전체 백업 · 복원을 쓸 수 있습니다."
-      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 복원 지점을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 시스템관리자 전용)`;
+      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 스냅샷을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 시스템관리자 전용)`;
     // 권한 없는 부분은 비활성 (data-need="admin")
     document.querySelectorAll('#mergeBackupPane [data-need="admin"]').forEach(el => {
       el.classList.toggle("bk-locked", !admin);
@@ -60,7 +60,7 @@ var SystemBackup = {
         <td>${this.size(b.size)}</td>
         <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(b.name)}</td>
         <td style="text-align:center; white-space:nowrap;">
-          <button class="btn btn-primary btn-sm" data-click="SystemBackup.download" data-click-args="${UiEvents.args(b.name)}">📥 내려받기</button>
+          <button class="btn btn-primary btn-sm" data-click="SystemBackup.download" data-click-args="${UiEvents.args(b.name)}">📥 다운로드</button>
           ${b.type === "system" ? `<button class="btn btn-warning btn-sm" data-click="SystemBackup.restore" data-click-args="${UiEvents.args(b.name)}">⏪ 복원</button>` : ""}
           <button class="btn btn-danger btn-sm" data-click="SystemBackup.remove" data-click-args="${UiEvents.args(b.name)}">삭제</button>
         </td></tr>`).join("")
@@ -86,18 +86,18 @@ var SystemBackup = {
     const res = await ServerBackend.request("/api/admin/backup/create", { withFiles }, "POST", 600000);
     if (!res.ok) return showToast("❌ 시스템 백업 실패: " + (res.message || ""));
     this._apply(res);
-    showToast(`✅ 시스템 백업을 만들었습니다: ${res.name}${withFiles ? " (첨부파일 포함)" : ""} — [📥 내려받기]로 PC 에도 보관하세요.`);
+    showToast(`✅ 시스템 백업을 만들었습니다: ${res.name}${withFiles ? " (첨부파일 포함)" : ""} — [📥 다운로드]로 PC 에도 보관하세요.`);
   },
   async download(name) {
     try {
       const r = await fetch(ServerBackend.baseUrl() + "/api/admin/backup/download?name=" + encodeURIComponent(name), { headers: { "Authorization": "Bearer " + ServerBackend.token }, cache: "no-store" });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); return showToast("⚠️ " + (j.message || "내려받지 못했습니다.")); }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); return showToast("⚠️ " + (j.message || "다운로드하지 못했습니다.")); }
       ExcelSync._triggerDownload(await r.blob(), name);
-    } catch (err) { showToast("⚠️ 내려받기 오류: " + err.message); }
+    } catch (err) { showToast("⚠️ 다운로드 오류: " + err.message); }
   },
   restore(name) {
     const b = (this.list || []).find(x => x.name === name) || {};
-    openConfirmDialog(`⚠️ [시스템 전체 복원] ${name}\n모든 프로젝트 · 사용자 계정 · 공정 유형 · 설정을 ${b.createdAt || ""} 시점으로 되돌립니다.${b.withFiles ? "\n첨부파일도 그 시점으로 바뀝니다." : "\n(이 백업에는 첨부파일이 없어 첨부파일은 그대로)"}\n복원 직전 상태를 먼저 자동 백업합니다. 다른 사용자는 다시 로그인해야 할 수 있습니다. 계속할까요?`, async () => {
+    openConfirmDialog(`⚠️ [시스템 전체 복원] ${name}\n모든 프로젝트 · 멤버 계정 · SDLC 유형 · 설정을 ${b.createdAt || ""} 시점으로 되돌립니다.${b.withFiles ? "\n첨부파일도 그 시점으로 바뀝니다." : "\n(이 백업에는 첨부파일이 없어 첨부파일은 그대로)"}\n복원 직전 상태를 먼저 자동 백업합니다. 다른 멤버는 다시 로그인해야 할 수 있습니다. 계속할까요?`, async () => {
       const res = await ServerBackend.request("/api/admin/backup/restore", { name }, "POST", 600000);
       if (!res.ok) return showToast("❌ 복원 실패: " + (res.message || ""));
       showToast(`✅ 시스템을 복원했습니다. (복원 직전 백업: ${res.before}) 화면을 다시 불러옵니다...`);
@@ -151,7 +151,7 @@ var SystemBackup = {
     const payload = { schemaVersion: this.LOCAL_SCHEMA, appVersion: APP_VERSION.version, exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo,
       projects: ProjectContext.localList().map(p => p.name), items };
     ExcelSync._triggerDownload(new Blob([JSON.stringify(payload)], { type: "application/json;charset=utf-8" }), ExcelSync.stdName("시스템전체백업", [], "json", ProjectData._stamp()));
-    showToast(`💾 이 브라우저의 시스템 전체(프로젝트 ${payload.projects.length}개 · 사용자 · 설정)를 백업했습니다.`);
+    showToast(`💾 이 브라우저의 시스템 전체(프로젝트 ${payload.projects.length}개 · 멤버 · 설정)를 백업했습니다.`);
   },
   async importLocal(e) {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
@@ -160,7 +160,7 @@ var SystemBackup = {
     let j;
     try { j = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다."); }
     if (!j || j.schemaVersion !== this.LOCAL_SCHEMA || !j.items) return showToast("⚠️ 시스템 전체 백업(JSON) 파일이 아닙니다. 프로젝트 하나는 [① 프로젝트 백업 · 복원]에서 올리세요.");
-    openConfirmDialog(`⚠️ [시스템 전체 복원] ${file.name}\n이 브라우저의 모든 프로젝트(${(j.projects || []).join(", ")}) · 사용자 · 설정을 백업 시점으로 바꿉니다. 지금 상태는 복원 지점에 남깁니다. 계속할까요?`, () => {
+    openConfirmDialog(`⚠️ [시스템 전체 복원] ${file.name}\n이 브라우저의 모든 프로젝트(${(j.projects || []).join(", ")}) · 멤버 · 설정을 백업 시점으로 바꿉니다. 지금 상태는 스냅샷에 남깁니다. 계속할까요?`, () => {
       BackupHistoryManager.createBackupSnapshot("시스템복원직전백업", "ALL", false);
       this._localKeys().forEach(k => localStorage.removeItem(k));
       Object.keys(j.items).forEach(k => { try { localStorage.setItem(k, j.items[k]); } catch (err) {} });

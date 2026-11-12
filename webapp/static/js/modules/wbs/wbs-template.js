@@ -19,7 +19,7 @@ function renderHolidays() {
 
     const dayName = WBSEngine.getDayOfWeekText(h.date);
     const typeBadge = h.type === "CUSTOM"
-      ? `<span class="status-tag tag-progress" style="font-size:calc(9px * var(--fs-scale, 1));">사용자휴일</span>`
+      ? `<span class="status-tag tag-progress" style="font-size:calc(9px * var(--fs-scale, 1));">지정 휴일</span>`
       : `<span class="status-tag tag-completed" style="font-size:calc(9px * var(--fs-scale, 1));">법정공휴일</span>`;
 
     tbody.innerHTML += `
@@ -39,7 +39,7 @@ function renderHolidays() {
 }
 
 function addCustomHolidayRow() {
-  projectConfig.holidays.push({ type: "CUSTOM", name: "사용자 특별휴일", date: projectConfig.reportDate });
+  projectConfig.holidays.push({ type: "CUSTOM", name: "멤버 특별휴일", date: projectConfig.reportDate });
   renderHolidays();
   rebuildAll();
 }
@@ -95,13 +95,13 @@ var WbsTemplate = {
       const sp = WBSEngine.getSdlcSpecByCode(meta.sdlcCode);
       opts.unshift([`SDLC:${sp.code}`, `SDLC · ${sp.name}`]);
     }
-    opts.push(["REQ", "개선(REQ) 단계 · 기준정보의 개선과제 공정 단계"]);
+    opts.push(["REQ", "개선(REQ) 단계 · 프로젝트 설정의 개선과제 공정 단계"]);
     const def = !meta ? "" : meta.type === "REQ" ? "REQ" : `SDLC:${meta.sdlcCode || (opts[0] && opts[0][0].slice(5))}`;
     // [v3.7.0] 다른 서브시스템의 WBS 복사 (WBS 가 있는 서브시스템만)
     const copies = this.metas().map(m => this.sysKey(m)).filter(k => k !== sys && this.existing(k).length)
-      .map(k => [`COPY:${k}`, `${k} 의 WBS 복사 (과업 ${this.existing(k).length}개)`]);
+      .map(k => [`COPY:${k}`, `${k} 의 WBS 복사 (Task ${this.existing(k).length}개)`]);
     const optHtml = list => list.map(([v, l]) => `<option value="${escapeAttr(v)}" ${v === def ? "selected" : ""}>${escapeHtml(l)}${v === def ? " (서브시스템 설정)" : ""}</option>`).join("");
-    tsel.innerHTML = `<optgroup label="표준 단계 템플릿 (기준정보)">${optHtml(opts)}</optgroup>` + (copies.length ? `<optgroup label="다른 서브시스템 WBS 복사">${optHtml(copies)}</optgroup>` : "");
+    tsel.innerHTML = `<optgroup label="표준 단계 템플릿 (프로젝트 설정)">${optHtml(opts)}</optgroup>` + (copies.length ? `<optgroup label="다른 서브시스템 WBS 복사">${optHtml(copies)}</optgroup>` : "");
     tsel.disabled = !meta;
     const n = sys ? this.existing(sys).length : 0;
     document.getElementById("tplExisting").hidden = !n;
@@ -171,7 +171,7 @@ var WbsTemplate = {
     const base = { id: "", system: sys, reqId: "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "", owner };  // 산출물은 비워 둠
     const rows = [];
     if (withRoot) {
-      rows.push(Object.assign({}, base, { level: 1, name: `${sys} ${type === "REQ" ? "개선 과업" : "구축"} (${t.label})`, weight: 100,
+      rows.push(Object.assign({}, base, { level: 1, name: `${sys} ${type === "REQ" ? "개선 Task" : "구축"} (${t.label})`, weight: 100,
         pStart: starts[0] || "", pEnd: ends[ends.length - 1] || "" }));
     }
     // 가중치: 서브시스템 100 기준 — 단계(L2)는 단계 가중치 비율로 100 을 나누고, 세부 과업(L3)은 단계 가중치를 반씩
@@ -181,7 +181,7 @@ var WbsTemplate = {
       rows.push(Object.assign({}, base, { level: 2, name, weight: l2w[i], pStart: slots[i][0], pEnd: slots[i][1] }));
       // 단계(L2)마다 세부 과업(L3) 2개 — 계획 일정은 단계와 같게
       const l3w = WbsWeight._split(l2w[i], [1, 1]);
-      [1, 2].forEach(n => rows.push(Object.assign({}, base, { level: 3, name: `${name} 세부 과업 ${n}`, weight: l3w[n - 1], pStart: slots[i][0], pEnd: slots[i][1] })));
+      [1, 2].forEach(n => rows.push(Object.assign({}, base, { level: 3, name: `${name} 세부 Task ${n}`, weight: l3w[n - 1], pStart: slots[i][0], pEnd: slots[i][1] })));
     });
     return rows;
   },
@@ -218,7 +218,7 @@ var WbsTemplate = {
       : plan.mode === "append" ? `— 기존 ${plan.ex.length}개 뒤에 ${plan.rows.length}개 추가` : `— ${plan.rows.length}개 생성`;
     const copy = String(plan.type).startsWith("COPY:");
     const lead = this.leadOf(plan.sys);
-    note.textContent += ` · 담당자: ${lead || "(지정할 총괄리더 없음 — 비워 둠)"}`;
+    note.textContent += ` · 담당자: ${lead || "(지정할 PL 없음 — 비워 둠)"}`;
     btn.textContent = plan.mode === "replace" ? "♻️ 교체 실행" : copy ? "➕ WBS 복사" : "➕ 템플릿 추가";
     btn.setAttribute("data-btn", plan.mode === "replace" ? "danger" : "add");
     btn.disabled = false;
@@ -246,10 +246,10 @@ var WbsTemplate = {
       if (fl && [...fl.options].some(o => o.value === plan.sys)) { fl.value = plan.sys; renderWbsTable(); }
       const what = String(plan.type).startsWith("COPY:") ? `[${String(plan.type).slice(5)}] WBS 복사본` : "템플릿";
       showToast(plan.mode === "replace" ? `♻️ [${plan.sys}] WBS 를 ${what}(으)로 교체했습니다. (기존 ${plan.ex.length}개 삭제, ${plan.rows.length}개 생성)`
-        : `✅ [${plan.sys}] WBS 에 ${what} 과업 ${plan.rows.length}개를 추가했습니다.`);
+        : `✅ [${plan.sys}] WBS 에 ${what} Task ${plan.rows.length}개를 추가했습니다.`);
     };
     if (plan.mode === "replace") {
-      openConfirmDialog(`⚠️ [${plan.sys}] 서브시스템의 기존 WBS 과업 ${plan.ex.length}개(입력한 실적·진척률 포함)를 모두 지우고 템플릿 과업 ${plan.rows.length}개로 교체합니다.\n계속하시겠습니까?`, run);
+      openConfirmDialog(`⚠️ [${plan.sys}] 서브시스템의 기존 WBS Task ${plan.ex.length}개(입력한 실적·진척률 포함)를 모두 지우고 템플릿 Task ${plan.rows.length}개로 교체합니다.\n계속하시겠습니까?`, run);
     } else run();
   }
 };

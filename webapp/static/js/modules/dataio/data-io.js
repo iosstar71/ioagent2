@@ -35,7 +35,7 @@ var DataIO = {
     if (!d) return;
     const scope = this.scope(kind);
     if (scope === "ALL" && !SmartMergeCenter.canBulkWork()) {
-      showToast(`🚫 [${d.label}] 전체 범위 올리기는 시스템관리자 · PM(담당이 ALL 인 총괄리더 포함)만 할 수 있습니다. [서브시스템 조회]에서 담당 서브시스템을 고른 뒤 올리세요.`);
+      showToast(`🚫 [${d.label}] 전체 범위 업로드는 시스템관리자 · PM(담당이 ALL 인 PL 포함)만 할 수 있습니다. [서브시스템 조회]에서 담당 서브시스템을 고른 뒤 올리세요.`);
       return;
     }
     if (scope !== "ALL" && typeof Permission !== "undefined" && Permission.canWriteSubsystem && !Permission.canWriteSubsystem(scope)) {
@@ -64,7 +64,7 @@ var DataIO = {
   // [v4.1.0] 스마트 병합과 같은 올리기 미리 보기 창 (파일 행 · 반영 · 제외 · 방법 → [반영] / [취소])
   async upload(kind, file) {
     const d = this.KINDS[kind];
-    await MergeTable.previewFile(file, { keys: [kind], scope: this.scope(kind), title: `📤 ${d.label} 엑셀 올리기` });
+    await MergeTable.previewFile(file, { keys: [kind], scope: this.scope(kind), title: `📤 ${d.label} 엑셀 업로드` });
   }
 };
 window.DataIO = DataIO;

@@ -47,7 +47,7 @@ var StorageManager = {
     const chk = (id, def) => { const el = document.getElementById(id); return el ? el.checked : def; };
     const targets = [
       ["chkClearWbs", true, () => { wbsData = []; }, "WBS"],
-      ["chkClearSubsystems", false, () => { subsystemsMeta = []; }, "서브시스템 기준정보"],
+      ["chkClearSubsystems", false, () => { subsystemsMeta = []; }, "서브시스템 프로젝트 설정"],
       ["chkClearDeliverables", true, () => { deliverablesData = []; }, "산출물"],
       ["chkClearReq", true, () => { reqMasterData = []; }, "REQ"],
       ["chkClearVoc", true, () => { vocData = []; }, "VOC"]
@@ -110,7 +110,7 @@ var StorageManager = {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`[전체 백업 완료] 시스템 설정, 기준정보, 업무 데이터(공지·소통·회의·주간보고 포함)를 저장했습니다.`);
+    showToast(`[전체 백업 완료] 시스템 설정, 프로젝트 설정, 업무 데이터(게시판 · 채팅·회의·주간보고 포함)를 저장했습니다.`);
   },
 
   async importFullSystemBackup(e) {
@@ -120,7 +120,7 @@ var StorageManager = {
     try {
       const data = JSON.parse(await file.text());
       if (!data || typeof data !== "object") throw new Error("유효하지 않은 백업 JSON 파일입니다.");
-      openConfirmDialog(`선택한 [${file.name}] 백업 파일로 모든 시스템 설정, 기준정보 및 업무 데이터를 복원하시겠습니까?`, () => {
+      openConfirmDialog(`선택한 [${file.name}] 백업 파일로 모든 시스템 설정, 프로젝트 설정 및 업무 데이터를 복원하시겠습니까?`, () => {
         BackupHistoryManager.createBackupSnapshot("전체복원직전자동백업", "ALL", false);
         DataRegistry.apply(data);
         const ss = data.systemSettings;
@@ -175,7 +175,7 @@ var StorageManager = {
 
   resetToRate2027Data() {
     openConfirmDialog(
-      "🏭 [27년 가동률 시스템 개선 복원]\n'27년 가동률 시스템 개선' (3개 분야, 7개 서브시스템, 232개 WBS) 데이터로 복원하시겠습니까?",
+      "🏭 [27년 가동률 시스템 개선 복원]\n'27년 가동률 시스템 개선' (3개 도메인, 7개 서브시스템, 232개 WBS) 데이터로 복원하시겠습니까?",
       () => {
         BackupHistoryManager.createBackupSnapshot("가동률샘플복원직전백업", "ALL", false);
         this._applySnapshot(window.AX_INITIAL_DATA);
@@ -186,7 +186,7 @@ var StorageManager = {
 
   resetToFactoryBlank() {
     openConfirmDialog(
-      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (사용자는 admin / pm 2개 계정, 비밀번호 1234로 초기화)",
+      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·게시판 · 채팅·회의·주간보고)와 프로젝트 설정을 초기화합니다. (멤버는 admin / pm 2개 계정, 비밀번호 1234로 초기화)",
       () => this._factoryBlank()
     );
   },
@@ -234,7 +234,7 @@ var StorageManager = {
           localStorage.removeItem(AuthManager.STORAGE_AUTOLOCK_KEY);
         } catch (e) {}
         DataRegistry.set("theme", defaultTheme());
-        this._afterBulkReplace("✅ [완전 초기화 완료] 모든 설정, 기준정보 및 업무 데이터가 초기 상태로 초기화되었습니다.");
+        this._afterBulkReplace("✅ [완전 초기화 완료] 모든 설정, 프로젝트 설정 및 업무 데이터가 초기 상태로 초기화되었습니다.");
       }
   }
 };
@@ -281,7 +281,7 @@ function normalizeAndDeduplicateSubsystems() {
     } else {
       const existing = mapByKey.get(key);
       if (existing.pm === "담당PM" && raw.pm && raw.pm !== "담당PM") existing.pm = raw.pm;
-      if (existing.desc.endsWith("과업") && displayDesc && !displayDesc.endsWith("과업")) existing.desc = displayDesc;
+      if (existing.desc.endsWith("Task") && displayDesc && !displayDesc.endsWith("Task")) existing.desc = displayDesc;
       if ((!existing.domain || existing.domain === "미지정분야") && raw.domain) existing.domain = raw.domain;
     }
   });
@@ -409,7 +409,7 @@ var MasterSyncEngine = {
 
       // 11. Toast notification
       if (notify && typeof showToast === "function") {
-        showToast("⚡ [실시간 적용 완료] 변경된 기준정보 및 시스템 설정이 모든 탭(WBS, 간트, 대시보드, 매트릭스, REQ, VOC, 산출물, 스마트병합, 소통광장)에 즉시 반영되었습니다.", "success");
+        showToast("⚡ [실시간 적용 완료] 변경된 프로젝트 설정 및 시스템 설정이 모든 탭(WBS, 간트, 대시보드, 매트릭스, REQ, VOC, 산출물, Import · Export, 소통광장)에 즉시 반영되었습니다.", "success");
       }
     } finally {
       this._isSyncing = false;

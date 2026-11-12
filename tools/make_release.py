@@ -2,7 +2,7 @@
 """
 [IOSTAR-PM 공용] 배포용 zip 생성기 (국내판·Standard·Neo 공용 — 이름·버전은 app.ini)
 
-- Standalone.html / js/initial-data.js 를 최신으로 다시 빌드한 뒤
+- js/initial-data.js · 매뉴얼 · 법적 고지 · 화면 설정을 최신으로 다시 빌드한 뒤
   <제품>[-판]_v<버전>.zip 을 생성합니다. (예: IOSTAR-PM_v1.2.0.zip, IOSTAR-PM-Standard_v1.0.1.zip)
 - 한글 파일명(Sample/*.xlsx 등)이 Windows 탐색기·알집 등에서 깨지지 않도록
   zip 항목에 UTF-8 파일명 플래그(General purpose bit 11)를 명시합니다.
@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import app_config  # noqa: E402
-import build_standalone  # noqa: E402
+import build_initial_data  # noqa: E402
+import build_manual_docx  # noqa: E402
+import build_legal  # noqa: E402
 
 # [v1.2.0] 제품 이름·판·버전은 app.ini 에서 읽음 (국내판·Standard·Neo 공용 파일)
 CFG = app_config.load()
@@ -42,7 +44,10 @@ def iter_files():
 
 
 def make(out_dir: Path) -> Path:
-    build_standalone.build()
+    build_initial_data.build()
+    build_manual_docx.build()
+    build_legal.build()
+    app_config.build()
     out = out_dir / f"{PKG}.zip"
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for path, rel in iter_files():

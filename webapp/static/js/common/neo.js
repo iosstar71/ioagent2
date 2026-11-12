@@ -5,7 +5,7 @@
 //  - NeoTodo   : 대시보드 "확인할 일" — 지연 과업 · 7일 안 마감 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item
 //  - NeoDetail : WBS 오른쪽 상세 패널 — ID 를 누르면 한 과업의 모든 항목을 한 곳에서 보고 고침
 //  - NeoBadges : 메뉴 건수 배지 (지연 과업 · 미조치 VOC · 확인할 산출물 · 미완료 Action Item)
-//  - NeoChips  : WBS 상태 칩 필터 (전체 · 지연 · 진행중 · 착수전 · 완료, 건수 표시)
+//  - NeoChips  : WBS 상태 칩 필터 (전체 · 지연 · 진행중 · 대기 · 완료, 건수 표시)
 //  - NeoSide   : 왼쪽 메뉴 접기 (아이콘만 표시)
 //  ※ 데이터 계산·저장은 기존 엔진(WBSEngine · UiH · rebuildAll · persistChanges)을 그대로 사용
 // =============================================================================
@@ -132,7 +132,7 @@ var NeoTodo = {
       "tab-deliverables": c.delivs.length,
       "tab-meeting": c.actions.length,
       // [v2.4.0] 홈: 내가 등록한 할 일 중 기한 지남 + 오늘 마감
-      "tab-home": typeof TodoCenter !== "undefined" ? TodoCenter.urgent() : 0
+      "tab-mywork": typeof TodoCenter !== "undefined" ? TodoCenter.urgent() : 0
     };
   },
 
@@ -143,12 +143,12 @@ var NeoTodo = {
     const box = document.getElementById("neoTodoCard");
     if (!box) return;
     const c = this.collect(this._systems);
-    const parts = [["🔴", "지연 과업", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
+    const parts = [["🔴", "지연 Task", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
     const total = parts.reduce((a, p) => a + p[2], 0);
     const mineOpen = typeof TodoCenter !== "undefined" ? TodoCenter.stats().open : 0;
     box.innerHTML = `
       <div class="neo-todo-line">
-        <span class="neo-todo-line-title"><span>✅ 확인할 일</span> <b class="neo-todo-total">${total}</b></span>
+        <span class="neo-todo-line-title"><span>✅ 체크할 일</span> <b class="neo-todo-total">${total}</b></span>
         ${parts.map(p => `<span class="neo-todo-chip${p[2] ? "" : " zero"}">${p[0]} <span>${p[1]}</span> <b>${p[2]}</b></span>`).join("")}
         <span class="neo-todo-chip mine"><span>📝 내 할 일</span> <b>${mineOpen}</b></span>
         <button type="button" class="btn btn-sm neo-todo-go" data-btn="nav" data-click="TodoCenter.openHome">홈의 내 할 일에서 보기 →</button>
@@ -205,7 +205,7 @@ var NeoDetail = {
     p.id = "neoDetail";
     p.className = "neo-detail";
     p.hidden = true;
-    p.setAttribute("aria-label", "WBS 과업 상세");
+    p.setAttribute("aria-label", "WBS Task 상세");
     document.body.appendChild(p);
     return p;
   },
@@ -301,8 +301,8 @@ var NeoDetail = {
           <span class="status-tag ${st.cssClass}">${st.label}</span>
         </div>
         <div class="neo-detail-nav">
-          <button type="button" class="btn btn-xs" data-click="NeoDetail.step" data-click-args="${UiEvents.args(-1)}" title="이전 과업">▲</button>
-          <button type="button" class="btn btn-xs" data-click="NeoDetail.step" data-click-args="${UiEvents.args(1)}" title="다음 과업">▼</button>
+          <button type="button" class="btn btn-xs" data-click="NeoDetail.step" data-click-args="${UiEvents.args(-1)}" title="이전 Task">▲</button>
+          <button type="button" class="btn btn-xs" data-click="NeoDetail.step" data-click-args="${UiEvents.args(1)}" title="다음 Task">▼</button>
           <button type="button" class="btn btn-xs" data-btn="cancel" data-click="NeoDetail.close" title="닫기 (Esc)">✕</button>
         </div>
       </div>
@@ -321,15 +321,15 @@ var NeoDetail = {
         <div class="neo-grid2">
           ${field("계획시작", "pStart", "date", ro)}
           ${field("계획종료", "pEnd", "date", ro)}
-          ${field("실적시작", "aStart", "date", ro)}
-          ${field("실적종료", "aEnd", "date", ro)}
-          ${field("실적 진척율(%)", "aProg", "number", `min="0" max="100" ${ro}`)}
+          ${field("실제 시작", "aStart", "date", ro)}
+          ${field("실제 종료", "aEnd", "date", ro)}
+          ${field("실적 진척률(%)", "aProg", "number", `min="0" max="100" ${ro}`)}
           ${field("가중치", "weight", "number", `min="0" step="0.1"${typeof WbsWeight !== "undefined" && WbsWeight.warnMap().has(row) ? ` class="weight-warn" title="${escapeAttr(WbsWeight.warnMap().get(row))}"` : ""}`)}
           ${field("REQ ID", "reqId", "text")}
           ${field("담당자", "owner", "text", `list="wbsOwnerList" maxlength="40" title="목록에서 고르거나 직접 입력 (1명)${leaf ? "" : " — 하위 Task 에도 자동 지정"}"`)}
           ${field("산출물", "output", "text")}
         </div>
-        ${leaf ? "" : '<div class="neo-note">상위 Task 의 일정·진척율은 하위 Task 에서 자동으로 합산됩니다.</div>'}
+        ${leaf ? "" : '<div class="neo-note">상위 Task 의 일정·진척률은 하위 Task 에서 자동으로 합산됩니다.</div>'}
         <div class="neo-detail-actions">
           <button type="button" class="btn btn-sm" data-btn="warn" data-click="NeoDetail.run" data-click-args="${UiEvents.args("fillRowActualFromPlan")}" ${leaf ? "" : "disabled"}>⚡ 계획을 실적에 반영</button>
           <button type="button" class="btn btn-sm" data-btn="add" data-click="NeoDetail.run" data-click-args="${UiEvents.args("addChildTask")}" ${row.level >= 5 ? "disabled" : ""}>+ 하위</button>
@@ -343,7 +343,7 @@ var NeoDetail = {
             : `<div class="neo-muted">${row.reqId ? `요구사항 [${escapeHtml(row.reqId)}] 을 찾을 수 없습니다.` : "REQ ID 를 입력하면 연결됩니다."}</div>`}
         </div>
         <div class="neo-detail-sec">
-          <div class="neo-detail-sec-title">💬 이 과업 소통 글 (${posts.length})</div>
+          <div class="neo-detail-sec-title">💬 이 Task 소통 글 (${posts.length})</div>
           ${posts.length ? posts.slice(0, 5).map(c => `<div class="neo-post"><b>${escapeHtml(c.author || "")}</b> <span class="neo-muted">${escapeHtml(c.date || "")}</span><div>${escapeHtml((c.title || c.content || "").slice(0, 80))}</div></div>`).join("")
             : '<div class="neo-muted">등록된 글이 없습니다.</div>'}
         </div>
@@ -383,7 +383,7 @@ var NeoDetail = {
 // 3. 메뉴 건수 배지
 // -----------------------------------------------------------------------------
 var NeoBadges = {
-  TIPS: { "tab-wbs": "지연 과업", "tab-voc": "미조치 VOC", "tab-deliverables": "확인할 산출물 (7일 이내)", "tab-meeting": "미완료 Action Item", "tab-home": "내 할 일 (기한 지남·오늘 마감)" },
+  TIPS: { "tab-wbs": "지연 Task", "tab-voc": "미조치 VOC", "tab-deliverables": "확인할 산출물 (7일 이내)", "tab-meeting": "미완료 Action Item", "tab-home": "내 할 일 (기한 지남·오늘 마감)" },
   _counts: {},
   _sig: "",
 
@@ -428,7 +428,7 @@ var NeoBadges = {
       s.textContent = sum > 99 ? "99+" : String(sum);
       s.classList.add("neo-alert");
       s.hidden = !sum;
-      s.title = sum ? `확인할 일 ${sum}건` : "";
+      s.title = sum ? `체크할 일 ${sum}건` : "";
     });
   }
 };
@@ -437,7 +437,7 @@ var NeoBadges = {
 // 4. WBS 상태 칩 필터
 // -----------------------------------------------------------------------------
 var NeoChips = {
-  LIST: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["착수전", "착수전", "chip-ready"], ["완료", "완료", "chip-completed"]],
+  LIST: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["대기", "대기", "chip-ready"], ["완료", "완료", "chip-completed"]],
   set(v) {
     const sel = document.getElementById("wbsStatusFilter");
     if (!sel) return;
@@ -467,11 +467,11 @@ var StatusChips = {
   _late(date, done) { const rep = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || ""; return !!(date && rep && date < rep && !done); },
   DEFS: {
     req: { box: "reqStatusChips", run: "renderReqMasterTable",
-      list: [["ALL", "전체", ""], ["착수전", "착수전", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["삭제", "삭제", "chip-del"]],
-      of: r => [r.status || "착수전"] },
+      list: [["ALL", "전체", ""], ["대기", "대기", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["삭제", "삭제", "chip-del"]],
+      of: r => [r.status || "대기"] },
     voc: { box: "vocStatusChips", run: "renderVocTable",
-      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["착수전", "착수전", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["제외", "제외", "chip-del"], ["삭제", "삭제", "chip-del"]],
-      of: r => [r.status || "착수전", StatusChips._late(r.targetDate, ["완료", "제외", "삭제", "보류"].indexOf(r.status) !== -1) ? "지연" : ""] },
+      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["대기", "대기", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["제외", "제외", "chip-del"], ["삭제", "삭제", "chip-del"]],
+      of: r => [r.status || "대기", StatusChips._late(r.targetDate, ["완료", "제외", "삭제", "보류"].indexOf(r.status) !== -1) ? "지연" : ""] },
     deliv: { box: "delivStatusChips", run: "renderDeliverablesTable",
       list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["작성전", "작성전", "chip-ready"], ["작성중", "작성중", "chip-progress"], ["검토요청", "검토요청", "chip-hold"], ["보완완료", "보완완료", "chip-completed"]],
       of: r => [r.status || "작성전", StatusChips._late(r.pDate, r.status === "보완완료" || !!r.aDate) ? "지연" : ""] },
@@ -639,8 +639,8 @@ var NeoPage = {
         if (!d.closest(".neo-dd") && !d.classList.contains("sync-toolbar") && !d.children.length && !d.textContent.trim()) d.remove();
       });
     };
-    make(btns.filter(isDown), "down", "⬇ 내려받기");
-    make(btns.filter(isUp), "up", "⬆ 올리기");
+    make(btns.filter(isDown), "down", "⬇ 다운로드");
+    make(btns.filter(isUp), "up", "⬆ 업로드");
   },
 
   toggle(key, ev) {

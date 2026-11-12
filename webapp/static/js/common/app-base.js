@@ -7,7 +7,11 @@
 const APP_VERSION = (function () {
   const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "IOSTAR-PM", version: "1.0.1", edition: "STANDARD", editionName: "Standard" };
   const edName = c.editionName !== undefined ? c.editionName : (c.edition && c.edition !== "KR" ? c.edition : "");
-  return { version: c.version, title: `${c.productName}${edName ? " " + edName : ""} ver${c.version}`, edition: c.edition || "KR", editionName: edName };
+  // 사내 표시 이름(PM Hub) · 브랜드 · 판: IOSTAR-PM Workgroup
+  const brand = c.brand || c.productName || "IOSTAR-PM";
+  const product = `${brand}${edName ? " " + edName : ""}`;
+  const name = c.displayName || product;
+  return { version: c.version, name, brand, product, variant: edName, title: `${c.displayName ? c.displayName + " · " : ""}${product} v${c.version}`, edition: c.edition || "KR", editionName: edName };
 })();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼

@@ -345,7 +345,7 @@ var MeetingManager = {
             id: "AGD-02",
             order: 2,
             title: "현장 비가동 사유 터치 키오스크 UI 대형 버튼 시범 적용",
-            discussion: "작업자 장갑 착용 상태에서 버튼 오터치를 방지하기 위해 10대 다빈도 비가동 사유 1-Touch 입력 레이아웃 시연 및 피드백 청취.",
+            discussion: "멤버 장갑 착용 상태에서 버튼 오터치를 방지하기 위해 10대 다빈도 비가동 사유 1-Touch 입력 레이아웃 시연 및 피드백 청취.",
             decision: "버튼 크기 140% 확대 및 감압식 터치 보정 알고리즘을 6월 5일까지 시범 라인에 적용하기로 확정."
           }
         ],
@@ -502,13 +502,13 @@ var MeetingManager = {
             id: "AGD-05",
             order: 1,
             title: "22주차 전사 WBS 진척률 집계 및 계획 대비 갭 분석 보고",
-            discussion: "금주 종합 실적 진척률 55% 달성 목표 확인 및 단위과업 일정 준수 상태 점검 예정.",
+            discussion: "금주 종합 실적 진척률 55% 달성 목표 확인 및 Task 일정 준수 상태 점검 예정.",
             decision: "(회의 진행 후 기록 예정)"
           },
           {
             id: "AGD-06",
             order: 2,
-            title: "6월 핵심 과업 모듈 개발 환경 및 테스트베드 공동 활용 방안",
+            title: "6월 핵심 Task 모듈 개발 환경 및 테스트베드 공동 활용 방안",
             discussion: "도장 및 조립 라인 가상 PLC 시뮬레이터 서버 자원 배분 계획 협의.",
             decision: "(회의 진행 후 기록 예정)"
           }
@@ -1151,7 +1151,7 @@ var MeetingManager = {
           <span>👥 회의 참석자 명단 (${(mtg.attendees || []).length}명)</span>
           <div style="display:flex; gap:6px; align-items:center;">
             <select id="selQuickAddUser" style="font-size:var(--fs-xs, 11px); padding:2px 6px;">
-              <option value="">-- 등록된 사용자 빠른 선택 --</option>
+              <option value="">-- 등록된 멤버 빠른 선택 --</option>
               ${((typeof projectUsers !== "undefined" && Array.isArray(projectUsers)) ? projectUsers : []).map(u => `<option value="${escapeHtml(u.name)}|${escapeHtml(u.dept)}">${escapeHtml(u.name)} (${escapeHtml(u.dept || u.role)})</option>`).join("")}
             </select>
             <input type="text" id="inCustomAttendee" placeholder="성명(소속/역할)" style="font-size:var(--fs-xs, 11px); padding:2px 6px; width:130px;">
@@ -1266,8 +1266,8 @@ var MeetingManager = {
         <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" data-click="MeetingManager.completeMinutes" data-click-args='[true]'>✅ 작성 완료 (저장)</button>
           <button class="btn btn-secondary btn-sm" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 내려받기 (회의록)</button>
-          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 내려받기 (회의록)</button>
+          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
+          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 다운로드 (회의록)</button>
         </div>
       </div>
     `;
@@ -1313,7 +1313,7 @@ var MeetingManager = {
     }
 
     if (!name) {
-      showToast("⚠️ 추가할 참석자의 성명을 입력하거나 사용자를 선택하세요.", "warning");
+      showToast("⚠️ 추가할 참석자의 성명을 입력하거나 멤버를 선택하세요.", "warning");
       return;
     }
 
@@ -1700,7 +1700,7 @@ var MeetingManager = {
     if (typeof ExcelSync !== "undefined" && typeof ExcelSync._triggerDownload === "function") {
       ExcelSync._triggerDownload(blob, filename);
     }
-    showToast(`📄 [회의록 워드 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📄 [회의록 워드 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
   // 회의록 엑셀(XLSX) 다운로드
@@ -1773,7 +1773,7 @@ var MeetingManager = {
     ]);
     const filename = ExcelSync.stdName("회의록", [m.system, m.title], "xlsx", String(m.date || "").replace(/-/g, ""));
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [회의록 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [회의록 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
   // Action Item 통합 목록 엑셀 내려받기
@@ -1805,7 +1805,7 @@ var MeetingManager = {
     ]);
     const filename = ExcelSync.stdName("ActionItem", [], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [Action Items 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [Action Items 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
   // [ver1.0.4 신규] 회의 일정 목록 전체/필터 엑셀 내려받기 (XLSX)
@@ -1850,7 +1850,7 @@ var MeetingManager = {
     ]);
     const filename = ExcelSync.stdName("회의일정", [scopeLabel], "xlsx");
     ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [회의일정 엑셀 내려받기 완료] ${filename} 파일이 저장되었습니다.`);
+    showToast(`📊 [회의일정 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 };
 

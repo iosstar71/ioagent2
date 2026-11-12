@@ -222,7 +222,7 @@ const GanttRenderer = {
           const ms = document.createElement("div");
           ms.className = "gantt-milestone";
           ms.style.left = `${left + 3}px`;
-          ms.title = `[마일스톤 과업] ${task.name} (${task.pStart})`;
+          ms.title = `[마일스톤 Task] ${task.name} (${task.pStart})`;
           row.appendChild(ms);
         } else {
           row.appendChild(this._progressBar(task, left, width, st));
