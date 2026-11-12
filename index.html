@@ -228,7 +228,7 @@
       <!-- 상단 모드 전환 및 실시간 상태 툴바 -->
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <span class="sub-title">🏠 홈</span>
+          <span class="sub-title">🏠 홈</span><span class="neo-ph-desc">오늘 확인할 일과 프로젝트 상황을 한눈에 봅니다.</span>
           <div class="home-style-switch" role="group" aria-label="홈 스타일">
             <button type="button" class="home-style-btn" data-home-style="EXECUTIVE" data-click="HomeScreenManager.setStyle" data-click-args='["EXECUTIVE"]'>📊 브리핑</button>
             <button type="button" class="home-style-btn" data-home-style="PORTAL" data-click="HomeScreenManager.setStyle" data-click-args='["PORTAL"]'>🧰 워크벤치</button>
@@ -465,7 +465,7 @@
     <div id="tab-dashboard" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📊 종합 대시보드</span>
+          <span class="sub-title">📊 종합 대시보드</span><span class="neo-ph-desc">프로젝트가 계획대로 가고 있는지 숫자와 그래프로 확인합니다.</span>
           <div class="current-date-badge">수행기간: <b id="dashProjPeriodText">-</b></div>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
@@ -675,7 +675,7 @@
     <div id="tab-matrix" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">📌 단계별 진척 현황</span>
+          <span class="sub-title">📌 단계별 진척 현황</span><span class="neo-ph-desc">서브시스템마다 분석 · 설계 · 개발 같은 단계가 어디까지 왔는지 봅니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -783,7 +783,7 @@
     <div id="tab-gantt" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">🗓️ 간트차트</span>
+          <span class="sub-title">🗓️ 간트차트</span><span class="neo-ph-desc">모든 일정을 막대로 펼쳐 겹치거나 늦어진 일을 찾습니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -835,7 +835,7 @@
     <div id="tab-wbs" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">📝 WBS 공정 관리</span>
+          <span class="sub-title">📝 WBS 공정 관리</span><span class="neo-ph-desc">해야 할 일을 단계별로 나누고 일정 · 담당자 · 실적을 입력합니다.</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
@@ -889,16 +889,19 @@
           <span class="status-badge-chip chip-delayed neo-std-only" style="cursor:pointer;" data-click="UiH.setValueRun" data-click-args='["wbsStatusFilter", "지연", "renderWbsTable"]' title="지연 최하위 Task 조회">지연 <b id="wbsDelayedCount">0</b>건</span>
           <!-- [Neo 2.1] 상태 칩 필터 (최하위 Task 상태별 건수, 누르면 해당 상태만 표시) -->
           <span class="neo-chips" id="neoStatusChips" role="group" aria-label="상태 필터"></span>
+          <span class="wbs-err-group" id="wbsErrGroup" style="display:none;" title="오류 칸은 표에서 같은 색으로 표시됩니다">
+            <span class="wbs-err-label">⚠️ 오류</span>
+            <span id="wbsWeightErrChip" class="wbs-err-chip" style="display:none;" title="하위 가중치 합이 상위와 다른 묶음"></span>
+            <span id="wbsHolidayErrChip" class="wbs-err-chip" style="display:none;" title="계획시작 · 종료일이 주말 · 공휴일인 Task"></span>
+            <span id="wbsDateErrChip" class="wbs-err-chip" style="display:none;" title="시작일이 종료일보다 늦거나 프로젝트 기간을 벗어난 Task"></span>
+          </span>
         </div>
         <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="btn btn-sm wbs-fold-btn" id="btnWbsFold" data-click="WbsFold.toggle" title="가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다">◀ 가중치·REQ·담당자·산출물 접기</button>
-          <span id="wbsWeightErrChip" class="wbs-err-chip" style="display:none;" title="하위 가중치 합이 상위와 다른 묶음"></span>
           <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 오류 보정</button>
-          <span id="wbsHolidayErrChip" class="wbs-err-chip" style="display:none;" title="계획시작 · 종료일이 주말 · 공휴일인 Task"></span>
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
             🗓️ 휴일 자동보정
           </button>
-          <span id="wbsDateErrChip" class="wbs-err-chip" style="display:none;" title="시작일이 종료일보다 늦거나 프로젝트 기간을 벗어난 Task"></span>
           <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="선택한 서브시스템(또는 전체)에서 계획 진척률이 있는 최하위 Task 를 모두 실적에 반영합니다. 실적시작일: 계획시작이 기준 주차보다 앞이면 주차 시작일, 주차 안이면 계획시작일. 실적종료일(100%): 계획종료가 기준 주차 안이면 계획종료일, 앞이면 기준일. 이미 입력된 실적일은 그대로 둡니다.">
             ⚡ 실적 자동반영
           </button>
@@ -938,7 +941,7 @@
     <div id="tab-req" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">🎯 요구사항 관리</span>
+          <span class="sub-title">🎯 요구사항 관리</span><span class="neo-ph-desc">고객이 요청한 기능을 등록하고 처리 상태를 관리합니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -999,7 +1002,7 @@
     <div id="tab-voc" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">💬 VOC·이슈 관리</span>
+          <span class="sub-title">💬 VOC·이슈 관리</span><span class="neo-ph-desc">진행 중에 새로 들어온 요청과 문제를 접수해 해결까지 챙깁니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -1064,7 +1067,7 @@
     <div id="tab-deliverables" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
-          <span class="sub-title">📑 산출물</span>
+          <span class="sub-title">📑 산출물</span><span class="neo-ph-desc">제출해야 할 문서 · 결과물의 일정과 승인 상태를 관리합니다.</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -1134,7 +1137,7 @@
     <div id="tab-weekly-report" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📝 주간보고</span>
+          <span class="sub-title">📝 주간보고</span><span class="neo-ph-desc">WBS 실적으로 이번 주 한 일과 다음 주 할 일을 정리해 보고합니다.</span>
           <div class="current-date-badge">보고 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
@@ -1330,7 +1333,7 @@
     <div id="tab-meeting" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📅 회의 관리 센터</span>
+          <span class="sub-title">📅 회의 관리 센터</span><span class="neo-ph-desc">회의 일정을 잡고 회의록과 후속 조치(Action Item)를 기록합니다.</span>
           <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1569,7 +1572,7 @@
     <div id="tab-merge" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🔀 스마트 병합</span>
+          <span class="sub-title">🔀 스마트 병합</span><span class="neo-ph-desc">여러 사람이 각자 PC에서 고친 자료를 하나로 모으는 곳입니다. 작업자는 내 자료를 파일로 받아 PM에게 보내고, PM은 받은 파일을 올려 미리 보기로 확인한 뒤 합칩니다.</span>
           <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -1712,7 +1715,7 @@
          ============================================================ -->
     <div id="tab-notices" class="tab-pane">
       <div class="sub-header-bar">
-        <div><span class="sub-title">📢 공지·소통</span>
+        <div><span class="sub-title">📢 공지·소통</span><span class="neo-ph-desc">팀 공지를 올리고 과업에 대한 의견을 주고받습니다.</span>
 </div>
       </div>
       <!-- 서브 탭 네비게이션 바 -->
@@ -1909,7 +1912,7 @@
                 <div id="tab-master" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">🗂️ 프로젝트 기준정보</span>
+          <span class="sub-title">🗂️ 프로젝트 기준정보</span><span class="neo-ph-desc">기간 · 서브시스템 · 단계 · 휴일 · 작업자처럼 모든 화면의 기준이 되는 값을 정합니다.</span>
           <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 관리자(SYS_ADMIN)</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -2360,7 +2363,7 @@
     <div id="tab-config" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">⚙️ 시스템 설정</span>
+          <span class="sub-title">⚙️ 시스템 설정</span><span class="neo-ph-desc">화면 모양 · 프로젝트 목록 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>

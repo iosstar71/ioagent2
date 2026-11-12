@@ -333,11 +333,12 @@ async function main() {
       rebuildAll(true);
       const c = id => { const e = document.getElementById(id); return getComputedStyle(e).display === "none" ? "" : e.textContent; };
       const col = sel => { const e = document.querySelector(sel); return e ? getComputedStyle(e).borderTopColor : ""; };
-      return { w: c("wbsWeightErrChip"), h: c("wbsHolidayErrChip"), d: c("wbsDateErrChip"), banner: !!document.querySelector(".holiday-alert-banner"),
+      const g = document.getElementById("wbsErrGroup");
+      return { grp: getComputedStyle(g).display !== "none" && !g.closest("div[style*='margin-left: auto']") && !!g.closest(".filter-item"), w: c("wbsWeightErrChip"), h: c("wbsHolidayErrChip"), d: c("wbsDateErrChip"), banner: !!document.querySelector(".holiday-alert-banner"),
         same: new Set([col("#wbsTableBody input.weight-warn"), col("#wbsTableBody input.holiday-date-highlight"), col("#wbsTableBody input.date-reversed")]).size };
     });
-    check("WBS errors: one colour for weight / holiday / date, counts shown in front of the buttons, no schedule notice banner",
-      /가중치 \d/.test(chips.w) && chips.h === "⚠️ 휴일 2" && chips.d === "⚠️ 날짜 1" && !chips.banner && chips.same === 1, JSON.stringify(chips));
+    check("WBS errors: one colour; counts in their own 오류 group apart from the buttons; no schedule notice banner",
+      /가중치 \d+건/.test(chips.w) && chips.h === "휴일 2건" && chips.d === "날짜 1건" && chips.grp && !chips.banner && chips.same === 1, JSON.stringify(chips));
     await wc.selectOption("#wbsPhaseFilter", "설계"); await wc.waitForTimeout(300);
     const ph = await wc.evaluate(() => ({ opts: [...document.querySelectorAll("#wbsPhaseFilter option")].map(o => o.value).join(), rows: [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]")].map(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).name).join() }));
     await wc.selectOption("#wbsPhaseFilter", "ALL"); await wc.waitForTimeout(200);

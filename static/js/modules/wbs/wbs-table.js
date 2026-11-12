@@ -38,8 +38,10 @@ function renderWbsTable() {
   const dte = errRows.filter(t => isDateReversed(t.pStart, t.pEnd) || isDateReversed(t.aStart, t.aEnd) || out(t.pStart) || out(t.pEnd) || out(t.aStart) || out(t.aEnd)).length;
   [["wbsHolidayErrChip", hol, "휴일"], ["wbsDateErrChip", dte, "날짜"]].forEach(([id, n, lbl]) => {
     const el = document.getElementById(id);
-    if (el) { el.style.display = n ? "inline-flex" : "none"; el.textContent = `⚠️ ${lbl} ${n}`; }
+    if (el) { el.style.display = n ? "inline-flex" : "none"; el.textContent = `${lbl} ${n}건`; }
   });
+  const grp = document.getElementById("wbsErrGroup");
+  if (grp) grp.style.display = [...grp.querySelectorAll(".wbs-err-chip")].some(c => c.style.display !== "none") ? "inline-flex" : "none";
 
   wbsData.forEach((row, idx) => {
     const pStartOutOfRange = WBSEngine.isDateOutOfRange(row.pStart, projectConfig.projectStartDate, projectConfig.projectEndDate);
