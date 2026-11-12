@@ -157,6 +157,22 @@ async function main() {
     const warn = await pm.evaluate(() => document.getElementById("mpNote").textContent);
     await pm.evaluate(() => MergeTable.close());
     check("A file based on an older 종합본 shows a warning in the preview", warn.includes("이전 종합본"), warn);
+    // 작업자 자료를 엑셀로 보내도 됨: 파일정보 시트(기준 종합본 · 보낸 사람)로 같은 경고, 미리 보기로 반영
+    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").aProg = 30; rebuildAll(true); persistChanges(true); });
+    const xl = await wa.evaluate(async () => {
+      const o = ExcelSync._triggerDownload; let got = null;
+      ExcelSync._triggerDownload = (b, n) => { got = { b, n }; };
+      try { GShell.go("tab-merge"); SubTabs.show("merge", "merge"); const s = document.getElementById("workDataSubsysSelect"); s.value = "W1"; MergeTable.selectUnit("sys"); MergeTable.download("EXCEL"); } finally { ExcelSync._triggerDownload = o; }
+      const buf = new Uint8Array(await got.b.arrayBuffer()); let bin = ""; buf.forEach(x => { bin += String.fromCharCode(x); });
+      return { name: got.n, b64: btoa(bin) };
+    });
+    await pm.evaluate(async x => { const bin = atob(x.b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      await MergeTable.previewFile(new File([u], "wg_a.xlsx"), { scope: "W1", title: "📋 자료 올리기" }); }, xl);
+    const pvx = await pm.evaluate(() => ({ note: document.getElementById("mpNote").textContent, wbs: [...document.querySelectorAll("#mpBody tr")].filter(r => /WBS/.test(r.textContent)).map(r => r.querySelector(".mp-apply").textContent).join() }));
+    await pm.click("#mpOkBtn"); await pm.waitForTimeout(600);
+    const xa = await pm.evaluate(() => wbsData.find(t => t.id === "1.1").aProg);
+    check("Worker data can also go as Excel: the file carries its 종합본 version and sender (stale warning), PM merges it through the preview",
+      /\.xlsx$/.test(xl.name) && pvx.note.includes("이전 종합본") && pvx.note.includes("가작업") && parseInt(pvx.wbs, 10) > 0 && xa === 30, JSON.stringify({ n: xl.name, pvx, xa }));
     // 작업자가 새 종합본을 가져와도 내 담당(W1) 작업은 그대로, W2 는 종합본대로
     await pm.evaluate(() => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 수정)"; rebuildAll(true); persistChanges(true); });
     const pkg3 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');

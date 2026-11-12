@@ -33,6 +33,7 @@ var MergeTable = {
     ["wbs", /wbs|공정표/i], ["deliverables", /산출물/], ["req", /요구|req/i], ["voc", /voc|이슈/i]
   ],
   _plan: null,
+  INFO_SHEET: "파일정보",
 
   item(k) { return this.ITEMS.find(i => i.k === k); },
   _lockOn() { return false; },  // Local 판: 체크아웃 잠금 없음 (담당 서브시스템 배정으로 대신)
@@ -129,6 +130,14 @@ var MergeTable = {
       return showToast(`📥 [자료 ${keys.length}종 · ${scope}] JSON 내려받기: ${name}`);
     }
     const sheets = keys.map(k => this.sheetFor(k, scope)).filter(Boolean);
+    // 파일 정보 시트: 어느 종합본을 받아 작업했는지 · 보낸 사람 (PM 이 올릴 때 이전 종합본이면 경고)
+    sheets.push({ name: this.INFO_SHEET, colWidths: [18, 40], rows: [
+      { cells: ["항목", "값"], styleId: 1, height: 22 },
+      { cells: ["기준 종합본", projectConfig.packageStamp || ""], styleId: 2, height: 20 },
+      { cells: ["보낸 사람", (AuthManager.getCurrentUser() || {}).name || ""], styleId: 2, height: 20 },
+      { cells: ["범위", scope === "ALL" ? "전체" : scope], styleId: 2, height: 20 },
+      { cells: ["프로젝트", ProjectData.currentName()], styleId: 2, height: 20 },
+      { cells: ["내려받은 시각", new Date().toLocaleString()], styleId: 2, height: 20 }] });
     const name = ExcelSync.stdName("자료", [scope, tag], "xlsx");
     ExcelSync._triggerDownload(ExcelSync._buildXlsxBlob(sheets), name);
     showToast(`📥 [자료 ${keys.length}종 · ${scope}] 엑셀 내려받기: ${name}`);
@@ -151,7 +160,16 @@ var MergeTable = {
       else if (d && d.data && typeof d.data === "object" && !Array.isArray(d.data)) d = Object.assign({}, d.data, d.projectUsers ? { projectUsers: d.projectUsers } : {});
       return { json: d };
     }
-    return { sheets: await ExcelSync._parseUploadedFile(file) };
+    const all = await ExcelSync._parseUploadedFile(file);
+    // 파일 정보 시트 (기준 종합본 · 보낸 사람) 는 자료로 읽지 않고 따로
+    const info = all.find(sh => String(sh.name || "").replace(/^\d+_/, "") === this.INFO_SHEET);
+    const meta = {};
+    if (info) (info.rows || []).forEach(r => {
+      const k = String((r && r[0]) || "").trim(), v = String((r && r[1]) || "").trim();
+      if (k === "기준 종합본") meta.basedOn = v;
+      else if (k === "보낸 사람") meta.exportedBy = v;
+    });
+    return { sheets: all.filter(sh => sh !== info), meta };
   },
 
   // 시트마다 어떤 자료인지 (이름 → 머리줄)
@@ -233,9 +251,10 @@ var MergeTable = {
     if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 내려받은 양식(엑셀 / JSON)을 쓰세요.`);
     this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
     // [Local] 오래된 종합본을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
-    const based = parsed.json && parsed.json.basedOn, cur = projectConfig.packageStamp;
+    const src = parsed.json || parsed.meta || {};
+    const based = src.basedOn, cur = projectConfig.packageStamp;
     const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 종합본(${based})을 받아 작업한 것입니다. 지금 종합본은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
-    const who = parsed.json && parsed.json.exportedBy ? `보낸 사람: ${parsed.json.exportedBy} · ` : "";
+    const who = src.exportedBy ? `보낸 사람: ${src.exportedBy} · ` : "";
     const checked = opts.checked && opts.checked.length ? opts.checked : keys;
     document.getElementById("mpTitle").textContent = `${opts.title || "📤 올리기"} — 미리 보기`;
     document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
