@@ -88,9 +88,9 @@ function switchTab(tabId) {
   activateTab(tabId);
 }
 
-// 테마 5가지: Urban Slate(기본) · Electric · Nordic Sage · Brown · Obsidian(값 "dark", 어두운 화면)
-//  — 이전 버전의 다른 테마 값은 가까운 테마로 (Navy · Matte → Urban Slate, Green → Nordic Sage)
-const STANDARD_THEMES = ["urban-slate", "electric", "nordic-sage", "brown", "dark"];
+// 테마 6가지 — 최신 무광 3 (Urban Slate 기본 · Nordic Sage · Brown) · 튀는 1 (Electric) · 전통 1 (Classic) · 어두운 화면 1 (Obsidian, 값 "dark")
+//  — 이전 버전의 다른 테마 값은 가까운 테마로 (Navy → Classic, Matte → Urban Slate, Green → Nordic Sage)
+const STANDARD_THEMES = ["urban-slate", "nordic-sage", "brown", "electric", "classic", "dark"];
 function defaultTheme() {
   const t = typeof APP_CONFIG !== "undefined" ? APP_CONFIG.defaultTheme : "";
   return STANDARD_THEMES.indexOf(t) !== -1 ? t : "urban-slate";
@@ -98,7 +98,7 @@ function defaultTheme() {
 function normalizeTheme(theme) {
   if (STANDARD_THEMES.indexOf(theme) !== -1) return theme;
   if (theme === "obsidian" || theme === "graphite" || theme === "cyber-neon" || theme === "charcoal") return "dark";
-  if (theme === "navy" || theme === "ocean" || theme === "purple") return "urban-slate";
+  if (theme === "navy" || theme === "ocean" || theme === "purple") return "classic";
   if (theme === "green" || theme === "emerald" || theme === "forest" || theme === "sage") return "nordic-sage";
   if (theme === "sepia" || theme === "mocha") return "brown";
   if (theme === "matte" || theme === "slate") return "urban-slate";

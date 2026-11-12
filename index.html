@@ -131,9 +131,10 @@
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마">
           <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Urban Slate</button>
-          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#0E0F14 50%,#6C5CFF 50%)"></i>Electric</button>
           <button type="button" class="g-swatch" data-theme-pick="nordic-sage" data-click="UiScale.pickTheme" data-click-args='["nordic-sage"]'><i style="background:linear-gradient(135deg,#F8FAF8 50%,#3F5A4F 50%)"></i>Nordic Sage</button>
           <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#FFFDFA 50%,#7A5236 50%)"></i>Brown</button>
+          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#0E0F14 50%,#6C5CFF 50%)"></i>Electric</button>
+          <button type="button" class="g-swatch" data-theme-pick="classic" data-click="UiScale.pickTheme" data-click-args='["classic"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F6BD8 50%)"></i>Classic</button>
           <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#181B20 50%,#849CB0 50%)"></i>Obsidian</button>
         </div>
         <div class="g-menu-title">글자 크기</div>
@@ -147,9 +148,10 @@
         <label class="g-menu-field g-hidden-field">테마 (목록)
           <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
             <option value="urban-slate">Urban Slate (기본)</option>
-            <option value="electric">Electric</option>
             <option value="nordic-sage">Nordic Sage</option>
             <option value="brown">Brown</option>
+            <option value="electric">Electric</option>
+            <option value="classic">Classic</option>
             <option value="dark">Obsidian (어두운 화면)</option>
           </select>
         </label>
@@ -2554,9 +2556,10 @@
               <label style="display:block; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; margin-bottom:4px;">🎨 테마:</label>
               <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]'>
                 <option value="urban-slate">Urban Slate (기본)</option>
-                <option value="electric">Electric</option>
                 <option value="nordic-sage">Nordic Sage</option>
                 <option value="brown">Brown</option>
+                <option value="electric">Electric</option>
+                <option value="classic">Classic</option>
                 <option value="dark">Obsidian (어두운 화면)</option>
               </select>
             </div>

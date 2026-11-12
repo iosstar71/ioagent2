@@ -395,8 +395,8 @@ async function main() {
       r.btnEmoji = btn ? /[\u{1F300}-\u{1FAFF}]/u.test(btn.textContent) : true;
       return r;
     });
-    check("Themes: 5 (Urban Slate default · Electric · Nordic Sage · Brown · Obsidian); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
-      th.opts === "urban-slate,electric,nordic-sage,brown,dark" && th.def === "urban-slate" && th.legacy === "nordic-sage,urban-slate,urban-slate,brown,dark"
+    check("Themes: 6 (modern Urban Slate default · Nordic Sage · Brown, bold Electric, traditional Classic, dark Obsidian); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
+      th.opts === "urban-slate,nordic-sage,brown,electric,classic,dark" && th.def === "urban-slate" && th.legacy === "nordic-sage,classic,urban-slate,brown,dark"
       && th.body === "nordic-sage" && th.chart && th.chart !== th.chartDark && /iostar_mono/.test(th.logo) && !/iostar_mono/.test(th.logoDark) && th.icons > 20 && !th.btnEmoji, JSON.stringify(th));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);

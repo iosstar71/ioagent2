@@ -38,9 +38,10 @@ PM Hub — IOSTAR-PM Standalone v1.0.0
   - 로그인 후 첫 화면: 관리자 · PM · PL = Summary, 멤버 = My Work ([Admin > 화면 · 테마 > 역할별 첫 화면])
 
 ■ 화면 · 테마
-  - 테마 5가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
-    Urban Slate(기본, 밝은 회청색) · Electric(선명한 청보라) · Nordic Sage(밝은 세이지) · Brown(따뜻한 무광 브라운) · Obsidian(어두운 화면)
-    예전 테마는 자동으로 가까운 테마로: Navy · Matte → Urban Slate, Green → Nordic Sage, Graphite → Obsidian
+  - 테마 6가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
+    최신 무광: Urban Slate(기본, 회청색) · Nordic Sage(세이지) · Brown(따뜻한 브라운)
+    튀는 색: Electric(먹색 + 시안 · 바이올렛)   전통: Classic(네이비 + 흰 바탕)   어두운 화면: Obsidian
+    예전 테마는 자동으로 가까운 테마로: Navy → Classic, Matte → Urban Slate, Green → Nordic Sage, Graphite → Obsidian
   - 로고: 밝은 머리말 테마(Urban Slate · Nordic Sage · Brown)는 무채색 로고, 나머지는 색 로고 (브라우저 탭 아이콘도 같이)
   - 아이콘: 화면의 그림 문자는 모두 같은 모양의 선 아이콘으로 그림 (상태 아이콘만 테마의 정상 · 주의 · 위험 색)
   - 차트(S-curve · 불릿 차트 · 대시보드 표 색)도 테마 색을 따름. 엑셀 · 워드 · PPT 보고서 색은 [보고서 테마] 설정을 따름
