@@ -1,20 +1,18 @@
 // =============================================================================
-// [IOSTAR-PM v4.1.0] ⚙️ 시스템 설정 > 🗄️ 데이터 관리 (DataAdmin) — 시스템관리자 전용
+// [Project Mgmt] ⚙️ 시스템 설정 > 🗄️ 데이터 관리 (DataAdmin) — 관리자 전용
 // -----------------------------------------------------------------------------
-//  ⏱ 자동 백업 설정 : DB 서버 방식 — 사용 · 간격 · 보관 개수 · 첨부파일 포함 (스마트 병합 > 백업 · 복원에는 상태만 표시)
+//  💽 사용 용량: 프로그램 폴더 전체 · DB 크기 (한도 10MB), DB 정리(VACUUM)
 //  🧹 프로젝트 초기화: 대상 프로젝트를 골라 (지금 프로젝트가 아니어도 됨) 프로젝트 이름을 입력해 확인
-//      Task 정보 초기화 (모든 프로젝트 일괄 가능) · 프로젝트 전체 초기화 · 제조 샘플 복원 · 채팅 기록 초기화 · 완전 초기화(지금 프로젝트만)
-//      바꾸기 전 자료는 복원 지점(스냅샷)으로 남김 — DB 서버 방식은 서버 data/backups 에도 남김
-//  🗑 첨부파일 휴지통 : 상태 · 열기 (DB 서버 방식)
+//      Task 정보 초기화 (모든 프로젝트 일괄 가능) · 프로젝트 전체 초기화 · 완전 초기화(지금 프로젝트만)
+//      바꾸기 전 자료는 복원 지점(브라우저)으로 남김
 // =============================================================================
 var DataAdmin = {
   ALL: "__ALL__",
+  LIMIT: 10 * 1024 * 1024,
   ACTIONS: {
-    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)", keep: "프로젝트 기본정보 · 기준정보 · 사용자", all: true },
-    project: { label: "⚠️ 프로젝트 전체 초기화", what: "기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 사용자" },
-    sample: { label: "🔄 제조 샘플 복원", what: "프로젝트 자료 전체를 2027 스마트공장 제조 샘플로 (샘플 담당자는 참여자로 추가)", keep: "프로젝트 이름 · 다른 사용자" },
-    chat: { label: "💬 채팅 기록 초기화", what: "그 프로젝트의 실시간 채팅 기록", keep: "업무 자료 전체", server: true },
-    factory: { label: "⚠️ 완전 초기화 (사용자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 사용자 목록을 처음 상태로 (admin · admin2 · pm, 비밀번호 1234)", keep: "다른 프로젝트 자료", current: true }
+    tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통", keep: "프로젝트 기본정보 · 기준정보 · 작업자", all: true },
+    project: { label: "⚠️ 프로젝트 전체 초기화", what: "기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 작업자" },
+    factory: { label: "⚠️ 완전 초기화 (작업자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 작업자 목록을 처음 상태로 (admin 하나, 암호 1234)", keep: "다른 프로젝트 자료", current: true }
   },
   isAdmin() { return typeof ProjectData !== "undefined" && ProjectData.isAdmin(); },
   isServer() { return typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
@@ -32,25 +30,33 @@ var DataAdmin = {
 
   async render() {
     if (!this.isAdmin()) return;
-    const server = this.isServer();
     if (typeof ProjectManager !== "undefined" && ProjectManager.refreshList) { try { await ProjectManager.refreshList(); } catch (e) {} }
     ProjectData.renderConfigTarget();
     this.renderActions();
-    document.getElementById("daAutoServer").style.display = server ? "" : "none";
-    document.getElementById("daAutoLocal").style.display = server ? "none" : "";
-    if (server) await SystemBackup.refresh();
-    const tr = document.getElementById("daTrash");
-    if (tr) {
-      if (!server) tr.innerHTML = `<span class="bk-hint">첨부파일은 DB 서버 방식에서만 씁니다.</span>`;
-      else {
-        if (typeof AttachManager !== "undefined") await AttachManager.refreshSummary(true);
-        const n = typeof AttachManager !== "undefined" ? AttachManager.trashCount || 0 : 0;
-        const pol = (typeof AttachManager !== "undefined" && (AttachManager.policy || AttachManager.FALLBACK)) || {};
-        tr.innerHTML = `<span>지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 휴지통: <b>${n}</b>개 · 지운 파일은 ${pol.trashDays || 30}일 뒤 자동 완전 삭제</span>
-          <button class="btn btn-sm" data-btn="neutral" data-click="AttachManager.openTrash">🗑 휴지통 열기</button>`;
-      }
-    }
+    await this.usage(true);
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(document.getElementById("dataAdminPane"));
+  },
+
+  size(n) { return n >= 1048576 ? (n / 1048576).toFixed(2) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB"; },
+  _showUsage(res) {
+    const el = document.getElementById("daUsage");
+    if (!el) return;
+    if (!res || !res.ok) { el.textContent = this.isServer() ? "사용 용량을 읽지 못했습니다." : "로컬 저장소 방식: 서버 용량 없음"; return; }
+    const pct = Math.round(res.total / (res.limit || this.LIMIT) * 100);
+    el.innerHTML = `프로그램 폴더 전체 <b>${this.size(res.total)}</b> / 한도 ${this.size(res.limit || this.LIMIT)} (<b style="color:${pct >= 90 ? "#dc2626" : pct >= 75 ? "#d97706" : "#059669"}">${pct}%</b>) · 그중 DB ${this.size(res.db)}`
+      + (pct >= 75 ? ` — ⚠️ 한도에 가깝습니다. 끝난 프로젝트를 백업(💾 백업 · 복원)한 뒤 지우고 [🧹 DB 정리]를 누르세요.` : "");
+  },
+  async usage(silent) {
+    if (!this.isServer()) return this._showUsage(null);
+    const res = await ServerBackend.request("/api/admin/usage", {});
+    this._showUsage(res);
+    if (!silent && res.ok) showToast(`💽 사용 용량 ${this.size(res.total)}`);
+  },
+  async vacuum() {
+    if (!this.isServer()) return;
+    const res = await ServerBackend.request("/api/admin/vacuum", {}, "POST", 60000);
+    this._showUsage(res);
+    showToast(res.ok ? `🧹 DB 를 정리했습니다. (DB ${this.size(res.db)})` : "❌ DB 정리 실패: " + (res.message || ""));
   },
 
   // 대상에 따라 쓸 수 있는 동작만 켬
@@ -58,21 +64,18 @@ var DataAdmin = {
     const body = document.getElementById("daActions");
     if (!body) return;
     const t = this.target();
-    const server = this.isServer();
     body.innerHTML = Object.keys(this.ACTIONS).map(k => {
       const a = this.ACTIONS[k];
       let why = "";
       if (t.all && !a.all) why = "모든 프로젝트 일괄은 Task 정보 초기화만";
       else if (a.current && !t.current) why = "지금 프로젝트만 (머리글에서 그 프로젝트로 바꾼 뒤)";
-      else if (a.server && !server) why = "채팅은 DB 서버 방식에서만";
-      const danger = k === "project" || k === "factory";
       return `<tr class="${why ? "mp-off" : ""}">
         <td><b>${a.label}</b></td>
         <td class="mt-desc">${escapeHtml(a.what)}</td>
         <td class="mt-desc">${escapeHtml(a.keep)}</td>
         <td style="text-align:center; white-space:nowrap;">${why
           ? `<span class="mt-lock">🔒 ${escapeHtml(why)}</span>`
-          : `<button class="btn btn-sm" data-btn="${danger ? "danger" : k === "chat" ? "neutral" : "warn"}" data-click="DataAdmin.run" data-click-args="${UiEvents.args(k)}">실행</button>`}</td>
+          : `<button class="btn btn-sm" data-btn="${k === "tasks" ? "warn" : "danger"}" data-click="DataAdmin.run" data-click-args="${UiEvents.args(k)}">실행</button>`}</td>
       </tr>`;
     }).join("");
   },
@@ -102,13 +105,12 @@ var DataAdmin = {
   },
 
   run(action) {
-    if (!this.isAdmin()) return showToast("🚫 데이터 관리는 시스템관리자만 할 수 있습니다.");
+    if (!this.isAdmin()) return showToast("🚫 데이터 관리는 관리자만 할 수 있습니다.");
     const a = this.ACTIONS[action];
     const t = this.target();
-    if (!a) return;
-    if (t.all && !a.all) return;
+    if (!a || (t.all && !a.all)) return;
     const lines = [`대상: ${t.name}${t.current ? " (지금 프로젝트)" : ""}`, `· 지우는 것: ${a.what}`, `· 그대로: ${a.keep}`,
-      this.isServer() ? "바꾸기 전 자료는 복원 지점(서버)에 남기고, Task 정보는 서버 data/backups 에도 남깁니다." : "바꾸기 전 자료는 복원 지점(이 브라우저)에 남깁니다.",
+      "바꾸기 전 자료는 복원 지점(이 브라우저)에 남깁니다. 오래 보관하려면 먼저 💾 백업 · 복원에서 내려받으세요.",
       "되돌리기 어렵습니다. 확인을 위해 아래에 대상 이름을 그대로 입력하세요."];
     this.ask(`${a.label} — ${t.name}`, lines, t.name, () => this._do(action, t));
   },
@@ -120,20 +122,7 @@ var DataAdmin = {
         await ProjectData._clear(list.map(p => p.id), list.map(p => p.name));
       } else if (action === "project") {
         if (t.current) ProjectData._resetCurrent();
-        else await this._writeOther(t, cur => ({ data: Object.assign(this._emptyTasks(), { projectConfig: ProjectData.blankConfig(cur.projectConfig), subsystemsMeta: [], standardDeliverablesMeta: [] }), users: [] }), "프로젝트초기화");
-      } else if (action === "sample") {
-        if (t.current) StorageManager._applySample();
-        else await this._writeOther(t, () => {
-          const c = DataRegistry.clone(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT);
-          const data = {};
-          ProjectData.BASE_KEYS.concat(ProjectData.TASK_KEYS).forEach(k => { data[k] = c[k] !== undefined ? c[k] : (k === "projectConfig" ? {} : []); });
-          return { data, users: (c.projectUsers || []).filter(u => !ProjectContext.isAdminUser(u)).map(u => ({ empNo: u.empNo, name: u.name, role: u.role, subsystem: u.subsystem, dept: u.dept, lang: u.lang })) };
-        }, "제조샘플복원");
-      } else if (action === "chat") {
-        const res = await ServerBackend.request("/api/chat/clear", { projectId: t.pid });
-        if (!res.ok) return showToast("⚠️ 채팅 기록 초기화 실패: " + (res.message || ""));
-        if (t.current && typeof RealtimeChatManager !== "undefined") { RealtimeChatManager.messages = []; if (RealtimeChatManager.renderMessages) RealtimeChatManager.renderMessages([], true); }
-        showToast(`🧹 [${t.name}] 채팅 기록을 초기화했습니다.`);
+        else await this._writeOther(t, cur => ({ data: Object.assign(this._emptyTasks(), { projectConfig: ProjectData.blankConfig(cur.projectConfig), subsystemsMeta: [], standardDeliverablesMeta: [] }), users: [] }));
       } else if (action === "factory") {
         if (!t.current) return;
         StorageManager._factoryBlank();
@@ -146,12 +135,12 @@ var DataAdmin = {
   _emptyTasks() { const o = {}; ProjectData.TASK_KEYS.forEach(k => { o[k] = []; }); return o; },
 
   // 다른 프로젝트: 지금 자료를 복원 지점으로 남긴 뒤 새 자료로 바꿈 (이름은 그대로)
-  async _writeOther(t, build, reason) {
+  async _writeOther(t, build) {
     const cur = await ProjectTransfer.load(t.pid);
-    BackupHistoryManager.createBackupSnapshot(`${reason}직전백업`, "ALL", false, { projectId: t.pid, projectName: t.name, source: cur.data });
+    BackupHistoryManager.createBackupSnapshot("프로젝트초기화직전백업", "ALL", false, { projectId: t.pid, projectName: t.name, source: cur.data });
     const next = build(cur.data);
     await ProjectTransfer.write(t.pid, { name: t.name, data: next.data, users: next.users }, true);
-    showToast(`✅ [${t.name}] ${reason === "제조샘플복원" ? "프로젝트를 2027 제조 샘플로 바꿨습니다." : "프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 사용자는 그대로)"}`);
+    showToast(`✅ [${t.name}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 작업자는 그대로)`);
   }
 };
 window.DataAdmin = DataAdmin;

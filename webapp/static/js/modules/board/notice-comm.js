@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 공지사항 · 업무 소통
+// [Project Mgmt] 공지사항 · 업무 소통
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
 // [ver1.0.4 신규] 프로젝트 공지사항 등록 및 팀원 간 소통 기능 매니저
@@ -7,7 +7,7 @@
 // [ver1.0.4 신규] 프로젝트 공지사항 등록 및 다중 뷰 모드(피드/칸반/스탠드업) 소통 매니저
 // =============================================================================
 // =============================================================================
-// [ver1.0.4] 공지사항, 업무소통 피드, 실시간 채팅 서브 탭 매니저
+// [ver1.0.4] 공지사항, 업무소통 피드 서브 탭 매니저
 // =============================================================================
 var NoticeCommManager = {
 
@@ -144,7 +144,7 @@ var NoticeCommManager = {
 
   editChannel(oldName) {
     if (!this.hasChannelPermission()) {
-      showToast("⚠️ 채널 정보 수정은 시스템 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다.", "warning");
+      showToast("⚠️ 채널 정보 수정은 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다.", "warning");
       return;
     }
     if (oldName === "전체") {
@@ -164,9 +164,6 @@ var NoticeCommManager = {
         // update communications channel if needed
         communicationsData.forEach(c => { if (c.channel === oldName) c.channel = cleanName; });
         if (this.activeChannel === oldName) this.activeChannel = cleanName;
-        if (typeof RealtimeChatManager !== "undefined" && RealtimeChatManager.activeChannel === oldName) {
-          RealtimeChatManager.activeChannel = cleanName;
-        }
         this.renderChannelOptions();
         this.renderCommunications();
         persistChanges();
@@ -175,7 +172,7 @@ var NoticeCommManager = {
     }
   },
 
-  currentSubTab: "NOTICES", // NOTICES | FEED | CHAT
+  currentSubTab: "NOTICES", // NOTICES | FEED
   viewMode: "FEED",         // FEED | KANBAN | STANDUP
   activeChannel: "전체",
   noticePriorityFilter: "ALL",
@@ -205,7 +202,7 @@ var NoticeCommManager = {
     if (persist) localStorage.setItem("WBS_COMM_SUB_TAB", tabName);
 
     // subtab buttons
-    ["NOTICES", "FEED", "CHAT"].forEach(t => {
+    ["NOTICES", "FEED"].forEach(t => {
       const btn = document.getElementById(`subtabBtn_${t}`);
       const pane = document.getElementById(`subpane_${t}`);
       if (btn) {
@@ -228,15 +225,9 @@ var NoticeCommManager = {
 
     if (tabName === "NOTICES") {
       this.renderNotices();
-      if (typeof RealtimeChatManager !== "undefined") RealtimeChatManager.stopPolling();
     } else if (tabName === "FEED") {
       this.renderChannelOptions();
       this.renderCommunications();
-      if (typeof RealtimeChatManager !== "undefined") RealtimeChatManager.stopPolling();
-    } else if (tabName === "CHAT") {
-      if (typeof RealtimeChatManager !== "undefined") {
-        RealtimeChatManager.init();
-      }
     }
   },
 
@@ -361,15 +352,6 @@ var NoticeCommManager = {
       ind.style.background = "var(--primary)";
     }
 
-    // 3. Chat Room Channels
-    const chatContainer = document.getElementById("chatChannelListContainer");
-    if (chatContainer && typeof RealtimeChatManager !== "undefined") {
-      chatContainer.innerHTML = channels.map(c => `
-        <button class="chat-channel-btn ${RealtimeChatManager.activeChannel === c ? 'active' : ''}" data-channel="${escapeHtml(c)}" data-click="RealtimeChatManager.setChannel" data-click-args="${UiEvents.args(String(c))}">
-          <span># ${escapeHtml(c)}</span>
-        </button>
-      `).join("");
-    }
 
     // 4. System Settings Channels Table
     this.renderSettingsChannelTable();
@@ -422,9 +404,6 @@ var NoticeCommManager = {
       if (!projectConfig.channels) projectConfig.channels = this.getChannels();
       projectConfig.channels = projectConfig.channels.filter(c => c !== name);
       if (this.activeChannel === name) this.activeChannel = "전체";
-      if (typeof RealtimeChatManager !== "undefined" && RealtimeChatManager.activeChannel === name) {
-        RealtimeChatManager.activeChannel = "전체";
-      }
       this.renderChannelOptions();
       this.renderCommunications();
       persistChanges();
@@ -452,15 +431,11 @@ var NoticeCommManager = {
   },
 
   renderAll() {
-    if (typeof AttachManager !== "undefined") AttachManager.refreshSummary();  // 첨부파일 수 (서버 방식, 처음 한 번)
     this.renderChannelOptions();
     this.updateHeaderBadge();
     this.renderNotices();
     this.renderCommunications();
     this.updateModeButtons();
-    if (this.currentSubTab === "CHAT" && typeof RealtimeChatManager !== "undefined") {
-      RealtimeChatManager.checkServerConnection();
-    }
   },
 
   renderNotices() {
@@ -524,7 +499,6 @@ var NoticeCommManager = {
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:var(--fs-xs, 11px); color:#64748b;">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
-            ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("notice", String(item.id), item) : ""}
             ${actionButtons}
           </div>
         </div>
@@ -622,7 +596,6 @@ var NoticeCommManager = {
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:var(--fs-xs, 11px); color:#94a3b8;">${escapeHtml(post.date)}</span>
-            ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("post", String(post.id), post) : ""}
             ${postActionButtons}
           </div>
         </div>

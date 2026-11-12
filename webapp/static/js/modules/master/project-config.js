@@ -1,12 +1,12 @@
-// [IOSTAR-PM] 기준정보: 프로젝트 기본 설정 · ID 규칙
+// [Project Mgmt] 기준정보: 프로젝트 기본 설정 · ID 규칙
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
 let projectConfig = {
   systemTitle: APP_VERSION.title,
-  projectName: "27년 가동률 시스템 개선",
-  domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
+  projectName: "기본 프로젝트",
+  domains: ["기본분야"],
   channels: [], // [v3.0.0] 소통 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
   customSdlcTypes: [ // SDLC 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
     {
@@ -23,7 +23,7 @@ let projectConfig = {
     {
       code: "SDLC_SMART_MFG",
       name: "스마트제조/설비가동률 개선형 (4단계)",
-      desc: "요구사항정의 ➔ 과제개발 ➔ 추가요구개발 ➔ 이행안정화 (27년 가동률 시스템 개선 맞춤형 공정)",
+      desc: "요구사항정의 ➔ 과제개발 ➔ 추가요구개발 ➔ 이행안정화",
       isRecommended: true,
       phases: [
         { key: "p1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/과제정의서", keywords: ["요구사항", "요건", "접수", "정의", "확정", "상세정의"] },
@@ -64,7 +64,7 @@ let projectConfig = {
       phases: [
         { key: "p1", name: "Fit-Gap분석", weight: 25, output: "갭분석서", keywords: ["갭", "fit", "gap", "분석", "패키지", "커스터마이징", "비교"] },
         { key: "p2", name: "파라미터설정", weight: 40, output: "환경설정정의서", keywords: ["설정", "파라미터", "구축", "커스텀", "모듈", "매핑"] },
-        { key: "p3", name: "인수테스트", weight: 20, output: "인수시험결과서", keywords: ["인수", "테스트", "검증", "시험", "사용자", "시운전"] },
+        { key: "p3", name: "인수테스트", weight: 20, output: "인수시험결과서", keywords: ["인수", "테스트", "검증", "시험", "작업자", "시운전"] },
         { key: "p4", name: "이행오픈", weight: 15, output: "가동승인원", keywords: ["이행", "오픈", "가동", "전환", "마이그레이션", "데이터"] }
       ]
     },
@@ -105,7 +105,7 @@ let projectConfig = {
     }
   ],
   activeSdlcCodes: ["SDLC_PMO", "SDLC_SMART_MFG", "SDLC_WATERFALL", "SDLC_AGILE"],
-  activeReqPreset: "REQ_MFG_2027",
+  activeReqPreset: "",
   // [ver1.0.4] 개선과제형(REQ) 서브시스템 공정 단계 기준정보 (4단계)
   reqSdlcPhases: [
     { key: "r1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/정의서", keywords: ["요구사항", "요건", "접수", "분석", "정의", "확정"] },
@@ -114,10 +114,11 @@ let projectConfig = {
     { key: "r4", name: "이행/안정화 단계 (11~12월)", weight: 15, output: "보안조치서/인수인계서", keywords: ["이행", "보안", "점검", "인수인계", "종료", "안정화"] }
   ],
   maxDeliverableRounds: 2,
-  projectStartDate: "2027-01-01",
-  projectEndDate: "2027-12-31",
-  weekStartDay: 5, // 금요일 시작
-  reportDate: "2027-06-01",
+  // 처음 값: 올해 1월 1일 ~ 12월 31일, 기준일 = 오늘 (기준정보에서 바꿈)
+  projectStartDate: `${new Date().getFullYear()}-01-01`,
+  projectEndDate: `${new Date().getFullYear()}-12-31`,
+  weekStartDay: 1, // 월요일 시작
+  reportDate: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10),
   roleHomeSettings: {
     SYS_ADMIN: "EXECUTIVE",
     PM: "EXECUTIVE",
@@ -145,18 +146,18 @@ let projectConfig = {
 
 function renderProjectTitles() {
   // 저장된 시스템 명칭의 버전 표기는 현재 프로그램 버전으로 표시
-  // [v1.0.10] 시스템 명칭 변경(IOSTAR-PM): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
+  // [v1.0.10] 시스템 명칭 변경(Project Mgmt): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
   if (/AX[ _]Project[ _]Management|AX_PMYS/i.test(projectConfig.systemTitle || "")) projectConfig.systemTitle = APP_VERSION.title;
-  const sysTitle = String(projectConfig.systemTitle || APP_VERSION.title).replace(/ver\d+\.\d+\.\d+/, "ver" + APP_VERSION.version);
-  const projName = projectConfig.projectName || "차세대 통합 구축 프로젝트";
+  const sysTitle = APP_VERSION.title;  // 시스템 이름은 고정: Project Mgmt (협업)
+  const projName = projectConfig.projectName || "프로젝트";
 
   const hSys = document.getElementById("headerSystemTitleText");
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
   // Standard·Neo: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
-  if (hSys) hSys.textContent = APP_VERSION.edition !== "KR" ? sysTitle.replace(/\s*ver\d+(\.\d+)*.*$/, "") : sysTitle;
+  if (hSys) hSys.textContent = APP_VERSION.name;
   const hVer = document.getElementById("headerVersionBadge");
-  if (hVer) hVer.textContent = (APP_VERSION.editionName ? APP_VERSION.editionName + " " : "") + "v" + APP_VERSION.version;
+  if (hVer) hVer.textContent = "v" + APP_VERSION.version;
   if (hProj) hProj.textContent = projName;
   if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 

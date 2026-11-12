@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM 서버] 전체 사용자 통합 관리 (v3.7.0) — 시스템관리자 전용
+"""[Project Mgmt 서버] 전체 작업자 관리 — 관리자 전용 (전사 시스템의 사용자 관리와 별개)
 
   POST /api/admin/users/list     전체 사용자 + 프로젝트(서브시스템 목록) — 비밀번호 정보는 내보내지 않음
   POST /api/admin/users/save     {empNo, name, dept, lang, sysAdmin, projectRoles:{프로젝트:{role, subsystem, dept}}, pwdReset, isNew}
   POST /api/admin/users/delete   {empNo}
 
-계정(사번 · 이름 · 비밀번호)은 하나이고, 프로젝트마다 참여 정보(역할 · 담당 서브시스템 · 부서)를 따로 둡니다.
+작업자(작업자 ID · 이름 · 암호)는 하나이고, 프로젝트마다 참여 정보(역할 · 담당 서브시스템 · 부서)를 따로 둡니다.
 """
 import re
 
 from .common import AuthError, now_str
-from .logger import write_server_log
 from .permission import is_sys_admin, normalize_role
 from .settings import DB_LOCK, DEFAULT_PROJECT
 from .store import Store
 
 EMP_NO_RE = re.compile(r"^[A-Za-z0-9_.\-]{2,30}$")
-SECOND_ADMIN = {"empNo": "admin2", "name": "시스템관리자2", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "시스템 총괄관리자",
-                "pwdHash": "", "lang": "ko", "projectRoles": {}}
 
 
 def _public(u):
@@ -45,7 +42,6 @@ def _update(mutator, who):
             part = mutator(users)
             revs[part] = {"rev": int((revs.get(part) or {}).get("rev", 0)) + 1, "by": who, "at": now_str()}
             Store._write_dataset(cur, "projectUsers", users, revs, who)
-            Store._write_mirror(cur, ["projectUsers"], DEFAULT_PROJECT)
             conn.commit()
         finally:
             conn.close()
@@ -91,7 +87,6 @@ def save_user(admin, req):
         return row["empNo"]
 
     _update(mutate, admin["empNo"])
-    write_server_log(f"[USER] Saved {emp} (sysAdmin={want_admin}, projects={','.join(roles) or '-'}) by {admin['empNo']}")
 
 
 def delete_user(admin, emp):
@@ -109,29 +104,6 @@ def delete_user(admin, emp):
         return row["empNo"]
 
     _update(mutate, admin["empNo"])
-    write_server_log(f"[USER] Deleted {emp} by {admin['empNo']}")
-
-
-def ensure_second_admin():
-    """[v3.7.0] 시스템관리자 계정을 하나 더 둠 (admin2 / 초기 비밀번호 1234) — 없을 때 한 번만 만듦"""
-    with DB_LOCK:
-        conn = Store.connect()
-        try:
-            cur = conn.cursor()
-            if cur.execute("SELECT 1 FROM TB_META WHERE META_KEY = 'second_admin'").fetchone():
-                return
-            users, revs = Store._read_dataset(cur, "projectUsers")
-            users = users or []
-            if not any(str(u.get("empNo", "")).lower() == "admin2" for u in users):
-                at = next((i for i, u in enumerate(users) if str(u.get("empNo", "")).lower() == "admin"), -1) + 1
-                users.insert(at, dict(SECOND_ADMIN))
-                revs["admin2"] = {"rev": 1, "by": "system", "at": now_str()}
-                Store._write_dataset(cur, "projectUsers", users, revs, "system")
-                write_server_log("[INIT] Second system administrator account created (admin2)")
-            cur.execute("INSERT OR REPLACE INTO TB_META VALUES ('second_admin', '1')")
-            conn.commit()
-        finally:
-            conn.close()
 
 
 # ---- API ----

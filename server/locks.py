@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM Workgroup 0.1] 서브시스템 체크아웃 · 체크인 (편집 잠금)
+"""[Project Mgmt] 서브시스템 체크아웃 · 체크인 (편집 잠금)
 
   범위(scope)
     SUB:<서브시스템>  그 서브시스템의 WBS · 요구사항 · 산출물 · VOC (DATASETS 의 part == "system")
@@ -18,14 +18,12 @@
     /api/locks/force-release  {scopes:[...], reason}    → PM · 시스템관리자, 사유 필수, 기록
   저장(/api/db/save)이 막히면 423 {locked:[{key, part, scope, reason, empNo, name, since, lastAt}]}
 
-  [Enterprise] 저장소를 바꿀 때는 이 파일의 SQL 만 옮기면 됨 (docs/ENTERPRISE_ROADMAP.md)
 """
 import time
 
 from .common import AuthError, now_str
-from .logger import write_server_log
 from .permission import can_write
-from .settings import APP_CONFIG, DB_LOCK, app_features, load_app_config, BASE_DIR
+from .settings import DB_LOCK, app_features, load_app_config, BASE_DIR
 
 LOCK_KEYS = ("wbsData", "reqMasterData", "deliverablesData", "vocData")
 PROJECT_KEYS = ("projectConfig", "subsystemsMeta", "standardDeliverablesMeta")
@@ -61,7 +59,12 @@ def _schema(cur):
     )
 
 
+LOG_KEEP = 300  # 프로젝트마다 최근 기록만 보관 (용량)
+
+
 def _log(cur, pid, scope, emp, name, action, by="", memo=""):
+    cur.execute("DELETE FROM TB_LOCK_LOG WHERE PROJECT_ID = ? AND LOG_ID NOT IN (SELECT LOG_ID FROM TB_LOCK_LOG WHERE PROJECT_ID = ? ORDER BY LOG_ID DESC LIMIT ?)",
+                (pid, pid, LOG_KEEP - 1))
     cur.execute("INSERT INTO TB_LOCK_LOG (PROJECT_ID, SCOPE, EMP_NO, USER_NAME, ACTION, AT, BY_EMP, MEMO) VALUES (?,?,?,?,?,?,?,?)",
                 (pid, scope, emp, name, action, now_str(), by, (memo or "")[:300]))
 
@@ -219,8 +222,6 @@ def api_checkout(h, req):
         touch(cur, info, pid)
         return dict(got=got, taken=taken, denied=denied, **listing(cur, pid, False))
     res = _run(go)
-    if res["got"]:
-        write_server_log(f"[LOCK] Checkout {pid} {res['got']} by {info['empNo']}")
     h._send_json(200, dict(ok=not res["taken"] and not res["denied"], **res))
 
 
@@ -249,8 +250,6 @@ def _release(h, req, action):
         touch(cur, info, pid)
         return dict(released=done, **listing(cur, pid, False))
     res = _run(go)
-    if res["released"]:
-        write_server_log(f"[LOCK] {action} {pid} {res['released']} by {info['empNo']}{' reason=' + memo if force else ''}")
     h._send_json(200, dict(ok=True, **res))
 
 

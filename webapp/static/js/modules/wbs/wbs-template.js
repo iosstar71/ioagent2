@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 간트 · 공휴일 표 · WBS 템플릿
+// [Project Mgmt] 간트 · 공휴일 표 · WBS 템플릿
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function renderGantt() {
   if (typeof GanttRenderer !== "undefined") {
@@ -19,7 +19,7 @@ function renderHolidays() {
 
     const dayName = WBSEngine.getDayOfWeekText(h.date);
     const typeBadge = h.type === "CUSTOM"
-      ? `<span class="status-tag tag-progress" style="font-size:calc(9px * var(--fs-scale, 1));">사용자휴일</span>`
+      ? `<span class="status-tag tag-progress" style="font-size:calc(9px * var(--fs-scale, 1));">작업자휴일</span>`
       : `<span class="status-tag tag-completed" style="font-size:calc(9px * var(--fs-scale, 1));">법정공휴일</span>`;
 
     tbody.innerHTML += `
@@ -39,7 +39,7 @@ function renderHolidays() {
 }
 
 function addCustomHolidayRow() {
-  projectConfig.holidays.push({ type: "CUSTOM", name: "사용자 특별휴일", date: projectConfig.reportDate });
+  projectConfig.holidays.push({ type: "CUSTOM", name: "작업자 특별휴일", date: projectConfig.reportDate });
   renderHolidays();
   rebuildAll();
 }
@@ -148,9 +148,9 @@ var WbsTemplate = {
   },
 
   // [v3.7.0] 서브시스템의 기본 담당자: 그 서브시스템 총괄리더(여럿이면 먼저 조회된 사람)
-  //   → 없으면 그 서브시스템 담당 사용자 → 전체 담당 총괄리더 순
+  //   → 없으면 그 서브시스템 담당 작업자 → 전체 담당 총괄리더 순
   leadOf(sys) {
-    // 이 프로젝트에서의 역할 · 담당 서브시스템 (사용자 정보는 프로젝트별 — projectRoles)
+    // 이 프로젝트에서의 역할 · 담당 서브시스템 (작업자 정보는 프로젝트별 — projectRoles)
     const users = (typeof projectUsers !== "undefined" ? projectUsers : []).filter(u => u && u.name);
     const eff = u => (typeof ProjectContext !== "undefined" && ProjectContext.effective ? ProjectContext.effective(u) : u);
     const role = u => (typeof AuthManager !== "undefined" ? AuthManager.normalizeRole(eff(u).role) : String(eff(u).role || ""));

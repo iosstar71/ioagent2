@@ -1,8 +1,8 @@
 // =============================================================================
-// [IOSTAR-PM v3.9.0] 공정 유형 라이브러리 (ProcessLib)
+// [Project Mgmt v3.9.0] 공정 유형 라이브러리 (ProcessLib)
 // -----------------------------------------------------------------------------
 //  - SDLC 유형 · 개선과제(REQ) 유형의 정의(단계 · 가중치 · 대표 산출물 · 매칭 키워드)는
-//    [시스템 설정 > 🔄 공정 유형]에서 시스템관리자가 관리 → 모든 프로젝트 공통 (processTypes)
+//    [시스템 설정 > 🔄 공정 유형]에서 관리자가 관리 → 모든 프로젝트 공통 (processTypes)
 //  - 프로젝트는 [기준정보 > 공정단계정보]에서 쓸 유형만 활성화하고, 단계별 계획 일정만 정함
 //    활성화하면 그 정의를 프로젝트에 복사해 둠 (projectConfig.customSdlcTypes / reqSdlcPhases)
 //    → 라이브러리가 바뀌어도 진행 중인 프로젝트는 그대로, [🔄 최신 반영]을 눌러야 바뀜 (계획 일정은 단계 이름으로 이어 받음)
@@ -79,7 +79,7 @@ var ProcessLib = {
     return true;
   },
   refreshSdlc(code) {
-    if (!this.canManageProject()) return showToast("🚫 PM · 시스템관리자만 바꿀 수 있습니다.");
+    if (!this.canManageProject()) return showToast("🚫 PM · 관리자만 바꿀 수 있습니다.");
     if (!this.applySdlcToProject(code)) return;
     renderCustomSdlcCards();
     rebuildAll(true);
@@ -142,7 +142,7 @@ var ProcessLib = {
   // saveCustomSdlcFromModal 에서 부름
   saveModal(mode, code, name, desc) {
     if (mode.target === "dates") {
-      if (!this.canManageProject()) return showToast("🚫 PM · 시스템관리자만 바꿀 수 있습니다.");
+      if (!this.canManageProject()) return showToast("🚫 PM · 관리자만 바꿀 수 있습니다.");
       const bad = _editingSdlcPhasesTemp.find(p => p.pStart && p.pEnd && p.pStart > p.pEnd);
       if (bad) return showToast(`[${bad.name}] 단계의 계획 종료일이 시작일보다 빠릅니다.`);
       if (!this.projectSdlc(mode.code)) this.applySdlcToProject(mode.code);
@@ -153,7 +153,7 @@ var ProcessLib = {
       rebuildAll(true);
       return showToast(`📅 [${t.name}] 단계별 계획 일정을 저장했습니다.`);
     }
-    if (!this.isAdmin()) return showToast("🚫 공정 유형은 시스템관리자만 바꿀 수 있습니다.");
+    if (!this.isAdmin()) return showToast("🚫 공정 유형은 관리자만 바꿀 수 있습니다.");
     if (!/^[A-Za-z0-9_-]{2,40}$/.test(code)) return showToast("⚠️ 유형 코드는 영문 · 숫자 · _ - 로 2~40자여야 합니다.");
     if (!name) return showToast("⚠️ 유형 이름을 입력하세요.");
     if (!_editingSdlcPhasesTemp.length) return showToast("⚠️ 단계를 1개 이상 등록하세요.");

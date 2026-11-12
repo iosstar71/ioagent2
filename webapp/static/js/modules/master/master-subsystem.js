@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 기준정보: 분야 · 서브시스템 · 표준 산출물
+// [Project Mgmt] 기준정보: 분야 · 서브시스템 · 표준 산출물
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
 // [요건 2 & 5 & 6 & 7] 서브시스템 기준정보 및 선택 리스트(<select>) 공통 공급자
@@ -7,7 +7,7 @@ let subsystemsMeta = [];
 
 // [ver1.0.4 신규] 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기비번: 1234)
 let projectUsers = [
-  { empNo: "admin", name: "시스템관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
+  { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
 ];
 
 // [요건 2 & 7 신규] 단계별 표준산출물관리 마스터 (1회차 / 2회차 복수 체크 가능)
@@ -19,7 +19,7 @@ const DEFAULT_STANDARD_DELIVERABLES = [
   { phase: "분석설계단계", name: "인터페이스 API 명세서", round1: true, round2: true, round3: false, round4: false, defaultDate: "2026-11-12", remarks: "1·2회차 대내외 인터페이스 설계" },
   { phase: "구현단계", name: "단위테스트 시나리오 및 결과보고서", round1: false, round2: true, round3: true, round4: false, defaultDate: "2026-12-10", remarks: "2·3회차 구현단계 검증 산출물" },
   { phase: "통합테스트단계", name: "통합테스트 결함조치결과서", round1: false, round2: false, round3: true, round4: true, defaultDate: "2026-12-22", remarks: "3회차 통합테스트 / 4회차 최종검증" },
-  { phase: "이행안정화단계", name: "시스템 운영자 및 사용자 매뉴얼", round1: false, round2: false, round3: false, round4: true, defaultDate: "2026-12-30", remarks: "4회차 이행 및 안정화 최종 산출물" }
+  { phase: "이행안정화단계", name: "시스템 운영자 및 작업자 매뉴얼", round1: false, round2: false, round3: false, round4: true, defaultDate: "2026-12-30", remarks: "4회차 이행 및 안정화 최종 산출물" }
 ];
 
 let standardDeliverablesMeta = JSON.parse(JSON.stringify(DEFAULT_STANDARD_DELIVERABLES));

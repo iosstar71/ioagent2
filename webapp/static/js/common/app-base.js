@@ -1,13 +1,14 @@
-// [IOSTAR-PM] 공통 기반: 버전 · 알림(토스트) · 확인 창 · HTML 이스케이프
+// [Project Mgmt] 공통 기반: 버전 · 알림(토스트) · 확인 창 · HTML 이스케이프
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
-// IOSTAR-PM - 코어 앱 엔진
+// Project Mgmt - 코어 앱 엔진
 // =============================================================================
 // [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
 const APP_VERSION = (function () {
-  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "IOSTAR-PM", version: "1.0.1", edition: "STANDARD", editionName: "Standard" };
-  const edName = c.editionName !== undefined ? c.editionName : (c.edition && c.edition !== "KR" ? c.edition : "");
-  return { version: c.version, title: `${c.productName}${edName ? " " + edName : ""} ver${c.version}`, edition: c.edition || "KR", editionName: edName };
+  const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { productName: "Project Mgmt", version: "1.0.0", edition: "COLLAB", editionName: "협업" };
+  const edName = c.editionName || "";
+  // 제품 이름: Project Mgmt (협업)
+  return { version: c.version, name: `${c.productName}${edName ? " (" + edName + ")" : ""}`, title: `${c.productName}${edName ? " (" + edName + ")" : ""} ver${c.version}`, edition: c.edition || "COLLAB", editionName: edName };
 })();
 
 // 인페이지 토스트 알림 및 비차단 확인 모달 헬퍼

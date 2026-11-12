@@ -13,8 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [
-    ("license", "사용권 계약", "LICENSE_ko.txt"),
-    ("privacy", "개인정보 처리 안내", "PRIVACY_ko.txt"),
     ("notices", "오픈소스 고지", "THIRD_PARTY_NOTICES.txt"),
 ]
 

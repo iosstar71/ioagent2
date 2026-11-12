@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM v1.0.10] 화면 이벤트 연결 (CSP script-src 'self' 대응)
+// [Project Mgmt v1.0.10] 화면 이벤트 연결 (CSP script-src 'self' 대응)
 // -----------------------------------------------------------------------------
 //  HTML 안의 onclick="..." 같은 인라인 스크립트는 콘텐츠 보안 정책(CSP)에서 차단되므로
 //  모든 화면 동작을 아래 선언형 속성으로 연결합니다.
@@ -41,7 +41,6 @@ var UiEvents = {
       case "ReportExporter": return typeof ReportExporter !== "undefined" ? ReportExporter : undefined;
       case "SmartMergeCenter": return typeof SmartMergeCenter !== "undefined" ? SmartMergeCenter : undefined;
       case "JsonCollabManager": return typeof JsonCollabManager !== "undefined" ? JsonCollabManager : undefined;
-      case "ManualViewer": return typeof ManualViewer !== "undefined" ? ManualViewer : undefined;
       case "GanttRenderer": return typeof GanttRenderer !== "undefined" ? GanttRenderer : undefined;
       case "DashboardChart": return typeof DashboardChart !== "undefined" ? DashboardChart : undefined;
       case "WBSEngine": return typeof WBSEngine !== "undefined" ? WBSEngine : undefined;

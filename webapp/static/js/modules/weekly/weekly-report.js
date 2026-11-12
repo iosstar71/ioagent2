@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 주간보고
+// [Project Mgmt] 주간보고
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 var weeklyReportsData = [];
 
@@ -14,7 +14,7 @@ var WeeklyReportManager = {
   scopeValue: "",
 
   // -------------------------------------------------------------------------
-  // 작성 단위(Scope): 일반 사용자 = 담당 서브시스템, PM·관리자·총괄리더 = 통합
+  // 작성 단위(Scope): 일반 작업자 = 담당 서브시스템, PM·관리자·총괄리더 = 통합
   // -------------------------------------------------------------------------
   defaultScope() {
     const u = AuthManager.getCurrentUser();
@@ -332,7 +332,7 @@ var WeeklyReportManager = {
     const wObj = weeks.find(w => w.weekNum === wNum) || weeks[0];
     if (!wObj) { body.innerHTML = ""; return; }
     let units = this._unitsOfWeek();
-    // 일반 사용자: 담당 서브시스템을 맨 위에 표시
+    // 일반 작업자: 담당 서브시스템을 맨 위에 표시
     if (!Permission.canEditAllSubsystems()) units = units.sort((a, b) => (b.scope === "SYS" && b.value === own) - (a.scope === "SYS" && a.value === own));
     const rows = units.map(sc => ({ sc, r: this._findSaved(wObj, sc.scope, sc.value) }));
     const done = rows.filter(x => x.r).length;
@@ -774,7 +774,7 @@ var WeeklyReportManager = {
     this.readInputsIntoCurrentReport();
     const rep = this.currentWeekReport;
     if (!this.canWrite(rep)) {
-      showToast(`⛔ 저장 권한 없음: 일반 사용자는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
+      showToast(`⛔ 저장 권한 없음: 일반 작업자는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
       return false;
     }
     if (!this._checkSize()) return false;
@@ -837,7 +837,7 @@ var WeeklyReportManager = {
     // 제외한 WBS 항목은 다시 넣지 않고, 직접 입력 항목은 그대로 유지
     const exCur = this._excludedOf("cur").slice();
     const exNxt = this._excludedOf("nxt").slice();
-    // 사용자가 직접 추가한 WBS 과업(added)은 자동 편성 대상이 아니어도 유지하고 일정·진척만 최신화
+    // 작업자가 직접 추가한 WBS 과업(added)은 자동 편성 대상이 아니어도 유지하고 일정·진척만 최신화
     const keepAdded = (list, freshList) => (list || []).filter(t => t.added && t.wbsId && !freshList.some(f => f.wbsId === t.wbsId)).map(t => {
       const w = wbsData.find(x => x.id === t.wbsId);
       return w ? Object.assign({}, t, { name: w.name, level: w.level, owner: w.owner || "", pProg: w.pProg, aProg: w.aProg, pStart: w.pStart, pEnd: w.pEnd, aStart: w.aStart, aEnd: w.aEnd }) : t;

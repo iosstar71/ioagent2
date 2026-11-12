@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 개선과제형(REQ) 공정 단계
+// [Project Mgmt] 개선과제형(REQ) 공정 단계
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
 // [ver1.0.4 신규] 개선과제형(REQ) 공정 단계 기준정보 관리자 (프리셋 & 실시간 동기화)
@@ -7,7 +7,7 @@ var ReqPhaseManager = {
   PRESETS: {
     REQ_MFG_2027: {
       code: "REQ_MFG_2027",
-      name: "27년 가동률 시스템 개선 표준형 (4단계)",
+      name: "개선과제 표준형 (4단계)",
       desc: "요구사항정의(1~3월) ➔ 과제요구개발(3~10월) ➔ 추가요구개발(5~10월) ➔ 이행안정화(11~12월)",
       phases: [
         { key: "r1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/정의서", keywords: ["요구사항", "요건", "접수", "분석", "정의", "확정"] },
@@ -64,7 +64,7 @@ var ReqPhaseManager = {
   applyPreset(presetCode) {
     // [v3.9.0] 개선과제 유형은 시스템 설정의 공정 유형 라이브러리에서 고름 (계획 일정은 단계 이름이 같으면 유지)
     if (typeof ProcessLib !== "undefined" && ProcessLib.findReq(presetCode)) {
-      if (!ProcessLib.canManageProject()) return showToast("🚫 PM · 시스템관리자만 바꿀 수 있습니다.");
+      if (!ProcessLib.canManageProject()) return showToast("🚫 PM · 관리자만 바꿀 수 있습니다.");
       ProcessLib.applyReqToProject(presetCode);
       const t = ProcessLib.findReq(presetCode);
       this.renderTable();
@@ -290,5 +290,4 @@ var ReqPhaseManager = {
 window.ReqPhaseManager = ReqPhaseManager;
 
 window.NoticeCommManager = NoticeCommManager;
-window.RealtimeChatManager = RealtimeChatManager;
 window.LayoutManager = LayoutManager;

@@ -1,8 +1,8 @@
-// [IOSTAR-PM] 자료 내려받기 · 올리기 (SmartMergeCenter)
+// [Project Mgmt] 자료 내려받기 · 올리기 (SmartMergeCenter)
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
 // 스마트병합(tab-merge) 통합 입출력 컨트롤러 (SmartMergeCenter)
-// - 모든 사용자: 다운로드 및 담당 서브시스템 업로드
+// - 모든 작업자: 다운로드 및 담당 서브시스템 업로드
 // - 기준정보 / 전체(ALL) 업로드: 관리자(SYS_ADMIN) 및 PM
 // =========================================================================
 const SmartMergeCenter = {
@@ -46,7 +46,7 @@ const SmartMergeCenter = {
         domains.map(d => `<option value="${escapeHtml(d)}" ${d === curD ? "selected" : ""}>🗂️ ${escapeHtml(d)}</option>`).join("");
     });
 
-    // 대상 서브시스템 드롭다운 갱신 (PM/관리자는 ALL 포함, 일반 사용자는 다운로드를 위해 ALL 선택 가능하되 업로드 시에는 개별 서브시스템 강제)
+    // 대상 서브시스템 드롭다운 갱신 (PM/관리자는 ALL 포함, 일반 작업자는 다운로드를 위해 ALL 선택 가능하되 업로드 시에는 개별 서브시스템 강제)
     ["masterPkgSubsysSelect", "workDataSubsysSelect"].forEach(sId => {
       const sSel = document.getElementById(sId);
       if (!sSel) return;
@@ -272,7 +272,7 @@ const SmartMergeCenter = {
     return true;
   },
 
-  // 1) 항목별 다운로드 (모든 사용자 허용)
+  // 1) 항목별 다운로드 (모든 작업자 허용)
   // [v3.3.0] scopeOverride: 화면 머리줄 [⬇ 내려받기]에서 그 화면의 서브시스템 조회 범위로 내려받을 때
   downloadItem(itemType, format, scopeOverride) {
     const repDate = projectConfig.reportDate || "2027-06-01";
@@ -690,7 +690,7 @@ const SmartMergeCenter = {
     deliverables: "3_산출물관리",
     req: "4_요구사항REQ",
     voc: "5_VOC이슈관리",
-    users: "6_사용자목록"
+    users: "6_작업자목록"
   },
 
   updateCountBadges() {
@@ -731,7 +731,7 @@ const SmartMergeCenter = {
     const mine = sys => keep.includes(String(sys || ""));
     openConfirmDialog(`📥 [종합본 가져오기] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 종합본으로 맞춥니다.\n` +
       (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 자료를 그대로 둡니다.\n` : "· 모든 서브시스템을 종합본 내용으로 바꿉니다.\n") +
-      `· 사용자 계정은 바꾸지 않습니다. 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
+      `· 작업자 계정은 바꾸지 않습니다. 바꾸기 전에 복원 지점을 만듭니다. 계속할까요?`, () => {
       BackupHistoryManager.createBackupSnapshot("종합본가져오기직전백업", "ALL", false);
       const cur = ProjectData.collect();
       const by = (k, f) => (src[k] || []).filter(r => !f(r)).concat((cur[k] || []).filter(f));
@@ -747,7 +747,7 @@ const SmartMergeCenter = {
     });
   },
 
-  // [v3.9.1] 프로젝트 전체 엑셀(기준정보 · 업무 · 사용자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용
+  // [v3.9.1] 프로젝트 전체 엑셀(기준정보 · 업무 · 작업자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용
   buildPackageSheets() {
     const cfgSchema = ExcelSync.TAB_SCHEMAS.config;
     const cfgRows = [
@@ -778,7 +778,7 @@ const SmartMergeCenter = {
       sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
     });
 
-    // [v3.9.0] 이 프로젝트 참여자 (시스템관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
+    // [v3.9.0] 이 프로젝트 참여자 (관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
     const uSchema = ExcelSync.TAB_SCHEMAS.users;
     sheets.push({ name: this.SHEET_NAMES.users, colWidths: uSchema.map(c => c.width || 18),
       rows: [{ cells: uSchema.map(c => c.label), styleId: 1, height: 25 }].concat(this._projectUserRows(false).map(r => ({ cells: uSchema.map(c => ExcelSync.formatExportCell("users", c.key, r[c.key])), styleId: 2, height: 20 }))) });
@@ -786,7 +786,7 @@ const SmartMergeCenter = {
     return sheets;
   },
 
-  // [v3.9.0] 사용자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (사용자 정보는 프로젝트별)
+  // [v3.9.0] 작업자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (작업자 정보는 프로젝트별)
   _projectUserRows(withAdmins) {
     return (projectUsers || []).filter(u => withAdmins || !ProjectContext.isAdminUser(u)).map(u => {
       const e = ProjectContext.effective ? ProjectContext.effective(u) : u;
@@ -794,7 +794,7 @@ const SmartMergeCenter = {
     });
   },
 
-  // [v3.0.0] 사용자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 사용자는 그대로 둠)
+  // [v3.0.0] 작업자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 작업자는 그대로 둠)
   _mergeUsersList(incomingUsers) {
     if (!Array.isArray(incomingUsers) || incomingUsers.length === 0) return;
     const pid = ProjectContext.current;
@@ -805,7 +805,7 @@ const SmartMergeCenter = {
       let row = list.find(u => String(u.empNo || "").toLowerCase() === key);
       if (!row) {
         const other = ProjectContext.findAny(key);
-        if (other && !ProjectContext.isAdminUser(other) && !ProjectManager.isAdmin()) return; // 다른 프로젝트 사용자: 시스템관리자만
+        if (other && !ProjectContext.isAdminUser(other) && !ProjectManager.isAdmin()) return; // 다른 프로젝트 작업자: 관리자만
         row = other || { empNo: inU.empNo, name: inU.name || inU.empNo, role: "MEMBER", pwdHash: "", lang: "ko" };
         list.push(row);
       }
@@ -832,7 +832,7 @@ const SmartMergeCenter = {
       if (
         (targetKey === "config" && (sName.includes("프로젝트기준") || sName.includes("기본정보") || sName.includes("config"))) ||
         (targetKey === "subsystems" && (sName.includes("서브시스템") || sName.includes("subsystem"))) ||
-        (targetKey === "users" && (sName.includes("사용자") || sName.includes("인력") || sName.includes("user"))) ||
+        (targetKey === "users" && (sName.includes("작업자") || sName.includes("인력") || sName.includes("user"))) ||
         sheets.length === 1
       ) {
         matched = true;

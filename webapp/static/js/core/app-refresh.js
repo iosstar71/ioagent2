@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 프로젝트 기간 · 기준일 · 전체 다시 그리기(rebuildAll)
+// [Project Mgmt] 프로젝트 기간 · 기준일 · 전체 다시 그리기(rebuildAll)
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function renderProjectPeriodLabels() {
   const startDay = WBSEngine.getDayOfWeekText(projectConfig.projectStartDate);

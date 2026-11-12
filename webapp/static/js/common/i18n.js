@@ -1,12 +1,12 @@
 // =============================================================================
-// [IOSTAR-PM v1.0.6] 다국어(한국어/English) 지원 엔진
+// [Project Mgmt v1.0.6] 다국어(한국어/English) 지원 엔진
 // -----------------------------------------------------------------------------
 //  - 화면의 메뉴·제목·설명·버튼·안내 문구를 사전(I18N_EN) 기반으로 번역합니다.
-//  - 작업 데이터(WBS 과업명, 요구사항, 회의록 등 사용자가 입력한 값)는 번역하지 않습니다.
+//  - 작업 데이터(WBS 과업명, 요구사항, 회의록 등 작업자가 입력한 값)는 번역하지 않습니다.
 //      · 입력 상자(input/textarea)의 값은 번역 대상이 아님
 //      · data-i18n-skip 속성이 있는 영역은 번역 제외
 //  - 동적으로 그려지는 화면은 MutationObserver 로 자동 번역
-//  - 언어는 사용자별 설정(projectUsers[].lang)이며 로그인 화면에서 선택합니다.
+//  - 언어는 작업자별 설정(projectUsers[].lang)이며 작업자 선택 화면에서 선택합니다.
 //  ※ 사전은 js/i18n-en.js (I18N_EN) 에 정의
 // =============================================================================
 var I18N = {
@@ -22,15 +22,15 @@ var I18N = {
   patterns() { return (typeof I18N_EN !== "undefined" && I18N_EN.patterns) || []; },
   phrases() { return (typeof I18N_EN !== "undefined" && I18N_EN.phrases) || []; },
 
-  // [v1.2.0] 처음 화면(로그인)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작
-  //          로그인 후에는 사용자별 언어(projectUsers[].lang)를 적용
+  // [v1.2.0] 처음 화면(작업자 선택)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작
+  //          작업자 선택 후에는 작업자별 언어(projectUsers[].lang)를 적용
   init() {
     const def = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.defaultLang === "en") ? "en" : "ko";
     this._wrapDialogs();
     this.setLanguage(def, true);
   },
 
-  // 로그인 화면에서 언어 선택 시 미리보기
+  // 작업자 선택 화면에서 언어 선택 시 미리보기
   preview(lang) { this.setLanguage(lang, true); },
 
   setLanguage(lang, noRemember) {

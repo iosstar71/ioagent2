@@ -1,10 +1,10 @@
 // =============================================================================
-// [IOSTAR-PM Standard v1.0.1] 화면 틀 (B2 레이아웃, G v1.0.0 에서 이름 변경 — 내부 이름 GShell·g-edition 은 호환을 위해 유지)
+// [Project Mgmt Standard v1.0.1] 화면 틀 (B2 레이아웃, G v1.0.0 에서 이름 변경 — 내부 이름 GShell·g-edition 은 호환을 위해 유지)
 // -----------------------------------------------------------------------------
 //  - 2단 메뉴: 업무 묶음 4개 + 선택한 묶음의 하위 메뉴 (위쪽 메뉴가 가로로 넘치지 않음)
 //  - ⚙ 관리 메뉴: 기준정보 · 스마트 병합 · 시스템 설정 · 프로젝트 관리 · 법적 고지 (권한 없으면 숨김)
-//  - 사용자 메뉴: 테마 3종 · 메뉴 위치(위쪽/왼쪽, 선택 설정) · 화면 밀도 · 언어 · 비밀번호 · 잠금
-//  - 검색 (Ctrl+K): 화면 · WBS · 요구사항 · VOC · 사용자
+//  - 작업자 메뉴: 테마 3종 · 메뉴 위치(위쪽/왼쪽, 선택 설정) · 화면 밀도 · 언어 · 암호 · 잠금
+//  - 검색 (Ctrl+K): 화면 · WBS · 요구사항 · VOC · 작업자
 //  - 즐겨찾기: 자주 쓰는 화면 최대 3개를 메뉴 줄에 고정
 //  - 아래 고정 줄: DB 서버 모드에서 저장하지 않은 변경이 있으면 표시 (Ctrl+S 로 모두 저장)
 //  ※ 기존 탭 버튼(.tab-bar)은 권한 판정·호환을 위해 숨긴 채 유지하고, 화면 전환은 기존 switchTab 을 사용
@@ -192,7 +192,7 @@ var GShell = {
     if (typeof UiScale !== "undefined") UiScale.sync();
   },
 
-  // 언어: 화면에 바로 적용하고 로그인한 사용자 설정으로 저장
+  // 언어: 화면에 바로 적용하고 선택한 작업자 설정으로 저장
   setLanguage(lang) {
     const l = lang === "en" ? "en" : "ko";
     if (typeof I18N !== "undefined") I18N.setLanguage(l);
@@ -234,7 +234,7 @@ var GShell = {
     p.hidden = true;
     p.innerHTML = `
       <div class="g-palette" role="dialog" aria-label="검색">
-        <input type="text" id="gPaletteInput" placeholder="화면 이름, WBS ID·Task명, 요구사항·VOC 번호, 사용자 이름으로 검색" autocomplete="off"
+        <input type="text" id="gPaletteInput" placeholder="화면 이름, WBS ID·Task명, 요구사항·VOC 번호, 작업자 이름으로 검색" autocomplete="off"
           data-input="GShell.searchPalette" data-input-args='["$value"]' data-keydown="GShell.paletteKey" data-keydown-args='["$event"]'>
         <div class="g-palette-list" id="gPaletteList"></div>
         <div class="g-palette-hint">↑↓ 이동 · Enter 열기 · Esc 닫기</div>
@@ -268,7 +268,7 @@ var GShell = {
     (typeof wbsData !== "undefined" ? wbsData : []).forEach(t => items.push({ kind: "WBS", text: `${t.id} ${t.name || ""}`, sub: t.system || "", act: () => this.reveal("tab-wbs", t.name || t.id) }));
     (typeof reqMasterData !== "undefined" ? reqMasterData : []).forEach(r => items.push({ kind: "요구사항", text: `${r.id} ${r.name || ""}`, sub: r.system || "", act: () => this.reveal("tab-req", r.id) }));
     (typeof vocData !== "undefined" ? vocData : []).forEach(v => items.push({ kind: "VOC", text: `${v.id} ${v.title || ""}`, sub: v.system || "", act: () => this.reveal("tab-voc", v.id) }));
-    (typeof projectUsers !== "undefined" ? projectUsers : []).forEach(u => items.push({ kind: "사용자", text: `${u.name || ""} (${u.empNo})`, sub: u.dept || "", act: () => { this.go("tab-master"); setTimeout(() => { try { MasterSubTabs.show("users"); } catch (e) {} this.reveal(null, u.empNo); }, 200); } }));
+    (typeof projectUsers !== "undefined" ? projectUsers : []).forEach(u => items.push({ kind: "작업자", text: `${u.name || ""} (${u.empNo})`, sub: u.dept || "", act: () => { this.go("tab-master"); setTimeout(() => { try { MasterSubTabs.show("users"); } catch (e) {} this.reveal(null, u.empNo); }, 200); } }));
     return items;
   },
   searchPalette(q) {

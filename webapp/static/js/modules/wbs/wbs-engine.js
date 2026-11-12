@@ -15,7 +15,7 @@ const WBSEngine = {
     SDLC_SMART_MFG: {
       code: "SDLC_SMART_MFG",
       name: "스마트제조/설비가동률 개선형 (4단계)",
-      desc: "요구사항정의 ➔ 과제개발 ➔ 추가요구개발 ➔ 이행안정화 (27년 가동률 시스템 개선 맞춤형 공정)",
+      desc: "요구사항정의 ➔ 과제개발 ➔ 추가요구개발 ➔ 이행안정화",
       isRecommended: true,
       phases: [
         { key: "p1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/과제정의서", keywords: ["요구사항", "요건", "접수", "정의", "확정", "상세정의"] },
@@ -58,7 +58,7 @@ const WBSEngine = {
       phases: [
         { key: "p1", name: "Fit-Gap분석", weight: 25, output: "갭분석서", keywords: ["갭", "fit", "gap", "분석", "패키지", "커스터마이징", "비교"] },
         { key: "p2", name: "파라미터설정", weight: 40, output: "환경설정정의서", keywords: ["설정", "파라미터", "구축", "커스텀", "모듈", "매핑"] },
-        { key: "p3", name: "인수테스트", weight: 20, output: "인수시험결과서", keywords: ["인수", "테스트", "검증", "시험", "사용자", "시운전"] },
+        { key: "p3", name: "인수테스트", weight: 20, output: "인수시험결과서", keywords: ["인수", "테스트", "검증", "시험", "작업자", "시운전"] },
         { key: "p4", name: "이행오픈", weight: 15, output: "가동승인원", keywords: ["이행", "오픈", "가동", "전환", "마이그레이션", "데이터"] }
       ]
     },
@@ -104,7 +104,7 @@ const WBSEngine = {
   DEFAULT_REQ_PRESETS: {
     REQ_MFG_2027: {
       code: "REQ_MFG_2027",
-      name: "27년 가동률 시스템 개선 표준형 (4단계)",
+      name: "개선과제 표준형 (4단계)",
       desc: "요구사항정의(1~3월) ➔ 과제요구개발(3~10월) ➔ 추가요구개발(5~10월) ➔ 이행안정화(11~12월)",
       isRecommended: true,
       phases: [

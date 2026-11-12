@@ -1,10 +1,10 @@
 // =============================================================================
-// [IOSTAR-PM v3.7.0] 전체 사용자 통합 관리 (UserAdmin) — [⚙ 시스템 설정 > 👥 전체 사용자], 시스템관리자 전용
+// [Project Mgmt v3.7.0] 전체 작업자 통합 관리 (UserAdmin) — [⚙ 시스템 설정 > 👥 전체 작업자], 관리자 전용
 // -----------------------------------------------------------------------------
-//  - 등록된 모든 사용자를 한 표에서 보고, 사용자마다 참여 프로젝트 · 역할 · 담당 서브시스템을 함께 관리
-//  - 계정(사번 · 이름 · 비밀번호)은 하나, 프로젝트마다 참여 정보(projectRoles[프로젝트] = 역할 · 담당 · 부서)
-//  - DB 서버 방식: /api/admin/users/* (서버가 시스템관리자인지 다시 확인) / 로컬 저장소 방식: 이 PC 저장소를 직접 고침
-//  - 프로젝트 안에서의 사용자 관리([기준정보 > 사용자 정보])는 그대로 — 여기서 고친 내용이 바로 반영됨
+//  - 등록된 모든 작업자를 한 표에서 보고, 작업자마다 참여 프로젝트 · 역할 · 담당 서브시스템을 함께 관리
+//  - 계정(작업자 ID · 이름 · 암호)은 하나, 프로젝트마다 참여 정보(projectRoles[프로젝트] = 역할 · 담당 · 부서)
+//  - DB 서버 방식: /api/admin/users/* (서버가 관리자인지 다시 확인) / 로컬 저장소 방식: 이 PC 저장소를 직접 고침
+//  - 프로젝트 안에서의 작업자 관리([기준정보 > 작업자 정보])는 그대로 — 여기서 고친 내용이 바로 반영됨
 // =============================================================================
 var UserAdmin = {
   ROLES: ["PM", "LEAD", "MEMBER"],
@@ -46,7 +46,7 @@ var UserAdmin = {
     if (!this.allowed()) return;
     if (this.isServer()) {
       const res = await ServerBackend.request("/api/admin/users/list", {});
-      if (!res.ok) { showToast("⚠️ " + (res.message || "사용자 목록을 불러오지 못했습니다.")); return; }
+      if (!res.ok) { showToast("⚠️ " + (res.message || "작업자 목록을 불러오지 못했습니다.")); return; }
       this._apply(res);
     } else {
       this._apply({
@@ -66,10 +66,10 @@ var UserAdmin = {
       const { st, list } = this._localUsers();
       const key = req.empNo.toLowerCase();
       let row = list.find(u => String(u.empNo || "").toLowerCase() === key);
-      if (req.isNew && row) return `이미 등록된 사번입니다: ${req.empNo}`;
+      if (req.isNew && row) return `이미 등록된 작업자 ID입니다: ${req.empNo}`;
       const me = String(AuthManager.getCurrentUser().empNo).toLowerCase();
       const admin = key === "admin" ? true : req.sysAdmin;
-      if (key === me && !admin) return "자기 자신의 시스템관리자 권한은 해제할 수 없습니다.";
+      if (key === me && !admin) return "자기 자신의 관리자 권한은 해제할 수 없습니다.";
       if (!row) { row = { empNo: req.empNo, pwdHash: "", lang: "ko" }; list.push(row); }
       const first = Object.values(req.projectRoles)[0];
       Object.assign(row, { name: req.name, dept: req.dept, projectRoles: req.projectRoles,
@@ -92,7 +92,7 @@ var UserAdmin = {
       const { st, list } = this._localUsers();
       const key = String(empNo).toLowerCase();
       if (key === "admin") return "기본 관리자(admin) 계정은 삭제할 수 없습니다.";
-      if (key === String(AuthManager.getCurrentUser().empNo).toLowerCase()) return "지금 로그인한 계정은 삭제할 수 없습니다.";
+      if (key === String(AuthManager.getCurrentUser().empNo).toLowerCase()) return "지금 선택한 계정은 삭제할 수 없습니다.";
       st.projectUsers = list.filter(u => String(u.empNo || "").toLowerCase() !== key);
       this._localWrite(st, empNo);
     }
@@ -120,10 +120,10 @@ var UserAdmin = {
       return true;
     });
     const admins = this.users.filter(u => u.sysAdmin).length;
-    document.getElementById("uaSummary").textContent = `등록 사용자 ${this.users.length}명 · 시스템관리자 ${admins}명 · 프로젝트 ${this.projects.length}개 — 표시 ${rows.length}명`;
+    document.getElementById("uaSummary").textContent = `등록 작업자 ${this.users.length}명 · 관리자 ${admins}명 · 프로젝트 ${this.projects.length}개 — 표시 ${rows.length}명`;
     body.innerHTML = rows.map(u => {
       const chips = u.sysAdmin
-        ? `<span class="ua-chip ua-admin">모든 프로젝트 · 시스템관리자</span>`
+        ? `<span class="ua-chip ua-admin">모든 프로젝트 · 관리자</span>`
         : (Object.keys(u.projectRoles || {}).filter(pid => this.projects.some(p => p.id === pid)).map(pid => {
           const a = u.projectRoles[pid];
           return `<span class="ua-chip" title="${escapeAttr(pid)}">${escapeHtml(this.projectName(pid))} · <b>${escapeHtml(this.roleLabel(a.role))}</b> · ${escapeHtml(a.subsystem || "ALL")}</span>`;
@@ -139,7 +139,7 @@ var UserAdmin = {
           <button class="btn btn-danger btn-sm" data-click="UserAdmin.remove" data-click-args="${UiEvents.args(u.empNo)}">삭제</button>
         </td>
       </tr>`;
-    }).join("") || `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 맞는 사용자가 없습니다.</td></tr>`;
+    }).join("") || `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 맞는 작업자가 없습니다.</td></tr>`;
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("uaPane"));
   },
 
@@ -159,7 +159,7 @@ var UserAdmin = {
     adm.disabled = String(u.empNo).toLowerCase() === "admin";
     document.getElementById("uaPwdReset").checked = false;
     document.getElementById("uaPwdResetRow").style.display = isNew ? "none" : "";
-    document.getElementById("uaEditTitle").textContent = isNew ? "👤 사용자 추가" : `👤 사용자 편집 — ${u.name || ""} (${u.empNo})`;
+    document.getElementById("uaEditTitle").textContent = isNew ? "👤 작업자 추가" : `👤 작업자 편집 — ${u.name || ""} (${u.empNo})`;
     document.getElementById("uaProjectRows").innerHTML = this.projects.map(p => {
       const a = (u.projectRoles || {})[p.id];
       const subs = ["ALL"].concat(p.subsystems || []);
@@ -176,7 +176,7 @@ var UserAdmin = {
     m.style.display = "flex";
     if (typeof I18N !== "undefined") I18N.translateTree(m);
   },
-  // 시스템관리자는 모든 프로젝트에 들어가므로 프로젝트별 지정을 끔 / 참여하지 않는 프로젝트는 역할 선택을 끔
+  // 관리자는 모든 프로젝트에 들어가므로 프로젝트별 지정을 끔 / 참여하지 않는 프로젝트는 역할 선택을 끔
   syncEditRows() {
     const admin = document.getElementById("uaSysAdmin").checked;
     document.getElementById("uaAdminNote").style.display = admin ? "" : "none";
@@ -196,7 +196,7 @@ var UserAdmin = {
     const val = id => document.getElementById(id).value.trim();
     const req = { isNew: this.editing.isNew, empNo: this.editing.isNew ? val("uaEmpNo") : this.editing.empNo, name: val("uaName"), dept: val("uaDept"),
       sysAdmin: document.getElementById("uaSysAdmin").checked, pwdReset: document.getElementById("uaPwdReset").checked, projectRoles: {} };
-    if (!/^[A-Za-z0-9_.\-]{2,30}$/.test(req.empNo)) return showToast("⚠️ 사번은 영문 · 숫자 · _ . - 로 2~30자여야 합니다.");
+    if (!/^[A-Za-z0-9_.\-]{2,30}$/.test(req.empNo)) return showToast("⚠️ 작업자 ID은 영문 · 숫자 · _ . - 로 2~30자여야 합니다.");
     if (!req.name) return showToast("⚠️ 이름을 입력하세요.");
     const prev = this.users.find(x => x.empNo === req.empNo);
     document.querySelectorAll("#uaProjectRows tr").forEach(tr => {
@@ -209,18 +209,18 @@ var UserAdmin = {
     if (err) return showToast("⚠️ " + err);
     this.closeEdit();
     this.render();
-    showToast(req.isNew ? `✅ 사용자 [${req.name}(${req.empNo})]를 등록했습니다. 초기 비밀번호는 1234 입니다.` : `✅ 사용자 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
+    showToast(req.isNew ? `✅ 작업자 [${req.name}(${req.empNo})]를 등록했습니다. 초기 암호는 1234 입니다.` : `✅ 작업자 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
     if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
   },
 
   remove(empNo) {
     const u = this.users.find(x => x.empNo === empNo);
     if (!u) return;
-    openConfirmDialog(`사용자 [${u.name || ""}(${u.empNo})] 계정을 삭제할까요? 모든 프로젝트에서 빠지며 되돌릴 수 없습니다.`, async () => {
+    openConfirmDialog(`작업자 [${u.name || ""}(${u.empNo})] 계정을 삭제할까요? 모든 프로젝트에서 빠지며 되돌릴 수 없습니다.`, async () => {
       const err = await this._delete(empNo);
       if (err) return showToast("⚠️ " + err);
       this.render();
-      showToast(`🗑 사용자 [${u.name || ""}(${u.empNo})] 계정을 삭제했습니다.`);
+      showToast(`🗑 작업자 [${u.name || ""}(${u.empNo})] 계정을 삭제했습니다.`);
       if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
     });
   }

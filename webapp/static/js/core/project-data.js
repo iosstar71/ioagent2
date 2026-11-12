@@ -1,10 +1,10 @@
 // =============================================================================
-// [IOSTAR-PM v3.8.0] 프로젝트 단위 백업 · 복원 · 초기화 (ProjectData) + 프로젝트별 화면 설정 공유 (SharedPanes)
+// [Project Mgmt v3.8.0] 프로젝트 단위 백업 · 복원 · 초기화 (ProjectData) + 프로젝트별 화면 설정 공유 (SharedPanes)
 // -----------------------------------------------------------------------------
-//  - 프로젝트 백업: 지금 프로젝트의 기본정보 · 기준정보 · Task 정보만 JSON 으로 (사용자 · 시스템 설정은 넣지 않음)
-//  - 프로젝트 복원: 그 JSON 으로 지금 프로젝트만 바꿈 (다른 프로젝트 · 사용자 계정은 그대로, 프로젝트 이름은 유지)
+//  - 프로젝트 백업: 지금 프로젝트의 기본정보 · 기준정보 · Task 정보만 JSON 으로 (작업자 · 시스템 설정은 넣지 않음)
+//  - 프로젝트 복원: 그 JSON 으로 지금 프로젝트만 바꿈 (다른 프로젝트 · 작업자 계정은 그대로, 프로젝트 이름은 유지)
 //  - Task 정보 초기화: 기본정보 · 기준정보는 두고 WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)만 지움
-//      DB 서버 방식은 서버가 data/backups 에 지우기 전 자료를 저장하고, 첨부파일은 휴지통으로 옮김
+//      지우기 전 자료는 복원 지점(브라우저)으로 남김
 //  - 프로젝트 전체 초기화: 프로젝트 이름 · 기간만 두고 기준정보까지 빈 상태로
 //  - 시스템 설정의 전체 백업 · 복원 · 초기화는 그대로 (StorageManager)
 // =============================================================================
@@ -39,8 +39,8 @@ var ProjectData = {
     return data;
   },
   exportProject(format) {
-    if (!this.canManage()) return showToast("🚫 프로젝트 백업은 PM · 시스템관리자만 할 수 있습니다.");
-    // [v3.9.1] 엑셀 백업 = 스마트병합 [④ 전체 일괄] 엑셀과 같은 양식 (기준정보 · 업무 · 사용자 · 협업 시트)
+    if (!this.canManage()) return showToast("🚫 프로젝트 백업은 PM · 관리자만 할 수 있습니다.");
+    // [v3.9.1] 엑셀 백업 = 스마트병합 [④ 전체 일괄] 엑셀과 같은 양식 (기준정보 · 업무 · 작업자 · 협업 시트)
     if (format === "EXCEL") {
       const blob = ExcelSync._buildXlsxBlob(SmartMergeCenter.buildPackageSheets());
       ExcelSync._triggerDownload(blob, ExcelSync.stdName("프로젝트백업", [], "xlsx", this._stamp()));
@@ -66,17 +66,17 @@ var ProjectData = {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
     if (!file) return;
-    if (!this.canManage()) return showToast("🚫 프로젝트 복원은 PM · 시스템관리자만 할 수 있습니다.");
+    if (!this.canManage()) return showToast("🚫 프로젝트 복원은 PM · 관리자만 할 수 있습니다.");
     if (/\.(xlsx|xls)$/i.test(file.name)) return this._importExcel(file);
     let json;
     try { json = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다: " + err.message); }
     const data = this._pick(json);
-    if (!data) return showToast("⚠️ IOSTAR-PM 백업 파일이 아닙니다. (프로젝트 백업 · 전체 백업 · 스냅샷 백업 JSON 을 쓰세요)");
+    if (!data) return showToast("⚠️ Project Mgmt 백업 파일이 아닙니다. (프로젝트 백업 · 전체 백업 · 스냅샷 백업 JSON 을 쓰세요)");
     const fromName = json.projectName || (data.projectConfig && data.projectConfig.projectName) || "";
     const other = json.projectId && json.projectId !== ProjectContext.current;
     openConfirmDialog(`[${this.currentName()}] 프로젝트를 백업 파일 [${file.name}] 의 내용으로 바꿉니다.\n` +
       `${other || (fromName && fromName !== this.currentName()) ? `⚠️ 다른 프로젝트(${fromName || json.projectId})의 백업입니다.\n` : ""}` +
-      `· 바뀌는 것: 기준정보 + ${this.countText(data)}\n· 그대로: 프로젝트 이름, 사용자 계정, 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => {
+      `· 바뀌는 것: 기준정보 + ${this.countText(data)}\n· 그대로: 프로젝트 이름, 작업자 계정, 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => {
       BackupHistoryManager.createBackupSnapshot("프로젝트복원직전백업", "ALL", false);
       const keepName = projectConfig.projectName;
       DataRegistry.apply(data, Object.keys(data));
@@ -96,7 +96,7 @@ var ProjectData = {
     }
     const summary = `WBS ${rows("WBS")} · 요구사항 ${rows("요구사항")} · 산출물 ${rows("산출물")} · VOC ${rows("VOC")} · 주간보고 ${rows("주간보고")} · 회의 ${rows("회의록")} · 공지 ${rows("공지")} · 소통 ${rows("소통")}`;
     openConfirmDialog(`[${this.currentName()}] 프로젝트를 엑셀 백업 [${file.name}] 의 내용으로 바꿉니다.\n` +
-      `· 바뀌는 것: 기준정보 + ${summary}\n· 그대로: 프로젝트 이름, 다른 프로젝트 (엑셀의 사용자는 이 프로젝트 참여자로 추가 · 갱신)\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, async () => {
+      `· 바뀌는 것: 기준정보 + ${summary}\n· 그대로: 프로젝트 이름, 다른 프로젝트 (엑셀의 작업자는 이 프로젝트 참여자로 추가 · 갱신)\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, async () => {
       BackupHistoryManager.createBackupSnapshot("프로젝트복원직전백업", "ALL", false);
       const keepName = projectConfig.projectName;
       this.TASK_KEYS.forEach(k => DataRegistry.set(k, []));
@@ -117,27 +117,32 @@ var ProjectData = {
     ids = (ids || []).filter(Boolean);
     if (!ids.length) return;
     const many = ids.length > 1;
-    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 시스템관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
+    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
     const names = ids.map(id => (this.projects().find(p => p.id === id) || { name: id }).name);
     const cur = ids.indexOf(ProjectContext.current) !== -1;
     const dirty = cur && SyncManager.dirtyCount ? SyncManager.dirtyCount() : 0;
     openConfirmDialog(`🧹 [Task 정보 초기화] ${label || names.join(", ")}\n` +
-      `· 지우는 것: WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)\n` +
-      `· 그대로: 프로젝트 기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물) · 사용자\n` +
-      `${this.isServer() ? "지우기 전 자료는 서버 data/backups 폴더에 자동 저장되고, 첨부파일은 휴지통으로 옮깁니다." : "지우기 전 자료는 백업 스냅샷으로 남깁니다."}` +
+      `· 지우는 것: WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통\n` +
+      `· 그대로: 프로젝트 기본정보 · 기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물) · 작업자\n` +
+      "지우기 전 자료는 복원 지점(이 브라우저)으로 남깁니다." +
       `${dirty ? `\n⚠️ 지금 화면의 저장하지 않은 변경 ${dirty}건은 버려집니다.` : ""}\n되돌리기 어렵습니다. 계속할까요?`, () => this._clear(ids, names));
   },
   async _clear(ids, names) {
     if (this.isServer()) {
+      // 서버에는 백업 파일을 남기지 않음 (용량) → 지우기 전 자료를 복원 지점(브라우저)으로
+      for (let i = 0; i < ids.length; i++) {
+        const pid = ids[i];
+        if (pid === ProjectContext.current) BackupHistoryManager.createBackupSnapshot("Task초기화직전백업", "ALL", false);
+        else {
+          try { const cur = await ProjectTransfer.load(pid); BackupHistoryManager.createBackupSnapshot("Task초기화직전백업", "ALL", false, { projectId: pid, projectName: names[i], source: cur.data }); } catch (e) {}
+        }
+      }
       const res = await ServerBackend.request("/api/projects/clear-tasks", { ids }, "POST", 60000);
       if (!res.ok) return showToast("❌ Task 정보 초기화 실패: " + (res.message || ""));
       if (ids.indexOf(ProjectContext.current) !== -1) {
-        if (typeof RealtimeChatManager !== "undefined") RealtimeChatManager.messages = [];
         await SyncManager.refresh(null, { silent: true, skipConfirm: true });
-        if (typeof AttachManager !== "undefined") AttachManager.refreshSummary(true);
       }
-      const files = res.results.reduce((a, r) => a + (r.filesTrashed || 0), 0);
-      showToast(`🧹 Task 정보를 초기화했습니다: ${names.join(", ")} — 서버 백업 ${res.results.map(r => r.backup).join(", ")}${files ? ` · 첨부파일 ${files}개 휴지통` : ""}`);
+      showToast(`🧹 Task 정보를 초기화했습니다: ${names.join(", ")} (지우기 전 자료는 복원 지점에)`);
       return;
     }
     // 로컬 저장소 방식: 지금 프로젝트는 화면 자료를, 다른 프로젝트는 저장소를 바로 고침
@@ -153,7 +158,6 @@ var ProjectData = {
     if (ids.indexOf(ProjectContext.current) !== -1) {
       BackupHistoryManager.createBackupSnapshot("Task초기화직전백업", "ALL", false);
       this.TASK_KEYS.forEach(k => DataRegistry.set(k, []));
-      if (typeof RealtimeChatManager !== "undefined") RealtimeChatManager.messages = [];
       StorageManager._afterBulkReplace(`🧹 Task 정보를 초기화했습니다: ${names.join(", ")} (기본정보 · 기준정보는 그대로)`);
     } else {
       showToast(`🧹 Task 정보를 초기화했습니다: ${names.join(", ")} (기본정보 · 기준정보는 그대로)`);
@@ -170,7 +174,7 @@ var ProjectData = {
     const sel = document.getElementById("cfgClearTarget");
     if (!sel) return;
     const keep = sel.value;
-    // [v4.1.0] 초기화는 시스템관리자만 — 모든 프로젝트
+    // [v4.1.0] 초기화는 관리자만 — 모든 프로젝트
     const list = this.projects();
     sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("") +
       `<option value="__ALL__">모든 프로젝트 일괄 (Task 정보 초기화만)</option>`;
@@ -178,11 +182,11 @@ var ProjectData = {
   },
 
   // ---- 프로젝트 전체 초기화 (기준정보 포함, 이름 · 기간은 유지) ----
-  // [v4.1.0] 초기화는 시스템관리자만 (시스템 설정 > 🗄️ 데이터 관리)
+  // [v4.1.0] 초기화는 관리자만 (시스템 설정 > 🗄️ 데이터 관리)
   resetProject() {
-    if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 시스템관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
+    if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
     openConfirmDialog(`⚠️ [프로젝트 전체 초기화] [${this.currentName()}]\n기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤)와 모든 Task 정보를 빈 상태로 되돌립니다.\n` +
-      `· 그대로: 프로젝트 이름 · 기간 · 사용자 계정 · 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => this._resetCurrent());
+      `· 그대로: 프로젝트 이름 · 기간 · 작업자 계정 · 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => this._resetCurrent());
   },
   // 이름 · 기간 · 파일 약칭만 두고 기준정보를 빈 상태로
   blankConfig(c) {
@@ -205,7 +209,7 @@ var ProjectData = {
       this.TASK_KEYS.forEach(k => DataRegistry.set(k, []));
       if (typeof NoticeCommManager !== "undefined") NoticeCommManager.activeChannel = "전체";
       if (this.isServer()) ServerBackend.request("/api/chat/clear", {});
-      StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 사용자는 그대로)`);
+      StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 초기 상태로 되돌렸습니다. (이름 · 기간 · 작업자는 그대로)`);
   },
 
   renderMasterPane() { if (typeof BackupPane !== "undefined") BackupPane.render(); }

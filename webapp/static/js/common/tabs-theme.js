@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 탭 이동 · 화면 테마
+// [Project Mgmt] 탭 이동 · 화면 테마
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // 탭 화면 활성화 (권한 검사는 AuthManager.installTabGuards 에서 단일 래핑)
 // ※ 탭 이동 시 화면의 미저장 변경 데이터는 메모리에 그대로 유지됩니다.

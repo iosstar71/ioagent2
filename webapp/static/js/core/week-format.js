@@ -1,5 +1,5 @@
 // =============================================================================
-// [IOSTAR-PM Workgroup 0.1] 주차 표시 (WeekFmt) — 기준정보 > 기본정보 > 주차 표시 방식
+// [Project Mgmt Workgroup 0.1] 주차 표시 (WeekFmt) — 기준정보 > 기본정보 > 주차 표시 방식
 // -----------------------------------------------------------------------------
 //  projectConfig.weekNumbering = { basis, multiYear, format }
 //   basis    : ANNUAL  = 연간 주차 (1월 1일이 들어 있는 주 = W1, 엑셀 WEEKNUM 과 같은 방식 — 날짜가 속한 해 기준)
@@ -88,7 +88,7 @@ var WeekFmt = {
     set("wkBasis", c.basis); set("wkMulti", c.multiYear);
     const sel = document.getElementById("wkFormatPreset");
     const custom = !this.PRESETS.some(p => p[0] === c.format);
-    sel.innerHTML = this.PRESETS.map(p => `<option value="${escapeAttr(p[0])}">${escapeHtml(p[1])}  —  ${escapeHtml(p[0])}</option>`).join("") + `<option value="__CUSTOM__">사용자 지정…</option>`;
+    sel.innerHTML = this.PRESETS.map(p => `<option value="${escapeAttr(p[0])}">${escapeHtml(p[1])}  —  ${escapeHtml(p[0])}</option>`).join("") + `<option value="__CUSTOM__">작업자 지정…</option>`;
     sel.value = custom ? "__CUSTOM__" : c.format;
     const inp = document.getElementById("wkFormatCustom");
     inp.value = c.format;

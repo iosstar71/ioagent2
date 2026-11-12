@@ -1,4 +1,4 @@
-// [IOSTAR-PM] 저장소 관리 · 기준정보 동기화
+// [Project Mgmt] 저장소 관리 · 기준정보 동기화
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
 // [v1.0.6] 저장소 관리자: 백업/복원, 샘플 복원, 초기화 (저장은 SyncManager 로 일원화)
@@ -61,7 +61,7 @@ var StorageManager = {
     this._afterBulkReplace(`선택 항목(${targets.map(t => t[3]).join(", ")})이 모두 삭제되었습니다.`);
   },
 
-  // 데이터는 보존하고 화면 설정·임시 키만 정리 (비밀번호 정책은 유지)
+  // 데이터는 보존하고 화면 설정·임시 키만 정리 (암호 정책은 유지)
   clearStorageExceptJsonKey() {
     const keep = new Set([LocalBackend.STORAGE_KEY, LocalBackend.REVS_KEY, DbConnector.CONFIG_STORAGE_KEY,
       AuthManager.STORAGE_POLICY_KEY, AuthManager.STORAGE_AUTOLOCK_KEY]);
@@ -79,9 +79,9 @@ var StorageManager = {
     showToast("프로젝트 데이터는 보존하고, 화면 설정·임시 저장 항목을 정리했습니다.");
   },
 
-  resetAllToSample() {
+  resetAllStorage() {
     this.closeResetModal();
-    openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 초기 데이터(initial_data.json)로 복원됩니다. 계속하시겠습니까?", () => {
+    openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 처음 상태(빈 프로젝트, admin 하나)로 돌아갑니다. 계속하시겠습니까?", () => {
       try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
       location.reload();
     });
@@ -143,50 +143,12 @@ var StorageManager = {
     weeklyReportsData = Array.isArray(c.weeklyReportsData) ? c.weeklyReportsData : [];
     meetingsData = Array.isArray(c.meetingsData)
       ? c.meetingsData
-      : MeetingManager.getDefaultMeetings().filter(meetingFilter || (() => true));
-  },
-
-  // [v3.9.0] 2027 제조 분야 샘플 (PMO 1 · 폭포수 표준형 2 · 개선과제형 1, 레벨 4 WBS, 주간보고 · 회의록 포함)
-  //  지금 프로젝트의 자료만 바꾸고, 샘플 담당자 계정은 없으면 이 프로젝트 참여자로 추가 (다른 사용자 · 프로젝트는 그대로)
-  resetToSampleData() {
-    openConfirmDialog(
-      "🔄 [2027 제조 샘플 복원]\n지금 프로젝트의 자료를 '2027 스마트공장 제조혁신 (샘플)'로 바꿉니다.\n· PMO 1 · 폭포수 표준형 2(MES · QMS) · 개선과제형 1(OEE), 레벨 4 WBS 126건\n· 요구사항 · VOC · 산출물 · 회의록 · 주간보고 · 공지 · 소통 포함\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?",
-      () => this._applySample()
-    );
-  },
-  // [v4.1.0] 확인 없이 바로 (시스템 설정 > 데이터 관리에서 이름 입력 확인 뒤 부름)
-  _applySample() {
-      {
-        BackupHistoryManager.createBackupSnapshot("제조샘플복원직전백업", "ALL", false);
-        const c = DataRegistry.clone(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT);
-        DataRegistry.apply(c, ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "wbsData", "deliverablesData", "reqMasterData", "vocData",
-          "noticesData", "communicationsData", "meetingsData", "weeklyReportsData"]);
-        const users = DataRegistry.clone(ProjectContext.allUsers && ProjectContext.allUsers.length ? ProjectContext.allUsers : DataRegistry.get("projectUsers"));
-        (c.projectUsers || []).forEach(su => {
-          const u = users.find(x => String(x.empNo).toLowerCase() === String(su.empNo).toLowerCase());
-          const a = { role: su.role, subsystem: su.subsystem, dept: su.dept };
-          if (u) { if (!ProjectContext.isAdminUser(u)) u.projectRoles = Object.assign({}, u.projectRoles, { [ProjectContext.current]: a }); }
-          else users.push(Object.assign({}, su, { projectRoles: { [ProjectContext.current]: a } }));
-        });
-        DataRegistry.set("projectUsers", users);
-        this._afterBulkReplace("✅ [2027 제조 샘플 복원 완료] PMO · MES · QMS(폭포수) · OEE(개선과제) 샘플로 바꿨습니다. (같은 내용의 엑셀: Sample/2027_제조_스마트공장_샘플_4레벨.xlsx)");
-      }
-  },
-
-  resetToRate2027Data() {
-    openConfirmDialog(
-      "🏭 [27년 가동률 시스템 개선 복원]\n'27년 가동률 시스템 개선' (3개 분야, 7개 서브시스템, 232개 WBS) 데이터로 복원하시겠습니까?",
-      () => {
-        BackupHistoryManager.createBackupSnapshot("가동률샘플복원직전백업", "ALL", false);
-        this._applySnapshot(window.AX_INITIAL_DATA);
-        this._afterBulkReplace("🏭 [27년 가동률 시스템 개선 복원 완료] 표준 7개 서브시스템 원본 데이터로 복원되었습니다.");
-      }
-    );
+      : [];
   },
 
   resetToFactoryBlank() {
     openConfirmDialog(
-      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (사용자는 admin / pm 2개 계정, 비밀번호 1234로 초기화)",
+      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (작업자는 admin 하나, 암호 1234 로 초기화)",
       () => this._factoryBlank()
     );
   },
@@ -221,13 +183,9 @@ var StorageManager = {
         communicationsData = [];
         meetingsData = [];
         weeklyReportsData = [];
-        RealtimeChatManager.messages = [];
         NoticeCommManager.activeChannel = "전체";
         DataRegistry.set("projectUsers", [
-          { empNo: "admin", name: "시스템관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
-          { empNo: "admin2", name: "시스템관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
-          { empNo: "pm", name: "프로젝트관리자", role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM", pwdHash: "", lang: "ko",
-            projectRoles: { [ProjectContext.current]: { role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM" } } }
+          { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "", pwdHash: "", lang: "ko" }
         ]);
         try {
           localStorage.removeItem(AuthManager.STORAGE_POLICY_KEY);
@@ -329,7 +287,7 @@ var MasterSyncEngine = {
     this._isSyncing = true;
     try {
       // 1. Read or populate input values between DOM and projectConfig
-      // 화면 입력값 → 기준정보 반영은 사용자가 [⚡ 전체 동기화]를 누른 경우에만 수행
+      // 화면 입력값 → 기준정보 반영은 작업자가 [⚡ 전체 동기화]를 누른 경우에만 수행
       if (source === "manual") {
         this.readAllDomInputs();
       } else {

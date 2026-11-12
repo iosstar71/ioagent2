@@ -1,12 +1,12 @@
 // =============================================================================
-// [IOSTAR-PM v3.9.2] 시스템 설정 > 🗂️ 프로젝트 — 프로젝트 파일 내려받기 · 올리기 (ProjectTransfer, 시스템관리자)
+// [Project Mgmt v3.9.2] 시스템 설정 > 🗂️ 프로젝트 — 프로젝트 파일 내려받기 · 올리기 (ProjectTransfer, 관리자)
 // -----------------------------------------------------------------------------
 //  - 내려받기: 모든 프로젝트 또는 특정 프로젝트를 엑셀 / JSON 으로
 //      엑셀 = 스마트병합 [④ 전체 일괄] · [기준정보 > 백업] 과 같은 양식 (프로젝트마다 파일 1개)
 //      JSON = 프로젝트 백업 형식 (모든 프로젝트는 묶음 파일 1개)
 //  - 올리기: 엑셀 / JSON 파일로 새 프로젝트를 추가하거나, 고른 프로젝트를 파일 내용으로 바꿈
 //      같은 이름의 프로젝트가 이미 있으면 새 이름을 받아서 추가
-//      파일의 사용자(사번)는 그 프로젝트 참여자로 추가 · 갱신 (계정이 없으면 새로 만들고 초기 비밀번호 1234)
+//      파일의 작업자(작업자 ID)는 그 프로젝트 참여자로 추가 · 갱신 (계정이 없으면 새로 만들고 초기 암호 1234)
 // =============================================================================
 var ProjectTransfer = {
   BUNDLE: "IOSTAR_PROJECTS_BUNDLE_v1",
@@ -17,7 +17,7 @@ var ProjectTransfer = {
   _c(v) { return JSON.parse(JSON.stringify(v === undefined ? null : v)); },
   _norm(n) { return String(n || "").replace(/\s+/g, " ").trim().toLowerCase(); },
   allUsers() { return ProjectContext.allUsers && ProjectContext.allUsers.length ? ProjectContext.allUsers : (projectUsers || []); },
-  // 모든 프로젝트의 참여 정보가 든 사용자 목록 (DB 서버는 화면에 지금 프로젝트 참여 정보만 있으므로 관리자 API 로)
+  // 모든 프로젝트의 참여 정보가 든 작업자 목록 (DB 서버는 화면에 지금 프로젝트 참여 정보만 있으므로 관리자 API 로)
   async fullUsers() {
     if (!this.isServer()) return this.allUsers();
     const res = await ServerBackend.request("/api/admin/users/list", {});
@@ -28,7 +28,7 @@ var ProjectTransfer = {
   async render() {
     if (!ProjectData.canManage()) return;
     await ProjectManager.refreshList();
-    // [v4.0.0] 시스템관리자: 모든 프로젝트 / PM: 지금 프로젝트만
+    // [v4.0.0] 관리자: 모든 프로젝트 / PM: 지금 프로젝트만
     const admin = ProjectData.isAdmin();
     const list = admin ? ProjectData.projects() : ProjectData.projects().filter(p => p.id === ProjectContext.current);
     const down = document.getElementById("ptDownTarget"), up = document.getElementById("ptUpTarget");
@@ -94,7 +94,7 @@ var ProjectTransfer = {
 
   // ---- 내려받기 ----
   async download(format) {
-    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
+    if (!ProjectData.canManage()) return showToast("🚫 관리자 · PM 만 할 수 있습니다.");
     let target = (document.getElementById("ptDownTarget") || {}).value || ProjectContext.current;
     if (!ProjectData.isAdmin()) target = ProjectContext.current;  // PM 은 지금 프로젝트만
     const list = ProjectData.projects();
@@ -196,7 +196,7 @@ var ProjectTransfer = {
   },
 
   async pick() {
-    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
+    if (!ProjectData.canManage()) return showToast("🚫 관리자 · PM 만 할 수 있습니다.");
     document.getElementById("ptUpInput").click();
   },
   async upload(e) {
@@ -213,7 +213,7 @@ var ProjectTransfer = {
       if (target === ProjectContext.current) return ProjectData.importProject({ target: { files: [file], value: "" } });
       const p = ProjectData.projects().find(x => x.id === target) || { name: target };
       const it = items[0];
-      return openConfirmDialog(`[${p.name}] 프로젝트를 파일 [${file.name}] 의 내용으로 바꿉니다.\n· 기준정보 + ${ProjectData.countText(it.data)}\n· 프로젝트 이름은 그대로 · 사용자는 참여자로 추가 · 갱신\n계속할까요?`, async () => {
+      return openConfirmDialog(`[${p.name}] 프로젝트를 파일 [${file.name}] 의 내용으로 바꿉니다.\n· 기준정보 + ${ProjectData.countText(it.data)}\n· 프로젝트 이름은 그대로 · 작업자는 참여자로 추가 · 갱신\n계속할까요?`, async () => {
         try {
           await this.write(target, it, true);
           showToast(`✅ [${p.name}] 프로젝트를 [${file.name}] 내용으로 바꿨습니다.`);
@@ -312,7 +312,7 @@ var ProjectTransfer = {
       });
       if (Object.keys(urows).length) {
         const ur = await ServerBackend.request("/api/db/save", { changes: { projectUsers: { parts: urows, base: {} } }, force: true, lockBypass: true, projectId: pid });
-        if (!ur.ok) throw new Error(ur.message || "사용자를 저장하지 못했습니다.");
+        if (!ur.ok) throw new Error(ur.message || "작업자를 저장하지 못했습니다.");
       }
       await SyncManager.refresh(["projectUsers"], { silent: true, skipConfirm: true });
       return;

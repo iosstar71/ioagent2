@@ -99,8 +99,8 @@ const BackupHistoryManager = {
       } catch (_) {}
     }
 
-    // [v3.9.1] 올리기 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 사용자가 켠 경우에만
-    // [v4.0.0] DB 서버 방식: PM · 시스템관리자의 복원 지점은 서버에도 보관 (다른 PC 에서도 복원)
+    // [v3.9.1] 올리기 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 작업자가 켠 경우에만
+    // [v4.0.0] DB 서버 방식: PM · 관리자의 복원 지점은 서버에도 보관 (다른 PC 에서도 복원)
     if (this._serverMode()) {
       const counts = {}; ["weeklyReportsData", "meetingsData", "noticesData", "communicationsData"].forEach(k => { counts[k] = (payload[k] || []).length; });
       const meta = { id: snapEntry.id, filename, createdAt: displayTime, actionType, targetSubsystem, projectId: pid, projectName: pname,
@@ -138,8 +138,9 @@ const BackupHistoryManager = {
     if (item && item.payload) this._download(item);
   },
 
+  // 복원 지점은 이 브라우저에만 보관 (서버에는 남기지 않음 — 용량 10MB 제한)
   _serverMode() {
-    return typeof SyncManager !== "undefined" && !SyncManager.isLocal() && typeof ProjectData !== "undefined" && ProjectData.canManage() && typeof ServerBackend !== "undefined" && !!ServerBackend.token;
+    return false;
   },
   async _serverItem(pid, id) {
     const res = await ServerBackend.request("/api/snapshots/get", { projectId: pid, id }, "POST", 30000);
@@ -188,7 +189,7 @@ const BackupHistoryManager = {
     }
   },
 
-  // [v4.0.0] 복원 지점 목록 — 시스템관리자: 모든 프로젝트 / PM: 지금 프로젝트 (DB 서버 방식은 서버에 보관된 목록)
+  // [v4.0.0] 복원 지점 목록 — 관리자: 모든 프로젝트 / PM: 지금 프로젝트 (DB 서버 방식은 서버에 보관된 목록)
   async renderBackupHistoryTable() {
     const tbody = document.getElementById("backupHistoryTableBody");
     if (!tbody) return;
@@ -384,7 +385,7 @@ const ReportExporter = {
 
 // -------------------------------------------------------------
 // [2026 v1.2.4] 단일 서브시스템 제한 로컬 JSON 협업 매니저
-// - 여러 서브시스템이 포함된 JSON이 올라와도 사용자가 지정한 [단 1개의 서브시스템 데이터]만 필터링하여 병합!
+// - 여러 서브시스템이 포함된 JSON이 올라와도 작업자가 지정한 [단 1개의 서브시스템 데이터]만 필터링하여 병합!
 // - 병합 실행 시 업데이트 날짜 및 시간(YYYYMMDD_HHMMSS)으로 백업 JSON 자동 생성!
 // -------------------------------------------------------------
 const JsonCollabManager = {

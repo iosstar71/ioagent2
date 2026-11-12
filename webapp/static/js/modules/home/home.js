@@ -1,12 +1,12 @@
-// [IOSTAR-PM] 홈 화면
+// [Project Mgmt] 홈 화면
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
-// [IOSTAR-PM ver1.0.4] 맞춤형 홈 화면 관리자 (HomeScreenManager)
+// [Project Mgmt ver1.0.4] 맞춤형 홈 화면 관리자 (HomeScreenManager)
 // 🏛️ 2. 이그제큐티브 브리핑 룸 / 🚀 3. 하이브리드 스마트 포털 및 권한별 설정
 // =========================================================================
 var HomeScreenManager = {
   _sessionMode: null, // (이전 버전 호환)
-  // [v2.4.0] 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 사용자가 홈 위쪽 단추로 고른 스타일(사용자별 기억)
+  // [v2.4.0] 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 작업자가 홈 위쪽 단추로 고른 스타일(작업자별 기억)
   STYLES: ["EXECUTIVE", "PORTAL", "TODO"],
   STYLE_LABELS: { EXECUTIVE: "📊 브리핑", PORTAL: "🧰 워크벤치", TODO: "✅ 내 할 일" },
   STYLE_KEY: "IOSTAR_HOME_STYLE_",
@@ -110,7 +110,7 @@ var HomeScreenManager = {
     return this.getEffectiveMode();
   },
 
-  // 사용자가 홈 위쪽 단추로 홈 스타일을 고름 (사용자별 기억, 역할 기본값과 같으면 기억 지움)
+  // 작업자가 홈 위쪽 단추로 홈 스타일을 고름 (작업자별 기억, 역할 기본값과 같으면 기억 지움)
   setStyle(mode) {
     if (this.STYLES.indexOf(mode) === -1) return;
     try {
@@ -124,7 +124,7 @@ var HomeScreenManager = {
 
   openSettings() {
     if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-config"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-config")) {
-      showToast("ℹ️ 홈 스타일은 위쪽 [브리핑 · 워크벤치 · 내 할 일] 단추로 바꿀 수 있습니다. 역할별 기본 홈은 시스템 관리자가 정합니다.");
+      showToast("ℹ️ 홈 스타일은 위쪽 [브리핑 · 워크벤치 · 내 할 일] 단추로 바꿀 수 있습니다. 역할별 기본 홈은 관리자가 정합니다.");
       return;
     }
     switchTab("tab-config");
@@ -226,7 +226,7 @@ var HomeScreenManager = {
 
   renderExecutive() {
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
-    const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "27년 가동률 시스템 개선";
+    const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "프로젝트";
     const repDay = (typeof WBSEngine !== "undefined" && WBSEngine.getDayOfWeekText) ? WBSEngine.getDayOfWeekText(repDate) : "화";
 
     // 1. Calculate overall metrics
@@ -249,7 +249,7 @@ var HomeScreenManager = {
 
     if (heroTitle) heroTitle.textContent = projName;
     if (heroMeta) {
-      let wLabel = "2027년 22주차";
+      let wLabel = "-";
       if (typeof WeeklyReportManager !== "undefined" && WeeklyReportManager.findWeekForDate) {
         const wObj = WeeklyReportManager.findWeekForDate(repDate);
         if (wObj) wLabel = wObj.fullLabel;

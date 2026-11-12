@@ -55,9 +55,9 @@ const ExcelSync = {
       { key: "extra2", label: "세부속성2(산출물/비고)", width: 32 },
       { key: "extra3", label: "세부속성3(매칭키워드)", width: 36 }
     ],
-    // 사용자 목록
+    // 작업자 목록
     users: [
-      { key: "empNo", label: "사번(ID)", width: 16 },
+      { key: "empNo", label: "작업자 ID(ID)", width: 16 },
       { key: "name", label: "성명", width: 16 },
       { key: "role", label: "권한등급(SYS_ADMIN/PM/LEAD/MEMBER)", width: 30 },
       { key: "subsystem", label: "담당서브시스템", width: 18 },
@@ -134,8 +134,8 @@ const ExcelSync = {
   // 헤더 별칭 매핑 (화면 테이블 복사본이나 변형된 헤더도 자동 인식)
   HEADER_ALIASES: {
     users: {
-      empNo: ["사번(id)", "사번", "사번 (로그인 id)", "id", "empno"],
-      name: ["성명", "이름", "사용자명", "name"],
+      empNo: ["작업자 ID(id)", "작업자 ID", "작업자 ID (작업자 선택 id)", "id", "empno"],
+      name: ["성명", "이름", "작업자명", "name"],
       role: ["권한등급(sys_admin/pm/lead/member)", "권한등급(sys_admin/pm/member)", "권한등급", "권한", "시스템 권한 등급", "role"],
       subsystem: ["담당서브시스템", "담당 서브시스템", "서브시스템", "subsystem"],
       dept: ["소속부서/담당역할", "소속 부서 / 담당 역할", "부서", "역할", "dept"],
@@ -774,7 +774,7 @@ const ExcelSync = {
         rows: rows
       }
     ]);
-    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "사용자", subsystems: "서브시스템", config: "기준정보" }[tabKey] || tabKey, [], "xlsx"));
+    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "작업자", subsystems: "서브시스템", config: "기준정보" }[tabKey] || tabKey, [], "xlsx"));
   },
 
   // ---------------------------------------------------------------------------
@@ -1594,7 +1594,7 @@ const ExcelSync = {
         voc: []
       };
 
-      // [v3.9.0] 전체 일괄 파일의 프로젝트 기준정보 · 사용자 시트 (서브시스템 시트로 잘못 읽지 않게 따로 처리)
+      // [v3.9.0] 전체 일괄 파일의 프로젝트 기준정보 · 작업자 시트 (서브시스템 시트로 잘못 읽지 않게 따로 처리)
       const configRows = [], userRows = [];
       const sheetRowsOf = (sheet, tabKey) => {
         const out = [];
@@ -1621,7 +1621,7 @@ const ExcelSync = {
         // 시트 이름으로 기본 섹션 추정
         const sName = (sheet.name || "").toLowerCase();
         if (sName.includes("프로젝트기준정보")) { configRows.push(...sheetRowsOf(sheet, "config")); return; }
-        if (sName.includes("사용자")) { userRows.push(...sheetRowsOf(sheet, "users")); return; }
+        if (sName.includes("작업자")) { userRows.push(...sheetRowsOf(sheet, "users")); return; }
         if (/주간보고|회의록|공지|소통/.test(sName)) return;  // 협업 데이터 시트는 SmartMergeCenter._applyCollabSheets 가 처리
         if (sName.includes("wbs") || sName.includes("공정")) currentSection = "wbs";
         else if (sName.includes("서브시스템") || sName.includes("기준정보") || sName.includes("subsystem")) currentSection = "subsystems";
@@ -1800,7 +1800,7 @@ const DocxBuilder = {
   // =========================================================================
   // [2026 v0.9 신규] 회의록 독립 OpenXML DOCX 생성기
   // =========================================================================
-  buildMeetingMinutesDocx(m, projName = "27년 가동률 시스템 개선") {
+  buildMeetingMinutesDocx(m, projName = "프로젝트") {
     const esc = s => ExcelSync.escapeXml(s);
     const bodyParts = [];
 

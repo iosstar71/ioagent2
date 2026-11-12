@@ -1,12 +1,12 @@
 // =============================================================================
-// [IOSTAR-PM Workgroup 0.1] 서브시스템 체크아웃 · 체크인 (LockManager) — DB 서버 방식
+// [Project Mgmt] 서브시스템 체크아웃 · 체크인 (LockManager) — DB 서버 방식
 // -----------------------------------------------------------------------------
 //  체크아웃 = 편집 시작(잠금) · 체크인 = 저장하고 잠금 해제 · 체크아웃 취소 = 변경 버리고 해제 · 강제 해제 = PM · 관리자
 //  범위: 서브시스템의 WBS · 요구사항 · 산출물 · VOC (주간보고 · 회의록 · 공지 · 소통은 지금처럼 문서별 동시수정 검사)
 //  주기 통신 없음: 잠금 현황은 불러오기 · 저장 · 체크아웃/체크인 · [🔄 상태 확인] 때 서버가 함께 알려 줌
 //  저장이 막히면(423): 내 변경 백업 받기 / 보류(브라우저에 보관, 잠기지 않은 변경만 저장) / 버리고 최신 받기
 //  다시 체크아웃할 때 그 사이 다른 사람이 바꿨으면 3자 비교(받았던 때 · 다른 사람 결과 · 내 것)로 합침
-//  서버 규칙: server/locks.py · 설정: conf/app.ini [lock] · Enterprise 확장: docs/ENTERPRISE_ROADMAP.md
+//  서버 규칙: server/locks.py · 설정: conf/app.ini [lock]
 // =============================================================================
 var LockManager = {
   KEYS: ["wbsData", "reqMasterData", "deliverablesData", "vocData"],
@@ -17,8 +17,9 @@ var LockManager = {
   log: [],
   serverTime: "",
 
-  active() { return typeof Features !== "undefined" && Features.lockMode() !== "off" && typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
-  required() { return this.active() && Features.lockMode() === "required"; },
+  lockCfg() { return (typeof APP_CONFIG !== "undefined" && APP_CONFIG.lock) || { mode: "off", hours: 4 }; },
+  active() { return this.lockCfg().mode !== "off" && typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
+  required() { return this.active() && this.lockCfg().mode === "required"; },
   me() { return String((Permission.user() || {}).empNo || "").toLowerCase(); },
   scope(sys) { return "SUB:" + sys; },
   sysOf(scope) { return String(scope || "").replace(/^SUB:/, ""); },
@@ -59,7 +60,7 @@ var LockManager = {
     if (!got.length) return false;
     if (opts.reload !== false) await this.syncParts(got);
     if (opts.snapshot !== false && typeof BackupHistoryManager !== "undefined") BackupHistoryManager.createBackupSnapshot(`체크아웃(${got.join("+")})`, got.length === 1 ? got[0] : "ALL", false);
-    if (!opts.quiet) showToast(`📝 ${got.join(", ")} 체크아웃 — 최신 자료로 편집을 시작합니다. 끝나면 [✅ 체크인]을 누르세요. (${Features.lockHours()}시간 동안 활동이 없으면 자동 해제)`);
+    if (!opts.quiet) showToast(`📝 ${got.join(", ")} 체크아웃 — 최신 자료로 편집을 시작합니다. 끝나면 [✅ 체크인]을 누르세요. (${this.lockCfg().hours}시간 동안 활동이 없으면 자동 해제)`);
     return got.length === systems.length;
   },
 
@@ -97,7 +98,7 @@ var LockManager = {
     showToast(`↩️ ${systems.join(", ")} 체크아웃을 취소했습니다.`);
   },
 
-  // ---- 강제 해제 (PM · 시스템관리자, 사유 필수) ----
+  // ---- 강제 해제 (PM · 관리자, 사유 필수) ----
   async forceRelease(sys) {
     if (!this.isManager()) return;
     const h = this.holder(sys);
@@ -251,7 +252,7 @@ var LockManager = {
     });
     if (changed) this.writeHold(h);
   },
-  // 로그인 · 다시 불러온 뒤: 보류한 변경을 화면에 다시 올림 (저장 전 상태로)
+  // 작업자 선택 · 다시 불러온 뒤: 보류한 변경을 화면에 다시 올림 (저장 전 상태로)
   restoreHeld() {
     if (!this.active()) return;
     const h = this.readHold();
@@ -457,7 +458,7 @@ var LockManager = {
       if (note) note.textContent = "";
       return;
     }
-    if (note) note.textContent = `방식: ${Features.lockMode() === "required" ? "체크아웃해야 저장" : "남이 잡은 것만 막음"} · 유효 ${Features.lockHours()}시간 (활동하면 연장) · 기준 ${this.serverTime || "-"} (자동으로 새로고침하지 않음 — [🔄])`;
+    if (note) note.textContent = `방식: ${this.lockCfg().mode === "required" ? "체크아웃해야 저장" : "남이 잡은 것만 막음"} · 유효 ${this.lockCfg().hours}시간 (활동하면 연장) · 기준 ${this.serverTime || "-"} (자동으로 새로고침하지 않음 — [🔄])`;
     const subs = typeof getAllSubsystemNames === "function" ? getAllSubsystemNames() : [];
     body.innerHTML = subs.map(s => {
       const h = this.holder(s);

@@ -1,9 +1,9 @@
 // =============================================================================
-// [IOSTAR-PM v4.1.0] 🔀 스마트 병합 > 📋 자료 내려받기·올리기 — 목록표 + 공통 올리기 미리 보기 (MergeTable)
+// [Project Mgmt v4.1.0] 🔀 스마트 병합 > 📋 자료 내려받기·올리기 — 목록표 + 공통 올리기 미리 보기 (MergeTable)
 // -----------------------------------------------------------------------------
 //  목록표: 자료마다 한 줄 (범위 · 건수 · 올리기 권한). 체크한 자료를 엑셀 / JSON 한 파일로 내려받음
-//    - 서브시스템 단위: WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 (올리기 = 담당 서브시스템, 전체는 시스템관리자 · PM · 담당이 ALL 인 리더)
-//    - 프로젝트 단위 : 공지사항 · 소통 피드 · 프로젝트 기준정보 · 서브시스템 기준정보 · 사용자 (올리기 = 시스템관리자 · PM)
+//    - 서브시스템 단위: WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 (올리기 = 담당 서브시스템, 전체는 관리자 · PM · 담당이 ALL 인 리더)
+//    - 프로젝트 단위 : 공지사항 · 소통 피드 · 프로젝트 기준정보 · 서브시스템 기준정보 · 작업자 (올리기 = 관리자 · PM)
 //  올리기 미리 보기 (모든 올리기 공통 — 각 화면의 📤 엑셀 올리기 포함):
 //    파일을 읽어 자료마다 [파일 행 · 반영할 행 · 제외할 행(범위 밖 · 권한 없음) · 반영 방법]을 보여 주고
 //    [반영]을 누르면 복원 지점을 만든 뒤 반영, [취소]면 아무것도 바꾸지 않음
@@ -17,10 +17,10 @@ var MergeTable = {
     { k: "weekly", unit: "sys", icon: "📝", label: "주간보고", desc: "서브시스템 주간보고 (전체 범위면 통합 보고서 포함)" },
     { k: "meetings", unit: "sys", icon: "📅", label: "회의록 · Action Item", desc: "서브시스템 회의 (+ 통합 회의)" },
     { k: "notices", unit: "prj", icon: "📢", label: "공지사항", desc: "프로젝트 공지" },
-    { k: "comms", unit: "prj", icon: "💬", label: "소통 피드", desc: "채널별 게시글 (채팅 제외)" },
+    { k: "comms", unit: "prj", icon: "💬", label: "소통 피드", desc: "채널별 게시글" },
     { k: "config", unit: "prj", icon: "🗂️", label: "프로젝트 기준정보", desc: "기본정보 · 분야 · SDLC · 공휴일 · 표준 산출물" },
     { k: "subsystems", unit: "prj", icon: "🏢", label: "서브시스템 기준정보", desc: "분야 · 코드/명 · SDLC 모델 · 가중치 · 담당" },
-    { k: "users", unit: "prj", icon: "👥", label: "사용자(참여자)", desc: "사번 · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
+    { k: "users", unit: "prj", icon: "👥", label: "작업자(참여자)", desc: "작업자 ID · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
   ],
   DATA_KEY: { wbs: "wbsData", req: "reqMasterData", deliverables: "deliverablesData", voc: "vocData", weekly: "weeklyReportsData", meetings: "meetingsData",
     notices: "noticesData", comms: "communicationsData", config: "projectConfig", subsystems: "subsystemsMeta", users: "projectUsers" },
@@ -28,7 +28,7 @@ var MergeTable = {
   COLLAB: ["weekly", "meetings", "notices", "comms"],
   // 시트 이름으로 자료 찾기 (먼저 맞는 것)
   SHEET_RX: [
-    ["config", /프로젝트\s*기준|기본\s*정보|config/i], ["subsystems", /서브시스템/], ["users", /사용자|인력|user/i],
+    ["config", /프로젝트\s*기준|기본\s*정보|config/i], ["subsystems", /서브시스템/], ["users", /작업자|인력|user/i],
     ["weekly", /주간\s*보고/], ["meetings", /회의/], ["notices", /공지/], ["comms", /소통/],
     ["wbs", /wbs|공정표/i], ["deliverables", /산출물/], ["req", /요구|req/i], ["voc", /voc|이슈/i]
   ],
@@ -44,8 +44,8 @@ var MergeTable = {
   canUpload(k, scope) {
     const it = this.item(k);
     if (!it) return { ok: false, why: "알 수 없는 자료" };
-    if (it.unit === "prj") return SmartMergeCenter.isAdminOrPm() ? { ok: true } : { ok: false, why: "시스템관리자 · PM 만" };
-    if (!scope || scope === "ALL") return SmartMergeCenter.canBulkWork() ? { ok: true } : { ok: false, why: "전체 범위는 시스템관리자 · PM · 총괄리더만 — 담당 서브시스템을 고르세요" };
+    if (it.unit === "prj") return SmartMergeCenter.isAdminOrPm() ? { ok: true } : { ok: false, why: "관리자 · PM 만" };
+    if (!scope || scope === "ALL") return SmartMergeCenter.canBulkWork() ? { ok: true } : { ok: false, why: "전체 범위는 관리자 · PM · 총괄리더만 — 담당 서브시스템을 고르세요" };
     if (!Permission.canWriteSubsystem(scope)) return { ok: false, why: `${scope} 는 담당 서브시스템이 아님` };
     // [Workgroup] 다른 사람이 체크아웃한 서브시스템은 올릴 수 없음
     if (this.WORK.includes(k) && this._lockOn() && LockManager.byOther(scope)) return { ok: false, why: `${LockManager.who(LockManager.holder(scope))} 님이 체크아웃(편집 중)` };
@@ -210,7 +210,7 @@ var MergeTable = {
     else if (this.COLLAB.includes(k)) how = "같은 ID 는 고치고 새 ID 는 추가";
     else if (k === "config") how = "기준정보를 파일 내용으로 바꾸기";
     else if (k === "subsystems") how = `서브시스템 목록 바꾸기 (지금 ${cur}개 → ${apply.length}개)`;
-    else if (k === "users") how = "이 프로젝트의 역할 · 담당 · 부서를 추가 · 갱신 (목록에 없는 사용자는 그대로)";
+    else if (k === "users") how = "이 프로젝트의 역할 · 담당 · 부서를 추가 · 갱신 (목록에 없는 작업자는 그대로)";
     if (!perm.ok) { why = `🔒 ${perm.why}`; apply = []; }
     return { k, label: `${it.icon} ${it.label}`, scope: sc, fileRows, rows: apply, ignored: fileRows - apply.length, why, how, ok: perm.ok && apply.length > 0, lockedOut };
   },
@@ -285,7 +285,7 @@ var MergeTable = {
     }
   },
 
-  // 반영 (기준정보 → 서브시스템 → 사용자 → 업무 → 협업 순서)
+  // 반영 (기준정보 → 서브시스템 → 작업자 → 업무 → 협업 순서)
   apply(picks, isJson) {
     const done = [];
     const by = k => picks.find(p => p.k === k);
@@ -308,16 +308,14 @@ var MergeTable = {
       done.push(`서브시스템 ${subsystemsMeta.length}개`);
     }
     const users = by("users");
-    if (users) { SmartMergeCenter._mergeUsersList(users.rows); done.push(`사용자 ${users.rows.length}명`); }
+    if (users) { SmartMergeCenter._mergeUsersList(users.rows); done.push(`작업자 ${users.rows.length}명`); }
     this.WORK.forEach(k => {
       const p = by(k);
       if (!p) return;
-      const keys = k === "deliverables" && typeof AttachManager !== "undefined" ? AttachManager.rememberKeys() : null;
       if (p.scope === "ALL" && p.lockedOut && p.lockedOut.length) {
         // 잠긴 서브시스템은 그대로 두고, 파일에 있는 서브시스템만 바꿈
         [...new Set(p.rows.map(r => this._sysOf(r)))].forEach(x => SmartMergeCenter._mergeWorkArrayData(k, p.rows.filter(r => this._sysOf(r) === x), x));
       } else SmartMergeCenter._mergeWorkArrayData(k, p.rows, p.scope);
-      if (keys) AttachManager.reapplyKeys(keys);  // 첨부파일 연결 유지
       done.push(`${this.item(k).label} ${p.rows.length}건`);
     });
     this.COLLAB.forEach(k => {

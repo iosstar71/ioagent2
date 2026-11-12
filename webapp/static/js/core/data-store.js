@@ -1,12 +1,12 @@
 // =============================================================================
-// [IOSTAR-PM v1.0.6] 데이터 저장/동기화 계층 (Data Store & Sync)
+// [Project Mgmt v1.0.6] 데이터 저장/동기화 계층 (Data Store & Sync)
 // -----------------------------------------------------------------------------
 //  - DataRegistry : 프로젝트 데이터셋(13종)의 단일 접근점 (수집/적용/백업/JSON 파일 저장 공통)
 //  - Partition    : 데이터셋을 "파티션" 단위로 분할 (서브시스템 단위 / 행 ID 단위 / 전체)
 //                   → 충돌 감지와 담당 서브시스템 저장 권한을 같은 단위로 처리
 //  - Permission   : 역할(SYS_ADMIN / PM / LEAD / MEMBER)별 파티션 쓰기 권한
 //  - LocalBackend : 브라우저 LocalStorage 저장소 (실시간 자동저장 지원)
-//  - ServerBackend: 다중 사용자 DB 서버 (토큰 인증, 저장 버튼 방식)
+//  - ServerBackend: 다중 작업자 DB 서버 (토큰 인증, 저장 버튼 방식)
 //  - SyncManager  : 변경 감지(기준본 대비), 저장/새로고침, 충돌 경고(덮어쓰기/무시하기), 화면별 툴바
 //
 //  ※ 이 파일은 app.js 다음, access-control.js 이전에 로드합니다.
@@ -22,7 +22,7 @@ var DataRegistry = {
     projectConfig:            { part: null,     scope: "master",    label: "프로젝트 기준정보" },
     subsystemsMeta:           { part: null,     scope: "master",    label: "분야/서브시스템" },
     standardDeliverablesMeta: { part: null,     scope: "master",    label: "표준 산출물" },
-    projectUsers:             { part: "empNo",  scope: "users",     label: "사용자" },
+    projectUsers:             { part: "empNo",  scope: "users",     label: "작업자" },
     wbsData:                  { part: "system", scope: "subsystem", label: "WBS 공정", volatile: ["pProg", "status"] },
     deliverablesData:         { part: "system", scope: "subsystem", label: "산출물" },
     reqMasterData:            { part: "system", scope: "subsystem", label: "요구사항" },
@@ -31,10 +31,10 @@ var DataRegistry = {
     communicationsData:       { part: "id",     scope: "shared",    label: "소통 피드" },
     meetingsData:             { part: "id",     scope: "shared",    label: "회의" },
     weeklyReportsData:        { part: "id",     scope: "weekly",    label: "주간보고" },
-    // [v2.4.0] 사용자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
+    // [v2.4.0] 작업자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
     todosData:                { part: "id",     scope: "personal",  label: "내 할 일" },
     theme:                    { part: null,     scope: "pref",      label: "화면 테마" },
-    // [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 시스템관리자가 관리, 모든 프로젝트 공통
+    // [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 관리자가 관리, 모든 프로젝트 공통
     processTypes:             { part: null,     scope: "system",    label: "공정 유형" }
   },
 
@@ -79,7 +79,7 @@ var DataRegistry = {
       case "subsystemsMeta": if (Array.isArray(val)) subsystemsMeta = val; break;
       case "standardDeliverablesMeta": if (Array.isArray(val)) standardDeliverablesMeta = val; break;
       case "projectUsers":
-        // [v3.0.0] 이 프로젝트의 사용자(시스템관리자 + 참여자)만 화면에 둠 — 전체 목록은 ProjectContext.allUsers
+        // [v3.0.0] 이 프로젝트의 작업자(관리자 + 참여자)만 화면에 둠 — 전체 목록은 ProjectContext.allUsers
         if (Array.isArray(val) && val.length > 0) {
           ProjectContext.ensureLegacyMembership(val);
           ProjectContext.allUsers = val;
@@ -230,7 +230,7 @@ var Permission = {
     return (typeof AuthManager !== "undefined" && AuthManager.normalizeRole) ? AuthManager.normalizeRole(u.role) : "SYS_ADMIN";
   },
   isManager() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM"; },
-  // 전체 서브시스템 데이터 수정 가능 여부 — 시스템관리자 · PM, 총괄리더는 담당이 ALL 일 때만 ([v4.0.0] 리더 · 사용자는 담당 서브시스템)
+  // 전체 서브시스템 데이터 수정 가능 여부 — 관리자 · PM, 총괄리더는 담당이 ALL 일 때만 ([v4.0.0] 리더 · 작업자는 담당 서브시스템)
   canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || (r === "LEAD" && this.ownSubsystem() === "ALL"); },
   ownSubsystem() { return String(this.user().subsystem || "ALL"); },
 
@@ -273,8 +273,8 @@ var Permission = {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 // [v1.0.10] 현재 프로젝트 (여러 프로젝트 관리)
-//  - 사용자 계정(projectUsers)·화면 테마(theme)는 한 곳에 저장, 그 밖의 데이터는 프로젝트별 저장
-//  - [v3.0.0] 사용자 정보(역할·담당·부서)는 프로젝트별 참여 정보로 관리, 화면에는 그 프로젝트 사용자만
+//  - 작업자 계정(projectUsers)·화면 테마(theme)는 한 곳에 저장, 그 밖의 데이터는 프로젝트별 저장
+//  - [v3.0.0] 작업자 정보(역할·담당·부서)는 프로젝트별 참여 정보로 관리, 화면에는 그 프로젝트 작업자만
 //  - 기본 프로젝트(DEFAULT)는 v1.0.9 이하 저장 위치를 그대로 사용 (기존 데이터 이관 불필요)
 // -----------------------------------------------------------------------------
 var ProjectContext = {
@@ -312,9 +312,9 @@ var ProjectContext = {
     try { localStorage.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
   },
 
-  // ---- [v3.0.0] 사용자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
-  //  계정(사번·이름·비밀번호)은 하나, 프로젝트마다 참여 정보 projectRoles[프로젝트ID] = { role, subsystem, dept }
-  //  시스템관리자는 모든 프로젝트에 보이고, 그 밖의 사용자는 참여한 프로젝트에만 보임
+  // ---- [v3.0.0] 작업자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
+  //  계정(작업자 ID·이름·암호)은 하나, 프로젝트마다 참여 정보 projectRoles[프로젝트ID] = { role, subsystem, dept }
+  //  관리자는 모든 프로젝트에 보이고, 그 밖의 작업자는 참여한 프로젝트에만 보임
   allUsers: [],
   isAdminUser(u) { return !!u && AuthManager.normalizeRole(u.baseRole || u.role) === "SYS_ADMIN"; },
   member(u, pid) {
@@ -328,7 +328,7 @@ var ProjectContext = {
     const k = String(empNo || "").toLowerCase();
     return (this.allUsers.length ? this.allUsers : (typeof projectUsers !== "undefined" ? projectUsers : [])).find(u => String(u.empNo || "").toLowerCase() === k) || null;
   },
-  // 이전 버전(참여 정보 없음) 사용자 행: 기본 프로젝트 참여로 간주 (샘플·백업 복원 데이터)
+  // 이전 버전(참여 정보 없음) 작업자 행: 기본 프로젝트 참여로 간주 (샘플·백업 복원 데이터)
   ensureLegacyMembership(list) {
     (list || []).forEach(u => {
       if (!u || this.isAdminUser(u) || (u.projectRoles && typeof u.projectRoles === "object")) return;
@@ -419,17 +419,17 @@ var LocalBackend = {
     const data = {};
     const revs = {};
     const cache = {};
-    // [v3.0.0] 로컬 저장소 사용자 1회 이관 (프로젝트별 참여 정보)
+    // [v3.0.0] 로컬 저장소 작업자 1회 이관 (프로젝트별 참여 정보)
     try {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
         if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
-        // [v3.7.0] 시스템관리자 계정 하나 더 (admin2 / 초기 비밀번호 1234) — 없을 때 한 번만 추가
+        // [v3.7.0] 관리자 계정 하나 더 (admin2 / 초기 암호 1234) — 없을 때 한 번만 추가
         if (localStorage.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
           localStorage.setItem("IOSTAR_SECOND_ADMIN", "1");
           if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
             const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
-            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "시스템관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
+            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
             const rv = this._readRevs(ProjectContext.DEFAULT);
             if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
             this._write(ProjectContext.DEFAULT, st, rv);
@@ -501,7 +501,7 @@ var LocalBackend = {
   // 전체 덮어쓰기 (초기화/샘플 복원/백업 복원 전용) — 공통 데이터는 기본 프로젝트 위치에 저장
   replaceAll(data) {
     const now = new Date().toLocaleString();
-    // [v3.0.0] 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 사용자 규칙을 따름 (1회 이관 불필요)
+    // [v3.0.0] 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 작업자 규칙을 따름 (1회 이관 불필요)
     try { localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); } catch (e) {}
     const groups = {};
     DataRegistry.KEYS.forEach(k => {
@@ -587,7 +587,7 @@ var ServerBackend = {
       clearTimeout(timer);
       const json = await res.json().catch(() => ({}));
       json.httpStatus = res.status;
-      if (typeof ServerHeartbeat !== "undefined" && !ServerHeartbeat.online) ServerHeartbeat.setOnline(true);
+      if (typeof ConnState !== "undefined" && !ConnState.online) ConnState.setOnline(true);
       if (res.status === 401) {
         json.authRequired = true;
         if (typeof AuthManager !== "undefined" && AuthManager.onServerAuthExpired) AuthManager.onServerAuthExpired();
@@ -595,8 +595,8 @@ var ServerBackend = {
       return json;
     } catch (err) {
       clearTimeout(timer);
-      // [Workgroup] 주기 확인 대신, 사용자 요청이 실패했을 때 연결 끊김 표시
-      if (typeof ServerHeartbeat !== "undefined" && ServerHeartbeat.online && !(typeof Features !== "undefined" && Features.on("server_heartbeat"))) ServerHeartbeat.setOnline(false);
+      // 주기 확인 없이, 작업자 요청이 실패했을 때 연결 끊김 표시
+      if (typeof ConnState !== "undefined" && ConnState.online) ConnState.setOnline(false);
       return { ok: false, network: true, message: err && err.name === "AbortError" ? "서버 응답 시간 초과" : (err.message || "서버 연결 실패") };
     }
   },
@@ -767,7 +767,7 @@ var SyncManager = {
   async save(keys, opts = {}) {
     if (typeof ProjectManager !== "undefined" && ProjectManager._switching) return { ok: false, switching: true };
     if (this._busy) { this._pendingSave = { keys, opts }; return { ok: false, busy: true }; }
-    // [v1.0.10] 보관된 프로젝트는 시스템관리자 외에는 읽기 전용
+    // [v1.0.10] 보관된 프로젝트는 관리자 외에는 읽기 전용
     const proj = ProjectContext.info();
     if (proj && proj.status === "ARCHIVED" && Permission.user().baseRole !== "SYS_ADMIN") {
       if (opts.notify || !this._archivedNotified) showToast("📦 사용 중지(보관)된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");
@@ -797,7 +797,6 @@ var SyncManager = {
     if (!Object.keys(changes).length) {
       if (blockedList.length) this.afterDataApplied(Object.keys(d), true);
       if (opts.notify) showToast("💾 저장할 변경 내용이 없습니다. (최신 상태)");
-      if (FileAutoSyncManager.fileHandle && opts.forceFile) FileAutoSyncManager.syncNow(false);
       this.updateIndicators();
       return { ok: true, nothing: true };
     }
@@ -835,7 +834,6 @@ var SyncManager = {
     }
     const cnt = Object.keys(changes).reduce((a, k) => a + Object.keys(changes[k].parts).length, 0);
     this.setStatus(`저장됨 (${new Date().toLocaleTimeString()})`, "ok");
-    if (typeof FileAutoSyncManager !== "undefined") FileAutoSyncManager.syncNow(false);
     if (opts.notify) {
       const labels = Object.keys(changes).map(k => DataRegistry.DEFS[k].label).join(", ");
       showToast(`💾 저장 완료: ${labels} (${cnt}개 단위 변경 · ${this.isLocal() ? "로컬 저장소" : "DB 서버"})`);
@@ -848,19 +846,19 @@ var SyncManager = {
     return { ok: true };
   },
 
-  // 다른 사용자가 먼저 저장한 데이터가 있을 때: 덮어쓰기 / 무시하기 / 취소
+  // 다른 작업자가 먼저 저장한 데이터가 있을 때: 덮어쓰기 / 무시하기 / 취소
   handleConflict(changes, conflicts, opts) {
     return new Promise(resolve => {
       const lines = conflicts.map(c => {
         const def = DataRegistry.DEFS[c.key] || { label: c.key };
         const part = c.part && c.part !== Partition.WHOLE ? ` [${c.part}]` : "";
-        return `• ${def.label}${part} — ${c.by || "다른 사용자"} ${c.at ? "(" + c.at + ")" : ""}`;
+        return `• ${def.label}${part} — ${c.by || "다른 작업자"} ${c.at ? "(" + c.at + ")" : ""}`;
       });
       SyncUI.openConflictModal(lines, async choice => {
         if (choice === "overwrite") {
           resolve(await this._commit(changes, true, opts));
         } else if (choice === "ignore") {
-          // 충돌 단위는 다른 사용자 저장본을 받아오고, 충돌이 없는 내 변경만 저장
+          // 충돌 단위는 다른 작업자 저장본을 받아오고, 충돌이 없는 내 변경만 저장
           const conflictSet = new Set(conflicts.map(c => c.key + "\u0000" + c.part));
           const remaining = {};
           Object.keys(changes).forEach(k => {
@@ -874,7 +872,7 @@ var SyncManager = {
           const conflictKeys = [...new Set(conflicts.map(c => c.key))];
           await this.reloadParts(conflictKeys, conflictSet);
           if (Object.keys(remaining).length) resolve(await this._commit(remaining, false, opts));
-          else { showToast("↩️ 내 변경을 무시하고 다른 사용자가 저장한 최신 데이터를 불러왔습니다."); resolve({ ok: true }); }
+          else { showToast("↩️ 내 변경을 무시하고 다른 작업자가 저장한 최신 데이터를 불러왔습니다."); resolve({ ok: true }); }
         } else {
           this.setStatus("저장 취소 (미저장 변경 유지)", "warn");
           resolve({ ok: false, cancelled: true });
@@ -911,7 +909,7 @@ var SyncManager = {
     if (!opts.skipConfirm && this.isDirty(scopeKeys)) {
       const choice = await SyncUI.ask(
         "🔄 새로고침 확인",
-        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 다른 사용자가 저장한 최신 데이터로 화면이 바뀝니다.`,
+        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 다른 작업자가 저장한 최신 데이터로 화면이 바뀝니다.`,
         [
           { id: "save", label: "💾 저장 후 새로고침", cls: "btn-primary" },
           { id: "discard", label: "🗑️ 변경 버리고 새로고침", cls: "btn-danger" },
@@ -969,7 +967,7 @@ var SyncManager = {
     this.updateIndicators();
   },
 
-  // 최초 로드 (앱 시작 / 로그인 직후)
+  // 최초 로드 (앱 시작 / 작업자 선택 직후)
   async initialLoad() {
     const be = this.backend();
     if (be === LocalBackend) {
@@ -1160,9 +1158,9 @@ var SyncUI = {
 
   openConflictModal(lines, cb) {
     this.ask(
-      "⚠️ 저장 충돌 — 다른 사용자가 이미 저장한 데이터가 있습니다",
-      "내가 화면을 불러온 이후 아래 데이터를 다른 사용자가 먼저 저장했습니다.\n\n" + lines.join("\n") +
-      "\n\n• 덮어쓰기: 내 데이터로 저장합니다. (다른 사용자의 해당 변경은 사라집니다)\n• 무시하기: 충돌된 항목은 다른 사용자의 저장본을 불러오고, 충돌이 없는 내 변경만 저장합니다.",
+      "⚠️ 저장 충돌 — 다른 작업자가 이미 저장한 데이터가 있습니다",
+      "내가 화면을 불러온 이후 아래 데이터를 다른 작업자가 먼저 저장했습니다.\n\n" + lines.join("\n") +
+      "\n\n• 덮어쓰기: 내 데이터로 저장합니다. (다른 작업자의 해당 변경은 사라집니다)\n• 무시하기: 충돌된 항목은 다른 작업자의 저장본을 불러오고, 충돌이 없는 내 변경만 저장합니다.",
       [
         { id: "overwrite", label: "⚠️ 덮어쓰기", cls: "btn-danger" },
         { id: "ignore", label: "↩️ 무시하기 (최신본 적용)", cls: "btn-primary" },
@@ -1172,132 +1170,4 @@ var SyncUI = {
   }
 };
 
-// -----------------------------------------------------------------------------
-// 7. 로컬 JSON 파일 실시간 연결 (File System Access API)
-//    저장 시 채팅을 제외한 모든 데이터(공지·소통·회의·주간보고 포함)를 파일에 기록
-// -----------------------------------------------------------------------------
-var FileAutoSyncManager = {
-  fileHandle: null,
-  fileName: "",
 
-  async openExistingFileHandle() {
-    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
-    if (!("showOpenFilePicker" in window)) {
-      showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
-      return;
-    }
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        types: [{ description: "WBS 프로젝트 JSON 파일", accept: { "application/json": [".json"] } }],
-        multiple: false
-      });
-      this.fileHandle = handle;
-      this.fileName = handle.name;
-      this.updateStatus(true);
-      await this.reloadFromFileHandle(true);
-    } catch (err) {
-      if (err.name !== "AbortError") console.error("기존 JSON 열기 실패:", err);
-    }
-  },
-
-  async reloadFromFileHandle(isInitialOpen = false) {
-    if (!this.fileHandle) {
-      showToast("먼저 [📂 기존 JSON 열기/연결] 또는 [💾 새 JSON 연결]로 로컬 파일을 지정해주세요.");
-      return;
-    }
-    try {
-      const file = await this.fileHandle.getFile();
-      const data = JSON.parse(await file.text());
-      DataRegistry.apply(data);
-      if (typeof renderProjectTitles === "function") renderProjectTitles();
-      // 파일에서 읽은 데이터는 "변경분"으로 취급 → 저장 시 저장소에 반영
-      SyncManager.afterDataApplied(DataRegistry.KEYS, true);
-      if (SyncManager.isAutoSave()) SyncManager.onDataChanged(true);
-      if (typeof JsonCollabManager !== "undefined") JsonCollabManager.closeCollabModal();
-      showToast(isInitialOpen
-        ? `로컬 파일 [${this.fileName}] 을 열어 데이터를 로드하고 실시간 동기화를 연결했습니다.`
-        : `로컬 파일 [${this.fileName}] 에서 최신 변경 데이터를 다시 읽어왔습니다.`);
-    } catch (err) {
-      showToast("로컬 JSON 파일 읽기 오류: " + err.message);
-    }
-  },
-
-  async setupFileHandle() {
-    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
-    if (!("showSaveFilePicker" in window)) {
-      showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
-      return;
-    }
-    try {
-      this.fileHandle = await window.showSaveFilePicker({
-        suggestedName: `WBS_Realtime_Sync_${projectConfig.reportDate}.json`,
-        types: [{ description: "WBS 프로젝트 백업 JSON 파일", accept: { "application/json": [".json"] } }]
-      });
-      this.fileName = this.fileHandle.name;
-      this.updateStatus(true);
-      await this.syncNow(false);
-      showToast(`로컬 파일 [${this.fileName}] 에 실시간 자동 동기화 연결이 완료되었습니다.`);
-    } catch (err) {
-      if (err.name !== "AbortError") console.error("파일 핸들 생성 실패:", err);
-    }
-  },
-
-  async syncNow(showAlert = false) {
-    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
-    if (!this.fileHandle) return;
-    try {
-      const payload = Object.assign({ exportedAt: new Date().toISOString(), schemaVersion: `AX_PMYS_${APP_VERSION.version}` }, DataRegistry.collect());
-      const writable = await this.fileHandle.createWritable();
-      await writable.write(JSON.stringify(payload, null, 2));
-      await writable.close();
-      const badge = document.getElementById("fileSyncBadge");
-      if (badge) {
-        badge.innerText = `파일동기화 (${new Date().toLocaleTimeString()})`;
-        badge.className = "status-badge-chip chip-completed";
-      }
-      if (showAlert) showToast(`로컬 파일 [${this.fileName}] 에 최신 데이터(공지·소통·회의·주간보고 포함)가 저장되었습니다.`);
-    } catch (err) {
-      const badge = document.getElementById("fileSyncBadge");
-      if (badge) {
-        badge.innerText = "동기화 권한필요";
-        badge.className = "status-badge-chip chip-delayed";
-      }
-    }
-  },
-
-  updateStatus(connected) {
-    const badge = document.getElementById("fileSyncBadge");
-    const detail = document.getElementById("fileSyncDetailStatus");
-    const btn = document.getElementById("btnFileHandleSync");
-    if (connected && this.fileName) {
-      if (badge) {
-        badge.style.display = "inline-flex";
-        badge.innerText = `동기화: ${this.fileName}`;
-        badge.className = "status-badge-chip chip-completed";
-      }
-      if (detail) detail.innerHTML = `<span style="color:var(--success); font-weight:bold;">🟢 연결됨 (${escapeHtml(this.fileName)})</span> - 저장 시 자동 덮어쓰기 활성화`;
-      if (btn) btn.innerText = `📁 [연결됨] ${this.fileName}`;
-    } else {
-      if (badge) badge.style.display = "none";
-      if (detail) detail.innerHTML = "미연결 (버튼을 눌러 백업할 JSON 파일을 지정하세요)";
-      if (btn) btn.innerText = "📁 동기화 파일 연결";
-    }
-  },
-
-  disconnect() {
-    this.fileHandle = null;
-    this.fileName = "";
-    this.updateStatus(false);
-    showToast("로컬 파일 실시간 자동 동기화 연결이 해제되었습니다.");
-  }
-};
-
-window.DataRegistry = DataRegistry;
-window.ProjectContext = ProjectContext;
-window.Partition = Partition;
-window.Permission = Permission;
-window.LocalBackend = LocalBackend;
-window.ServerBackend = ServerBackend;
-window.SyncManager = SyncManager;
-window.SyncUI = SyncUI;
-window.FileAutoSyncManager = FileAutoSyncManager;
