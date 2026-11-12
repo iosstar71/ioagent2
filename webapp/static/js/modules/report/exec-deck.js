@@ -191,7 +191,7 @@ var ExecDeck = {
       const domainOf = sys => ((rows.find(r => r[1] === sys) || [])[0]) || (typeof WBSEngine !== "undefined" ? WBSEngine.getSubsystemDomain(sys) : "");
       const reqs = c.data.reqs || [], vocs = c.data.vocs || [];
       const tr = c.order.map(sys => {
-        const rq = reqs.filter(r => r.system === sys), vc = vocs.filter(v => v.system === sys);
+        const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys);   // 삭제 요구사항은 완료율에서 뺌
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
         const vw = vc.filter(v => v.status === "착수전" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
         const rr = rq.length ? Math.round(rd / rq.length * 100) : 0, vr = vc.length ? Math.round(vd / vc.length * 100) : 0;

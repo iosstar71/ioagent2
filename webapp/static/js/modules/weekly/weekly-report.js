@@ -79,14 +79,18 @@ var WeeklyReportManager = {
     return weeks.find(w => target >= w.startDate && target <= w.endDate) || weeks[weeks.length - 1] || weeks[0];
   },
 
-  // 금주 주간보고 표시 태스크: a) 금주까지 계획 시작·미완료 b) 실적 진행 중 c) 금주 실적 완료
+  // 금주 주간보고 표시 태스크 (최하위 Task):
+  //  a) 계획 기간이 금주에 걸치고 금주 전에 끝나지 않은 Task  b) 지연 Task (미완료)
+  //  c) 실적 진행 중 (금주까지 시작, 미완료)  d) 금주에 실적 완료
   isTaskInWeek(task, wStart, wEnd) {
     if (!task || !task.isLeaf) return false;
     const aE = (task.aEnd || "").trim();
-    const condA = Boolean(task.pStart && task.pStart <= wEnd && !aE);
-    const condB = Boolean(task.aStart && !aE && task.status !== "완료");
-    const condC = Boolean(aE && aE >= wStart && aE <= wEnd);
-    return condA || condB || condC;
+    const doneBefore = Boolean(aE && aE < wStart);
+    const condA = Boolean(task.pStart && task.pEnd && task.pStart <= wEnd && task.pEnd >= wStart && !doneBefore);
+    const condB = Boolean(!aE && task.status === "지연");
+    const condC = Boolean(task.aStart && task.aStart <= wEnd && !aE);
+    const condD = Boolean(aE && aE >= wStart && aE <= wEnd);
+    return condA || condB || condC || condD;
   },
 
   // 차주 표시 태스크: 계획시작일이 차주까지이고 금주까지 실적 미완료

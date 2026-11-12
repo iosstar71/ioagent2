@@ -172,11 +172,14 @@ async function localMain() {
     const t2 = { pStart: "2027-01-04", pEnd: "2027-02-01", pProg: 100, aProg: 0, aStart: "2027-12-01" };
     applyPlanToActual(t1); applyPlanToActual(t2);
     const st = WBSEngine.getTaskStatus({ pProg: 50, aProg: 49 }, rep).label;
-    return { t1: t1.aEnd === wk.end, t2: t2.aEnd === rep, t2s: t2.aStart === t2.aEnd, st };
+    const st5 = WBSEngine.getTaskStatus({ pProg: 50, aProg: 45 }, rep).label;
+    const ph = (WbsPhase.fill(subsystemsMeta.map(m => m.name)), [...document.querySelectorAll("#wbsPhaseFilter option")].length);
+    return { t1: t1.aEnd === wk.end, t2: t2.aEnd === rep, t2s: t2.aStart === "2027-12-01" && isDateReversed(t2.aStart, t2.aEnd), st, st5, ph };
   });
   check("100% apply: plan end in report week -> plan end date", act.t1);
-  check("100% apply: otherwise -> report date, actual start corrected", act.t2 && act.t2s);
-  check("Actual 1%p below plan -> Delayed", act.st === "지연");
+  check("100% apply: otherwise -> report date; an existing actual start is kept and shown as reversed", act.t2 && act.t2s);
+  check("Delayed from 5%p behind plan (default setting); 1%p is not delayed", act.st !== "지연" && act.st5 === "지연", JSON.stringify(act));
+  check("WBS stage filter lists the SDLC stages", act.ph > 2, JSON.stringify(act));
   const delayed = await page.evaluate(() => {
     const t = wbsData.find(x => x.isLeaf && x.pProg >= 10 && x.pProg < 100);
     if (t) { t.aProg = t.pProg - 5; rebuildAll(); }

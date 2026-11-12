@@ -531,16 +531,22 @@ const WBSEngine = {
     return { plan: Math.round(p), actual: Math.round(a) };
   },
 
-  // [v1.0.8] 과업 상태 판정
+  // 판정 기준값 ([기준정보 > 휴일 · 진척 기준 > 판정 기준])
+  DELAY_GAP_DEFAULT: 5,
+  DUE_DAYS_DEFAULT: 7,
+  delayGap() { const v = parseFloat(typeof projectConfig !== "undefined" && projectConfig ? projectConfig.delayGap : NaN); return isNaN(v) || v < 0 ? this.DELAY_GAP_DEFAULT : v; },
+  dueDays() { const v = parseInt(typeof projectConfig !== "undefined" && projectConfig ? projectConfig.dueDays : NaN, 10); return isNaN(v) || v < 1 ? this.DUE_DAYS_DEFAULT : v; },
+
+  // 과업 상태 판정
   //  - 완료  : 실적 100%
-  //  - 지연  : 계획 진척률보다 실적이 1%p 이상 적은 경우 (계획종료일 경과 미완료 포함)
+  //  - 지연  : 계획 진척률보다 실적이 지연 기준(기본 5%p) 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료
   //  - 진행중: 실적이 있거나 실적시작일이 기준일 이전
   //  - 착수전: 그 외
   getTaskStatus(task, reportDateStr) {
     const aProg = parseFloat(task.aProg) || 0;
     const pProg = parseFloat(task.pProg) || 0;
     if (aProg >= 100) return { code: "completed", label: "완료", cssClass: "tag-completed" };
-    if (pProg - aProg >= 1) return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
+    if (pProg - aProg >= this.delayGap() || (task.pEnd && reportDateStr && task.pEnd < reportDateStr)) return { code: "delayed", label: "지연", cssClass: "tag-delayed" };
     if (aProg > 0 || (task.aStart && task.aStart <= reportDateStr)) return { code: "progress", label: "진행중", cssClass: "tag-progress" };
     return { code: "ready", label: "착수전", cssClass: "tag-ready" };
   },

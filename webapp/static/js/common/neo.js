@@ -66,7 +66,7 @@ UiMode.init();
 // 1. 대시보드 "확인할 일"
 // -----------------------------------------------------------------------------
 var NeoTodo = {
-  DUE_DAYS: 7,
+  get DUE_DAYS() { return typeof WBSEngine !== "undefined" && WBSEngine.dueDays ? WBSEngine.dueDays() : 7; },   // 기준정보의 마감 임박 일수
   SHOW: 5,
   KEY_MINE: "IOSTAR_NEO_TODO_MINE",
   _systems: null,

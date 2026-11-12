@@ -896,6 +896,12 @@
       <!-- [요건 5] WBS 조회 필터(서브시스템별, 레벨단위 접기) 및 일괄 보정 툴바 -->
       <div class="filter-toolbar">
         <div class="filter-item">
+          <label style="font-weight:bold;">📶 단계별 조회:</label>
+          <select id="wbsPhaseFilter" data-change="renderWbsTable" style="font-weight:bold; min-width:150px;" title="SDLC · 개선 공정 단계로 걸러 봅니다 (단계에 해당하는 Task 와 그 상위 Task 표시)">
+            <option value="ALL">전체 단계</option>
+          </select>
+        </div>
+        <div class="filter-item">
           <label style="font-weight:bold;">🗂️ 분야별 조회:</label>
           <select id="wbsDomainFilter" data-change="UiH.domainFilter" data-change-args='["wbsDomainFilter", "wbsSubsystemFilter", "renderWbsTable"]' style="font-weight:bold;"></select>
         </div>
@@ -935,7 +941,7 @@
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
             🗓️ 휴일 자동보정
           </button>
-          <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="현재 선택된 서브시스템(또는 전체)에서 기준일자 기준 진행중이거나 당일 완료되는 과업만 계획➔실적을 자동 반영합니다 (과거 완료건 제외).">
+          <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="선택한 서브시스템(또는 전체)에서 계획 진척률이 있는 최하위 Task 를 모두 실적에 반영합니다. 실적시작일: 계획시작이 기준 주차보다 앞이면 주차 시작일, 주차 안이면 계획시작일. 실적종료일(100%): 계획종료가 기준 주차 안이면 계획종료일, 앞이면 기준일. 이미 입력된 실적일은 그대로 둡니다.">
             ⚡ 실적 자동반영
           </button>
         </div>
@@ -2416,6 +2422,23 @@
           </div>
         </div>
 
+
+        <!-- 판정 기준: 지연 · 마감 임박 -->
+        <div class="card" style="border-left: 4px solid #ef4444;">
+          <div class="card-title">
+            <div>
+              <strong>🚦 판정 기준 (지연 · 마감 임박)</strong>
+              <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-top:3px;">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>확인할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 과업 · 산출물을 보여 줍니다.</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">지연 판정 차이:</label>
+            <input type="number" id="cfgDelayGap" min="0" max="100" step="0.5" style="width:80px;"> <span>%p 이상</span>
+            <label style="font-weight:bold; font-size:var(--fs-sm, 12px); margin-left:12px;">마감 임박:</label>
+            <input type="number" id="cfgDueDays" min="1" max="90" step="1" style="width:70px;"> <span>일 안</span>
+            <button class="btn btn-primary btn-sm" data-click="JudgeRules.apply">✅ 적용 (다시 계산)</button>
+          </div>
+        </div>
 
         <!-- [1-6] 휴일 및 비작업일 캘린더 관리 -->
         <div class="card" style="border-left: 4px solid #f59e0b;">
