@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULTS = {"brand": "IOSTAR-PM", "display_name": "PM Hub", "edition": "STANDALONE", "edition_name": "Standalone",
-            "version": "1.0.0", "default_lang": "ko", "default_theme": "electric", "base_path": "/pprjmgmt"}
+            "version": "1.0.0", "default_lang": "ko", "default_theme": "urban-slate", "base_path": "/pprjmgmt"}
 
 
 def load(root=None):

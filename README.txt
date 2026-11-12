@@ -37,6 +37,15 @@ PM Hub — IOSTAR-PM Standalone v1.0.0
   ⚙ 관리          프로젝트 설정 · 파일 Merge · Admin
   - 로그인 후 첫 화면: 관리자 · PM · PL = Summary, 멤버 = My Work ([Admin > 화면 · 테마 > 역할별 첫 화면])
 
+■ 화면 · 테마
+  - 테마 5가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
+    Urban Slate(기본, 밝은 회청색) · Electric · Navy · Nordic Sage(밝은 세이지) · Obsidian(어두운 화면)
+    예전 테마는 자동으로 가까운 테마로: Green → Nordic Sage, Brown · Matte → Urban Slate, Graphite → Obsidian
+  - 로고: 밝은 머리말 테마(Urban Slate · Nordic Sage)는 무채색 로고, 나머지는 색 로고 (브라우저 탭 아이콘도 같이)
+  - 아이콘: 화면의 그림 문자는 모두 같은 모양의 선 아이콘으로 그림 (상태 아이콘만 테마의 정상 · 주의 · 위험 색)
+  - 차트(S-curve · 불릿 차트 · 대시보드 표 색)도 테마 색을 따름. 엑셀 · 워드 · PPT 보고서 색은 [보고서 테마] 설정을 따름
+  - 기본 테마는 conf/app.ini [ui] default_theme (urban-slate)
+
 ■ 멤버 선택 (로그인이 아님)
   - 전사 SSO 와 별개로, 이 프로그램에서 일하는 멤버를 고르는 화면
   - 처음 암호 = 멤버 ID + 123! (예: hong → hong123!). 바꾸지 않아도 됨. 바꾸려면 [🔑 암호 변경]

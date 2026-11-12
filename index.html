@@ -10,7 +10,7 @@
   
   
 </head>
-<body data-theme="electric" data-layout="top-nav" data-density="standard">
+<body data-theme="urban-slate" data-layout="top-nav" data-density="standard">
   <!-- [v1.0.6] 멤버 선택 / 신규 멤버 등록 / 권한 메뉴 인증 오버레이 -->
   <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
     <div class="security-lock-modal login-2col">
@@ -61,8 +61,7 @@
           <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 마스터 파일 업로드 (최신 자료 받기)</button>
           <div id="localPkgChoice" class="pkg-choice" style="display:none;"></div>
           <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 마스터 파일을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
-          <span style="color:var(--text-muted); margin:0 6px;">|</span>
-          <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:#b45309;">🔑 암호 변경</a>
+          <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:var(--warning);">🔑 암호 변경</a>
         </div>
       </div>
 
@@ -131,12 +130,11 @@
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마">
+          <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Urban Slate</button>
           <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#111318 50%,#3D3BFF 50%)"></i>Electric</button>
           <button type="button" class="g-swatch" data-theme-pick="navy" data-click="UiScale.pickTheme" data-click-args='["navy"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F5BD3 50%)"></i>Navy</button>
-          <button type="button" class="g-swatch" data-theme-pick="green" data-click="UiScale.pickTheme" data-click-args='["green"]'><i style="background:linear-gradient(135deg,#0F3B2A 50%,#2E9A68 50%)"></i>Green</button>
-          <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#3B2414 50%,#B0702F 50%)"></i>Brown</button>
-          <button type="button" class="g-swatch" data-theme-pick="matte" data-click="UiScale.pickTheme" data-click-args='["matte"]'><i style="background:linear-gradient(135deg,#F7F6F3 50%,#4F6475 50%)"></i>Matte</button>
-          <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#030712 50%,#38BDF8 50%)"></i>Graphite</button>
+          <button type="button" class="g-swatch" data-theme-pick="nordic-sage" data-click="UiScale.pickTheme" data-click-args='["nordic-sage"]'><i style="background:linear-gradient(135deg,#F8FAF8 50%,#3F5A4F 50%)"></i>Nordic Sage</button>
+          <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#181B20 50%,#849CB0 50%)"></i>Obsidian</button>
         </div>
         <div class="g-menu-title">글자 크기</div>
         <div class="g-scale-btns" role="group" aria-label="글자 크기">
@@ -148,12 +146,11 @@
         <div class="g-menu-sep"></div>
         <label class="g-menu-field g-hidden-field">테마 (목록)
           <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
-            <option value="electric">Electric (기본)</option>
+            <option value="urban-slate">Urban Slate (기본)</option>
+            <option value="electric">Electric</option>
             <option value="navy">Navy</option>
-            <option value="green">Green</option>
-            <option value="brown">Brown</option>
-            <option value="matte">Matte (무광)</option>
-            <option value="dark">Graphite (어두운 화면)</option>
+            <option value="nordic-sage">Nordic Sage</option>
+            <option value="dark">Obsidian (어두운 화면)</option>
           </select>
         </label>
         <label class="g-menu-field">메뉴 위치
@@ -603,10 +600,11 @@
         <div class="card-title">
           <span>📈 S-Curve 주별 진척률 (선) 및 달성률 (막대)</span>
           <div style="display: flex; gap: 12px; align-items: center; font-size: calc(11.5px * var(--fs-scale, 1)); flex-wrap: wrap;">
-            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #64748b;"><span style="display:inline-block; width:12px; height:3px; background:#64748b; border-radius:2px;"></span> 누적 계획(%)</span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #10b981;"><span style="display:inline-block; width:12px; height:3px; background:#10b981; border-radius:2px;"></span> 누적 실적(%)</span>
-            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #ef4444;"><span style="display:inline-block; width:2px; height:10px; background:#ef4444;"></span> 기준일</span>
-            <span style="font-size:var(--fs-xs, 11px); color:#94a3b8; margin-left:4px;">(※ 상단 대시보드 필터와 100% 자동 연동)</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--chart-plan);"><span style="display:inline-block; width:12px; height:3px; background:var(--chart-plan); border-radius:2px;"></span> 누적 계획(%)</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--chart-actual);"><span style="display:inline-block; width:12px; height:3px; background:var(--chart-actual); border-radius:2px;"></span> 누적 실적(%)</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--chart-today);"><span style="display:inline-block; width:2px; height:10px; background:var(--chart-today);"></span> 기준일</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--chart-rate-text);"><span style="display:inline-block; width:9px; height:10px; background:var(--chart-rate-fill); border:1px solid var(--chart-rate-line);"></span> 달성률(%)</span>
+            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:4px;">(※ 상단 대시보드 필터와 100% 자동 연동)</span>
           </div>
         </div>
         <div style="height: 270px; position: relative;">
@@ -2555,12 +2553,11 @@
             <div>
               <label style="display:block; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; margin-bottom:4px;">🎨 테마:</label>
               <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]'>
-                <option value="electric">Electric (기본)</option>
+                <option value="urban-slate">Urban Slate (기본)</option>
+                <option value="electric">Electric</option>
                 <option value="navy">Navy</option>
-                <option value="green">Green</option>
-                <option value="brown">Brown</option>
-                <option value="matte">Matte (무광)</option>
-                <option value="dark">Graphite (어두운 화면)</option>
+                <option value="nordic-sage">Nordic Sage</option>
+                <option value="dark">Obsidian (어두운 화면)</option>
               </select>
             </div>
           </div>
@@ -3113,6 +3110,7 @@
   <script src="static/js/modules/weekly/weekly-export.js"></script>
   <script src="static/js/modules/report/exec-deck.js"></script>
   <script src="static/js/common/app-base.js"></script>
+  <script src="static/js/common/icons.js"></script>
   <script src="static/js/modules/master/master-subsystem.js"></script>
   <script src="static/js/modules/master/project-config.js"></script>
   <script src="static/js/modules/master/users.js"></script>

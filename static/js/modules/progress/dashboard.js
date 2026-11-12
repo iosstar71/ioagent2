@@ -150,7 +150,7 @@ function renderDashboard() {
   let sDone = 0, sIng = 0, sRdy = 0;
 
   if (activeSystems.length === 0) {
-    dashDelivTbody.innerHTML = `<tr><td colspan="${activeRounds.length + 5}" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
+    dashDelivTbody.innerHTML = `<tr><td colspan="${activeRounds.length + 5}" style="text-align:center; padding:20px; color:var(--text-muted);">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const dAll = validDelivs.filter(d => d.system === sys);
@@ -177,7 +177,7 @@ function renderDashboard() {
         <td>${done}</td>
         <td>${ing}</td>
         <td>${rdy}</td>
-        <td style="font-weight:bold; color:${rate >= 80 ? "#15803d" : "#b45309"}">${rate}%</td>
+        <td style="font-weight:bold; color:${rate >= 80 ? "var(--chart-good-text)" : "var(--chart-warn-text)"}">${rate}%</td>
       `;
       dashDelivTbody.appendChild(tr);
     });
@@ -192,7 +192,7 @@ function renderDashboard() {
       <td><b>${sDone}</b></td>
       <td><b>${sIng}</b></td>
       <td><b>${sRdy}</b></td>
-      <td style="font-weight:bold; color:#1e40af">${totRateVal}%</td>
+      <td style="font-weight:bold; color:var(--tint-info-text)">${totRateVal}%</td>
     `;
     dashDelivTbody.appendChild(totalRow);
   }
@@ -209,7 +209,7 @@ function renderDashboard() {
 
   let vTotSum = 0, vCmpSum = 0, vExcSum = 0, vPrgSum = 0, vRdySum = 0;
   if (activeSystems.length === 0) {
-    dashVocTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
+    dashVocTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const vAll = scopeVocs.filter(v => v.system === sys);
@@ -229,7 +229,7 @@ function renderDashboard() {
           <td>${vExc}건</td>
           <td>${vPrg}건</td>
           <td>${vRdy}건</td>
-          <td><b style="color:${vRate >= 80 ? "#15803d" : "#b45309"};">${vRate}%</b></td>
+          <td><b style="color:${vRate >= 80 ? "var(--chart-good-text)" : "var(--chart-warn-text)"};">${vRate}%</b></td>
         </tr>
       `;
     });

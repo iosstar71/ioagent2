@@ -380,11 +380,30 @@ async function main() {
     await wc.evaluate(() => SampleProject.add()); await wc.waitForTimeout(300); await wc.click("#confirmDialogOkBtn"); await wc.waitForTimeout(1200);
     const sp = await wc.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); const st = p ? LocalBackend._read(p.id) : null; return { has: !!p, wbs: st ? (st.wbsData || []).length : 0 }; });
     check("[🧪 샘플 프로젝트 추가] adds a separate sample project", sp.has && sp.wbs > 20, JSON.stringify(sp));
+    const th = await wc.evaluate(() => {
+      const r = { opts: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), def: defaultTheme(),
+        legacy: ["green", "brown", "matte", "graphite", "obsidian"].map(normalizeTheme).join(",") };
+      changeTheme("nordic-sage");
+      r.body = document.body.getAttribute("data-theme");
+      r.chart = ChartTheme.get().actual;
+      r.logo = getComputedStyle(document.querySelector(".brand-logo")).content || "";
+      changeTheme("dark"); r.chartDark = ChartTheme.get().actual; r.logoDark = getComputedStyle(document.querySelector(".brand-logo")).content || "";
+      changeTheme("urban-slate");
+      const btn = [...document.querySelectorAll("button")].find(b => b.offsetParent && b.querySelector("svg.iostar-ico"));
+      r.icons = document.querySelectorAll("svg.iostar-ico").length;
+      r.btnEmoji = btn ? /[\u{1F300}-\u{1FAFF}]/u.test(btn.textContent) : true;
+      return r;
+    });
+    check("Themes: 5 (Urban Slate default · Electric · Navy · Nordic Sage · Obsidian); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
+      th.opts === "urban-slate,electric,navy,nordic-sage,dark" && th.def === "urban-slate" && th.legacy === "nordic-sage,urban-slate,urban-slate,dark,dark"
+      && th.body === "nordic-sage" && th.chart && th.chart !== th.chartDark && /iostar_mono/.test(th.logo) && !/iostar_mono/.test(th.logoDark) && th.icons > 20 && !th.btnEmoji, JSON.stringify(th));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);
     const enT = await en.evaluate(() => ({ title: document.getElementById("lockModalTitle").textContent, btn: document.getElementById("btnLockSubmit").textContent.trim() }));
     check("English UI is available on the member selection screen", /Choose member/.test(enT.title) && /Start/.test(enT.btn), JSON.stringify(enT));
+    const enIco = await en.evaluate(() => { const b = [...document.querySelectorAll(".login-2col button, .login-2col a")].filter(x => x.offsetParent && x.querySelector("svg.iostar-ico")); return b.map(x => x.textContent.trim()).join(" | "); });
+    check("English text still applies next to the line icons (emoji-free lookup)", enIco && !/[가-힣]/.test(enIco), enIco);
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);

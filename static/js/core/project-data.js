@@ -258,7 +258,7 @@ var ThemeScope = {
   global: undefined,
   effective() {
     const pc = typeof projectConfig !== "undefined" ? projectConfig : null;
-    return normalizeTheme((pc && pc.uiTheme) || this.global || (typeof defaultTheme === "function" ? defaultTheme() : "electric"));
+    return normalizeTheme((pc && pc.uiTheme) || this.global || (typeof defaultTheme === "function" ? defaultTheme() : "urban-slate"));
   },
   apply() {
     if (typeof normalizeTheme !== "function") return;

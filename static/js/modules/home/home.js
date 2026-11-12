@@ -264,11 +264,11 @@ var HomeScreenManager = {
     const elKpiDelaySub = document.getElementById("execKpiDelayedSub");
     if (elKpiDelay) {
       elKpiDelay.textContent = `${delayedCount}건`;
-      elKpiDelay.style.color = delayedCount === 0 ? "#15803d" : "#b91c1c";
+      elKpiDelay.style.color = delayedCount === 0 ? "var(--chart-good-text)" : "var(--chart-bad-text)";
     }
     if (elKpiDelaySub) {
       elKpiDelaySub.textContent = delayedCount === 0 ? "지연 리스크 정상 통제" : "중점 만회 대책 필요";
-      elKpiDelaySub.style.color = delayedCount === 0 ? "#15803d" : "#b91c1c";
+      elKpiDelaySub.style.color = delayedCount === 0 ? "var(--chart-good-text)" : "var(--chart-bad-text)";
     }
 
     const validReqs = (reqMasterData || []).filter(r => r.status !== "삭제");
@@ -314,19 +314,19 @@ var HomeScreenManager = {
 
         let lightIcon = "🟢";
         let lightText = "정상";
-        let cardBorder = "#10b981";
-        let rateColor = "#15803d";
+        let cardBorder = "var(--chart-good-text)";
+        let rateColor = "var(--chart-good-text)";
 
         if (rateNum < 70) {
           lightIcon = "🔴";
           lightText = "경고";
-          cardBorder = "#ef4444";
-          rateColor = "#b91c1c";
+          cardBorder = "var(--chart-bad)";
+          rateColor = "var(--chart-bad-text)";
         } else if (rateNum < 90) {
           lightIcon = "🟡";
           lightText = "주의";
-          cardBorder = "#f59e0b";
-          rateColor = "#b45309";
+          cardBorder = "var(--chart-warn)";
+          rateColor = "var(--chart-warn-text)";
         }
 
         const tile = document.createElement("div");
@@ -344,24 +344,24 @@ var HomeScreenManager = {
 
         tile.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-weight:800; font-size:var(--fs-base, 13px); color:#1e293b;">${escapeHtml(sys)}</div>
+            <div style="font-weight:800; font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sys)}</div>
             <div style="font-size:var(--fs-xs, 11px); font-weight:700; display:flex; align-items:center; gap:3px;">
               <span>${lightIcon}</span>
               <span style="color:${rateColor};">${lightText}</span>
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-size:var(--fs-xs, 11px); color:#64748b;">달성률</span>
+            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">달성률</span>
             <span style="font-size:calc(20px * var(--fs-scale, 1)); font-weight:900; color:${rateColor};">${rate}%</span>
           </div>
-          <div style="width:100%; background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden; margin-bottom:8px;">
+          <div style="width:100%; background:var(--track); height:6px; border-radius:3px; overflow:hidden; margin-bottom:8px;">
             <div style="width:${Math.min(100, aProg)}%; background:${cardBorder}; height:100%;"></div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs, 11px); color:#475569; border-top:1px dashed #e2e8f0; padding-top:6px;">
+          <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs, 11px); color:var(--text-sub); border-top:1px dashed var(--track); padding-top:6px;">
             <span>계획 <b>${pProg}%</b> / 실적 <b>${aProg}%</b></span>
-            <span>${sysDelays > 0 ? `<b style="color:#ef4444;">지연 ${sysDelays}</b>` : '<span style="color:#10b981;">지연 0</span>'}</span>
+            <span>${sysDelays > 0 ? `<b style="color:var(--chart-bad);">지연 ${sysDelays}</b>` : '<span style="color:var(--chart-good-text);">지연 0</span>'}</span>
           </div>
-          <div style="font-size:var(--fs-2xs, 10px); color:#94a3b8; margin-top:4px; display:flex; justify-content:space-between;">
+          <div style="font-size:var(--fs-2xs, 10px); color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
             <span>PM: ${escapeHtml(pmName)}</span>
             <span class="badge" style="font-size:calc(9px * var(--fs-scale, 1)); padding:1px 4px;">${sysType}</span>
           </div>
@@ -394,7 +394,7 @@ var HomeScreenManager = {
           <td>${dWeight}%</td>
           <td>${dPlan}%</td>
           <td><strong>${dActual}%</strong></td>
-          <td style="font-weight:700; color:${dRate >= 90 ? "#15803d" : (dRate >= 70 ? "#b45309" : "#b91c1c")};">${dRate}%</td>
+          <td style="font-weight:700; color:${dRate >= 90 ? "var(--chart-good-text)" : (dRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")};">${dRate}%</td>
           <td><span class="status-tag ${dRate >= 90 ? "tag-completed" : (dRate >= 70 ? "tag-progress" : "tag-delayed")}">${dRate >= 90 ? "정상" : (dRate >= 70 ? "주의" : "지연")}</span></td>
         `;
         domTbody.appendChild(tr);
@@ -458,16 +458,16 @@ var HomeScreenManager = {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><span class="badge" style="background:#f1f5f9; color:#334155; font-size:var(--fs-2xs, 10px);">${escapeHtml(t.system)}</span></td>
+        <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(t.system)}</span></td>
         <td><strong>${escapeHtml(t.id)}</strong></td>
-        <td style="text-align:left; font-weight:600; color:#1e293b;">${escapeHtml(t.name)}</td>
-        <td style="font-size:var(--fs-xs, 11px); color:#64748b;">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
+        <td style="text-align:left; font-weight:600; color:var(--text-main);">${escapeHtml(t.name)}</td>
+        <td style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
         <td>
           <div style="display:flex; align-items:center; gap:6px;">
-            <div style="flex:1; background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden;">
-              <div style="width:${t.aProg || 0}%; background:#2563eb; height:100%;"></div>
+            <div style="flex:1; background:var(--track); height:6px; border-radius:3px; overflow:hidden;">
+              <div style="width:${t.aProg || 0}%; background:var(--primary); height:100%;"></div>
             </div>
-            <span style="font-size:var(--fs-xs, 11px); font-weight:700; color:#2563eb; width:30px; text-align:right;">${t.aProg || 0}%</span>
+            <span style="font-size:var(--fs-xs, 11px); font-weight:700; color:var(--primary); width:30px; text-align:right;">${t.aProg || 0}%</span>
           </div>
         </td>
         <td>${stTag}</td>
@@ -547,19 +547,19 @@ var HomeScreenManager = {
       : ((typeof projectNoticesData !== "undefined" && Array.isArray(projectNoticesData)) ? projectNoticesData : []);
 
     if (notices.length === 0) {
-      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:#64748b; padding:12px; text-align:center;">등록된 공지이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
+      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); padding:12px; text-align:center;">등록된 공지이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
       return;
     }
     notices.slice(0, 4).forEach(n => {
       const item = document.createElement("div");
       item.style.padding = "7px 10px";
-      item.style.borderLeft = n.priority === "긴급" ? "3px solid #ef4444" : (n.priority === "중요" ? "3px solid #f59e0b" : "3px solid #3b82f6");
-      item.style.background = "#f8fafc";
+      item.style.borderLeft = n.priority === "긴급" ? "3px solid var(--chart-bad)" : (n.priority === "중요" ? "3px solid var(--chart-warn)" : "3px solid var(--primary)");
+      item.style.background = "var(--bg-main)";
       item.style.borderRadius = "4px";
       item.style.cursor = "pointer";
       item.style.transition = "background 0.15s ease, transform 0.15s ease";
-      item.onmouseenter = () => { item.style.background = "#eff6ff"; item.style.transform = "translateX(2px)"; };
-      item.onmouseleave = () => { item.style.background = "#f8fafc"; item.style.transform = "none"; };
+      item.onmouseenter = () => { item.style.background = "var(--tint-info)"; item.style.transform = "translateX(2px)"; };
+      item.onmouseleave = () => { item.style.background = "var(--bg-main)"; item.style.transform = "none"; };
       item.title = "클릭 시 공지 탭으로 바로 이동합니다.";
       item.onclick = () => {
         switchTab("tab-notices");
@@ -570,9 +570,9 @@ var HomeScreenManager = {
       item.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:calc(11.5px * var(--fs-scale, 1));">
           <strong style="color:var(--primary);">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
-          <span style="font-size:var(--fs-2xs, 10px); color:#64748b;">${escapeHtml(n.date || "")}</span>
+          <span style="font-size:var(--fs-2xs, 10px); color:var(--text-muted);">${escapeHtml(n.date || "")}</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:#475569; margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
+        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
       `;
       listEl.appendChild(item);
     });
@@ -589,7 +589,7 @@ var HomeScreenManager = {
       : ((typeof teamChatMessages !== "undefined" && Array.isArray(teamChatMessages)) ? teamChatMessages : []);
 
     if (comms.length === 0) {
-      stream.innerHTML = `<div style="color:#94a3b8; font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 게시판 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
+      stream.innerHTML = `<div style="color:var(--text-muted); font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 게시판 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
       return;
     }
 
@@ -599,13 +599,13 @@ var HomeScreenManager = {
       p.style.marginBottom = "6px";
       p.style.padding = "5px 8px";
       p.style.borderRadius = "4px";
-      p.style.background = "#ffffff";
-      p.style.border = "1px solid #e2e8f0";
+      p.style.background = "var(--bg-card)";
+      p.style.border = "1px solid var(--track)";
       p.style.fontSize = "var(--fs-xs, 11px)";
       p.style.cursor = "pointer";
       p.style.transition = "background 0.15s ease";
-      p.onmouseenter = () => { p.style.background = "#eff6ff"; };
-      p.onmouseleave = () => { p.style.background = "#ffffff"; };
+      p.onmouseenter = () => { p.style.background = "var(--tint-info)"; };
+      p.onmouseleave = () => { p.style.background = "var(--bg-card)"; };
       p.title = "클릭 시 게시판 탭으로 바로 이동합니다.";
       p.onclick = () => {
         switchTab("tab-notices");
@@ -619,7 +619,7 @@ var HomeScreenManager = {
       const text = m.content || m.text || "";
       const time = m.createdAt ? m.createdAt.substring(5, 16) : (m.time || "");
 
-      p.innerHTML = `<span style="font-weight:700; color:#2563eb;">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span style="color:#334155;">${escapeHtml(text)}</span> <span style="color:#94a3b8; font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:4px;">(${escapeHtml(time)})</span>`;
+      p.innerHTML = `<span style="font-weight:700; color:var(--primary);">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span style="color:var(--text-sub);">${escapeHtml(text)}</span> <span style="color:var(--text-muted); font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:4px;">(${escapeHtml(time)})</span>`;
       stream.appendChild(p);
     });
     stream.scrollTop = stream.scrollHeight;

@@ -15,7 +15,7 @@ var BulletChart = {
     const barW = W - labelW - valueW;
     const H = top + rows.length * rowH + 6;
     const x = v => labelW + barW * Math.max(0, Math.min(100, v)) / 100;
-    const col = { ok: "var(--primary)", warn: "#D97706", bad: "#DC2626" };
+    const col = { ok: "var(--chart-ok)", warn: "var(--chart-warn)", bad: "var(--chart-bad)" };
     let s = `<svg class="bullet-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" role="img" aria-label="서브시스템별 계획 대비 실적">`;
     [0, 25, 50, 75, 100].forEach(v => { s += `<text x="${x(v)}" y="14" class="bl-axis" text-anchor="middle">${v}%</text>`; });
     rows.forEach((r, i) => {
@@ -53,3 +53,15 @@ var BulletChart = {
   }
 };
 window.BulletChart = BulletChart;
+
+// 테마 차트 색 — CSS 의 --chart-* 값을 읽음 (canvas 처럼 CSS 변수를 못 쓰는 그림용)
+var ChartTheme = {
+  KEYS: ["grid", "axis", "label", "sub", "plan", "actual", "today", "rate-fill", "rate-line", "rate-text", "ok", "warn", "bad"],
+  get() {
+    const cs = getComputedStyle(document.body);
+    const out = {};
+    this.KEYS.forEach(k => { out[k.replace(/-(\w)/g, (m, c) => c.toUpperCase())] = (cs.getPropertyValue("--chart-" + k) || "").trim(); });
+    return out;
+  }
+};
+window.ChartTheme = ChartTheme;

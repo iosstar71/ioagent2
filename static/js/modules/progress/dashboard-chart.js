@@ -112,9 +112,10 @@ const DashboardChart = {
       }
     });
 
+    const C = typeof ChartTheme !== "undefined" ? ChartTheme.get() : {};
     // 1. 가로 그리드 라인 & 좌측 Y축 (누적 진척률 0~100%)
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.fillStyle = "#64748b";
+    ctx.strokeStyle = C.grid||"#e2e8f0";
+    ctx.fillStyle = C.axis||"#64748b";
     ctx.font = "10px sans-serif";
     ctx.textAlign = "right";
     for (let i = 0; i <= 100; i += 25) {
@@ -127,7 +128,7 @@ const DashboardChart = {
     }
 
     // 2. 우측 Y축 (계획 대비 달성률 0~150%)
-    ctx.fillStyle = "#d97706";
+    ctx.fillStyle = C.rateText||"#d97706";
     ctx.textAlign = "left";
     ctx.fillText("150%", pad.left + w + 6, pad.top + 4);
     ctx.fillText("100%", pad.left + w + 6, pad.top + h - (h * (100 / 150)) + 3);
@@ -146,15 +147,15 @@ const DashboardChart = {
         const barH = h * (Math.min(150, rate) / 150);
         const y = pad.top + h - barH;
 
-        ctx.fillStyle = "rgba(245, 158, 11, 0.38)";
+        ctx.fillStyle = C.rateFill||"rgba(245, 158, 11, 0.38)";
         ctx.fillRect(x - barWidth / 2, y, barWidth, barH);
-        ctx.strokeStyle = "#f59e0b";
+        ctx.strokeStyle = C.rateLine||"#f59e0b";
         ctx.lineWidth = 0.8;
         ctx.strokeRect(x - barWidth / 2, y, barWidth, barH);
 
         // 막대 상단 달성률 수치 표시 (폭이 좁으면 폰트를 줄이거나 짝수/마지막 주차에 선명하게 표시)
         if (stepX >= 15 || i % 2 === 0 || i === pastWeeks.length - 1) {
-          ctx.fillStyle = "#b45309";
+          ctx.fillStyle = C.rateText||"#b45309";
           ctx.font = `bold ${rateFontSize}px sans-serif`;
           ctx.textAlign = "center";
           ctx.fillText(`${rate}%`, x, Math.max(pad.top + 9, y - 3));
@@ -165,7 +166,7 @@ const DashboardChart = {
     // 4. 누적 계획 진척률 곡선 (전 기간 1월~12월 회색 실선)
     ctx.beginPath();
     ctx.lineWidth = 2.2;
-    ctx.strokeStyle = "#64748b";
+    ctx.strokeStyle = C.plan||"#64748b";
     planCurve.forEach((val, i) => {
       const x = pad.left + i * stepX;
       const y = pad.top + h - (h * (val / 100));
@@ -178,7 +179,7 @@ const DashboardChart = {
     planCurve.forEach((val, i) => {
       const x = pad.left + i * stepX;
       const y = pad.top + h - (h * (val / 100));
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = C.sub||"#94a3b8";
       ctx.beginPath();
       ctx.arc(x, y, stepX < 18 ? 1.8 : 2.5, 0, Math.PI * 2);
       ctx.fill();
@@ -187,7 +188,7 @@ const DashboardChart = {
     // 5. 누적 실적 진척률 곡선 (녹색 실선 및 포인트)
     ctx.beginPath();
     ctx.lineWidth = 2.8;
-    ctx.strokeStyle = "#10b981";
+    ctx.strokeStyle = C.actual||"#10b981";
     let firstActual = true;
     actualCurve.forEach((val, i) => {
       if (val !== null) {
@@ -207,7 +208,7 @@ const DashboardChart = {
       if (val !== null) {
         const x = pad.left + i * stepX;
         const y = pad.top + h - (h * (val / 100));
-        ctx.fillStyle = "#10b981";
+        ctx.fillStyle = C.actual||"#10b981";
         ctx.beginPath();
         ctx.arc(x, y, stepX < 18 ? 2.5 : 3.5, 0, Math.PI * 2);
         ctx.fill();
@@ -215,14 +216,14 @@ const DashboardChart = {
     });
 
     // 6. X축 전 기간 주차 레이블 표시 (화면에 모자라면 글씨 크기를 자동 축소하고 2줄 교차 배치하여 53주 전 기간 모두 식별 가능)
-    ctx.fillStyle = "#334155";
+    ctx.fillStyle = C.label||"#334155";
     ctx.textAlign = "center";
     ctx.font = `${xLabelFontSize}px sans-serif`;
 
     weeks.forEach((wk, i) => {
       const x = pad.left + i * stepX;
       // 눈금 틱 표시
-      ctx.strokeStyle = "#cbd5e1";
+      ctx.strokeStyle = C.grid||"#cbd5e1";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x, pad.top + h);
@@ -235,7 +236,7 @@ const DashboardChart = {
     });
 
     // 하단 전체 기간 요약 캡션
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = C.axis||"#64748b";
     ctx.font = "9.5px sans-serif";
     ctx.textAlign = "right";
     const pStartStr = (projectConfig && projectConfig.projectStartDate) || "2027-01-01";
@@ -247,7 +248,7 @@ const DashboardChart = {
     if (repIndex < 0) repIndex = weeks.length - 1;
     if (repIndex >= 0) {
       const rx = pad.left + repIndex * stepX;
-      ctx.strokeStyle = "#ef4444";
+      ctx.strokeStyle = C.today||"#ef4444";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -255,7 +256,7 @@ const DashboardChart = {
       ctx.lineTo(rx, pad.top + h);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = "#ef4444";
+      ctx.fillStyle = C.today||"#ef4444";
       ctx.font = "bold 10px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(`기준일(${reportDateStr || projectConfig.reportDate})`, rx, pad.top - 10);

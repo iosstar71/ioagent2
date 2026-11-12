@@ -61,7 +61,7 @@ var DataRegistry = {
           if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "electric";
           return ThemeScope.global;
         }
-        return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "electric");
+        return document.body.getAttribute("data-theme") || (typeof defaultTheme === "function" ? defaultTheme() : "urban-slate");
     }
     return undefined;
   },
