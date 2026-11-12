@@ -180,6 +180,17 @@ async function localMain() {
   check("100% apply: otherwise -> report date; an existing actual start is kept and shown as reversed", act.t2 && act.t2s);
   check("Delayed from 5%p behind plan (default setting); 1%p is not delayed", act.st !== "지연" && act.st5 === "지연", JSON.stringify(act));
   check("WBS stage filter lists the SDLC stages", act.ph > 2, JSON.stringify(act));
+  const od = await page.evaluate(() => {
+    const old = { level: 3, system: wbsData.find(t => t.level === 1).system, name: "오래 밀린 일", id: "9.9.9", isLeaf: true, pStart: "2026-01-04", pEnd: "2026-01-10", pProg: 100, aProg: 20, weight: 0 };
+    wbsData.push(old);
+    try {
+      const w = WeeklyReportManager.findWeekForDate(projectConfig.reportDate);
+      const rep = WeeklyReportManager.buildReport(w, "SYS", old.system);
+      const it = (rep.currentWeekTasks || []).find(x => x.wbsId === "9.9.9");
+      return it ? { status: it.status, detail: it.detail } : null;
+    } finally { wbsData.splice(wbsData.indexOf(old), 1); }
+  });
+  check("Weekly report lists a long-overdue unfinished Task this week as 지연 with days overdue", !!od && od.status === "지연" && /일 경과/.test(od.detail), JSON.stringify(od));
   const delayed = await page.evaluate(() => {
     const t = wbsData.find(x => x.isLeaf && x.pProg >= 10 && x.pProg < 100);
     if (t) { t.aProg = t.pProg - 5; rebuildAll(); }
