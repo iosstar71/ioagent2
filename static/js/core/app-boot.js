@@ -131,6 +131,7 @@ var AppBoot = {
     WeeklyReportManager.scope = null;
     WeeklyReportManager.currentWeekReport = null;
     if (document.getElementById("tab-weekly-report").classList.contains("active")) WeeklyReportManager.init();
+    if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) rebuildAll(true);   // 예전 가중치 자료 한 번 전환
     AuthManager.applyTabPermissions();
     if (typeof HomeScreenManager !== "undefined") {
       HomeScreenManager.applyRoleMode();
