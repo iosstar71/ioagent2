@@ -132,7 +132,7 @@ var NeoTodo = {
       "tab-deliverables": c.delivs.length,
       "tab-meeting": c.actions.length,
       // [v2.4.0] 홈: 내가 등록한 할 일 중 기한 지남 + 오늘 마감
-      "tab-home": typeof TodoCenter !== "undefined" ? TodoCenter.urgent() : 0
+      "tab-mywork": typeof TodoCenter !== "undefined" ? TodoCenter.urgent() : 0
     };
   },
 

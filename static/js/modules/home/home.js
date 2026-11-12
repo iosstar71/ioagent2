@@ -7,8 +7,11 @@
 var HomeScreenManager = {
   _sessionMode: null, // (이전 버전 호환)
   // [v2.4.0] 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 작업자가 홈 위쪽 단추로 고른 스타일(작업자별 기억)
-  STYLES: ["EXECUTIVE", "PORTAL", "TODO"],
-  STYLE_LABELS: { EXECUTIVE: "📊 브리핑", PORTAL: "🧰 워크벤치", TODO: "✅ 내 할 일" },
+  // 역할별 첫 화면: Summary(tab-home) · Dashboard · My Work (예전 값 PORTAL 은 My Work)
+  STYLES: ["EXECUTIVE", "DASHBOARD", "TODO", "PORTAL"],
+  STYLE_LABELS: { EXECUTIVE: "🧭 Summary", DASHBOARD: "📊 Dashboard", TODO: "🙋 My Work", PORTAL: "🙋 My Work" },
+  LANDING: { EXECUTIVE: "tab-home", DASHBOARD: "tab-dashboard", TODO: "tab-mywork", PORTAL: "tab-mywork" },
+  landingTab() { return this.LANDING[this.roleDefault()] || "tab-home"; },
   STYLE_KEY: "IOSTAR_HOME_STYLE_",
 
   init() {
@@ -110,21 +113,14 @@ var HomeScreenManager = {
     return this.getEffectiveMode();
   },
 
-  // 작업자가 홈 위쪽 단추로 홈 스타일을 고름 (작업자별 기억, 역할 기본값과 같으면 기억 지움)
-  setStyle(mode) {
-    if (this.STYLES.indexOf(mode) === -1) return;
-    try {
-      if (mode === this.roleDefault()) AppStore.removeItem(this._styleKey());
-      else AppStore.setItem(this._styleKey(), mode);
-    } catch (e) {}
-    this.render();
-  },
+  // 화면 고르기 (예전 홈 스타일 단추와 같은 이름 유지)
+  setStyle(mode) { if (typeof GShell !== "undefined") GShell.go(this.LANDING[mode] || "tab-home"); },
 
   setSessionMode(mode) { this.setStyle(mode); },
 
   openSettings() {
     if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-config"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-config")) {
-      showToast("ℹ️ 홈 스타일은 위쪽 [브리핑 · 워크벤치 · 내 할 일] 단추로 바꿀 수 있습니다. 역할별 기본 홈은 관리자가 정합니다.");
+      showToast("ℹ️ 역할별 첫 화면은 관리자가 정합니다. 메뉴에서 My Work · Summary · Dashboard 로 바로 갈 수 있습니다.");
       return;
     }
     switchTab("tab-config");
@@ -141,17 +137,14 @@ var HomeScreenManager = {
     this.render();
   },
 
-  previewMode(mode) {
-    switchTab("tab-home");
-    this.setStyle(mode);
-  },
+  previewMode(mode) { this.setStyle(mode); },
 
   onRoleHomeSettingChange(role, mode) {
     this.ensureConfig();
     projectConfig.roleHomeSettings[role] = mode;
     if (typeof persistChanges === "function") persistChanges();
     this.render();
-    showToast(`🏠 [${role}] 역할의 기본 홈을 [${this.STYLE_LABELS[mode] || mode}](으)로 정했습니다.`);
+    showToast(`🚪 [${role}] 역할의 첫 화면을 [${this.STYLE_LABELS[mode] || mode}](으)로 정했습니다.`);
   },
 
   onExportSettingChange(key, value) {
@@ -190,38 +183,19 @@ var HomeScreenManager = {
     el.textContent = `예) ${WeeklyExport.fileCode()}_주간보고_2027W22_ALL_DOC-T_v2.docx`;
   },
 
+  // Summary(tab-home) 와 My Work(tab-mywork) 를 함께 그림
   render() {
     this.ensureConfig();
-    const mode = this.getCurrentMode();
-    const roleDef = this.roleDefault();
-    document.querySelectorAll(".home-style-btn").forEach(btn => {
-      const on = btn.getAttribute("data-home-style") === mode;
-      btn.classList.toggle("active", on);
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-    });
-    const badge = document.getElementById("homeModeStatusBadge");
-    if (badge) {
-      badge.textContent = mode === roleDef ? "역할 기본 홈" : "내가 고른 홈";
-      badge.title = `역할 기본: ${this.STYLE_LABELS[roleDef]}`;
-    }
-    // [v3.0.2] 홈 스타일 단추는 머리줄 맨 오른쪽에 고정 (안내 문구 길이가 바뀌어도 단추 위치가 움직이지 않게)
-    const sw = document.querySelector("#tab-home .home-style-switch");
-    if (sw && sw.parentElement) {
-      if (badge && badge.parentElement === sw.parentElement && badge.nextElementSibling !== sw) sw.parentElement.insertBefore(badge, sw);
-      if (sw.parentElement.lastElementChild !== sw) sw.parentElement.appendChild(sw);
-    }
-
-    if (mode === "EXECUTIVE" && typeof ExecReport !== "undefined") { try { ExecReport.render(); } catch (e) { console.warn(e); } }
-    const boxes = { EXECUTIVE: "homeExecutiveContainer", PORTAL: "homePortalContainer", TODO: "homeTodoContainer" };
-    Object.keys(boxes).forEach(k => {
-      const el = document.getElementById(boxes[k]);
-      if (el) el.style.display = k === mode ? "block" : "none";
-    });
-    if (mode === "EXECUTIVE") this.renderExecutive();
-    else if (mode === "PORTAL") this.renderPortal();
-    else if (typeof TodoCenter !== "undefined") TodoCenter.render();
+    if (typeof ExecReport !== "undefined") { try { ExecReport.render(); } catch (e) { console.warn(e); } }
+    this.renderExecutive();
+    this.renderMyWork();
+    if (typeof I18N !== "undefined") { I18N.translateTree(document.getElementById("tab-home")); I18N.translateTree(document.getElementById("tab-mywork")); }
+  },
+  renderMyWork() {
+    ["homeTodoContainer", "homePortalContainer"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = "block"; });
+    if (typeof TodoCenter !== "undefined") TodoCenter.render();
+    this.renderPortal();
     if (typeof TodoCenter !== "undefined") TodoCenter.updateCounts();
-    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("tab-home"));
   },
 
   renderExecutive() {

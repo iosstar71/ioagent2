@@ -551,7 +551,7 @@ var AuthManager = {
       this.sessionAuthenticated = true;
       this._saveSession();
       ProjectContext.set(opts.project);
-      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
+      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || (typeof HomeScreenManager !== "undefined" ? HomeScreenManager.landingTab() : "tab-home")); } catch (e) {}
       showToast("🗂️ 선택한 프로젝트로 들어갑니다...");
       setTimeout(() => AppStore.reload(), 200);
       return;
@@ -564,7 +564,7 @@ var AuthManager = {
       this.currentUser = next;
       this.sessionAuthenticated = true;
       this._saveSession();
-      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || "tab-home"); } catch (e) {}
+      try { sessionStorage.setItem("AX_PMYS_LANDING_TAB", opts.landing || (typeof HomeScreenManager !== "undefined" ? HomeScreenManager.landingTab() : "tab-home")); } catch (e) {}
       showToast(`👤 계정 전환: ${next.name}(${next.empNo}) — 권한을 다시 적용합니다...`);
       setTimeout(() => AppStore.reload(), 300);
       return;

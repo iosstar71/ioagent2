@@ -11,21 +11,22 @@
 // =============================================================================
 var GShell = {
   GROUPS: [
-    { key: "ov", label: "개요", icon: "🧭", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
+    { key: "mw", label: "My Work", icon: "🙋", tabs: ["tab-mywork"] },
+    { key: "ov", label: "Dashboard", icon: "📊", tabs: ["tab-home", "tab-dashboard", "tab-matrix"] },
     { key: "sc", label: "일정", icon: "🗓️", tabs: ["tab-wbs", "tab-gantt"] },
-    { key: "sq", label: "범위·품질", icon: "🎯", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
-    { key: "co", label: "보고·협업", icon: "🤝", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
+    { key: "sq", label: "요구 · VOC · 산출물", icon: "🎯", tabs: ["tab-req", "tab-voc", "tab-deliverables"] },
+    { key: "co", label: "보고 · 소통", icon: "🤝", tabs: ["tab-weekly-report", "tab-meeting", "tab-notices"] }
   ],
   ADMIN_TABS: ["tab-master", "tab-merge", "tab-config"],
   LABELS: {
-    "tab-home": "홈", "tab-dashboard": "대시보드", "tab-matrix": "Phase 진척",
+    "tab-mywork": "My Work", "tab-home": "Summary", "tab-dashboard": "Dashboard", "tab-matrix": "Phase 진척",
     "tab-wbs": "WBS", "tab-gantt": "Gantt",
     "tab-req": "요구사항", "tab-voc": "VOC · 이슈", "tab-deliverables": "산출물",
     "tab-weekly-report": "주간보고", "tab-meeting": "회의", "tab-notices": "게시판",
     "tab-master": "프로젝트 설정", "tab-merge": "파일 Merge", "tab-config": "Admin"
   },
   ICONS: {
-    "tab-home": "🏠", "tab-dashboard": "📊", "tab-matrix": "📈", "tab-wbs": "📋", "tab-gantt": "🗓️",
+    "tab-mywork": "🙋", "tab-home": "🧭", "tab-dashboard": "📊", "tab-matrix": "📈", "tab-wbs": "📋", "tab-gantt": "🗓️",
     "tab-req": "📌", "tab-voc": "📣", "tab-deliverables": "📑", "tab-weekly-report": "📝", "tab-meeting": "📅",
     "tab-notices": "📢", "tab-master": "🗂️", "tab-merge": "🔀", "tab-config": "⚙️"
   },

@@ -224,17 +224,113 @@
     <!-- [Project Mgmt ver1.0.4] 🏠 프로젝트 통합 맞춤형 홈 화면   -->
     <!-- 🏛️ 2. 이그제큐티브 브리핑 룸 / 🚀 3. 하이브리드 스마트 포털         -->
     <!-- =================================================================== -->
+    <div id="tab-mywork" class="tab-pane">
+      <div class="sub-header-bar">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span class="sub-title">🙋 My Work</span><span class="neo-ph-desc">내가 체크할 일과 내 담당 Task 를 한곳에 모았습니다.</span>
+          <span class="home-style-count" id="homeTodoCount" hidden></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="btn btn-outline btn-sm btn-progress-refresh" data-click="refreshHomeView" title="최신 저장 자료를 다시 불러와 계획 · 실적을 다시 계산">🔄 실적 새로고침</button>
+        </div>
+      </div>
+      <div id="homeTodoContainer" style="display:block;"></div>
+      <div id="homePortalContainer" style="display:block;">
+        <!-- 상단 환영 & 미완료 Task 퀵 요약 배너 -->
+        <div class="card" style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px 20px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h3 style="margin:0 0 4px 0; font-size:var(--fs-lg, 16px); font-weight:800; color:#1e293b;">
+                📋 내 담당 Task
+              </h3>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <label style="font-weight:700; font-size:var(--fs-sm, 12px); color:#334155;">서브시스템 필터:</label>
+              <select id="portalTaskFilterSubsystem" data-change="HomeScreenManager.renderPortal" style="font-weight:700; padding:4px 10px; border-radius:4px; font-size:var(--fs-sm, 12px); border:1px solid #cbd5e1;">
+                <option value="ALL">전체 서브시스템</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 핵심 워크벤치 2단 그리드: 좌측(내 Task & 완료버튼) / 우측(요약카드 & 공지/소통) -->
+        <div style="display:grid; grid-template-columns: 1.35fr 1fr; gap:14px; margin-bottom:14px;">
+          <!-- 좌측: 내 담당 미완료 Task 목록과 원클릭 ✓ 100% 완료 처리 버튼 -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">
+              <span style="font-weight:700; cursor:pointer;" data-click="switchTab" data-click-args='["tab-wbs"]' title="WBS 공정표 탭으로 이동">📋 진행중 및 미완료 Task 목록 (원클릭 실적 반영)</span>
+              <span id="portalTaskCountBadge" class="status-badge-chip chip-progress" style="font-size:var(--fs-2xs, 10px);">0건 대상</span>
+            </div>
+            <div class="table-container" style="max-height:420px; overflow-y:auto;">
+              <table class="matrix-table" id="portalTasksTable">
+                <thead>
+                  <tr>
+                    <th style="width:75px;">서브시스템</th>
+                    <th style="width:75px;">WBS ID</th>
+                    <th>Task명칭</th>
+                    <th style="width:145px;">계획 일정</th>
+                    <th style="width:70px;">실적(%)</th>
+                    <th style="width:65px;">상태</th>
+                    <th style="width:95px; text-align:center;">실적 등록</th>
+                  </tr>
+                </thead>
+                <tbody id="portalTasksTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 우측: 3대 업무 요약 카드 + 공지 & 게시판 -->
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <!-- 3대 업무 요약 카드 (요구사항, 산출물, VOC) -->
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+              <div data-click="switchTab" data-click-args='["tab-req"]' style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="요구사항(REQ) 탭으로 바로 이동">
+                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#166534;">🎯 요구사항(REQ)</div>
+                <div id="portalReqStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#15803d; margin:4px 0;">0/0건</div>
+                <div id="portalReqStatSub" style="font-size:var(--fs-2xs, 10px); color:#166534;">완료율 0%</div>
+              </div>
+              <div data-click="switchTab" data-click-args='["tab-deliverables"]' style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="산출물 관리 탭으로 바로 이동">
+                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#1e40af;">📑 산출물 승인</div>
+                <div id="portalDelivStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#1d4ed8; margin:4px 0;">0/0건</div>
+                <div id="portalDelivStatSub" style="font-size:var(--fs-2xs, 10px); color:#1e40af;">승인율 0%</div>
+              </div>
+              <div data-click="switchTab" data-click-args='["tab-voc"]' style="background:#fffbeb; border:1px solid #fef3c7; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="현장 VOC 관리 탭으로 바로 이동">
+                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#92400e;">💬 현장 VOC</div>
+                <div id="portalVocStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#b45309; margin:4px 0;">0/0건</div>
+                <div id="portalVocStatSub" style="font-size:var(--fs-2xs, 10px); color:#92400e;">조치율 0%</div>
+              </div>
+            </div>
+
+            <!-- 주요 공지 카드 -->
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-title">
+                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["NOTICES"]' title="공지 탭으로 이동">📢 프로젝트 주요 공지</span>
+                <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["NOTICES"]'>공지 전체보기</button>
+              </div>
+              <div id="portalNoticesList" style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;"></div>
+            </div>
+
+            <!-- 실시간 팀 게시판 및 퀵 메시지 작성 -->
+            <div class="card" style="margin-bottom:0; flex:1;">
+              <div class="card-title">
+                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["FEED"]' title="게시판 탭으로 이동">💬 실시간 팀 게시판</span>
+                <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["FEED"]'>소통센터 이동</button>
+              </div>
+              <div id="portalChatStream" style="height:110px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; font-size:var(--fs-xs, 11px); margin-bottom:8px;"></div>
+              <div style="display:flex; gap:6px;">
+                <input type="text" id="portalChatInput" placeholder="팀원에게 빠른 메시지 전송..." style="flex:1; font-size:var(--fs-xs, 11px); padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px;" data-keypress="HomeScreenManager.sendQuickMessage" data-keypress-key="Enter">
+                <button class="btn btn-primary btn-sm" data-click="HomeScreenManager.sendQuickMessage" style="padding:4px 10px;">전송</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="tab-home" class="tab-pane active">
       <!-- 상단 모드 전환 및 실시간 상태 툴바 -->
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-          <span class="sub-title">🏠 홈</span><span class="neo-ph-desc">오늘 체크할 일과 프로젝트 상황을 한눈에 봅니다.</span>
-          <div class="home-style-switch" role="group" aria-label="홈 스타일">
-            <button type="button" class="home-style-btn" data-home-style="EXECUTIVE" data-click="HomeScreenManager.setStyle" data-click-args='["EXECUTIVE"]'>📊 브리핑</button>
-            <button type="button" class="home-style-btn" data-home-style="PORTAL" data-click="HomeScreenManager.setStyle" data-click-args='["PORTAL"]'>🧰 워크벤치</button>
-            <button type="button" class="home-style-btn" data-home-style="TODO" data-click="HomeScreenManager.setStyle" data-click-args='["TODO"]'>✅ 내 할 일<span class="home-style-count" id="homeTodoCount" hidden></span></button>
-          </div>
-          <span id="homeModeStatusBadge" class="home-style-note"></span>
+          <span class="sub-title">🧭 Summary</span><span class="neo-ph-desc">프로젝트 상황을 한 화면으로 요약합니다 — 보고 · 회의용.</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="lbl-progress-refreshed-at" style="font-size:var(--fs-xs, 11px); color:#64748b;"></span>
@@ -242,7 +338,7 @@
             🔄 실적 새로고침
           </button>
           <button class="btn btn-primary btn-sm" id="btnHomeSettings" data-click="HomeScreenManager.openSettings" title="역할별 기본 홈 스타일 설정 (시스템 설정 > 화면·테마)">
-            ⚙️ 홈 설정
+            ⚙️ 첫 화면 설정
           </button>
         </div>
       </div>
@@ -364,102 +460,8 @@
         </div>
       </div>
 
-      <!-- [모드 3] 🚀 하이브리드 스마트 포털 (Hybrid Smart Portal) 컨테이너 -->
-      <!-- [v2.4.0] ✅ 내 할 일 홈: 체크할 일(자동) + 내가 등록한 할 일 -->
-      <div id="homeTodoContainer" style="display:none;"></div>
 
-      <div id="homePortalContainer" style="display:none;">
-        <!-- 상단 환영 & 미완료 Task 퀵 요약 배너 -->
-        <div class="card" style="background:#f8fafc; border-left:4px solid #2563eb; padding:16px 20px; margin-bottom:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div>
-              <h3 style="margin:0 0 4px 0; font-size:var(--fs-lg, 16px); font-weight:800; color:#1e293b;">
-                🧰 워크벤치 — 내 담당 서브시스템 Task
-              </h3>
-              <div style="font-size:var(--fs-sm, 12px); color:#64748b;">
-                내 담당 서브시스템의 미완료 Task을 확인하고, <b>[✓ 100% 완료]</b> 버튼으로 실적을 즉시 등록할 수 있습니다.
-              </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <label style="font-weight:700; font-size:var(--fs-sm, 12px); color:#334155;">서브시스템 필터:</label>
-              <select id="portalTaskFilterSubsystem" data-change="HomeScreenManager.renderPortal" style="font-weight:700; padding:4px 10px; border-radius:4px; font-size:var(--fs-sm, 12px); border:1px solid #cbd5e1;">
-                <option value="ALL">전체 서브시스템</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        <!-- 핵심 워크벤치 2단 그리드: 좌측(내 Task & 완료버튼) / 우측(요약카드 & 공지/소통) -->
-        <div style="display:grid; grid-template-columns: 1.35fr 1fr; gap:14px; margin-bottom:14px;">
-          <!-- 좌측: 내 담당 미완료 Task 목록과 원클릭 ✓ 100% 완료 처리 버튼 -->
-          <div class="card" style="margin-bottom:0;">
-            <div class="card-title">
-              <span style="font-weight:700; cursor:pointer;" data-click="switchTab" data-click-args='["tab-wbs"]' title="WBS 공정표 탭으로 이동">📋 진행중 및 미완료 Task 목록 (원클릭 실적 반영)</span>
-              <span id="portalTaskCountBadge" class="status-badge-chip chip-progress" style="font-size:var(--fs-2xs, 10px);">0건 대상</span>
-            </div>
-            <div class="table-container" style="max-height:420px; overflow-y:auto;">
-              <table class="matrix-table" id="portalTasksTable">
-                <thead>
-                  <tr>
-                    <th style="width:75px;">서브시스템</th>
-                    <th style="width:75px;">WBS ID</th>
-                    <th>Task명칭</th>
-                    <th style="width:145px;">계획 일정</th>
-                    <th style="width:70px;">실적(%)</th>
-                    <th style="width:65px;">상태</th>
-                    <th style="width:95px; text-align:center;">실적 등록</th>
-                  </tr>
-                </thead>
-                <tbody id="portalTasksTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 우측: 3대 업무 요약 카드 + 공지 & 게시판 -->
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <!-- 3대 업무 요약 카드 (요구사항, 산출물, VOC) -->
-            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-              <div data-click="switchTab" data-click-args='["tab-req"]' style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="요구사항(REQ) 탭으로 바로 이동">
-                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#166534;">🎯 요구사항(REQ)</div>
-                <div id="portalReqStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#15803d; margin:4px 0;">0/0건</div>
-                <div id="portalReqStatSub" style="font-size:var(--fs-2xs, 10px); color:#166534;">완료율 0%</div>
-              </div>
-              <div data-click="switchTab" data-click-args='["tab-deliverables"]' style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="산출물 관리 탭으로 바로 이동">
-                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#1e40af;">📑 산출물 승인</div>
-                <div id="portalDelivStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#1d4ed8; margin:4px 0;">0/0건</div>
-                <div id="portalDelivStatSub" style="font-size:var(--fs-2xs, 10px); color:#1e40af;">승인율 0%</div>
-              </div>
-              <div data-click="switchTab" data-click-args='["tab-voc"]' style="background:#fffbeb; border:1px solid #fef3c7; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="현장 VOC 관리 탭으로 바로 이동">
-                <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#92400e;">💬 현장 VOC</div>
-                <div id="portalVocStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#b45309; margin:4px 0;">0/0건</div>
-                <div id="portalVocStatSub" style="font-size:var(--fs-2xs, 10px); color:#92400e;">조치율 0%</div>
-              </div>
-            </div>
-
-            <!-- 주요 공지 카드 -->
-            <div class="card" style="margin-bottom:0;">
-              <div class="card-title">
-                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["NOTICES"]' title="공지 탭으로 이동">📢 프로젝트 주요 공지</span>
-                <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["NOTICES"]'>공지 전체보기</button>
-              </div>
-              <div id="portalNoticesList" style="display:flex; flex-direction:column; gap:8px; max-height:140px; overflow-y:auto;"></div>
-            </div>
-
-            <!-- 실시간 팀 게시판 및 퀵 메시지 작성 -->
-            <div class="card" style="margin-bottom:0; flex:1;">
-              <div class="card-title">
-                <span style="font-weight:700; cursor:pointer;" data-click="UiH.goNotice" data-click-args='["FEED"]' title="게시판 탭으로 이동">💬 실시간 팀 게시판</span>
-                <button class="btn btn-outline btn-xs" data-click="UiH.goNotice" data-click-args='["FEED"]'>소통센터 이동</button>
-              </div>
-              <div id="portalChatStream" style="height:110px; overflow-y:auto; background:#f8fafc; border:1px solid #e2e8f0; border-radius:4px; padding:8px; font-size:var(--fs-xs, 11px); margin-bottom:8px;"></div>
-              <div style="display:flex; gap:6px;">
-                <input type="text" id="portalChatInput" placeholder="팀원에게 빠른 메시지 전송..." style="flex:1; font-size:var(--fs-xs, 11px); padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px;" data-keypress="HomeScreenManager.sendQuickMessage" data-keypress-key="Enter">
-                <button class="btn btn-primary btn-sm" data-click="HomeScreenManager.sendQuickMessage" style="padding:4px 10px;">전송</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div id="tab-dashboard" class="tab-pane">
@@ -2449,38 +2451,22 @@
         <div class="card" style=" border-left: 4px solid #6366f1;">
           <div class="card-title">
             <div>
-              <span>🏠 홈 스타일 (브리핑 · 워크벤치 · 내 할 일)</span>
+              <span>🚪 역할별 첫 화면 (로그인 후 처음 여는 화면)</span>
             </div>
-            <div style="display:flex; gap:6px;">
-              <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["EXECUTIVE"]'>👁️ 브리핑 보기</button>
-              <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["PORTAL"]'>👁️ 워크벤치 보기</button>
-              <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["TODO"]'>👁️ 내 할 일 보기</button>
-            </div>
+            
           </div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; padding:4px 0;">
             <div class="home-role-box">
               <label>👑 관리자 (SYS_ADMIN)</label>
-              <select id="cfgRoleHomeSysAdmin" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["SYS_ADMIN", "$value"]' class="home-role-select">
-                <option value="EXECUTIVE" selected>📊 브리핑</option>
-                <option value="PORTAL">🧰 워크벤치</option>
-                <option value="TODO">✅ 내 할 일</option>
-              </select>
+              <select id="cfgRoleHomeSysAdmin" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["SYS_ADMIN", "$value"]' class="home-role-select"><option value="EXECUTIVE" selected>🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO">🙋 My Work</option></select>
             </div>
             <div class="home-role-box">
               <label>👔 프로젝트 관리자 · PL (PM · LEAD)</label>
-              <select id="cfgRoleHomePM" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["PM", "$value"]' class="home-role-select">
-                <option value="EXECUTIVE" selected>📊 브리핑</option>
-                <option value="PORTAL">🧰 워크벤치</option>
-                <option value="TODO">✅ 내 할 일</option>
-              </select>
+              <select id="cfgRoleHomePM" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["PM", "$value"]' class="home-role-select"><option value="EXECUTIVE" selected>🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO">🙋 My Work</option></select>
             </div>
             <div class="home-role-box">
               <label>👷 멤버 (MEMBER)</label>
-              <select id="cfgRoleHomeMember" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["MEMBER", "$value"]' class="home-role-select">
-                <option value="EXECUTIVE">📊 브리핑</option>
-                <option value="PORTAL">🧰 워크벤치</option>
-                <option value="TODO" selected>✅ 내 할 일</option>
-              </select>
+              <select id="cfgRoleHomeMember" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["MEMBER", "$value"]' class="home-role-select"><option value="EXECUTIVE">🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO" selected>🙋 My Work</option></select>
             </div>
           </div>
         </div><div class="card" style=" border-left: 4px solid #0284c7;">

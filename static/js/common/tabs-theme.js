@@ -20,6 +20,7 @@ function activateTab(tabId) {
 
   switch (tabId) {
     case "tab-home":
+    case "tab-mywork":
       HomeScreenManager.render();
       break;
     case "tab-dashboard":

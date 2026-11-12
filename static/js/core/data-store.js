@@ -629,6 +629,7 @@ var SyncManager = {
 
   // 화면(탭)별 저장/새로고침 대상 데이터셋
   TAB_KEYS: {
+    "tab-mywork": null,
     "tab-home": null,
     "tab-dashboard": ["wbsData", "deliverablesData", "reqMasterData", "vocData"],
     "tab-matrix": ["wbsData", "reqMasterData"],

@@ -184,8 +184,7 @@ var TodoCenter = {
     if (type === "MTG") return GShell.go("tab-meeting");
   },
   openHome() {
-    GShell.go("tab-home");
-    if (typeof HomeScreenManager !== "undefined") HomeScreenManager.setStyle("TODO");
+    GShell.go("tab-mywork");
   },
 
   // 홈 단추 · 메뉴 배지용: 기한 지남 + 오늘 마감 (내가 등록한 할 일)
