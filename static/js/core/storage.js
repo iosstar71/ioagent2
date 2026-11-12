@@ -148,7 +148,7 @@ var StorageManager = {
 
   resetToFactoryBlank() {
     openConfirmDialog(
-      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (작업자는 admin 하나, 암호 1234 로 초기화)",
+      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·공지·소통·회의·주간보고)와 프로젝트 기준정보를 초기화합니다. (작업자는 admin 하나, 암호 admin123! 로 초기화)",
       () => this._factoryBlank()
     );
   },

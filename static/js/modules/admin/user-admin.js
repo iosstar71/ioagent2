@@ -133,7 +133,7 @@ var UserAdmin = {
         <td>${escapeHtml(u.name || "")}</td>
         <td>${escapeHtml(u.dept || "")}</td>
         <td>${chips}</td>
-        <td style="text-align:center;">${u.pwdDefault ? '<span class="status-tag tag-ready">초기(1234)</span>' : '<span class="status-tag tag-completed">변경함</span>'}</td>
+        <td style="text-align:center;">${u.pwdDefault ? '<span class="status-tag tag-ready">초기(ID+123!)</span>' : '<span class="status-tag tag-completed">변경함</span>'}</td>
         <td style="white-space:nowrap; text-align:center;">
           <button class="btn btn-secondary btn-sm" data-click="UserAdmin.openEdit" data-click-args="${UiEvents.args(u.empNo)}">편집</button>
           <button class="btn btn-danger btn-sm" data-click="UserAdmin.remove" data-click-args="${UiEvents.args(u.empNo)}">삭제</button>
@@ -209,7 +209,7 @@ var UserAdmin = {
     if (err) return showToast("⚠️ " + err);
     this.closeEdit();
     this.render();
-    showToast(req.isNew ? `✅ 작업자 [${req.name}(${req.empNo})]를 등록했습니다. 초기 암호는 1234 입니다.` : `✅ 작업자 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
+    showToast(req.isNew ? `✅ 작업자 [${req.name}(${req.empNo})]를 등록했습니다. 초기 암호는 ${req.empNo}123! 입니다.` : `✅ 작업자 [${req.name}(${req.empNo})] 정보를 저장했습니다.`);
     if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
   },
 

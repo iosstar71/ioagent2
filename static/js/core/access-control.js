@@ -115,16 +115,21 @@ var AuthManager = {
     return this._sha256PureJs(bytes);
   },
 
-  // [v1.0.10] 새 암호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 암호(1234) 사용 불가
+  // 초기 암호 = 작업자 ID + "123!" (예: hong → hong123!) — 암호를 정하지 않았거나 초기화한 작업자
+  INITIAL_PWD_SUFFIX: "123!",
+  INITIAL_PWD_HINT: "작업자 ID + 123!",
+  initialPassword(empNo) { return String(empNo || "") + this.INITIAL_PWD_SUFFIX; },
+  // 새 암호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 암호 사용 불가
   PWD_MIN_LENGTH: 8,
-  validateNewPassword(pwd) {
+  validateNewPassword(pwd, empNo) {
     const p = String(pwd || "");
+    if (empNo && p.toLowerCase() === this.initialPassword(empNo).toLowerCase()) return "초기 암호(작업자 ID + 123!)는 새 암호로 쓸 수 없습니다.";
     if (p.length < this.PWD_MIN_LENGTH) return `암호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
     if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "암호는 영문과 숫자를 모두 포함해야 합니다.";
     if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 암호는 사용할 수 없습니다.";
     return "";
   },
-  // 초기 암호(1234) 사용 중이거나 관리자가 지정한 임시 암호이면 첫 작업자 선택 때 변경 필수
+  // 초기 암호 사용 중이거나 관리자가 지정한 임시 암호이면 첫 작업자 선택 때 변경 필수
   mustChangeLocal(u) { return !!u && (!u.pwdHash || !!u.pwdTemp); },
 
   // ---------------------------------------------------------------------------
@@ -313,7 +318,7 @@ var AuthManager = {
     this._setText("lockModalTitle", title || "🔐 작업자 선택");
     this._setText("lockModalDesc",
       (desc || "작업자 ID과 암호를 입력하여 작업자를 선택하세요.") +
-      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>1234</b> (기본 관리자 작업자 ID: admin)</span>`, true);
+      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>작업자 ID + 123!</b> (예: admin → admin123!)</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
@@ -454,7 +459,7 @@ var AuthManager = {
     if (!target && String(u.empNo).toLowerCase() === "admin") {
       try { target = AppStore.getItem(this.LEGACY_ADMIN_HASH_KEY) || ""; } catch (e) {}
     }
-    if (!target) target = await this.hashPassword("1234");
+    if (!target) target = await this.hashPassword(this.initialPassword(u.empNo));
     return inputHash === target ? { ok: true, user: u } : { ok: false, message: "암호가 일치하지 않습니다." };
   },
 
@@ -667,7 +672,7 @@ var AuthManager = {
     const empNo = v("pcEmpNo").trim();
     const oldPwd = v("pcOldPwd"), n1 = v("pcNewPwd"), n2 = v("pcNewPwd2");
     if (!empNo || !oldPwd || !n1 || !n2) return this._err("pcErrorMessage", "모든 항목을 입력하세요.");
-    const rule = this.validateNewPassword(n1);
+    const rule = this.validateNewPassword(n1, empNo);
     if (rule) return this._err("pcErrorMessage", rule);
     if (n1 !== n2) return this._err("pcErrorMessage", "새 암호와 확인 입력이 일치하지 않습니다.");
     if (n1 === oldPwd) return this._err("pcErrorMessage", "현재 암호와 다른 암호를 입력하세요.");
@@ -709,9 +714,9 @@ var AuthManager = {
     const n2 = document.getElementById("cfgConfirmPassword").value;
     if (!cur || !n1 || !n2) return showToast("모든 암호 필드를 입력해주세요.");
     if (n1 !== n2) return showToast("새 암호와 확인 입력이 일치하지 않습니다.");
-    const rule = this.validateNewPassword(n1);
-    if (rule) return showToast(rule);
     const me = this.getCurrentUser();
+    const rule = this.validateNewPassword(n1, me.empNo);
+    if (rule) return showToast(rule);
     const newHash = await this.hashPassword(n1);
     if (SyncManager.isLocal()) {
       const check = await this._verifyLocal(me.empNo, cur);
@@ -833,7 +838,7 @@ var WorkerPick = {
     const row = l2.find(p => p.id === pid);
     if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
-    showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호 1234).`);
+    showToast(`📥 [${it.name}] 종합본을 이 브라우저에 넣었습니다 — 작업자 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 작업자 ID + 123!).`);
     setTimeout(() => AppStore.reload(), 900);
   }
 };

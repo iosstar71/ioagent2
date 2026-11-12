@@ -5,7 +5,7 @@
 // -------------------------------------------------------------
 let subsystemsMeta = [];
 
-// [ver1.0.4 신규] 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기비번: 1234)
+// [ver1.0.4 신규] 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기 암호: admin123!)
 let projectUsers = [
   { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
 ];

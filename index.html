@@ -41,7 +41,7 @@
         <datalist id="workerPickList"></datalist>
         <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 작업자를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
         <label class="login-label">③ 작업자 암호:</label>
-        <input type="password" id="inputSecurityPassword" placeholder="작업자 암호 (처음: 1234)" autocomplete="off" class="login-input"
+        <input type="password" id="inputSecurityPassword" placeholder="작업자 암호 (처음: 작업자 ID + 123!)" autocomplete="off" class="login-input"
                data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
         <div id="lockErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-top: 2px; display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 14px;">
@@ -70,7 +70,7 @@
         <input type="password" id="pcNewPwd" class="login-input" autocomplete="new-password">
         <label class="login-label">새 암호 확인 *:</label>
         <input type="password" id="pcNewPwd2" class="login-input" autocomplete="new-password" data-keydown="AuthManager.changePasswordFromLogin" data-keydown-key="Enter">
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin:4px 0;">* 암호를 잊은 경우 관리자/PM에게 [기준정보 &gt; 작업자 정보]에서 암호 초기화(1234)를 요청하세요.</div>
+        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin:4px 0;">* 암호를 잊은 경우 관리자/PM에게 [기준정보 &gt; 작업자 정보]에서 암호 초기화(작업자 ID + 123!)를 요청하세요.</div>
         <div id="pcErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
           <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 작업자 선택으로</button>
@@ -2295,7 +2295,7 @@
 
       <div class="config-group-banner" style="background: linear-gradient(90deg, #b45309, #d97706);">
         <span>👥 작업자 정보 — 투입인력 계정 · 권한 등급(관리자 / PM / 총괄리더 / 일반) · 담당 서브시스템 · 언어</span>
-        <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.95;">초기 암호는 1234이며, 스마트 데이터 병합 탭에서도 작업자 목록을 다중선택하여 엑셀/JSON으로 일괄 업·다운로드할 수 있습니다.</span>
+        <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.95;">초기 암호는 작업자 ID + 123!(예: hong → hong123!)이며, 스마트 데이터 병합 탭에서도 작업자 목록을 다중선택하여 엑셀/JSON으로 일괄 업·다운로드할 수 있습니다.</span>
       </div>
 
       <!-- 권한 등급별 요약 카드 -->
@@ -2686,7 +2686,7 @@
 
             <div style="display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--border-color); padding-left:16px;">
               <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(작업자 선택 작업자) 암호 변경:</label>
-              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 1234)" autocomplete="off" style="width:100%;">
+              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 작업자 ID + 123!)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgNewPassword" placeholder="새 암호 입력 (8자 이상, 영문+숫자)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgConfirmPassword" placeholder="새 암호 확인 입력" autocomplete="off" style="width:100%;">
               <button class="btn btn-primary btn-sm" data-btn="save" style="margin-top:4px; padding:8px; justify-content:center;" data-click="AuthManager.changePassword">🔑 암호 변경</button>
@@ -2887,7 +2887,7 @@
             🗂️ 옵션 2. LocalStorage 내 JSON 데이터만 보존하고 기타 저장소 항목(암호·캐시 등) 모두 삭제
           </div>
           <p style="font-size: var(--fs-xs, 11px); color: var(--text-sub); margin-bottom: 8px; line-height: 1.4;">
-            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>1234</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
+            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>작업자 ID + 123!</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
           </p>
           <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; padding: 8px;" data-click="StorageManager.clearStorageExceptJsonKey">
             🧹 기타 캐시 삭제
@@ -3015,7 +3015,7 @@
       </div>
       <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
       <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
-      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(1234)으로 되돌림 — 다음 작업자 선택 때 새 암호로 바꿔야 함</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(작업자 ID + 123!)으로 되돌림 — 다음 작업자 선택 때 새 암호로 바꿔야 함</label>
       <div class="ua-sub-title">프로젝트별 권한</div>
       <div class="pm-hint" id="uaAdminNote" style="display:none;">관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
       <div class="table-container" style="max-height: 300px;">

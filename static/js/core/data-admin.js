@@ -12,7 +12,7 @@ var DataAdmin = {
   ACTIONS: {
     tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통", keep: "프로젝트 기본정보 · 기준정보 · 작업자", all: true },
     project: { label: "⚠️ 프로젝트 전체 초기화", what: "기준정보(분야 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 작업자" },
-    factory: { label: "⚠️ 완전 초기화 (작업자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 작업자 목록을 처음 상태로 (admin 하나, 암호 1234)", keep: "다른 프로젝트 자료", current: true }
+    factory: { label: "⚠️ 완전 초기화 (작업자 포함)", what: "지금 프로젝트의 기준정보 · 업무 자료 + 작업자 목록을 처음 상태로 (admin 하나, 암호 admin123!)", keep: "다른 프로젝트 자료", current: true }
   },
   isAdmin() { return typeof ProjectData !== "undefined" && ProjectData.isAdmin(); },
   isServer() { return typeof SyncManager !== "undefined" && !SyncManager.isLocal(); },
