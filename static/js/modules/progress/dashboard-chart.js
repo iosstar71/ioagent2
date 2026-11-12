@@ -72,10 +72,13 @@ const DashboardChart = {
     const w = Math.max(120, canvas.width - pad.left - pad.right);
     const h = Math.max(90, canvas.height - pad.top - pad.bottom);
 
-    const totalW = targetTasks.reduce((acc, d) => acc + (parseFloat(d.weight) || 1), 0) || 1;
+    // 과업별 비중 (합 1): L1 이면 서브시스템 가중치 × L1 비율, 서브시스템 안이면 가중치 비율
+    const shares = targetTasks.length && targetTasks.every(t => t.level === 1) ? WBSEngine.rootShares(targetTasks) : null;
+    const totalW = targetTasks.reduce((acc, d) => acc + WBSEngine.wOf(d), 0);
+    const share = d => shares ? (shares.get(d) || 0) : (totalW > 0 ? WBSEngine.wOf(d) / totalW : 1 / (targetTasks.length || 1));
     let currentActual = 0;
-    targetTasks.forEach(d => { currentActual += ((parseFloat(d.aProg) || 0) * (parseFloat(d.weight) || 1)); });
-    currentActual = Math.round(currentActual / totalW);
+    targetTasks.forEach(d => { currentActual += (parseFloat(d.aProg) || 0) * share(d); });
+    currentActual = Math.round(currentActual);
 
     const planCurve = [];
     const actualCurve = [];
@@ -95,9 +98,9 @@ const DashboardChart = {
           const el = Math.max(0, (wk.end - s) / (1000 * 60 * 60 * 24));
           prog = Math.min(100, Math.round((el / tot) * 100));
         }
-        pSum += prog * (parseFloat(task.weight) || 1);
+        pSum += prog * share(task);
       });
-      const weekPlan = Math.round(pSum / totalW);
+      const weekPlan = Math.round(pSum);
       planCurve.push(weekPlan);
 
       if (wk.start <= repDate) {

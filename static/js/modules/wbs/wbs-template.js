@@ -171,14 +171,17 @@ var WbsTemplate = {
     const base = { id: "", system: sys, reqId: "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: "", owner };  // 산출물은 비워 둠
     const rows = [];
     if (withRoot) {
-      rows.push(Object.assign({}, base, { level: 1, name: `${sys} ${type === "REQ" ? "개선 과업" : "구축"} (${t.label})`, weight: parseFloat(meta.weight) || 10,
+      rows.push(Object.assign({}, base, { level: 1, name: `${sys} ${type === "REQ" ? "개선 과업" : "구축"} (${t.label})`, weight: 100,
         pStart: starts[0] || "", pEnd: ends[ends.length - 1] || "" }));
     }
+    // 가중치: 서브시스템 100 기준 — 단계(L2)는 단계 가중치 비율로 100 을 나누고, 세부 과업(L3)은 단계 가중치를 반씩
+    const l2w = WbsWeight._split(100, t.phases.map(p => parseFloat(p.weight) || 1));
     t.phases.forEach((p, i) => {
       const name = p.name || p.taskName || `단계 ${i + 1}`;
-      rows.push(Object.assign({}, base, { level: 2, name, weight: parseFloat(p.weight) || 1, pStart: slots[i][0], pEnd: slots[i][1] }));
+      rows.push(Object.assign({}, base, { level: 2, name, weight: l2w[i], pStart: slots[i][0], pEnd: slots[i][1] }));
       // 단계(L2)마다 세부 과업(L3) 2개 — 계획 일정은 단계와 같게
-      [1, 2].forEach(n => rows.push(Object.assign({}, base, { level: 3, name: `${name} 세부 과업 ${n}`, weight: 1, pStart: slots[i][0], pEnd: slots[i][1] })));
+      const l3w = WbsWeight._split(l2w[i], [1, 1]);
+      [1, 2].forEach(n => rows.push(Object.assign({}, base, { level: 3, name: `${name} 세부 과업 ${n}`, weight: l3w[n - 1], pStart: slots[i][0], pEnd: slots[i][1] })));
     });
     return rows;
   },
@@ -188,7 +191,7 @@ var WbsTemplate = {
     const owner = this.leadOf(sys);
     const rename = n => String(n || "").split(src).join(sys);
     return this.existing(src).filter(t => withRoot || (parseInt(t.level, 10) || 1) !== 1).map(t => ({
-      id: "", level: parseInt(t.level, 10) || 1, system: sys, name: rename(t.name), weight: parseFloat(t.weight) || 1, reqId: "",
+      id: "", level: parseInt(t.level, 10) || 1, system: sys, name: rename(t.name), weight: WBSEngine.wOf(t), reqId: "",
       pStart: t.pStart || "", pEnd: t.pEnd || "", aStart: "", aEnd: "", pProg: 0, aProg: 0, output: t.output || "", owner
     }));
   },

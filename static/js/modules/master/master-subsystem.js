@@ -346,12 +346,8 @@ function updateSubsystemName(idx, newName) {
   rebuildAll();
 }
 
-function syncSubsystemWeights() {
-  subsystemsMeta.forEach(sub => {
-    const root = wbsData.find(d => d.system === sub.name && d.level === 1);
-    if (root) root.weight = sub.weight;
-  });
-}
+// 서브시스템 가중치는 프로젝트 종합 계산(WBSEngine.weightedProgress)에만 씀 — WBS L1 가중치(서브시스템 100 기준)와 별개
+function syncSubsystemWeights() {}
 
 function deleteSubsystemMeta(idx) {
   openConfirmDialog(`[${subsystemsMeta[idx].name}] 기준정보를 삭제하시겠습니까?`, () => {

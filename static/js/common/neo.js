@@ -188,7 +188,15 @@ var NeoDetail = {
   _id: null,
 
   // 과업은 ID 로 찾음 (다시 계산하면 행 객체가 새로 만들어질 수 있음)
-  idx() { return this._id === null ? -1 : wbsData.findIndex(t => String(t.id) === this._id); },
+  // 행 객체로 따라감 (레벨 이동 · 추가로 WBS ID 가 다시 매겨져도 같은 과업 유지)
+  _ref: null,
+  idx() {
+    if (this._ref) { const i = wbsData.indexOf(this._ref); if (i !== -1) { this._id = String(this._ref.id); return i; } }
+    // 저장 뒤 자료가 새 객체로 바뀐 경우: ID 로 다시 찾아 이어 감
+    const i = this._id === null ? -1 : wbsData.findIndex(t => String(t.id) === this._id);
+    this._ref = i === -1 ? null : wbsData[i];
+    return i;
+  },
   row() { const i = this.idx(); return i === -1 ? null : wbsData[i]; },
   _panel() {
     let p = document.getElementById("neoDetail");
@@ -206,10 +214,12 @@ var NeoDetail = {
     const row = wbsData[idx];
     if (!row) return;
     this._id = String(row.id);
+    this._ref = row;
     this.render();
   },
   close() {
     this._id = null;
+    this._ref = null;
     const p = document.getElementById("neoDetail");
     if (p) p.hidden = true;
     document.body.classList.remove("neo-detail-open");
@@ -232,6 +242,7 @@ var NeoDetail = {
     const idx = this.idx();
     if (idx === -1) return this.close();
     if (field === "owner") return WbsOwner.set(idx, value);
+    if (field === "weight") { WbsWeight.set(idx, value); return this.render(); }
     const after = {
       name: ["persistChanges"], output: ["persistChanges"],
       reqId: ["renderPhaseMatrix", "renderReqMasterTable", "persistChanges"],
@@ -247,7 +258,20 @@ var NeoDetail = {
     const idx = this.idx();
     if (idx === -1) return;
     const fn = UiEvents.resolve(fnName);
+    const before = new Set(wbsData);
     if (fn) fn.fn.call(fn.owner, idx);
+    // 하위 · 동위 추가: 새 과업을 상세 패널에 바로 엶 (레벨 이동 · 입력을 이어서 할 수 있게)
+    const added = wbsData.find(t => !before.has(t));
+    if (added) { this._ref = added; this._id = String(added.id); }
+    setTimeout(() => this.render(), 80);
+  },
+  // 레벨 올리기(-1) · 내리기(+1)
+  level(delta) {
+    const idx = this.idx();
+    if (idx === -1) return;
+    const row = wbsData[idx];
+    changeTaskLevel(idx, delta);
+    this._ref = row; this._id = String(row.id);   // 다시 매긴 ID 로 따라감
     setTimeout(() => this.render(), 80);
   },
 
@@ -300,7 +324,7 @@ var NeoDetail = {
           ${field("실적시작", "aStart", "date", ro)}
           ${field("실적종료", "aEnd", "date", ro)}
           ${field("실적 진척율(%)", "aProg", "number", `min="0" max="100" ${ro}`)}
-          ${field("가중치", "weight", "number", `min="0" step="0.5"`)}
+          ${field("가중치", "weight", "number", `min="0" step="0.1"${typeof WbsWeight !== "undefined" && WbsWeight.warnMap().has(row) ? ` class="weight-warn" title="${escapeAttr(WbsWeight.warnMap().get(row))}"` : ""}`)}
           ${field("REQ ID", "reqId", "text")}
           ${field("담당자", "owner", "text", `list="wbsOwnerList" maxlength="40" title="목록에서 고르거나 직접 입력 (1명)${leaf ? "" : " — 하위 Task 에도 자동 지정"}"`)}
           ${field("산출물", "output", "text")}
@@ -310,6 +334,8 @@ var NeoDetail = {
           <button type="button" class="btn btn-sm" data-btn="warn" data-click="NeoDetail.run" data-click-args="${UiEvents.args("fillRowActualFromPlan")}" ${leaf ? "" : "disabled"}>⚡ 계획을 실적에 반영</button>
           <button type="button" class="btn btn-sm" data-btn="add" data-click="NeoDetail.run" data-click-args="${UiEvents.args("addChildTask")}" ${row.level >= 5 ? "disabled" : ""}>+ 하위</button>
           <button type="button" class="btn btn-sm" data-btn="add" data-click="NeoDetail.run" data-click-args="${UiEvents.args("addSiblingTask")}">+ 동위</button>
+          <button type="button" class="btn btn-sm" data-click="NeoDetail.level" data-click-args="${UiEvents.args(-1)}" title="상위 레벨로 올리기 (하위 Task 포함)" ${row.level <= 2 ? "disabled" : ""}>◀ 레벨 올리기</button>
+          <button type="button" class="btn btn-sm" data-click="NeoDetail.level" data-click-args="${UiEvents.args(1)}" title="하위 레벨로 내리기 (하위 Task 포함, 최대 L5)" ${row.level <= 1 || row.level >= 5 ? "disabled" : ""}>레벨 내리기 ▶</button>
         </div>
         <div class="neo-detail-sec">
           <div class="neo-detail-sec-title">🔗 연결된 요구사항</div>

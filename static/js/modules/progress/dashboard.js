@@ -31,9 +31,9 @@ function renderDashboard() {
     : wbsData.filter(d => activeSystems.includes(d.system));
 
   const rootItems = scopeTasks.filter(d => d.level === 1);
-  const totalWeight = rootItems.reduce((acc, d) => acc + (parseFloat(d.weight) || 1), 0) || 1;
-  const totalPlan = Math.round(rootItems.reduce((acc, d) => acc + (d.pProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
-  const totalActual = Math.round(rootItems.reduce((acc, d) => acc + (d.aProg * (parseFloat(d.weight) || 1)), 0) / totalWeight);
+  const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
+  const totalPlan = wp.plan;
+  const totalActual = wp.actual;
   const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
 
   const delayedTasks = scopeTasks.filter(d => WBSEngine.getTaskStatus(d, repDate).code === "delayed");

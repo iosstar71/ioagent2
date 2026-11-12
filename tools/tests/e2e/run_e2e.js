@@ -238,12 +238,50 @@ async function main() {
     await pm.reload(); await pm.waitForTimeout(1800); await waitApp(pm);
     const pmSame = await pm.evaluate(() => ({ w2: wbsData.find(t => t.id === "2.1").name, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG"), dlg: getComputedStyle(document.getElementById("confirmDialogModal")).display }));
     check("Same version is not applied again (worker PC and the PM's own PC are left alone)", !again.shown && pmSame.w2 === "W2 설계 (PM 4차)" && !pmSame.pending && pmSame.dlg === "none", JSON.stringify({ again, pmSame }));
+    // WBS 가중치: 서브시스템 100 기준 · 상위 변경 시 하위 자동 조정 · 경고색 유지 · 오류 보정 · 서브시스템 가중치로 종합
+    console.log("\n[WBS weights and levels]");
+    const wc = await newPage();
+    await wc.goto(web.url); await wc.waitForTimeout(1500);
+    await pickWorker(wc, "admin", {});
+    await wc.evaluate(() => {
+      projectConfig.reportDate = "2026-11-15";
+      subsystemsMeta = [{ domain: "기본분야", code: "A", name: "A", type: "SDLC", sdlcCode: "SDLC_COMPACT", weight: 70, pm: "" }, { domain: "기본분야", code: "B", name: "B", type: "SDLC", sdlcCode: "SDLC_COMPACT", weight: 30, pm: "" }];
+      wbsData = [{ level: 1, system: "A", name: "A", weight: 100 }, { level: 2, system: "A", name: "a1", weight: 60 },
+        { level: 3, system: "A", name: "a11", weight: 30, pStart: "2026-11-01", pEnd: "2026-11-10", aProg: 100 }, { level: 3, system: "A", name: "a12", weight: 30, pStart: "2026-11-11", pEnd: "2026-11-30", aProg: 0 },
+        { level: 2, system: "A", name: "a2", weight: 40, pStart: "2026-11-01", pEnd: "2026-11-30", aProg: 50 },
+        { level: 1, system: "B", name: "B", weight: 100 }, { level: 2, system: "B", name: "b1", weight: 100, pStart: "2026-11-01", pEnd: "2026-11-30", aProg: 0 }];
+      rebuildAll(true); GShell.go("tab-wbs");
+    });
+    await wc.waitForTimeout(600);
+    const W = () => wc.evaluate(() => { const g = n => wbsData.find(t => t.name === n); return { a1: g("a1").weight, a11: g("a11").weight, a12: g("a12").weight, a2: g("a2").weight,
+      warn: document.querySelectorAll("#wbsTableBody input.weight-warn").length, chip: getComputedStyle(document.getElementById("wbsWeightErrChip")).display !== "none",
+      A: g("A").aProg, B: g("B").aProg, tot: WBSEngine.weightedProgress(wbsData.filter(t => t.level === 1)).actual }; });
+    await wc.evaluate(() => WbsWeight.set(wbsData.findIndex(t => t.name === "a1"), "50"));
+    const c1 = await W();
+    check("Changing an upper weight rescales its lower Tasks (a1 60→50: a11/a12 25/25); sibling sum ≠ 100 is flagged",
+      c1.a11 === 25 && c1.a12 === 25 && c1.warn === 2 && c1.chip, JSON.stringify(c1));
+    await wc.evaluate(() => WbsWeight.set(wbsData.findIndex(t => t.name === "a11"), "33.33"));
+    await wc.waitForTimeout(1200); await wc.evaluate(() => AppStore.flush());
+    await wc.reload(); await wc.waitForTimeout(1500); await waitApp(wc); await wc.evaluate(() => GShell.go("tab-wbs")); await wc.waitForTimeout(600);
+    const c2 = await W();
+    check("Weights keep 1 decimal (33.33→33.3); warning colours stay after saving and reloading", c2.a11 === 33.3 && c2.warn === 4 && c2.chip, JSON.stringify(c2));
+    await wc.evaluate(() => WbsWeight.runFix()); await wc.waitForTimeout(400);
+    const c3 = await W();
+    check("[⚖️ 가중치 오류 보정] splits only the flagged groups by planned days (a1/a2 50/50, a11 10d / a12 20d → 16.7/33.3); no warnings left",
+      c3.a1 === 50 && c3.a2 === 50 && c3.a11 === 16.7 && c3.a12 === 33.3 && c3.warn === 0 && !c3.chip, JSON.stringify(c3));
+    check("Project total = each subsystem's progress × subsystem weight (A 70 : B 30)", c3.tot === Math.round(c3.A * 0.7 + c3.B * 0.3), JSON.stringify(c3));
+    await wc.evaluate(() => { NeoDetail.open(wbsData.findIndex(t => t.name === "a12")); NeoDetail.run("addChildTask"); }); await wc.waitForTimeout(400);
+    const p1 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name }));
+    await wc.evaluate(() => NeoDetail.level(-1)); await wc.waitForTimeout(400);
+    const p2 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name, max: Math.max(...wbsData.map(t => t.level)) }));
+    check("Detail panel: [+ 하위] opens the new child, and [◀ 레벨 올리기] moves it back up (follows the Task after renumbering)",
+      p1.lv === 4 && /하위과업/.test(p1.name) && p2.lv === 3 && p2.name === p1.name && p2.max <= 5, JSON.stringify({ p1, p2 }));
     // 데이터 관리: 브라우저 저장 용량
     await pm.evaluate(() => { GShell.go("tab-config"); SubTabs.show("config", "data"); }); await pm.waitForTimeout(700);
     const usage = await pm.evaluate(() => document.getElementById("daUsage").textContent);
     check("Data management shows browser storage usage", usage.includes("IndexedDB"), usage);
     check("No requests outside /pprjmgmt (no server, no external calls) and no page errors",
-      pm.external.length + wa.external.length + wb.external.length === 0 && pm.errors.length + wa.errors.length + wb.errors.length === 0, pm.external.concat(wa.external, wb.external, pm.errors, wa.errors, wb.errors).slice(0, 4).join(" | "));
+      pm.external.length + wa.external.length + wb.external.length + wc.external.length === 0 && pm.errors.length + wa.errors.length + wb.errors.length + wc.errors.length === 0, pm.external.concat(wa.external, wb.external, wc.external, pm.errors, wa.errors, wb.errors, wc.errors).slice(0, 4).join(" | "));
     void pkg2;
   } finally {
     web.stop();

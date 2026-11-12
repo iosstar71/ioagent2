@@ -765,6 +765,8 @@ var SyncManager = {
     }
     // 작업자를 고르기 전에는 저장하지 않음 (화면 기본값 정리 등) — 작업자를 고른 뒤 저장
     if (typeof AuthManager !== "undefined" && !AuthManager.currentUser) return { ok: false, notPicked: true };
+    // 가중치 오류가 남아 있으면 알리고 그대로 저장 (경고색은 고칠 때까지 계속 표시)
+    if (opts.notify && typeof WbsWeight !== "undefined" && (!keys || keys.includes("wbsData"))) WbsWeight.notify("💾 저장합니다 — ");
     const scopeKeys = keys || DataRegistry.KEYS;
     const d = this.diff(scopeKeys);
     const blockedList = this.blockedSummary(d);

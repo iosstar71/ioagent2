@@ -84,7 +84,7 @@ var WeeklyExport = {
   _planCurve() {
     const weeks = WeeklyReportManager.getAllWeeks();
     const tasks = (wbsData || []).filter(d => d.level === 1);
-    const totalW = tasks.reduce((a, d) => a + (parseFloat(d.weight) || 1), 0) || 1;
+    const shares = WBSEngine.rootShares(tasks);   // 서브시스템 가중치 × L1 비율
     const day = 86400000;
     return weeks.map(w => {
       const end = new Date(w.endDate);
@@ -92,9 +92,9 @@ var WeeklyExport = {
       tasks.forEach(t => {
         const s = new Date(t.pStart || projectConfig.projectStartDate), e = new Date(t.pEnd || projectConfig.projectEndDate);
         const p = end < s ? 0 : end >= e ? 100 : Math.min(100, Math.round((end - s) / day / Math.max(1, (e - s) / day) * 100));
-        sum += p * (parseFloat(t.weight) || 1);
+        sum += p * (shares.get(t) || 0);
       });
-      return { w: w.weekNum, label: String(w.startDate).slice(5).replace("-", "/"), p: Math.round(sum / totalW) };
+      return { w: w.weekNum, label: String(w.startDate).slice(5).replace("-", "/"), p: Math.round(sum) };
     });
   },
   _sdlc() {

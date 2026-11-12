@@ -240,9 +240,9 @@ const ReportExporter = {
     const sysTitle = projectConfig.systemTitle || "Enterprise WBS & 프로젝트 통합 관리 시스템";
 
     const rootItems = wbsData.filter(d => d.level === 1);
-    const totalWeight = rootItems.reduce((acc, d) => acc + (parseFloat(d.weight) || 1), 0) || 1;
-    const totalPlan = Math.round(rootItems.reduce((acc, d) => acc + ((d.pProg || 0) * (parseFloat(d.weight) || 1)), 0) / totalWeight);
-    const totalActual = Math.round(rootItems.reduce((acc, d) => acc + ((d.aProg || 0) * (parseFloat(d.weight) || 1)), 0) / totalWeight);
+    const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
+    const totalPlan = wp.plan;
+    const totalActual = wp.actual;
     const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
 
     let cntTotal = wbsData.length, cntComp = 0, cntProg = 0, cntDel = 0, cntReady = 0;
