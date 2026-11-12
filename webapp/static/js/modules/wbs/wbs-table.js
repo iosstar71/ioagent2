@@ -29,7 +29,17 @@ function renderWbsTable() {
   if (dc) dc.textContent = delayCnt;
   // 가중치 경고 (하위 합 ≠ 상위) — 자료에서 매번 계산하므로 고칠 때까지 계속 표시
   const wWarn = typeof WbsWeight !== "undefined" ? WbsWeight.warnMap(wbsData) : new Map();
-  if (typeof WbsWeight !== "undefined") WbsWeight.renderBadge();
+  // 오류 건수 (조회 범위): 가중치 · 휴일 · 날짜(역전 · 기간 이탈) — 알림 대신 단추 앞에 건수로
+  const inScopeSys = s => (sysFilter === "ALL" || s === sysFilter) && (dFilter === "ALL" || WBSEngine.getSubsystemDomain(s) === dFilter);
+  if (typeof WbsWeight !== "undefined") WbsWeight.renderBadge(inScopeSys);
+  const errRows = wbsData.filter(t => t.isLeaf && inScopeSys(String(t.system || "").trim()));
+  const hol = errRows.filter(t => WBSEngine.isHoliday(t.pStart, projectConfig.holidays) || WBSEngine.isHoliday(t.pEnd, projectConfig.holidays)).length;
+  const out = (d) => WBSEngine.isDateOutOfRange(d, projectConfig.projectStartDate, projectConfig.projectEndDate);
+  const dte = errRows.filter(t => isDateReversed(t.pStart, t.pEnd) || isDateReversed(t.aStart, t.aEnd) || out(t.pStart) || out(t.pEnd) || out(t.aStart) || out(t.aEnd)).length;
+  [["wbsHolidayErrChip", hol, "휴일"], ["wbsDateErrChip", dte, "날짜"]].forEach(([id, n, lbl]) => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = n ? "inline-flex" : "none"; el.textContent = `⚠️ ${lbl} ${n}`; }
+  });
 
   wbsData.forEach((row, idx) => {
     const pStartOutOfRange = WBSEngine.isDateOutOfRange(row.pStart, projectConfig.projectStartDate, projectConfig.projectEndDate);
@@ -561,6 +571,5 @@ function fillActualFromPlan() {
   });
   rebuildAll();
   const scopeLabel = sysFilter === "ALL" ? "전체 서브시스템" : `[${sysFilter}]`;
-  const rev = countReversedDates(wbsData.filter(t => sysFilter === "ALL" || t.system === sysFilter));
-  showToast(`${scopeLabel}에서 계획 진척률이 있는 과업 ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준, 이미 입력된 실적일은 그대로).${rev ? ` ⚠️ 시작 · 종료일이 뒤집힌 과업 ${rev}건 (보라색 칸)` : ""}`);
+  showToast(`${scopeLabel} 과업 ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준).`);
 }

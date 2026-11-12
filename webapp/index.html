@@ -76,7 +76,6 @@
         <input type="password" id="pcNewPwd" class="login-input" autocomplete="new-password">
         <label class="login-label">새 비밀번호 확인 *:</label>
         <input type="password" id="pcNewPwd2" class="login-input" autocomplete="new-password" data-keydown="AuthManager.changePasswordFromLogin" data-keydown-key="Enter">
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin:4px 0;">* 비밀번호를 잊은 경우 관리자/PM에게 [기준정보 &gt; 사용자 정보]에서 비밀번호 초기화(1234)를 요청하세요.</div>
         <div id="pcErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
           <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 로그인으로</button>
@@ -110,7 +109,6 @@
           <div><label class="login-label">비밀번호 확인 *:</label>
             <input type="password" id="regPwd2" class="login-input" autocomplete="new-password"></div>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin:4px 0;">* 신규 등록 계정은 <b>일반 사용자</b> 권한으로 생성되며, 권한 변경은 관리자/PM이 [기준정보 &gt; 사용자 정보]에서 설정합니다.</div>
         <div id="regErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
           <button class="btn btn-secondary" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showRegister" data-click-args='[false]'>← 로그인으로</button>
@@ -264,7 +262,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <span class="sub-title">🏠 홈</span>
-          <span class="neo-ph-desc">홈 스타일: 브리핑(전체 현황) · 워크벤치(내 담당 과업) · 내 할 일(확인할 일과 개인 할 일)</span>
           <div class="home-style-switch" role="group" aria-label="홈 스타일">
             <button type="button" class="home-style-btn" data-home-style="EXECUTIVE" data-click="HomeScreenManager.setStyle" data-click-args='["EXECUTIVE"]'>📊 브리핑</button>
             <button type="button" class="home-style-btn" data-home-style="PORTAL" data-click="HomeScreenManager.setStyle" data-click-args='["PORTAL"]'>🧰 워크벤치</button>
@@ -502,7 +499,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">📊 종합 대시보드</span>
-          <span class="neo-ph-desc">핵심 KPI · 서브시스템 공정률 · 산출물/VOC 통합 현황</span>
           <div class="current-date-badge">수행기간: <b id="dashProjPeriodText">-</b></div>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
@@ -624,7 +620,6 @@
       <div class="card" style="margin-bottom: 12px;">
         <div class="card-title">
           <span>🏢 서브시스템별 공정 진척 현황</span>
-          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 각 서브시스템 L1 기준 계획 대비 실적 및 달성률 요약</span>
         </div>
         <div id="subsystemCardsContainer" class="grid-2" style="gap: 12px;"></div>
       </div>
@@ -714,7 +709,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">📌 단계별 진척 현황</span>
-          <span class="neo-ph-desc">요구사항/산출물/VOC 통합 진척 · SDLC 단계별 · REQ 요건별</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -739,7 +733,6 @@
       <div class="card" id="integratedProgressCard">
         <div class="card-title">
           <span>📋 [1] 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 통합 진척 현황표</span>
-          <span style="font-size: var(--fs-xs, 11px); color: var(--text-muted);">* 프로젝트 기준정보 지정 회차 산출물 및 VOC 대기/진행 분리 통합 종합 진척 현황</span>
         </div>
         <div class="table-container">
           <table class="matrix-table" id="integratedProgressTable">
@@ -769,7 +762,6 @@
       <div class="card" id="phaseMatrixCard" style="margin-top: 14px;">
         <div class="card-title">
           <span>🏛️ [2] SDLC 단계별 종합 공정 매트릭스</span>
-          <span style="font-size: var(--fs-xs, 11px); color: var(--text-muted);">* 서브시스템에 매핑되어 있는 SDLC 유형만 선별 진척 현황을 표출합니다</span>
         </div>
         <div id="phaseMatrixContainer">
           <table class="matrix-table" id="phaseMatrixTable">
@@ -799,7 +791,6 @@
       <div class="card" id="enhancementMatrixCard" style="margin-top: 14px;">
         <div class="card-title">
           <span>🔄 [3] 개선과제형(REQ) 서브시스템 요건 단위 진척 및 달성 현황</span>
-          <span style="font-size: var(--fs-xs, 11px); color: var(--text-muted);">* 각 서브시스템 하위 요구사항(REQ)별 연계 태스크 계획, 실적, 달성률</span>
         </div>
         <div class="table-container">
           <table id="enhancementMatrixTable">
@@ -826,7 +817,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">🗓️ 간트차트</span>
-          <span class="neo-ph-desc">WBS 계층별 계획 일정 타임라인 · 기준일 · 마일스톤</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -879,7 +869,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">📝 WBS 공정 관리</span>
-          <span class="neo-ph-desc">ID 를 누르면 상세 패널 · [⚡] 실적반영 · [↳] 하위 추가 · [＋] 동위 추가 · [◀/▶] 레벨 · [▲/▼] 순서 · 담당자는 상위에 지정하면 하위에도 자동 지정</span>
         </div>
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
@@ -936,22 +925,17 @@
         </div>
         <div style="margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="btn btn-sm wbs-fold-btn" id="btnWbsFold" data-click="WbsFold.toggle" title="가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다">◀ 가중치·REQ·담당자·산출물 접기</button>
-          <span id="wbsWeightErrChip" class="weight-err-chip" style="display:none;" title="하위 가중치 합이 상위 가중치와 다른 묶음 수 (경고색 칸)"></span>
+          <span id="wbsWeightErrChip" class="wbs-err-chip" style="display:none;" title="하위 가중치 합이 상위와 다른 묶음"></span>
           <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 오류 보정</button>
+          <span id="wbsHolidayErrChip" class="wbs-err-chip" style="display:none;" title="계획시작 · 종료일이 주말 · 공휴일인 Task"></span>
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
             🗓️ 휴일 자동보정
           </button>
+          <span id="wbsDateErrChip" class="wbs-err-chip" style="display:none;" title="시작일이 종료일보다 늦거나 프로젝트 기간을 벗어난 Task"></span>
           <button class="btn btn-warning btn-sm" data-click="fillActualFromPlan" title="선택한 서브시스템(또는 전체)에서 계획 진척률이 있는 최하위 Task 를 모두 실적에 반영합니다. 실적시작일: 계획시작이 기준 주차보다 앞이면 주차 시작일, 주차 안이면 계획시작일. 실적종료일(100%): 계획종료가 기준 주차 안이면 계획종료일, 앞이면 기준일. 이미 입력된 실적일은 그대로 둡니다.">
             ⚡ 실적 자동반영
           </button>
         </div>
-      </div>
-
-      <div class="holiday-alert-banner">
-        <span>⚠️ <b>일정 검증 안내:</b>
-          (1) 프로젝트 기간(<b id="wbsBannerPeriodText">-</b>) 이탈 일정은 <b class="date-out-of-range">[기간오류] 붉은 테두리</b>로 표시됩니다. |
-          (2) 계획일자가 휴일인 경우 <b class="holiday-date-highlight">[휴일경고] 붉은 글씨</b>로 표시되며 <b>[🗓️ 휴일 자동보정]</b> 버튼으로 일괄 평일 전환이 가능합니다.
-        </span>
       </div>
 
       <div class="table-container" style="max-height: 620px;">
@@ -962,7 +946,7 @@
               <th style="width: 50px;" title="◀ 상위 레벨로 / ▶ 하위 레벨로">레벨</th>
               <th style="width: 92px;">서브시스템</th>
               <th style="min-width: 250px;">Task명 (Task Name)</th>
-              <th style="width: 54px;" title="완료 / 지연(계획 대비 실적 1%p 이상 부족) / 진행중 / 착수전">상태</th>
+              <th style="width: 54px;" title="완료 / 지연 / 진행중 / 착수전 (지연 기준: 기준정보 > 판정 기준)">상태</th>
               <th class="col-fold" style="width: 50px;">가중치</th>
               <th class="col-fold" style="width: 80px;">REQ ID</th>
               <th style="width: 112px;">계획시작</th>
@@ -988,7 +972,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">🎯 요구사항 관리</span>
-          <span class="neo-ph-desc">요구사항(REQ) 등록 · 수용 여부 · 진행 상태</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -1050,7 +1033,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">💬 VOC·이슈 관리</span>
-          <span class="neo-ph-desc">추가 요구(VOC)와 이슈의 접수 · 조치 · 완료 관리</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -1116,7 +1098,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="sub-title">📑 산출물</span>
-          <span class="neo-ph-desc">서브시스템별 · 회차별 산출물 제출 계획과 진행 상태</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
@@ -1188,7 +1169,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">📝 주간보고</span>
-          <span class="neo-ph-desc">보고 단위 목록에서 고르고 오른쪽에서 작성 · 선택 주차 통합 주간보고 내려받기</span>
           <div class="current-date-badge">보고 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
@@ -1226,7 +1206,6 @@
             <tbody id="wrSavedListBody"></tbody>
           </table>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-top:6px;">* 행을 선택하면 오른쪽에 보고서가 열립니다. 일반 사용자는 담당 서브시스템(⭐), PM·관리자·총괄리더는 통합 보고서를 작성합니다. 머리줄의 [⬇ 내려받기]는 선택 주차에 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 1개 통합 보고서로 생성합니다.</div>
         <select id="wrSubsystemSelect" style="display:none;"></select>
       </div>
 
@@ -1282,7 +1261,6 @@
               <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addManualItem" data-click-args='["cur"]'>➕ 직접 입력 항목 추가</button>
             </div>
           </div>
-          <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-bottom:6px;">* WBS 에서 자동으로 불러온 과업은 [✕]로 보고서에서 제외할 수 있고, WBS 에 없는 보고 내용은 [직접 입력 항목 추가]로 등록합니다. (직접 입력 항목은 WBS ID 없이 이 주간보고에서만 관리)</div>
           <div class="table-container" style="max-height:420px;">
             <table class="matrix-table" id="wrCurrentTasksTable">
               <thead>
@@ -1337,7 +1315,6 @@
         <div class="card" style="margin-bottom:0;">
           <div class="card-title">
             <span>🤝 [금주 회의 실적] WBS 연계 주간 회의 진행 현황</span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 금주 기간 진행된 회의 및 도출 결정사항</span>
           </div>
           <div class="table-container" style="max-height:220px;">
             <table class="matrix-table" id="wrCurrentMeetingsTable">
@@ -1359,7 +1336,6 @@
         <div class="card" style="margin-bottom:0;">
           <div class="card-title">
             <span>📅 [차주 회의 계획] WBS 연계 차주 예정 회의 계획</span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 차주 기간 예정된 회의 및 상정 안건</span>
           </div>
           <div class="table-container" style="max-height:220px;">
             <table class="matrix-table" id="wrNextMeetingsTable">
@@ -1389,7 +1365,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">📅 회의 관리 센터</span>
-          <span class="neo-ph-desc">회의일정 캘린더 · 회의록 작성 · Action Item 현황</span>
           <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1470,7 +1445,6 @@
               <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#2563eb; border-radius:2px; display:inline-block;"></span> 예정</span>
               <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#15803d; border-radius:2px; display:inline-block;"></span> 완료</span>
               <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:#dc2626; border-radius:2px; display:inline-block;"></span> 휴일</span>
-              <span style="font-size:var(--fs-2xs, 10px); color:#94a3b8; margin-left:6px;">* 날짜 클릭 시 빠른 회의 등록 / 회의 클릭 시 회의록 작성</span>
             </div>
           </div>
           <div id="meetingCalendarGrid"></div>
@@ -1480,7 +1454,6 @@
         <div class="card" id="meetingScheduleListCard">
           <div class="card-title">
             <span>📋 프로젝트 공식 회의 일정 관리 대장</span>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 각 서브시스템별 정기/수시 회의 일정을 통합 통제합니다.</span>
           </div>
           <div class="table-container" style="max-height:380px;">
             <table class="matrix-table" id="meetingScheduleTable">
@@ -1564,7 +1537,6 @@
           <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span>⚡ 회의 도출 Action Item 전사 통합 관리 대장</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 회의에서 합의된 실행과업의 담당자, 완료목표일, 이행 상태를 추적합니다.</span>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-success btn-xs" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 내려받기 (Action Item)</button>
@@ -1632,7 +1604,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">🔀 스마트 병합</span>
-          <span class="neo-ph-desc">엑셀 일괄 작업 · 여러 사람 자료 합치기 (자료 내려받기 · 올리기) / 비상 대비 백업 · 복원</span>
           <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -1651,7 +1622,6 @@
             <span class="mt-step">1 범위</span>
             <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]'></select>
             <select id="workDataSubsysSelect" class="merge-scope-select" style="min-width:240px;"></select>
-            <span class="mt-hint">서브시스템 단위 자료는 이 범위만 내려받고, 올릴 때도 이 범위만 합칩니다.</span>
             <label class="mt-auto"><input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'> 💾 올리기 전 백업 파일도 받기</label>
           </div>
           <div class="table-container" style="max-height:none;">
@@ -1676,13 +1646,12 @@
               <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["prj"]'>프로젝트 단위만</button>
             </div>
           </div>
-          <div class="pm-hint" style="margin:8px 0 0;">올린 파일은 바로 반영하지 않고 <b>미리 보기</b>에서 자료마다 파일 행 · 반영할 행 · 제외할 행(범위 밖 · 권한 없음)을 보여 줍니다. [반영]을 누르면 복원 지점을 먼저 만듭니다. 각 업무 화면의 📤 엑셀 올리기도 같은 미리 보기를 씁니다.</div>
         </div>
 
         <!-- 종합본: 프로젝트 전체 한 파일 (모든 사용자 내려받기 · 로컬 저장소 방식은 가져오기) -->
         <div class="card mt-card mt-pkg">
           <div class="mt-pkg-row">
-            <div><b>📦 종합본</b> — 기준정보 · 업무 · 사용자 · 협업 자료 전체를 한 파일로 <span class="mt-desc">(프로젝트 복원 · 새 프로젝트 추가는 💾 백업 · 복원)</span></div>
+            <div><b>📦 종합본</b> — 기준정보 · 업무 · 사용자 · 협업 자료 전체를 한 파일로</div>
             <div class="mt-btns">
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>📥 엑셀 (전체)</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>📥 JSON (전체)</button>
@@ -1779,7 +1748,6 @@
             </div>
           </div>
           <div id="bkLocalBox" style="display:none;">
-            <p class="bk-hint">로컬 저장소 방식: 이 브라우저에 저장된 모든 프로젝트 · 사용자 · 설정을 JSON 파일 1개로 보관하고 되돌립니다.</p>
             <div class="proj-box-btns">
               <button class="btn btn-sm" data-btn="json-down" data-click="SystemBackup.exportLocal">📥 시스템 전체 백업 (JSON)</button>
               <input type="file" id="bkLocalInput" style="display:none;" accept=".json" data-change="SystemBackup.importLocal" data-change-args='["$event"]'>
@@ -1815,7 +1783,7 @@
     <div id="tab-notices" class="tab-pane">
       <div class="sub-header-bar">
         <div><span class="sub-title">📢 공지·소통</span>
-          <span class="neo-ph-desc">공지사항 · 과업별 소통 피드 · 실시간 채팅</span></div>
+</div>
       </div>
       <!-- 서브 탭 네비게이션 바 -->
       <div class="sub-tab-nav">
@@ -1917,7 +1885,6 @@
                 <span style="font-size: var(--fs-base, 13px); font-weight: bold; color: #1e3a8a;">📢 채널별 피드 필터링:</span>
                 <span id="feedActiveChannelIndicator" class="badge" style="background:#1e3a8a; color:#fff; font-size:calc(11.5px * var(--fs-scale, 1)); padding:4px 10px; font-weight:bold; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.15);">📢 선택된 채널: # 전체</span>
               </div>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 채널 버튼을 클릭하여 서브시스템별 업무 소통 피드 및 안건을 선별 조회합니다.</span>
             </div>
             <div id="feedChannelFilterContainer" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
               <!-- JavaScript 렌더링 -->
@@ -2095,15 +2062,9 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">🗂️ 프로젝트 기준정보</span>
-          <span class="neo-ph-desc">기본정보 · 공정단계 · 휴일 · 사용자</span>
           <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 시스템 관리자(SYS_ADMIN)</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
-      </div>
-
-      <div class="config-group-banner">
-        <span>📋 프로젝트 마스터 기준정보 설정 (업무 중요도 및 Task 순서 기준 순차 구성)</span>
-        <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.85;">1.기본정보 ➔ 2.서브시스템 ➔ 3.SDLC ➔ 4.개선단계 ➔ 5.산출물 ➔ 6.휴일 ➔ 7.채번 규칙 순으로 설정합니다.</span>
       </div>
 
       
@@ -2122,7 +2083,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
         <!-- [Standard v1.0.1] 프로젝트 바로가기 (PM 도 사용) -->
         <div class="card pm-shortcut-card">
-          <div class="card-title"><span>🗂️ 프로젝트</span><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 아래 기본정보는 현재 프로젝트에 적용됩니다.</span></div>
+          <div class="card-title"><span>🗂️ 프로젝트</span></div>
           <div id="masterProjectPanel" data-project-panel="compact"></div>
         </div>
         <!-- [1-1] 프로젝트 기본정보 -->
@@ -2130,8 +2091,7 @@
           <div class="card-title">
             <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
               <div>
-                <strong>프로젝트 기본정보 (타이틀 · 프로젝트명 · 수행기간 · 주차시작요일 · 산출물 운영회차)</strong>
-                <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 프로젝트 식별 명칭, 수행 캘린더 및 상위 관리 정책을 정의합니다.</span>
+                <strong>프로젝트 기본정보</strong>
               </div>
               <button class="btn btn-success btn-sm" style="font-weight:bold; padding:4px 12px; font-size:calc(11.5px * var(--fs-scale, 1));" data-click="MasterSyncEngine.syncAll" data-click-args='[true]' title="변경된 프로젝트 기준정보를 모든 탭에 즉시 실시간 동기화">⚡ 기준정보 적용</button>
             </div>
@@ -2169,9 +2129,6 @@
                   <option value="3">1회차 ~ 3회차 운영 (3회 제출)</option>
                   <option value="4" selected>1회차 ~ 4회차 전체 운영 (최대 4회 제출)</option>
                 </select>
-                <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:6px; line-height:1.4;">
-                  * 분야는 서브시스템 상위 그룹핑 조건이며 최대 5개까지 운영됩니다.
-                </p>
               </div>
             </div>
 
@@ -2230,8 +2187,7 @@
         <div class="card" style="border-left: 4px solid #7c3aed;">
           <div class="card-title">
             <div>
-              <strong>주요 마일스톤 관리 (통합 · 서브시스템별)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:6px;">* 통합 마일스톤은 간트차트 최상단 행, 서브시스템 마일스톤은 해당 서브시스템(L1) 행에 ◆ 로 표시됩니다.</span>
+              <strong>주요 마일스톤</strong>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["ALL"]'>➕ 통합 마일스톤 추가</button>
@@ -2252,8 +2208,7 @@
         <div class="card" style="border-left: 4px solid #0284c7;">
           <div class="card-title">
             <div>
-              <strong>분야 및 서브시스템 기준정보 (조직 및 과업 분할체계)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 상위 분야별 서브시스템의 관리 유형(SDLC 공정형 vs 개선타입 REQ), 배정 SDLC, 가중치, 담당자를 관리합니다.</span>
+              <strong>분야 및 서브시스템</strong>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
               <button class="btn btn-primary btn-sm" data-click="addNewSubsystemMeta">+ 서브시스템 추가</button>
@@ -2286,7 +2241,6 @@
           <div class="card-title">
             <div>
               <strong>WBS · REQ · VOC 코드 채번 규칙 (ID Prefix)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 작업번호, 요구사항 ID, VOC 식별 접두사 및 서브시스템 코드 결합 규칙을 설정합니다.</span>
             </div>
             <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 재채번</button>
           </div>
@@ -2324,7 +2278,6 @@
           <div class="card-title">
             <div>
               <strong>SDLC 공정 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 프로젝트 표준 개발 공정 단계를 관리합니다. (마스터 풀 최대 8개 / 프로젝트당 최대 4개 활성화)</span>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 시스템관리자가 [시스템 설정 > 공정 유형]에서 합니다">⚙ 공정 유형 관리 (시스템 설정)</button>
@@ -2373,8 +2326,7 @@
         <div class="card" style="border-left: 4px solid #10b981;">
           <div class="card-title">
             <div>
-              <strong>단계별 표준 산출물 기준정보 (회차별 필수 제출물)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 1회차 ~ 4회차 마일스톤별 필수 산출물 양식 및 품질 검수 기준을 관리합니다.</span>
+              <strong>단계별 표준 산출물</strong>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-secondary btn-sm" data-click="resetStandardDeliverablesMeta">🔄 기본 복원</button>
@@ -2444,8 +2396,7 @@
         <div class="card" style="border-left: 4px solid #f59e0b;">
           <div class="card-title">
             <div>
-              <strong>공휴일 및 비작업일 캘린더 (공정 일정 자동 연동)</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 2027년 대한민국 법정공휴일/대체공휴일 및 프로젝트 전용 휴일을 관리하며 간트차트 작업일수에 즉시 반영됩니다.</span>
+              <strong>공휴일 · 비작업일</strong>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-primary btn-sm" data-click="updateKoreanHolidays" data-click-args='[true]'>🔄 공휴일 업데이트</button>
@@ -2563,7 +2514,6 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">⚙️ 시스템 설정</span>
-          <span class="neo-ph-desc">화면 · 프로젝트 · 사용자 · 보고서 · 보안 · DB · 데이터 관리 · 소통 채널</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 시스템 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -2602,7 +2552,6 @@
               <button class="btn btn-secondary btn-sm" data-click="ProcessLib.resetDefaults">🔄 기본 유형으로</button>
             </span>
           </div>
-          <div class="pm-hint">모든 프로젝트가 함께 쓰는 공정 유형(단계 · 가중치 · 대표 산출물 · WBS 매칭 키워드)을 관리합니다. 각 프로젝트는 [기준정보 &gt; 공정단계정보]에서 쓸 유형을 활성화하고 단계별 계획 일정만 정합니다. 이미 쓰고 있는 프로젝트에는 그 프로젝트에서 [🔄 최신 반영]을 눌러야 바뀐 내용이 들어갑니다.</div>
           <div class="pl-head"><b>SDLC 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["sdlc"]'>+ SDLC 유형</button></div>
           <div id="plSdlcCards" class="grid-2" style="gap:10px;"></div>
           <div class="pl-head" style="margin-top:16px;"><b>개선과제(REQ) 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["req"]'>+ 개선과제 유형</button></div>
@@ -2622,7 +2571,6 @@
               <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 사용자 추가</button>
             </span>
           </div>
-          <div class="pm-hint">등록된 모든 사용자와, 사용자마다 참여하는 프로젝트 · 역할 · 담당 서브시스템을 한곳에서 관리합니다. 계정(사번 · 이름 · 비밀번호)은 하나이고 프로젝트마다 권한을 따로 줍니다. 시스템관리자는 모든 프로젝트에 들어갑니다.</div>
           <div id="uaSummary" style="font-size:var(--fs-sm, 12px); font-weight:700; margin:6px 0;"></div>
           <div class="table-container" style="max-height: 560px;">
             <table class="m-table ua-table">
@@ -2635,17 +2583,15 @@
 
       <div class="master-subpane" data-group="config" data-subpane="project">
         <div class="card" style="border-left:4px solid var(--primary);">
-          <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 머리글의 프로젝트 선택 상자와 같은 기능입니다.</span></div>
-          <div class="pm-hint">프로젝트마다 WBS·요구사항·VOC·산출물·회의·주간보고·공지·기준정보를 따로 관리합니다. [➕ 새 프로젝트 등록]으로 프로젝트를 추가하고, [🗂️ 프로젝트 관리 열기]에서 이름 변경·참여자 지정·보관·삭제를 합니다. 사용자별 역할·담당 서브시스템은 [기준정보 &gt; d. 사용자 정보]에서 프로젝트별로 지정합니다.</div>
+          <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
-        <div class="pm-hint" style="margin-top:12px;">📦 프로젝트를 파일로 내려받기 · 올리기(새 프로젝트 추가)는 [🔀 스마트 병합 &gt; 💾 백업 · 복원]에서 합니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 이동</button></div>
       </div>
 
       <div class="master-subpane active" data-group="config" data-subpane="screen">
         <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="card" style="border-left:4px solid #475569;">
-          <div class="card-title"><span>🎛️ 버튼 · 바로가기 스타일 표준</span><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 모든 화면의 버튼은 기능에 따라 아래 색상으로 통일됩니다.</span></div>
+          <div class="card-title"><span>🎛️ 버튼 · 바로가기 스타일 표준</span></div>
           <div class="btn-legend">
             <button class="btn btn-sm" data-btn="save" type="button">💾 저장 · 완료 · 적용</button>
             <button class="btn btn-sm" data-btn="refresh" type="button">🔄 새로고침 · 동기화</button>
@@ -2665,20 +2611,12 @@
           <div class="card-title">
             <div>
               <span>🏠 홈 스타일 (브리핑 · 워크벤치 · 내 할 일)</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
-                * 역할별로 처음 보이는 홈을 정합니다.
-              </span>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["EXECUTIVE"]'>👁️ 브리핑 보기</button>
               <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["PORTAL"]'>👁️ 워크벤치 보기</button>
               <button class="btn btn-outline btn-xs" data-click="HomeScreenManager.previewMode" data-click-args='["TODO"]'>👁️ 내 할 일 보기</button>
             </div>
-          </div>
-          <div class="home-style-guide">
-            <div class="home-style-card"><b>📊 브리핑</b><span>경영진 · PM — 전체 공정 달성률, 핵심 KPI, 서브시스템 신호등, 분야별 현황, 경영 보고서 바로 내려받기</span></div>
-            <div class="home-style-card"><b>🧰 워크벤치</b><span>실무 담당자 — 내 담당 서브시스템의 진행 중 과업과 원클릭 실적 반영, 요구사항·산출물·VOC 요약, 공지·소통</span></div>
-            <div class="home-style-card"><b>✅ 내 할 일</b><span>모든 사용자 — 확인할 일(지연·마감 임박·VOC·산출물·Action Item)과 내가 직접 등록한 할 일을 한 화면에서 관리</span></div>
           </div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; padding:4px 0;">
             <div class="home-role-box">
@@ -2706,14 +2644,10 @@
               </select>
             </div>
           </div>
-          <div class="home-role-hint">* 역할별 기본 홈입니다. 각 사용자는 홈 화면 위쪽의 [브리핑 · 워크벤치 · 내 할 일] 단추로 자기 홈을 바꿀 수 있고, 고른 홈은 사용자마다 기억합니다.</div>
         </div><div class="card" style=" border-left: 4px solid #0284c7;">
           <div class="card-title">
             <div>
               <span>🎨 메뉴 위치 · 화면 밀도 · 테마</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
-                * 사용 환경(상황실 모니터, 와이드 모니터, 노트북)에 맞춰 바로 바꾸고 저장합니다. 머리글의 사용자 메뉴에서도 바꿀 수 있습니다.
-              </span>
             </div>
             <div style="display:flex; align-items:center; gap:8px;">
               <button class="btn btn-success btn-sm" style="font-weight:bold; padding:4px 12px; font-size:calc(11.5px * var(--fs-scale, 1));" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 설정 동기화</button>
@@ -2803,7 +2737,6 @@
           <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <span>📊 엑셀(XLSX) · 워드 공통 보고서 스타일 및 폰트 설정</span>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">* 주간보고서 워드, 회의록 워드, WBS 공정표 XLSX 전체에 일괄 적용되는 통합 테마 및 서체 설정</span>
             </div>
           </div>
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:14px;">
@@ -3069,7 +3002,6 @@
               <tbody id="daActions"></tbody>
             </table>
           </div>
-          <div class="pm-hint" style="margin:8px 0 0;">PM 은 초기화 대신 스마트 병합 &gt; 💾 백업 · 복원의 <b>복원 지점</b>으로 되돌립니다.</div>
         </div>
 
         <div class="card" style="border-left:4px solid #64748b;">
@@ -3079,7 +3011,6 @@
       </div>
 
       <div class="master-subpane" data-group="config" data-subpane="backup">
-        <div class="pm-hint">💾 백업 · 복원은 [🔀 스마트 병합 &gt; 💾 백업 · 복원], 초기화 · 자동 백업 설정은 [⚙️ 시스템 설정 &gt; 🗄️ 데이터 관리]에 있습니다. <button class="btn btn-sm" data-btn="nav" data-click="ProjectData.goBackup">➡️ 백업 · 복원으로 이동</button></div>
       </div>
       <div class="master-subpane" data-group="config" data-subpane="channel">
         <div style="display:flex; flex-direction:column; gap:16px;">
@@ -3267,10 +3198,6 @@
         <span>📋 서브시스템별 WBS 템플릿 추가 · 복사</span>
         <button class="btn btn-secondary btn-sm" data-btn="cancel" data-click="WbsTemplate.close">닫기</button>
       </div>
-      <p class="tpl-hint">
-        [기준정보]에 등록된 서브시스템만 선택할 수 있습니다. 표준 단계 템플릿(단계마다 세부 과업 2개, 기준정보의 단계 계획 일정 반영)을 만들거나
-        다른 서브시스템의 WBS 를 복사합니다. 담당자는 대상 서브시스템의 총괄리더로 넣고, 자동 재채번합니다.
-      </p>
       <div class="tpl-grid">
         <label class="tpl-field"><span>대상 서브시스템</span>
           <select id="tplSystemSelect" data-change="WbsTemplate.render"></select>
