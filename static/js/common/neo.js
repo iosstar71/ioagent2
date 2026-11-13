@@ -799,3 +799,32 @@ var MyWorkHello = {
   }
 };
 window.MyWorkHello = MyWorkHello;
+
+// =============================================================================
+// 오른쪽 상세 패널(WBS · 요구사항 · VOC · 산출물 · Action Item)의 자리
+//  - 패널이 메뉴 바로 아래가 아니라, 지금 화면의 머리글(화면 이름 줄) 아래 = 화면 내용 영역에서 시작
+//  - 열려 있는 동안 스크롤 · 창 크기 · 화면 전환에 맞춰 위쪽 위치를 다시 잡음 (--panel-top)
+// =============================================================================
+var PanelDock = {
+  _raf: 0,
+  isOpen() { return document.body.classList.contains("neo-detail-open") || document.body.classList.contains("rec-panel-open"); },
+  place() {
+    if (!this.isOpen()) return;
+    const pane = document.querySelector(".tab-pane.active");
+    const head = pane && pane.querySelector(":scope > .sub-header-bar");
+    const menu = document.querySelector(".g-header");
+    const floor = menu ? Math.round(menu.getBoundingClientRect().bottom) : 0;   // 메뉴 아래로는 올라가지 않음
+    let top = floor + 8;
+    if (head) top = Math.max(top, Math.round(head.getBoundingClientRect().bottom) + 8);
+    document.body.style.setProperty("--panel-top", top + "px");
+  },
+  later() { if (this._raf) return; this._raf = requestAnimationFrame(() => { this._raf = 0; this.place(); }); }
+};
+window.PanelDock = PanelDock;
+(function () {
+  const run = () => PanelDock.later();
+  window.addEventListener("scroll", run, { passive: true, capture: true });
+  window.addEventListener("resize", run);
+  const start = () => new MutationObserver(run).observe(document.body, { attributes: true, attributeFilter: ["class", "data-layout"] });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();
