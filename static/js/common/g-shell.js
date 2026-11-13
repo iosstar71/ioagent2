@@ -22,7 +22,7 @@ var GShell = {
     "tab-mywork": "My Work", "tab-home": "Summary", "tab-dashboard": "Dashboard", "tab-matrix": "Phase 진척",
     "tab-wbs": "WBS", "tab-gantt": "Gantt",
     "tab-req": "요구사항", "tab-voc": "VOC · 이슈", "tab-deliverables": "산출물",
-    "tab-weekly-report": "주간보고", "tab-meeting": "회의", "tab-notices": "게시판",
+    "tab-weekly-report": "보고", "tab-meeting": "회의", "tab-notices": "게시판",
     "tab-master": "프로젝트 설정", "tab-merge": "파일 Merge", "tab-config": "Admin"
   },
   ICONS: {

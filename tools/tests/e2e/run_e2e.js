@@ -465,6 +465,29 @@ async function main() {
     check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
       ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
       && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
+    // 2차: [보고] 메뉴 — 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정(PM 이상)
+    const ph2 = await wc.evaluate(async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+      GShell.go("tab-weekly-report"); await wait(400);
+      o.label = GShell.label("tab-weekly-report");
+      o.tabs = [...document.querySelectorAll("[data-rp-tab]")].filter(b => !b.hidden).map(b => b.getAttribute("data-rp-tab")).join();
+      ReportTabs.show("deck"); await wait(300);
+      o.deck = document.getElementById("rpDeckWeek").options.length > 0 && document.querySelectorAll("#rpDeckSlides li").length >= 3;
+      const og = ExcelSync._triggerDownload; let name = ""; ExcelSync._triggerDownload = (b, n) => { name = n; };
+      try { ReportTabs.downloadDeck(); } finally { ExcelSync._triggerDownload = og; }
+      o.file = /_종합보고서_\d{4}W\d{2}_PPT\.pptx$/.test(name);
+      ReportTabs.show("settings"); await wait(300);
+      const sel = document.getElementById("cfgExportUnifiedTheme");
+      o.settings = document.getElementById("reportSub-settings").contains(sel) && !!sel.offsetParent && sel.options.length === 3;
+      o.oneplace = !document.querySelector('.master-subtab-btn[data-subtab="ui-report"]') && !!document.querySelector(".master-subtab-link");
+      MasterSubTabs.show("ui-report"); await wait(300);
+      o.redirect = document.querySelector(".tab-pane.active").id + "/" + ReportTabs.cur;
+      const role = AuthManager.getCurrentRole; AuthManager.getCurrentRole = () => "MEMBER"; ReportTabs.sync();
+      o.member = ReportTabs.cur + "/" + document.querySelector('[data-rp-tab="settings"]').hidden;
+      AuthManager.getCurrentRole = role; ReportTabs.sync(); ReportTabs.show("weekly");
+      return o; });
+    check("Menu 보고: weekly report / summary report (PPT) / report settings in one place; settings for PM and above only; old settings tab redirects here",
+      ph2.label === "보고" && ph2.tabs === "weekly,deck,settings" && ph2.deck && ph2.file && ph2.settings && ph2.oneplace && ph2.redirect === "tab-weekly-report/settings" && ph2.member === "weekly/true", JSON.stringify(ph2));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

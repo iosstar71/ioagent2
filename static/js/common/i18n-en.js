@@ -13,6 +13,22 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "보고": "Reports",
+    "📝 보고": "📝 Reports",
+    "주간보고를 작성 · 출력하고, 종합보고서를 내려받습니다.": "Write and export weekly reports, and download the summary report.",
+    "📝 주간보고 작성 · 출력": "📝 Weekly report",
+    "📽 종합보고서 출력": "📽 Summary report",
+    "⚙️ 보고서 설정": "⚙️ Report settings",
+    "PM 이상만 바꿀 수 있습니다": "Only PM and above can change this",
+    "⚠️ 보고서 설정은 PM 이상만 바꿀 수 있습니다.": "⚠️ Only PM and above can change report settings.",
+    "📽 종합보고서 (PowerPoint)": "📽 Summary report (PowerPoint)",
+    "📥 종합보고서 PPT 다운로드": "📥 Download summary report PPT",
+    "들어가는 장표": "Slides included",
+    "💡 고른 주차에 작성 완료된 통합 · 서브시스템 주간보고와 그 시점의 진척 자료로 만듭니다. 색상 · 글꼴은 [보고서 설정]을 따릅니다.": "💡 Built from the completed weekly reports of the selected week and the progress data at that time. Colours and fonts follow [Report settings].",
+    "📊 보고서 설정 →": "📊 Report settings →",
+    "보고서 설정은 [보고] 메뉴로 옮겼습니다": "Report settings moved to the [Reports] menu",
+    "💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [보고 > 보고서 설정]에서 정합니다.": "💡 Built from the completed overall and subsystem weekly reports of the report-date week. Colours, fonts and file code are set in [Reports > Report settings].",
+    "⚠️ 보고 주차를 찾을 수 없습니다. 프로젝트 기간과 기준일을 확인하세요.": "⚠️ Report week not found. Check the project period and report date.",
     "표기 규칙": "Notation rules",
     "ID 접두사 · 주차 표시 — 번호와 주차를 화면 · 보고서에 적는 방식": "ID prefixes · week format — how numbers and weeks are written on screens and reports",
     "🏷️ ID 규칙": "🏷️ ID rules",

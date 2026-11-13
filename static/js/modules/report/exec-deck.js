@@ -35,7 +35,7 @@ var ExecDeck = {
       projName: data.projectName || projectConfig.projectName || "",
       pal: ExcelSync.getExportThemePalette(),
       author: (integ && integ.author) || (AuthManager.getCurrentUser() || {}).name || "",
-      docNo: `${WeeklyExport.fileCode()}_경영보고_${wObj.year || String(wObj.startDate).slice(0, 4)}W${String(wObj.weekNum).padStart(2, "0")}`
+      docNo: `${WeeklyExport.fileCode()}_종합보고서_${wObj.year || String(wObj.startDate).slice(0, 4)}W${String(wObj.weekNum).padStart(2, "0")}`
     };
   },
 

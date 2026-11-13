@@ -103,7 +103,11 @@ var SubTabs = {
   KEY: "AX_PMYS_SUBTAB_",
   show(group, name) {
     // 화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트 설정에만 있음 (Admin 에서 예전 탭을 열면 프로젝트 탭으로)
-    if (group === "config" && ["screen", "report", "channel"].indexOf(name) !== -1) name = "project";
+    if ((group === "config" && name === "report") || (group === "master" && name === "ui-report")) {   // 보고서 설정은 [보고] 메뉴 한 곳
+      if (typeof ReportTabs !== "undefined") return ReportTabs.open("settings");
+      name = group === "config" ? "project" : "basic";
+    }
+    if (group === "config" && ["screen", "channel"].indexOf(name) !== -1) name = "project";
     if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // [v3.8.0] 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
     document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));

@@ -222,7 +222,8 @@ window.ProjectData = ProjectData;
 //  - 설정 값은 모두 프로젝트별로 저장 (projectConfig): 테마 · 메뉴 위치 · 밀도 · 역할별 홈 · 보고서 테마 · 파일 이름 · 소통 채널
 // =============================================================================
 var SharedPanes = {
-  MAP: { screen: "ui-screen", report: "ui-report", channel: "ui-channel" },
+  MAP: { screen: "ui-screen", channel: "ui-channel" },   // 프로젝트 설정에서 여는 화면
+  HOSTS: { report: "reportSub-settings" },               // 다른 메뉴에 한 곳만 두는 화면 (보고 > 보고서 설정)
   _wrap(name) {
     let w = document.getElementById("shared-" + name);
     if (w) return w;
@@ -240,11 +241,12 @@ var SharedPanes = {
     let key = null, target = null;
     if (group === "config" && this.MAP[name]) { key = name; target = document.querySelector(`.master-subpane[data-group="config"][data-subpane="${name}"]`); }
     if (group === "master") { key = Object.keys(this.MAP).find(k => this.MAP[k] === name); if (key) target = document.getElementById("masterSub-" + name); }
+    if (group === "report" && this.HOSTS[name]) { key = name; target = document.getElementById(this.HOSTS[name]); }
     if (!key || !target) return;
     const w = this._wrap(key);
     if (w && w.parentNode !== target) target.appendChild(w);
     if (typeof ProjectData !== "undefined") document.querySelectorAll(".lbl-project-scope").forEach(el => { el.textContent = ProjectData.currentName(); });
-    if (key === "screen" && typeof HomeScreenManager !== "undefined") HomeScreenManager.syncConfigUi();
+    if ((key === "screen" || key === "report") && typeof HomeScreenManager !== "undefined") HomeScreenManager.syncConfigUi();
     if (key === "channel" && typeof NoticeCommManager !== "undefined") NoticeCommManager.renderSettingsChannelTable();
     if (typeof LayoutManager !== "undefined" && LayoutManager.syncThemeSelect) LayoutManager.syncThemeSelect();
   }

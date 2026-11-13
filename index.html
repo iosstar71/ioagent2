@@ -440,7 +440,7 @@
               </div>
             </div>
             <div class="exec-report-note">
-              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [프로젝트 설정 &gt; 보고서 양식]에서 정합니다.
+              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [보고 &gt; 보고서 설정]에서 정합니다.
             </div>
           </div>
         </div>
@@ -1132,18 +1132,25 @@
     <!-- =================================================================== -->
     <div id="tab-weekly-report" class="tab-pane">
       <div class="sub-header-bar">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">📝 주간보고</span><span class="neo-ph-desc">WBS 실적으로 이번 주 한 일과 다음 주 할 일을 정리해 보고합니다.</span>
+        <div class="rp-head">
+          <span class="sub-title">📝 보고</span><span class="neo-ph-desc">주간보고를 작성 · 출력하고, 종합보고서를 내려받습니다.</span>
           <div class="current-date-badge">보고 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
-        <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
-        <div class="wr-export-bar" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <span class="neo-dd-label" style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">선택 주차 통합 주간보고</span>
+        <div class="meeting-sub-tab-bar rp-tabs" id="rpTabs">
+          <button class="meeting-sub-tab active" data-rp-tab="weekly" data-click="ReportTabs.show" data-click-args='["weekly"]'>📝 주간보고 작성 · 출력</button>
+          <button class="meeting-sub-tab" data-rp-tab="deck" data-click="ReportTabs.show" data-click-args='["deck"]'>📽 종합보고서 출력</button>
+          <button class="meeting-sub-tab" data-rp-tab="settings" data-click="ReportTabs.show" data-click-args='["settings"]' title="PM 이상만 바꿀 수 있습니다">⚙️ 보고서 설정</button>
+        </div>
+      </div>
+
+      <!-- ① 주간보고 작성 · 출력 -->
+      <div class="rp-pane active" data-rp-pane="weekly">
+      <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
+      <div class="wr-export-bar rp-export-bar">
+        <span class="neo-dd-label rp-export-label">선택 주차 통합 주간보고</span>
           <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
           <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
           <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="ExecDeck.downloadPptxSelected" title="선택 주차의 종합보고서 (PowerPoint)">📥 종합보고서 (PPT)</button>
-        </div>
       </div>
 
       <!-- [Neo 2.2] 주간보고 2단 화면: 왼쪽 보고 단위 목록 / 오른쪽 보고서 -->
@@ -1321,6 +1328,26 @@
       </div>
       </div>
       </div><!-- /neo-wr-split -->
+      </div><!-- /rp-pane weekly -->
+
+      <!-- ② 종합보고서 출력 (PPT) -->
+      <div class="rp-pane" data-rp-pane="deck">
+        <div class="card rp-deck-card">
+          <div class="card-title"><span>📽 종합보고서 (PowerPoint)</span></div>
+          <div class="rp-deck-row">
+            <label class="rp-deck-label" for="rpDeckWeek">보고 주차</label>
+            <select id="rpDeckWeek" data-change="ReportTabs.renderDeck"></select>
+            <button class="btn" data-btn="nav" data-click="ReportTabs.downloadDeck">📥 종합보고서 PPT 다운로드</button>
+          </div>
+          <div id="rpDeckInfo" class="exec-report-info"></div>
+          <div class="rp-deck-sub">들어가는 장표</div>
+          <ol id="rpDeckSlides" class="rp-deck-slides"></ol>
+          <div class="exec-report-note">💡 고른 주차에 작성 완료된 통합 · 서브시스템 주간보고와 그 시점의 진척 자료로 만듭니다. 색상 · 글꼴은 [보고서 설정]을 따릅니다.</div>
+        </div>
+      </div>
+
+      <!-- ③ 보고서 설정 (PM 이상) — 설정 화면 한 벌을 SharedPanes 가 여기로 옮겨 옴 -->
+      <div class="rp-pane" data-rp-pane="settings" id="reportSub-settings"></div>
     </div>
 
 <!-- =================================================================== -->
@@ -1926,7 +1953,7 @@
         <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>📅 휴일정보</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
-        <button class="master-subtab-btn" data-subtab="ui-report" data-click="MasterSubTabs.show" data-click-args='["ui-report"]'>📊 보고서 템플릿</button>
+        <button class="master-subtab-btn master-subtab-link" data-click="ReportTabs.open" data-click-args='["settings"]' title="보고서 설정은 [보고] 메뉴로 옮겼습니다">📊 보고서 설정 →</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
       </div>
 
@@ -2272,9 +2299,8 @@
         </div>
       </div>
 
-      <!-- [v3.8.0] 프로젝트별 설정: 시스템 설정의 화면·테마 / 보고서 템플릿 / 게시판 채널을 여기서도 엶 (SharedPanes 가 화면을 옮겨 옴) -->
+      <!-- [v3.8.0] 프로젝트별 설정: 화면·테마 / 게시판 채널 (보고서 설정은 [보고] 메뉴) (SharedPanes 가 화면을 옮겨 옴) -->
       <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
-      <div class="master-subpane" data-group="master" id="masterSub-ui-report" data-subpane="ui-report"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
       <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
       
