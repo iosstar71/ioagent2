@@ -772,6 +772,10 @@ class SharedFilesTest(unittest.TestCase):
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_shared_files.py")], capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout)
 
+    def test_ui_style_debt_not_increased(self):
+        r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_ui_debt.py")], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout)
+
 
 class TlsAndUpgradeTest(unittest.TestCase):
     """[v1.0.10] HTTPS(사내 CA 인증서 검증) + v1.0.9 이하 SHA-256 비밀번호 → PBKDF2 자동 전환"""

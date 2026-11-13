@@ -209,7 +209,7 @@ var ProcessLib = {
           </div>
         </div>
         <p>${escapeHtml(t.desc || "")}</p>
-        <div class="pl-phases"><b>단계 ${(t.phases || []).length}개</b> (가중치 합계 <span style="color:${Math.round(sum) === 100 ? "#15803d" : "#dc2626"}">${sum}%</span>) — ${ph}</div>
+        <div class="pl-phases"><b>단계 ${(t.phases || []).length}개</b> (가중치 합계 <span style="color:${Math.round(sum) === 100 ? "var(--chart-good-text)" : "var(--chart-bad-text)"}">${sum}%</span>) — ${ph}</div>
       </div>`;
     };
     const lib = this.lib();

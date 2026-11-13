@@ -38,7 +38,7 @@ def load_app_config(base_dir):
         cfg["edition_name"] = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo"}.get(cfg["edition"], cfg["edition"]) if cfg["edition"] not in ("WORKGROUP", "ENTERPRISE") else cfg["edition"].title()
     cfg["default_ui"] = "neo" if str(cfg.get("default_ui", "")).lower() == "neo" else "standard"
     cfg["allow_ui_switch"] = "0" if str(cfg.get("allow_ui_switch", "1")).strip() in ("0", "false", "no") else "1"
-    cfg["default_theme"] = cfg["default_theme"].lower() if str(cfg.get("default_theme", "")).lower() in ("urban-slate", "nordic-sage", "brown", "electric", "classic", "dark") else "urban-slate"
+    cfg["default_theme"] = cfg["default_theme"].lower() if str(cfg.get("default_theme", "")).lower() in ("urban-slate", "brown", "classic", "dark", "electric") else "urban-slate"
     return cfg
 
 

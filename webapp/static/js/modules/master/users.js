@@ -102,6 +102,8 @@ function applyBulkUserLanguage() {
 var SubTabs = {
   KEY: "AX_PMYS_SUBTAB_",
   show(group, name) {
+    // 화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트 설정에만 있음 (Admin 에서 예전 탭을 열면 프로젝트 탭으로)
+    if (group === "config" && ["screen", "report", "channel"].indexOf(name) !== -1) name = "project";
     if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // [v3.8.0] 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
     document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
@@ -237,7 +239,7 @@ var ProgressBasisManager = {
     if (!sel || !st) return;
     const pending = sel.value !== this.current();
     st.innerHTML = pending
-      ? `<span style="color:#d97706; font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
+      ? `<span style="color:var(--chart-warn-text); font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
       : `현재 적용: <b>${this.LABELS[this.current()]}</b>`;
   },
   apply() {

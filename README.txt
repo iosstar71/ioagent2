@@ -29,6 +29,12 @@ PM Hub — IOSTAR-PM Workgroup v0.4.0 (사내망 서버 판 · SQLite DB · 서�
     또는 관리자로 [Admin > 🗄️ 데이터 관리]에서 프로젝트별 초기화
   - 암호만 처음으로: 관리자 · PM 이 [프로젝트 설정 > 멤버 정보]에서 [🔄 초기화]
 
+■ [화면 사용 팁]
+  - 머리말 오른쪽 작은 점 = 저장 상태 (초록 저장됨 · 주황 미저장 · 빨강 오류, 마우스를 올리면 글자, 누르면 메뉴)
+    미저장 건수는 [💾 전체 저장 (n)] 버튼에 표시. 버전은 사용자 메뉴(오른쪽 위 이름)에 표시
+  - WBS: 행 끝 [▯] 버튼이나 행의 빈 곳을 누르면 오른쪽에 상세 패널 (Esc 로 닫기)
+  - My Work 맨 위 "오늘의 핵심" 한 줄에서 지연 Task · Dashboard 로 바로 이동
+
 ■ [메뉴]
   🙋 My Work      내 체크할 일(지연 · 마감 임박 · 미조치 VOC · 산출물 · Action Item) + 내 담당 Task + 내 할 일
   📊 Dashboard    Summary(한 화면 요약) · Dashboard(그래프 · 통계) · Phase 진척
@@ -36,14 +42,14 @@ PM Hub — IOSTAR-PM Workgroup v0.4.0 (사내망 서버 판 · SQLite DB · 서�
   🎯 요구 · VOC · 산출물   요구사항(REQ) · VOC · 이슈(구분: VOC / 버그 / 이슈) · 산출물
   🤝 보고 · 소통   주간보고 · 회의 · 게시판 · 채팅
   ⚙ 관리          프로젝트 설정 · 파일 Merge · Admin
-  - 로그인 후 첫 화면: 관리자 · PM · PL = Summary, 멤버 = My Work ([Admin > 화면 · 테마 > 역할별 첫 화면])
+  - 로그인 후 첫 화면: 관리자 · PM · PL = Summary, 멤버 = My Work ([프로젝트 설정 > 화면·테마 > 역할별 첫 화면])
 
 ■ [화면 · 테마]
-  - 테마 6가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
-    최신 무광: Urban Slate(기본, 회청색) · Nordic Sage(세이지) · Brown(따뜻한 브라운)
-    튀는 색: Electric(먹색 + 시안 · 바이올렛)   전통: Classic(네이비 + 흰 바탕)   어두운 화면: Obsidian
-    예전 테마는 자동으로 가까운 테마로: Navy → Classic, Matte → Urban Slate, Green → Nordic Sage, Graphite → Obsidian
-  - 로고: 밝은 머리말 테마(Urban Slate · Nordic Sage · Brown)는 무채색 로고, 나머지는 색 로고 (탭 아이콘도 같이)
+  - 테마 5가지 (머리말 [화면] 또는 [프로젝트 설정]의 테마, 프로젝트마다 기억)
+    Slate(기본, 흰 바탕 · 회청) · Walnut(따뜻한 원목) · Navy(클래식 네이비) · Obsidian(다크) · Pop(팝아트)
+    예전 테마는 자동으로 가까운 테마로: Urban Slate · Nordic Sage · Green · Matte → Slate, Brown → Walnut,
+    Classic · Navy → Navy, Graphite → Obsidian, Electric → Pop
+  - 로고: 밝은 머리말 테마(Slate · Walnut)는 무채색 로고, 나머지는 색 로고 (탭 아이콘도 같이)
   - 아이콘: 화면의 그림 문자는 모두 같은 모양의 선 아이콘으로 그림. 차트(S-curve · 불릿)도 테마 색을 따름
   - 기본 테마: conf/app.ini [ui] default_theme (urban-slate)
 
@@ -60,7 +66,7 @@ PM Hub — IOSTAR-PM Workgroup v0.4.0 (사내망 서버 판 · SQLite DB · 서�
 4. VOC 구분(VOC / 버그 / 이슈): 목록 · 필터에만 (대시보드 · 주간보고는 VOC 하나로 집계)
 5. 서버 전용: 로컬 저장소 모드 · Standalone.html · 저장 방식 선택 삭제. 시험도 모두 서버로 실행
 6. 새 버전 알림: 서버 버전이 바뀌면 화면에 한 번 알림
-7. 디자인: 선 아이콘, 테마 6가지(Urban Slate 기본), 테마별 로고 · 차트 색, 메뉴 전환 · 시작 때 깜박임 없음
+7. 디자인: 선 아이콘, 테마 5가지(Slate 기본 · Walnut · Navy · Obsidian · Pop), 테마별 로고 · 차트 색, 메뉴 전환 · 시작 때 깜박임 없음
 
 ■ [Workgroup v0.3.0] — 실적 일괄 반영 규칙, 단계별 조회, 판정 기준
 1. [⚡ 실적 자동반영]: 계획 진척률이 있는 최하위 Task 모두 (기준일이 속한 주차 = 기준 주차)

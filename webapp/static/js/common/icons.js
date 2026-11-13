@@ -211,9 +211,9 @@ var Icons = {
 window.Icons = Icons;
 document.addEventListener("DOMContentLoaded", () => Icons.init());
 
-// 테마에 맞춘 탭 아이콘(favicon): 밝은 머리말 테마(Urban Slate · Nordic Sage)는 무채색 아이콘
+// 테마에 맞춘 탭 아이콘(favicon): 밝은 머리말 테마(Slate · Walnut)는 무채색 아이콘
 var ThemeLogo = {
-  MONO: ["urban-slate", "nordic-sage", "brown"],
+  MONO: ["urban-slate", "brown"],
   sync() {
     const link = document.querySelector('link[rel="icon"]');
     if (!link) return;

@@ -361,7 +361,7 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("Themes: 6 — Urban Slate (default) · Nordic Sage · Brown · Electric · Classic · Obsidian; left menu option", side && themes === "urban-slate,nordic-sage,brown,electric,classic,dark", themes);
+  check("Themes: 5 — Slate (default) · Walnut · Navy · Obsidian · Pop; left menu option", side && themes === "urban-slate,brown,classic,dark,electric", themes);
   // [v3.1.0] 보고서 테마 5가지 · 머리글 [🎨 화면] 메뉴(테마 견본 · 글자 크기) · WBS 담당자·산출물 접기
   const ui310 = await page.evaluate(async () => {
     const out = {};
@@ -389,7 +389,7 @@ async function localMain() {
     return out;
   });
   check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 6 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 5 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
     ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
@@ -421,7 +421,7 @@ async function localMain() {
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
     return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
   await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "urban-slate,nordic-sage,brown,electric,classic,dark" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "classic" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "urban-slate,brown,classic,dark,electric" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "classic" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
   // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
@@ -864,9 +864,23 @@ async function serverScenarios() {
     await nameInput.fill("CSP-UI-EDIT"); await nameInput.press("Tab"); await a.waitForTimeout(300);
     const edited = await a.evaluate(() => wbsData.some(t => t.name === "CSP-UI-EDIT"));
     const th04 = await a.evaluate(() => { const r = { def: defaultTheme(), opts: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), icons: document.querySelectorAll("svg.iostar-ico").length };
-      const cur = document.body.getAttribute("data-theme"); changeTheme("nordic-sage"); r.chart = ChartTheme.get().actual; r.logo = getComputedStyle(document.querySelector(".brand-logo")).content || ""; changeTheme(cur); return r; });
-    check("0.4.0: 6 themes (Urban Slate default), line icons, theme logo and chart colours on the server screens",
-      th04.def === "urban-slate" && th04.opts === "urban-slate,nordic-sage,brown,electric,classic,dark" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
+      const cur = document.body.getAttribute("data-theme"); changeTheme("brown"); r.chart = ChartTheme.get().actual; r.logo = getComputedStyle(document.querySelector(".brand-logo")).content || ""; changeTheme(cur); return r; });
+    const ux = await a.evaluate(async () => {
+      GShell.go("tab-home"); await new Promise(r => setTimeout(r, 300));
+      const r = { ver: (document.getElementById("gUserVer") || {}).textContent || "", verHidden: getComputedStyle(document.getElementById("headerVersionBadge")).display === "none",
+        dotW: Math.round(document.getElementById("storageStatusBox").getBoundingClientRect().width), heroInline: document.querySelectorAll("#execHeroBanner [style]").length };
+      GShell.go("tab-mywork"); await new Promise(r => setTimeout(r, 300));
+      const h = document.getElementById("mwHello"); r.hello = !!h && !h.hidden;
+      GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 400));
+      r.openBtns = document.querySelectorAll("#wbsTableBody .wbs-open-btn").length; r.rows = document.querySelectorAll("#wbsTableBody tr").length;
+      const tr = document.querySelectorAll("#wbsTableBody tr")[1]; const td = tr && tr.querySelector("td:nth-child(6)");
+      if (td) td.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await new Promise(r => setTimeout(r, 300)); r.panel = NeoDetail.isOpen(); NeoDetail.close();
+      return r; });
+    check("UX: version in the member menu, save status dot, class-based Summary header, My Work greeting, WBS open button + row click",
+      /v\d/.test(ux.ver) && ux.verHidden && ux.dotW <= 34 && ux.heroInline === 0 && ux.hello && ux.openBtns > 0 && ux.openBtns === ux.rows && ux.panel, JSON.stringify(ux));
+    check("0.4.0: 5 themes (Slate default), line icons, theme logo and chart colours on the server screens",
+      th04.def === "urban-slate" && th04.opts === "urban-slate,brown,classic,dark,electric" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
     check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
     await a.waitForTimeout(300);
     const barText = await a.evaluate(() => document.getElementById("gSaveBarText").textContent);

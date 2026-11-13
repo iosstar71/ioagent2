@@ -1050,6 +1050,7 @@ var SyncManager = {
     const box = document.getElementById("storageStatusBox");
     if (el) el.innerText = text;
     if (box) {
+      box.title = text;
       box.setAttribute("data-kind", kind || "");
       if (kind === "ok") { box.classList.add("saved"); setTimeout(() => box.classList.remove("saved"), 1500); }
     }
@@ -1131,6 +1132,9 @@ var SyncUI = {
     }
     const mode = document.getElementById("storageStatusText");
     if (mode && all > 0 && !SyncManager._busy) mode.innerText = local ? "자동저장 대기" : `미저장 ${all}건`;
+    // 머리말 저장 상태는 점 하나 (변경 대기 = 주의 색), 글자는 마우스를 올리면 보임
+    const sbox = document.getElementById("storageStatusBox");
+    if (sbox) { sbox.toggleAttribute("data-dirty", all > 0); if (mode) sbox.title = mode.innerText; }
     // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
     if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
     if (typeof LockManager !== "undefined") LockManager.renderBadge();

@@ -769,3 +769,33 @@ var StickyTop = {
 };
 window.StickyTop = StickyTop;
 window.addEventListener("DOMContentLoaded", () => StickyTop.init());
+
+// WBS 표: 행의 빈 곳(입력칸 · 버튼 밖)을 누르면 오른쪽 상세 패널
+document.addEventListener("click", e => {
+  const td = e.target && e.target.closest ? e.target.closest("#wbsTableBody td") : null;
+  if (!td || e.target.closest("input, select, textarea, button, a, label, [data-click]")) return;
+  const btn = td.parentElement && td.parentElement.querySelector(".wbs-open-btn");
+  if (btn && typeof NeoDetail !== "undefined") { const m = /\d+/.exec(btn.getAttribute("data-click-args") || ""); if (m) NeoDetail.open(parseInt(m[0], 10)); }
+});
+
+// My Work 인사 헤더: 오늘 볼 것만 한 줄 (체크할 일 집계 그대로)
+var MyWorkHello = {
+  render() {
+    const box = document.getElementById("mwHello");
+    if (!box || typeof NeoTodo === "undefined") return;
+    const c = NeoTodo.collect(null);
+    const u = typeof AuthManager !== "undefined" && AuthManager.getCurrentUser ? AuthManager.getCurrentUser() : null;
+    const parts = [["지연 Task", c.delayed.length], [`${NeoTodo.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["미조치 VOC", c.vocs.length], ["확인할 산출물", c.delivs.length], ["미완료 Action Item", c.actions.length]].filter(p => p[1] > 0);
+    const line = parts.length ? parts.map(p => `<span>${p[0]}</span> <b>${p[1]}</b>`).join(" · ") : "<span>체크할 일이 없습니다</span>";
+    box.innerHTML = `<div class="mw-hello-ico">🏠</div>
+      <div class="mw-hello-text"><h3><span>오늘의 핵심</span>${u && u.name ? ` <small class="mw-who" data-i18n-skip>${escapeHtml(u.name)}</small>` : ""}</h3><p>${line}</p></div>
+      <div class="mw-hello-go">
+        ${c.delayed.length ? `<button type="button" class="btn btn-sm" data-btn="nav" data-click="NeoTodo.openWbsStatus" data-click-args='["지연"]'>지연 Task 보기 →</button>` : ""}
+        <button type="button" class="btn btn-sm" data-btn="nav" data-click="GShell.go" data-click-args='["tab-dashboard"]'>Dashboard 열기 →</button>
+      </div>`;
+    box.hidden = false;
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
+    if (typeof I18N !== "undefined") I18N.translateTree(box);
+  }
+};
+window.MyWorkHello = MyWorkHello;

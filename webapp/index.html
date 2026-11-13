@@ -159,12 +159,11 @@
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마">
-          <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Urban Slate</button>
-          <button type="button" class="g-swatch" data-theme-pick="nordic-sage" data-click="UiScale.pickTheme" data-click-args='["nordic-sage"]'><i style="background:linear-gradient(135deg,#F8FAF8 50%,#3F5A4F 50%)"></i>Nordic Sage</button>
-          <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#FFFDFA 50%,#7A5236 50%)"></i>Brown</button>
-          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#0E0F14 50%,#6C5CFF 50%)"></i>Electric</button>
-          <button type="button" class="g-swatch" data-theme-pick="classic" data-click="UiScale.pickTheme" data-click-args='["classic"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F6BD8 50%)"></i>Classic</button>
+          <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Slate</button>
+          <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#F1E9DF 50%,#7A5236 50%)"></i>Walnut</button>
+          <button type="button" class="g-swatch" data-theme-pick="classic" data-click="UiScale.pickTheme" data-click-args='["classic"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F6BD8 50%)"></i>Navy</button>
           <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#181B20 50%,#849CB0 50%)"></i>Obsidian</button>
+          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#FFD60A 50%,#FF3D8B 50%)"></i>Pop</button>
         </div>
         <div class="g-menu-title">글자 크기</div>
         <div class="g-scale-btns" role="group" aria-label="글자 크기">
@@ -176,12 +175,11 @@
         <div class="g-menu-sep"></div>
         <label class="g-menu-field g-hidden-field">테마 (목록)
           <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
-            <option value="urban-slate">Urban Slate (기본)</option>
-            <option value="nordic-sage">Nordic Sage</option>
-            <option value="brown">Brown</option>
-            <option value="electric">Electric</option>
-            <option value="classic">Classic</option>
-            <option value="dark">Obsidian (어두운 화면)</option>
+            <option value="urban-slate">Slate (기본)</option>
+            <option value="brown">Walnut (따뜻한 원목)</option>
+            <option value="classic">Navy (클래식)</option>
+            <option value="dark">Obsidian (다크)</option>
+            <option value="electric">Pop (팝아트)</option>
           </select>
         </label>
         <label class="g-menu-field">메뉴 위치
@@ -213,6 +211,7 @@
       </button>
       <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
         <div class="g-menu-title">멤버</div>
+        <div class="g-menu-row g-user-ver" id="gUserVer"></div>
         <label class="g-menu-field">언어
           <select id="gLangSelect" data-change="GShell.setLanguage" data-change-args='["$value"]'>
             <option value="ko">한국어</option>
@@ -267,6 +266,7 @@
           <button class="btn btn-outline btn-sm btn-progress-refresh" data-click="refreshHomeView" title="최신 저장 자료를 다시 불러와 계획 · 실적을 다시 계산">🔄 실적 새로고침</button>
         </div>
       </div>
+      <div class="mw-hello" id="mwHello" hidden></div>
       <div id="homeTodoContainer" style="display:block;"></div>
       <div id="homePortalContainer" style="display:block;">
         <!-- 상단 환영 & 미완료 Task 퀵 요약 배너 -->
@@ -379,56 +379,51 @@
       <!-- [모드 2] 🏛️ 이그제큐티브 브리핑 룸 (Executive Briefing Room) 컨테이너 -->
       <div id="homeExecutiveContainer" style="display:block;">
         <!-- 전사 달성률 히어로 배너 (Hero Banner) -->
-        <div class="card hero-banner" id="execHeroBanner" data-click="switchTab" data-click-args='["tab-dashboard"]' style="cursor:pointer;" title="Dashboard 탭으로 바로 이동">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px; font-size:var(--fs-xs, 11px); font-weight:700; letter-spacing:0.5px;">전사 통합 공정 사령탑</span>
-                <span id="execHeroStatusBadge" style="background:#22c55e; color:#ffffff; padding:2px 8px; border-radius:4px; font-size:var(--fs-xs, 11px); font-weight:700;">🟢 정상 공정 궤도</span>
-              </div>
-              <h2 id="execHeroProjTitle" style="margin:0 0 4px 0; font-size:calc(22px * var(--fs-scale, 1)); font-weight:800; letter-spacing:-0.5px;">27년 가동률 시스템 개선</h2>
-              <div id="execHeroMeta" style="font-size:var(--fs-sm, 12px); color:rgba(255,255,255,0.85);">
-                공정 기준일: <b>2027-06-01 (화)</b> | 보고 대상: <b>2027년 22주차</b> | 총괄 PM: <b>김총괄 수석PM</b>
-              </div>
+        <div class="card hero-banner" id="execHeroBanner" data-click="switchTab" data-click-args='["tab-dashboard"]' title="Dashboard 탭으로 바로 이동">
+          <div class="hero-row">
+            <div class="hero-main">
+              <span id="execHeroStatusBadge" class="hero-status" data-level="ok">🟢 정상 공정 궤도</span>
+              <h2 id="execHeroProjTitle" class="hero-title">프로젝트</h2>
+              <div id="execHeroMeta" class="hero-meta">공정 기준일: <b>-</b> | 보고 대상: <b>-</b> | 총괄 PM: <b>-</b></div>
             </div>
-            <div style="display:flex; gap:20px; align-items:center;">
-              <div style="text-align:right;">
-                <div style="font-size:var(--fs-xs, 11px); color:rgba(255,255,255,0.8); font-weight:600;">계획 대비 달성률</div>
-                <div id="execHeroAchieveRate" style="font-size:calc(36px * var(--fs-scale, 1)); font-weight:900; line-height:1; color:#f8fafc;">90.5%</div>
-                <div id="execHeroGap" style="font-size:var(--fs-xs, 11px); color:#fde047; font-weight:700; margin-top:3px;">공정 GAP: -4.0%p</div>
+            <div class="hero-kpi">
+              <div class="hero-rate-box">
+                <div class="hero-kpi-label">계획 대비 달성률</div>
+                <div id="execHeroAchieveRate" class="hero-rate">-</div>
+                <div id="execHeroGap" class="hero-gap" data-level="ok">공정 GAP: -</div>
               </div>
-              <div style="border-left:1px solid rgba(255,255,255,0.25); padding-left:18px; display:flex; flex-direction:column; gap:4px; font-size:var(--fs-sm, 12px);">
-                <div>목표 계획: <b id="execHeroPlanRate" style="font-size:var(--fs-md, 14px);">42.0%</b></div>
-                <div>누적 실적: <b id="execHeroActualRate" style="font-size:calc(15px * var(--fs-scale, 1)); color:#86efac;">38.0%</b></div>
+              <div class="hero-pills">
+                <div class="hero-pill">목표 계획: <b id="execHeroPlanRate">-</b></div>
+                <div class="hero-pill">누적 실적: <b id="execHeroActualRate" class="hero-actual">-</b></div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 5대 핵심 경영 KPI 스트립 -->
-        <div class="grid-4" id="execKpiStrip" style="margin-bottom:14px;">
+        <div class="grid-4" id="execKpiStrip">
           <!-- 1. WBS 전체 공정률 -->
-          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-wbs"]' style="border-left:4px solid var(--primary); cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="WBS 종합 공정표 탭으로 바로 이동">
+          <div class="kpi-card kpi-link kpi-tone-info" data-click="switchTab" data-click-args='["tab-wbs"]' data-hover-lift="1" title="WBS 종합 공정표 탭으로 바로 이동">
             <div class="kpi-title">📊 WBS 종합 진척률</div>
-            <div class="kpi-value" id="execKpiWbsActual" style="color:var(--tint-info-text);">38.0%</div>
+            <div class="kpi-value" id="execKpiWbsActual">38.0%</div>
             <div class="kpi-sub" id="execKpiWbsSub">계획 42.0% (달성률 90.5%)</div>
           </div>
           <!-- 2. 지연 Task수 -->
-          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-wbs"]' style="border-left:4px solid #ef4444; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="지연 Task WBS 공정표로 바로 이동">
+          <div class="kpi-card kpi-link kpi-tone-bad" data-click="switchTab" data-click-args='["tab-wbs"]' data-hover-lift="1" title="지연 Task WBS 공정표로 바로 이동">
             <div class="kpi-title">⚠️ 지연 관리 Task</div>
-            <div class="kpi-value" id="execKpiDelayed" style="color:#b91c1c;">0건</div>
-            <div class="kpi-sub" id="execKpiDelayedSub" style="color:#15803d;">지연 리스크 정상 통제</div>
+            <div class="kpi-value" id="execKpiDelayed">0건</div>
+            <div class="kpi-sub" id="execKpiDelayedSub">지연 리스크 정상 통제</div>
           </div>
           <!-- 3. 요구사항(REQ) 완료율 -->
-          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-req"]' style="border-left:4px solid #10b981; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="요구사항(REQ) 진척 관리 탭으로 바로 이동">
+          <div class="kpi-card kpi-link kpi-tone-ok" data-click="switchTab" data-click-args='["tab-req"]' data-hover-lift="1" title="요구사항(REQ) 진척 관리 탭으로 바로 이동">
             <div class="kpi-title">🎯 요구사항(REQ) 완료율</div>
-            <div class="kpi-value" id="execKpiReqRate" style="color:#047857;">60.0%</div>
+            <div class="kpi-value" id="execKpiReqRate">60.0%</div>
             <div class="kpi-sub" id="execKpiReqSub">완료 12건 / 전체 20건</div>
           </div>
           <!-- 4. 필수 산출물 승인율 & VOC 조치율 -->
-          <div class="kpi-card" data-click="switchTab" data-click-args='["tab-deliverables"]' style="border-left:4px solid #f59e0b; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="산출물 및 현장 VOC 관리 탭으로 바로 이동">
+          <div class="kpi-card kpi-link kpi-tone-warn" data-click="switchTab" data-click-args='["tab-deliverables"]' data-hover-lift="1" title="산출물 및 현장 VOC 관리 탭으로 바로 이동">
             <div class="kpi-title">📑 산출물 승인 / 💬 VOC 조치</div>
-            <div class="kpi-value" id="execKpiDelivVoc" style="font-size:var(--fs-xl, 18px); color:var(--warning); margin-top:4px;">산출물 53% · VOC 50%</div>
+            <div class="kpi-value" id="execKpiDelivVoc">산출물 53% · VOC 50%</div>
             <div class="kpi-sub" id="execKpiDelivVocSub">산출물 8건 승인 | VOC 5건 조치</div>
           </div>
         </div>
@@ -1630,6 +1625,10 @@
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
         <!-- [v4.1.0] 📋 자료 다운로드·업로드 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
+        <ol class="mt-guide" aria-label="순서">
+          <li><b>1</b> 범위 고르기</li><li><b>2</b> 자료 체크</li><li><b>3</b> 다운로드 · 업로드</li><li><b>4</b> 미리 보기 확인 후 반영</li>
+          <li class="mt-guide-side">백업 · 복원은 <button type="button" class="btn btn-xs" data-btn="nav" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원 →</button></li>
+        </ol>
         <div class="card mt-card">
           <div class="mt-scope">
             <span class="mt-step">1 범위</span>
@@ -2526,7 +2525,7 @@
     <div id="tab-config" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">화면 모양 · 프로젝트 목록 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
+          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">프로젝트 목록 · 전체 멤버 · SDLC 유형 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 시스템 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -2544,16 +2543,14 @@
       </div>
 
       <div class="master-subtab-bar" data-group="config">
-        <button class="master-subtab-btn active" data-subtab="screen" data-click="SubTabs.show" data-click-args='["config", "screen"]'>🖥️ 화면·테마</button>
-        <button class="master-subtab-btn" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
+        <button class="master-subtab-btn active" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 멤버</button>
         <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 SDLC 유형</button>
-        <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 템플릿</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
-        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
         <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
-        <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 게시판 · 채팅 채널</button>
+        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
       </div>
+      <div class="cfg-scope-note">화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트마다 다르게 정하므로 <button type="button" class="btn btn-xs" data-btn="nav" data-click="GShell.go" data-click-args='["tab-master"]'>프로젝트 설정 →</button> 에 있습니다.</div>
 
       <!-- [v3.9.0] SDLC 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 시스템관리자 -->
       <div class="master-subpane" data-group="config" data-subpane="process">
@@ -2594,14 +2591,14 @@
         </div>
       </div>
 
-      <div class="master-subpane" data-group="config" data-subpane="project">
+      <div class="master-subpane active" data-group="config" data-subpane="project">
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
       </div>
 
-      <div class="master-subpane active" data-group="config" data-subpane="screen">
+      <div class="master-subpane" data-group="config" data-subpane="screen">
         <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="card" style="border-left:4px solid #475569;">
           <div class="card-title"><span>🎛️ 버튼 · 바로가기 스타일 표준</span></div>
@@ -2715,12 +2712,11 @@
             <div>
               <label style="display:block; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; margin-bottom:4px;">🎨 테마:</label>
               <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]'>
-                <option value="urban-slate">Urban Slate (기본)</option>
-                <option value="nordic-sage">Nordic Sage</option>
-                <option value="brown">Brown</option>
-                <option value="electric">Electric</option>
-                <option value="classic">Classic</option>
-                <option value="dark">Obsidian (어두운 화면)</option>
+                <option value="urban-slate">Slate (기본)</option>
+                <option value="brown">Walnut (따뜻한 원목)</option>
+                <option value="classic">Navy (클래식)</option>
+                <option value="dark">Obsidian (다크)</option>
+                <option value="electric">Pop (팝아트)</option>
               </select>
             </div>
           </div>
@@ -2970,6 +2966,7 @@
 
       <!-- [v4.1.0] 🗄️ 데이터 관리 (시스템관리자) — 자동 백업 설정 · 프로젝트 초기화 · 첨부파일 휴지통 -->
       <div class="master-subpane" data-group="config" data-subpane="data" id="dataAdminPane">
+        <div class="cfg-scope-note">백업 · 복원은 한 곳에서 합니다 — <button type="button" class="btn btn-xs" data-btn="nav" data-click="ProjectData.goBackup">파일 Merge › 💾 백업 · 복원 →</button></div>
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title"><span>⏱ 자동 백업 설정 (선택)</span><span class="bk-who">시스템 전체 백업(zip)을 정해진 간격으로 서버에 만듭니다 — 목록 · 복원은 Import · Export &gt; 💾 백업 · 복원</span></div>
           <div id="daAutoServer">
