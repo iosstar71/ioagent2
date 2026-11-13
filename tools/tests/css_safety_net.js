@@ -95,18 +95,21 @@ async function openApp() {
       "borderTopStyle","borderLeftStyle","borderTopLeftRadius","borderBottomRightRadius","fontSize","fontWeight","fontStyle","lineHeight","letterSpacing","paddingTop","paddingRight","paddingBottom","paddingLeft",
       "marginTop","marginRight","marginBottom","marginLeft","display","width","height","minWidth","maxWidth","boxShadow","opacity","textDecorationLine","visibility","position","top","left","gap","cursor",
       "whiteSpace","textAlign","verticalAlign","zIndex","overflowX","overflowY","transform","filter","outlineStyle","flexDirection","justifyContent","alignItems","fill","stroke"];
-    const h = s => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(36); };
-    window.__snap = (theme, detail) => {
+    // 메모리를 아끼려고 문자열을 모으지 않고 바로 해시에 섞음
+    window.__snap = (theme) => {
       document.body.setAttribute("data-theme", theme);
-      const out = []; let n = 0;
-      document.querySelectorAll("body *").forEach(e => {
-        if (e.closest("#pvTag, script, style")) return;
-        const cs = getComputedStyle(e); if (cs.display === "none") return;
-        if (!e.offsetParent && cs.position !== "fixed" && e.tagName !== "BODY" && !(e instanceof SVGElement)) return;
-        const v = P.map(p => cs[p]).join("|"); n++;
-        out.push(detail ? (e.id || e.className.baseVal || e.className || e.tagName) + "=" + v : v);
-      });
-      return detail ? out : h(out.join("\n")) + ":" + n;
+      let x = 2166136261, n = 0;
+      const mix = str => { for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } };
+      const all = document.body.getElementsByTagName("*");
+      for (let k = 0; k < all.length; k++) {
+        const e = all[k];
+        if (e.tagName === "SCRIPT" || e.tagName === "STYLE" || e.tagName === "OPTION") continue;
+        const cs = getComputedStyle(e); if (cs.display === "none") continue;
+        if (!e.offsetParent && cs.position !== "fixed" && !(e instanceof SVGElement)) continue;
+        for (let j = 0; j < P.length; j++) mix(cs[P[j]]);
+        n++;
+      }
+      return (x >>> 0).toString(36) + ":" + n;
     };
     window.__matches = sels => sels.map(s => { try { return !!document.querySelector(s.replace(/::?(before|after|placeholder|selection)\b/g, "")); } catch (e) { return false; } });
   });
@@ -123,7 +126,7 @@ async function snapshot(page, only) {
       if (only && !only.includes(si)) continue;
       const st = window.__STATES[si];
       st.run(); await new Promise(r => setTimeout(r, 60));
-      for (const th of themes) res[si + "|" + th] = window.__snap(th, false);
+      for (const th of themes) res[si + "|" + th] = window.__snap(th);
       if (st.after) st.after();
     }
     return res;
@@ -158,7 +161,7 @@ async function compare(oldCss) {
 async function prune() {
   const css = fs.readFileSync(CSS_FILE, "utf8");
   const cand = candidates(css);
-  const { page, close } = await openApp();
+  let { page, close } = await openApp();
   await setCss(page, css);
   const sels = [...new Set(cand.map(c => c.sel))];
   const per = await matchesPerState(page, sels);
@@ -172,9 +175,17 @@ async function prune() {
   const keysFor = list => { const s = new Set(); list.forEach(c => statesOf(c).forEach(x => s.add(x))); return [...s]; };
   async function ok(list) {
     const only = keysFor(list);
-    await setCss(page, withRemoved(css, accepted.concat(list)));
-    const snap = await snapshot(page, only);
-    return same(snap, base, Object.keys(snap));
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        await setCss(page, withRemoved(css, accepted.concat(list)));
+        const snap = await snapshot(page, only);
+        return same(snap, base, Object.keys(snap));
+      } catch (e) {   // 브라우저가 멈춤 → 다시 열고 재시도
+        try { await close(); } catch (x) {}
+        ({ page, close } = await openApp());
+      }
+    }
+    return false;
   }
   async function tryChunk(chunk) {
     if (!chunk.length) return;
@@ -186,7 +197,7 @@ async function prune() {
   const SIZE = 24;
   for (let i = 0; i < live.length; i += SIZE) {
     await tryChunk(live.slice(i, i + SIZE));
-    process.stdout.write(`\r  checked ${Math.min(i + SIZE, live.length)}/${live.length}, removable ${accepted.length}   `);
+    console.log(`  checked ${Math.min(i + SIZE, live.length)}/${live.length}, removable ${accepted.length}`);
   }
   console.log("");
   // 전체 다시 확인
