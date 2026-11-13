@@ -2372,7 +2372,6 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 [data-theme="dark"] .todo-due.near, [data-theme="dark"] .todo-due.today, [data-theme="dark"] .neo-due.near { background: rgba(245,158,11,0.18); color: #fcd34d; }
 [data-theme="dark"] .todo-due.late, [data-theme="dark"] .neo-due.late { background: rgba(239,68,68,0.18); color: #fca5a5; }
 [data-theme="dark"] .todo-tile.today b { color: #fcd34d; } [data-theme="dark"] .todo-tile.late b, [data-theme="dark"] .todo-gap { color: #fca5a5; }
-[data-theme="dark"] .btn[data-btn="add"] { color: #ffffff !important; }
 .login-hint { font-size: var(--fs-xs, 11px); color: var(--text-muted); margin: -2px 0 8px; }
 #regProjectInfo { font-size: var(--fs-sm, 12px); font-weight: 700; color: var(--text-main); margin: 0 0 8px; }
 .channel-scope-note { margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-main); font-size: var(--fs-sm, 12px); color: var(--text-sub); }
