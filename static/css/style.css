@@ -737,7 +737,7 @@ body[data-density="spacious"] table td {
 .btn[data-btn]:disabled { opacity:0.5; cursor:not-allowed; }
 .btn[data-btn="save"] { background:#2563eb !important; border-color:#1d4ed8 !important; color:#fff !important; }
 .btn[data-btn="refresh"] { background:var(--bg-card) !important; border-color:var(--primary) !important; color:var(--primary) !important; }
-.btn[data-btn="add"] { background:var(--text-main) !important; border-color:var(--text-main) !important; color:var(--bg-card) !important; }
+.btn[data-btn="add"] { background:var(--btn-add-bg, var(--text-main)) !important; border-color:var(--btn-add-bg, var(--text-main)) !important; color:var(--btn-add-fg, var(--bg-card)) !important; }
 .btn[data-btn="danger"] { background:#dc2626 !important; border-color:#b91c1c !important; color:#fff !important; }
 .btn[data-btn="warn"] { background:#d97706 !important; border-color:#b45309 !important; color:#fff !important; }
 .btn[data-btn="cancel"] { background:#fff !important; border-color:#cbd5e1 !important; color:#475569 !important; }
@@ -3213,3 +3213,5 @@ body[data-theme="electric"] { background: #FFFDF7; }
 [data-theme="electric"] .mw-hello { border-color: #1F1F1F; }
 [data-theme="electric"] input, [data-theme="electric"] select, [data-theme="electric"] textarea, [data-theme="electric"] td, [data-theme="electric"] th { border-color: #D4D4D4; }
 [data-theme="electric"] header.g-header input, [data-theme="electric"] header.g-header select { border-color: #FFFDF7; }
+/* 어두운 화면: [추가] 버튼은 밝은 상자 대신 차분한 청회색 */
+[data-theme="dark"] { --btn-add-bg: #4F6475; --btn-add-fg: #F8FAFC; }
