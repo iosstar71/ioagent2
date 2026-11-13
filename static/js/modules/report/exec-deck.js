@@ -57,7 +57,7 @@ var ExecDeck = {
       T(0.45, 0.12, 9.5, 0.66, [p(title, 24, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
       T(9.4, 0.12, 3.5, 0.66, [p(sub || c.wObj.fullLabel, 11, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
       R(0, this.H - 0.32, this.W, 0.32, SUB),
-      T(0.45, this.H - 0.32, 8, 0.32, [p(`${c.projName} · 주간 임원 보고`, 9, { color: "475569" })], { anchor: "ctr" }),
+      T(0.45, this.H - 0.32, 8, 0.32, [p(`${c.projName} · 종합보고서`, 9, { color: "475569" })], { anchor: "ctr" }),
       T(this.W - 3.2, this.H - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "475569", align: "r" })], { anchor: "ctr" })
     ];
     // 표 그리기 (머리줄 + 줄무늬 행)
@@ -83,7 +83,7 @@ var ExecDeck = {
       R(0, 0, 0.35, this.H, H),
       R(0.35, 2.15, this.W - 0.35, 0.06, C),
       T(1.0, 1.0, 11.3, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
-      T(1.0, 2.45, 11.3, 1.1, [p("주간 임원 보고", 44, { bold: true, color: C })]),
+      T(1.0, 2.45, 11.3, 1.1, [p("종합보고서", 44, { bold: true, color: C })]),
       T(1.0, 3.65, 11.3, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
       T(1.0, 4.4, 11.3, 0.5, [p(`차주: ${c.integ.nextStartDate} ~ ${c.integ.nextEndDate}`, 14, { color: "475569" })]),
       T(1.0, 6.0, 11.3, 0.9, [
@@ -476,7 +476,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
 .t p { margin: 0 0 2pt; line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; }
 .bar { position: sticky; top: 0; background: #111827; color: #fff; padding: 10px 16px; font: 14px sans-serif; z-index: 5; }
 @media print { html, body { background: #fff; } .slide { margin: 0; box-shadow: none; } .bar { display: none; } }
-</style></head><body><div class="bar">주간 임원 보고 미리보기 — 인쇄 창에서 대상을 [PDF로 저장]으로 고르면 PDF 파일이 됩니다. (용지: 가로, 여백 없음)</div>${slides}</body></html>`;
+</style></head><body><div class="bar">종합보고서 미리보기 — 인쇄 창에서 대상을 [PDF로 저장]으로 고르면 PDF 파일이 됩니다. (용지: 가로, 여백 없음)</div>${slides}</body></html>`;
   },
 
   // ---------------------------------------------------------------------------
@@ -488,7 +488,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     if (!deck) return showToast("⚠️ 보고 주차를 찾을 수 없습니다.");
     const name = `${deck.c.docNo}_PPT.pptx`;
     ExcelSync._triggerDownload(this.toPptxBlob(deck), name);
-    showToast(`📽 [임원 보고] ${name} 다운로드 완료 (${deck.slides.length}장)`);
+    showToast(`📽 [종합보고서] ${name} 다운로드 완료 (${deck.slides.length}장)`);
     return name;
   },
   // 주간보고 화면 [⬇ 내려받기]: 왼쪽 목록에서 고른 주차
@@ -502,7 +502,7 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     w.document.write(this.toHtml(deck));
     w.document.close();
     setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 600);
-    showToast(`🖨 [임원 보고] 인쇄 창에서 [PDF로 저장]을 고르세요 (${deck.slides.length}장)`);
+    showToast(`🖨 [종합보고서] 인쇄 창에서 [PDF로 저장]을 고르세요 (${deck.slides.length}장)`);
   }
 };
 window.ExecDeck = ExecDeck;

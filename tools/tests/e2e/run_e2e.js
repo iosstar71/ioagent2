@@ -441,6 +441,30 @@ async function main() {
     });
     check("Right detail panel for REQ · VOC · deliverables (open, edit, Esc); in-app prompt; busy lock on download buttons; theme pickers drawn from the registry",
       Object.keys(rp).filter(k => ["req", "voc", "deliv"].includes(k)).every(k => rp[k] === "true,true,true,true" || /^rows:0$/.test(rp[k])) && rp.prompt === "xyz" && rp.busy && rp.themes, JSON.stringify(rp));
+    // 1차 정리: 표기 규칙 묶음 · Action Item 수정 패널 · 보고서 카드 · 양식 색상 3가지 · Navy 왼쪽 메뉴
+    const ph1 = await wc.evaluate(async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+      const keep = meetingsData;
+      meetingsData = [{ id: "M-T", title: "t", date: "2027-05-20", system: "ALL", actionItems: [{ id: "ACT-T1", meetingId: "M-T", title: "a", status: "진행중", targetDate: "2027-05-25" }] }];
+      GShell.go("tab-meeting"); MeetingManager.switchSubTab("actionitems"); await wait(300);
+      o.noAdd = !document.querySelector('#meeting-panel-actionitems [data-click="MeetingManager.openAddActionItemModal"]');
+      document.querySelector("#aiTrackerTableBody td.ai-title").click(); await wait(200);
+      o.open = RecordPanel.isOpen() && RecordPanel._kind === "action";
+      const ta = document.querySelector("#recPanel textarea"); ta.value = "b"; ta.dispatchEvent(new Event("change", { bubbles: true })); await wait(400);
+      const sel = document.querySelector("#recPanel select"); sel.value = "완료"; sel.dispatchEvent(new Event("change", { bubbles: true })); await wait(200);
+      const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
+      RecordPanel.close(); meetingsData = keep; MeetingManager.render();
+      const c = document.getElementById("ruleCard");
+      o.rule = !!c && !!c.querySelector("#weekFmtBox") && c.querySelectorAll(".rule-id-box").length === 4;
+      o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
+      o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
+      const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
+      const probe = document.createElement("button"); probe.className = "g-side-item"; document.body.appendChild(probe);
+      o.navy = getComputedStyle(probe).color; probe.remove(); document.body.setAttribute("data-theme", th);
+      return o; });
+    check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
+      ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
+      && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

@@ -92,7 +92,7 @@ var WeekFmt = {
     sel.value = custom ? "__CUSTOM__" : c.format;
     const inp = document.getElementById("wkFormatCustom");
     inp.value = c.format;
-    inp.style.display = custom ? "" : "none";
+    inp.hidden = !custom;
     this.preview();
   },
   _form() {
@@ -101,7 +101,7 @@ var WeekFmt = {
     const sel = document.getElementById("wkFormatPreset");
     const inp = document.getElementById("wkFormatCustom");
     if (sel.value !== "__CUSTOM__") inp.value = sel.value;
-    inp.style.display = sel.value === "__CUSTOM__" ? "" : "none";
+    inp.hidden = sel.value !== "__CUSTOM__";
     return { basis: val("wkBasis") || "ANNUAL", multiYear: val("wkMulti") || "PREFIX", format: (inp.value || '"W"w').slice(0, 40) };
   },
   // 미리 보기: 시작일 · 해 바뀜 · 기준일 · 종료일

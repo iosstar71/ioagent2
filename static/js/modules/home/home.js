@@ -73,7 +73,7 @@ var HomeScreenManager = {
     const curFont = exp.exportFont || exp.docxFont || exp.xlsxFont || "맑은 고딕";
     const curSize = String(exp.exportFontSize || exp.docxFontSize || exp.xlsxFontSize || 10);
 
-    if (selUnifiedTheme) selUnifiedTheme.value = ExcelSync.normalizeExportTheme(curTheme);
+    if (selUnifiedTheme) { ExcelSync.fillExportThemeSelect(selUnifiedTheme); selUnifiedTheme.value = ExcelSync.normalizeExportTheme(curTheme); }
     const fc = document.getElementById("cfgFileCode");
     if (fc) fc.value = projectConfig.fileCode || "";
     this.renderFileNameSample();
