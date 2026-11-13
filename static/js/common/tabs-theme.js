@@ -88,22 +88,49 @@ function switchTab(tabId) {
   activateTab(tabId);
 }
 
-// 테마 5가지 (화면 이름 / 내부 값): Slate(기본) urban-slate · Walnut brown · Navy classic · Obsidian dark · Pop electric
-//  — 내부 값은 저장된 프로젝트 호환을 위해 그대로. 예전 값은 가까운 테마로 (Nordic Sage · Green · Matte → Slate, Navy → Navy(classic))
-const STANDARD_THEMES = ["urban-slate", "brown", "classic", "dark", "electric"];
+// =============================================================================
+// 테마 등록부 — 테마 목록은 여기 한 곳에만 둔다 (머리말 견본 버튼 · 설정 화면 선택 상자는 이 목록으로 그림)
+//  테마를 더하려면: ① 아래 THEMES 에 한 줄 ② style.css 에 [data-theme="값"] 색 블록과 견본 색(.g-swatch[data-theme-pick="값"] i)
+//  id 는 저장된 프로젝트 값이라 바꾸지 않는다 (화면 이름만 바꿈). lightHeader = 밝은 머리말 → 무채색 로고
+// =============================================================================
+var THEMES = [
+  { id: "urban-slate", name: "Slate", note: "기본", lightHeader: true },
+  { id: "brown", name: "Walnut", note: "따뜻한 원목", lightHeader: true },
+  { id: "classic", name: "Navy", note: "클래식" },
+  { id: "dark", name: "Obsidian", note: "다크" },
+  { id: "electric", name: "Pop", note: "팝아트" }
+];
+// 예전 버전에서 쓰던 값 → 지금 테마
+var THEME_ALIASES = {
+  obsidian: "dark", graphite: "dark", "cyber-neon": "dark", charcoal: "dark",
+  navy: "classic", ocean: "classic", purple: "classic",
+  "nordic-sage": "urban-slate", green: "urban-slate", emerald: "urban-slate", forest: "urban-slate", sage: "urban-slate", matte: "urban-slate", slate: "urban-slate",
+  sepia: "brown", mocha: "brown"
+};
+const STANDARD_THEMES = THEMES.map(t => t.id);
 function defaultTheme() {
   const t = typeof APP_CONFIG !== "undefined" ? APP_CONFIG.defaultTheme : "";
-  return STANDARD_THEMES.indexOf(t) !== -1 ? t : "urban-slate";
+  return STANDARD_THEMES.indexOf(t) !== -1 ? t : STANDARD_THEMES[0];
 }
 function normalizeTheme(theme) {
   if (STANDARD_THEMES.indexOf(theme) !== -1) return theme;
-  if (theme === "obsidian" || theme === "graphite" || theme === "cyber-neon" || theme === "charcoal") return "dark";
-  if (theme === "navy" || theme === "ocean" || theme === "purple") return "classic";
-  if (theme === "nordic-sage" || theme === "green" || theme === "emerald" || theme === "forest" || theme === "sage") return "urban-slate";
-  if (theme === "sepia" || theme === "mocha") return "brown";
-  if (theme === "matte" || theme === "slate") return "urban-slate";
-  return defaultTheme();
+  return THEME_ALIASES[theme] || defaultTheme();
 }
+// 견본 버튼 · 선택 상자를 등록부로 그림 (index.html 에는 빈 자리만)
+var ThemePickers = {
+  label(t) { return `${t.name} (${t.note})`; },
+  render() {
+    document.querySelectorAll("[data-theme-swatches]").forEach(box => {
+      box.innerHTML = THEMES.map(t => `<button type="button" class="g-swatch" data-theme-pick="${t.id}" data-click="UiScale.pickTheme" data-click-args='["${t.id}"]'><i></i>${t.name}</button>`).join("");
+    });
+    document.querySelectorAll("select[data-theme-select]").forEach(sel => {
+      const keep = sel.value;
+      sel.innerHTML = THEMES.map(t => `<option value="${t.id}">${this.label(t)}</option>`).join("");
+      if (keep && STANDARD_THEMES.indexOf(keep) !== -1) sel.value = keep;
+    });
+  }
+};
+ThemePickers.render();
 
 function changeTheme(theme) {
   theme = normalizeTheme(theme);

@@ -129,12 +129,7 @@
       <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
-        <div class="g-theme-swatches" role="group" aria-label="테마">
-          <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Slate</button>
-          <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#F1E9DF 50%,#7A5236 50%)"></i>Walnut</button>
-          <button type="button" class="g-swatch" data-theme-pick="classic" data-click="UiScale.pickTheme" data-click-args='["classic"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F6BD8 50%)"></i>Navy</button>
-          <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#181B20 50%,#849CB0 50%)"></i>Obsidian</button>
-          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#FFD60A 50%,#FF3D8B 50%)"></i>Pop</button>
+        <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
         </div>
         <div class="g-menu-title">글자 크기</div>
         <div class="g-scale-btns" role="group" aria-label="글자 크기">
@@ -145,12 +140,7 @@
         <div class="g-menu-hint">글자 크기는 멤버마다 기억합니다. 넓은 표(WBS 등)는 가로로 스크롤될 수 있습니다.</div>
         <div class="g-menu-sep"></div>
         <label class="g-menu-field g-hidden-field">테마 (목록)
-          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
-            <option value="urban-slate">Slate (기본)</option>
-            <option value="brown">Walnut (따뜻한 원목)</option>
-            <option value="classic">Navy (클래식)</option>
-            <option value="dark">Obsidian (다크)</option>
-            <option value="electric">Pop (팝아트)</option>
+          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
           </select>
         </label>
         <label class="g-menu-field">메뉴 위치
@@ -2551,12 +2541,7 @@
             </div>
             <div>
               <label style="display:block; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; margin-bottom:4px;">🎨 테마:</label>
-              <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]'>
-                <option value="urban-slate">Slate (기본)</option>
-                <option value="brown">Walnut (따뜻한 원목)</option>
-                <option value="classic">Navy (클래식)</option>
-                <option value="dark">Obsidian (다크)</option>
-                <option value="electric">Pop (팝아트)</option>
+              <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
               </select>
             </div>
           </div>
@@ -3149,6 +3134,7 @@
   <script src="static/js/common/legal-notice.js"></script>
   <script src="static/js/common/g-shell.js"></script>
   <script src="static/js/common/neo.js"></script>
+  <script src="static/js/common/record-panel.js"></script>
   <script src="static/js/modules/todo/todo-center.js"></script>
   <script src="static/js/core/access-control.js"></script>
   <script src="static/js/common/ui-standards.js"></script>

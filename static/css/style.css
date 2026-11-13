@@ -2825,3 +2825,38 @@ header.g-header .g-notice { color: var(--danger); border: 1px solid var(--border
 [data-theme="classic"] header.g-header .g-notice { color: #FCA5A5; border-color: rgba(255,255,255,0.3); }
 [data-theme="electric"] header.g-header .g-notice { color: #FF7FB0; border: 1.5px solid #FF3D8B; }
 
+
+/* 입력 다듬기: 키보드 포커스 테두리 · 오류 표시 · 작업 중 버튼 · 입력 대화상자 (테마 변수만) */
+:where(input, select, textarea, button, a, [tabindex]):focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.is-invalid { border-color: var(--danger); box-shadow: 0 0 0 2px rgba(220,38,38,0.18); }
+.btn.is-busy, button.is-busy { position: relative; cursor: progress; opacity: 0.7; pointer-events: none; }
+.btn.is-busy::after, button.is-busy::after { content: ""; width: 10px; height: 10px; margin-left: 6px; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent; display: inline-block; vertical-align: -1px; animation: ui-spin 0.7s linear infinite; }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+.prompt-modal { width: 440px; max-width: calc(100vw - 32px); }
+.prompt-field { width: 100%; box-sizing: border-box; margin: 10px 0 4px; padding: 8px 10px; font: inherit; }
+textarea.prompt-field { resize: vertical; min-height: 110px; }
+.prompt-hint { font-size: var(--fs-xs, 11px); color: var(--text-muted); margin-bottom: 12px; }
+.prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* 목록 오른쪽 상세 패널 (요구사항 · VOC · 산출물) — WBS 상세 패널(.neo-detail)과 같은 틀 */
+body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.rec-panel-open #tab-deliverables.active { margin-right: 384px; }
+.rec-panel .neo-field select { width: 100%; box-sizing: border-box; padding: 5px 7px; font: inherit; font-size: calc(12.5px * var(--fs-scale, 1)); font-weight: 500; }
+.rec-panel .neo-detail-title b { margin-left: 4px; }
+.rec-status { background: var(--st-neutral-bg); color: var(--text-sub); }
+.rec-section { border-top: 1px solid var(--border-color); padding-top: 10px; display: grid; gap: 6px; }
+.rec-section-title { font-size: var(--fs-sm, 12px); font-weight: 700; color: var(--text-sub); }
+.rec-list { margin: 0; padding-left: 16px; display: grid; gap: 3px; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.rec-empty, .rec-hint { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+#reqMasterTableBody tr:hover td, #vocTableBody tr:hover td, #deliverablesTableBody tr:hover td { background-color: rgba(100,116,139,0.06); cursor: pointer; }
+#reqMasterTableBody tr:hover .rec-open-btn, #vocTableBody tr:hover .rec-open-btn, #deliverablesTableBody tr:hover .rec-open-btn { background: var(--primary); color: #fff; border-color: var(--primary); }
+#reqMasterTableBody tr.neo-sel td, #vocTableBody tr.neo-sel td, #deliverablesTableBody tr.neo-sel td { background-color: rgba(100,116,139,0.12); }
+#reqMasterTableBody tr.neo-sel td:first-child, #vocTableBody tr.neo-sel td:first-child, #deliverablesTableBody tr.neo-sel td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
+.rec-panel .neo-grid2 .neo-field-wide { grid-column: 1 / -1; }
+
+/* 테마 견본 색 (테마 등록부 THEMES 와 짝) */
+.g-swatch[data-theme-pick="urban-slate"] i { background: linear-gradient(135deg, #FFFFFF 50%, #335C81 50%); }
+.g-swatch[data-theme-pick="brown"] i { background: linear-gradient(135deg, #F1E9DF 50%, #7A5236 50%); }
+.g-swatch[data-theme-pick="classic"] i { background: linear-gradient(135deg, #0B1F44 50%, #2F6BD8 50%); }
+.g-swatch[data-theme-pick="dark"] i { background: linear-gradient(135deg, #181B20 50%, #849CB0 50%); }
+.g-swatch[data-theme-pick="electric"] i { background: linear-gradient(135deg, #FFD60A 50%, #FF3D8B 50%); }

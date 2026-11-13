@@ -211,14 +211,14 @@ var Icons = {
 window.Icons = Icons;
 document.addEventListener("DOMContentLoaded", () => Icons.init());
 
-// 테마에 맞춘 탭 아이콘(favicon): 밝은 머리말 테마(Slate · Walnut)는 무채색 아이콘
+// 테마에 맞춘 탭 아이콘(favicon): 밝은 머리말 테마(THEMES 의 lightHeader)는 무채색 아이콘
 var ThemeLogo = {
-  MONO: ["urban-slate", "brown"],
   sync() {
     const link = document.querySelector('link[rel="icon"]');
     if (!link) return;
     if (!this._orig) this._orig = link.getAttribute("href");
-    const mono = this.MONO.indexOf(document.body.getAttribute("data-theme")) !== -1;
+    const cur = document.body.getAttribute("data-theme");
+    const mono = typeof THEMES !== "undefined" && THEMES.some(t => t.id === cur && t.lightHeader);
     const want = mono ? "static/img/iostar_mono_32.png" : this._orig;
     if (link.getAttribute("href") !== want) link.setAttribute("href", want);
   },

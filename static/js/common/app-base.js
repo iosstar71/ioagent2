@@ -53,6 +53,61 @@ function closeConfirmDialog(confirmed) {
   if (confirmed && typeof cb === "function") cb();
 }
 
+// 앱 안 입력 대화상자 (브라우저 prompt() 대신): openPromptDialog("제목", "처음 값", 값 => {...}, { multiline: true })
+//  Enter(여러 줄은 Ctrl+Enter) = 확인, Esc = 취소. 빈 값은 확인되지 않음
+function openPromptDialog(title, value, onOk, opts = {}) {
+  let m = document.getElementById("promptDialogModal");
+  if (!m) {
+    m = document.createElement("div");
+    m.className = "modal-overlay"; m.id = "promptDialogModal";
+    m.innerHTML = `<div class="modal prompt-modal"><div class="card-title"><span id="promptDialogTitle"></span></div>
+      <div id="promptDialogBody"></div><div class="prompt-hint" id="promptDialogHint"></div>
+      <div class="prompt-actions"><button type="button" class="btn btn-secondary btn-sm" data-click="closePromptDialog" data-click-args='[false]'>취소</button>
+      <button type="button" class="btn btn-primary btn-sm" data-click="closePromptDialog" data-click-args='[true]'>확인</button></div></div>`;
+    document.body.appendChild(m);
+    m.addEventListener("keydown", e => {
+      const f = document.getElementById("promptDialogField");
+      if (e.key === "Escape") closePromptDialog(false);
+      else if (e.key === "Enter" && f && (f.tagName !== "TEXTAREA" || e.ctrlKey || e.metaKey)) { e.preventDefault(); closePromptDialog(true); }
+    });
+  }
+  document.getElementById("promptDialogTitle").textContent = title;
+  document.getElementById("promptDialogHint").textContent = opts.multiline ? "Ctrl+Enter 확인 · Esc 취소" : "Enter 확인 · Esc 취소";
+  const body = document.getElementById("promptDialogBody");
+  body.innerHTML = opts.multiline ? `<textarea id="promptDialogField" class="prompt-field" rows="5"></textarea>` : `<input id="promptDialogField" class="prompt-field" type="text">`;
+  const f = document.getElementById("promptDialogField");
+  f.value = value == null ? "" : String(value);
+  m._onOk = onOk;
+  m.style.display = "flex";
+  if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
+  setTimeout(() => { f.focus(); if (f.select) f.select(); }, 30);
+}
+function closePromptDialog(ok) {
+  const m = document.getElementById("promptDialogModal");
+  if (!m) return;
+  const f = document.getElementById("promptDialogField");
+  const v = f ? f.value.trim() : "";
+  if (ok && !v) { if (typeof UiForm !== "undefined") UiForm.invalid(f, "값을 입력하세요"); return; }
+  m.style.display = "none";
+  const cb = m._onOk; m._onOk = null;
+  if (ok && typeof cb === "function") cb(v);
+}
+
+// 입력 오류 표시: UiForm.invalid(입력칸, "안내") / UiForm.clear(입력칸) — 빨간 테두리 + 마우스를 올리면 안내
+var UiForm = {
+  invalid(el, msg) {
+    if (!el) return;
+    el.classList.add("is-invalid"); el.setAttribute("aria-invalid", "true");
+    if (msg) { if (!el.hasAttribute("data-title-orig")) el.setAttribute("data-title-orig", el.getAttribute("title") || ""); el.title = msg; }
+  },
+  clear(el) {
+    if (!el || !el.classList.contains("is-invalid")) return;
+    el.classList.remove("is-invalid"); el.removeAttribute("aria-invalid");
+    if (el.hasAttribute("data-title-orig")) { el.title = el.getAttribute("data-title-orig"); el.removeAttribute("data-title-orig"); }
+  }
+};
+window.UiForm = UiForm;
+
 function openDataBackupModal() {
   const modal = document.getElementById("dataBackupModal");
   if (modal) modal.style.display = "flex";

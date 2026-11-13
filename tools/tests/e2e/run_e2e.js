@@ -418,6 +418,29 @@ async function main() {
     });
     check("UX: version in the member menu (not the header), save status is a dot with a tooltip, Summary header uses classes, My Work greeting, WBS open button + row click opens the detail panel",
       /v\d/.test(ux.ver) && ux.verHidden && ux.dotW <= 34 && !!ux.dotTitle && ux.heroInline === 0 && !!ux.heroLevel && ux.hello && ux.openBtns > 0 && ux.openBtns === ux.rows && ux.panel, JSON.stringify(ux));
+    const rp = await wc.evaluate(async () => {
+      const out = {};
+      for (const [tab, tb, kind] of [["tab-req", "reqMasterTableBody", "req"], ["tab-voc", "vocTableBody", "voc"], ["tab-deliverables", "deliverablesTableBody", "deliv"]]) {
+        GShell.go(tab); await new Promise(r => setTimeout(r, 300));
+        const rows = document.querySelectorAll(`#${tb} > tr`).length, btn = document.querySelector(`#${tb} .rec-open-btn`);
+        if (!btn) { out[kind] = "rows:" + rows; continue; }
+        btn.click(); await new Promise(r => setTimeout(r, 200));
+        const open = RecordPanel.isOpen(), sel = document.querySelector('#recPanel select[data-change-args*="status"]');
+        const v = sel.options[sel.options.length - 1].value === sel.value ? sel.options[0].value : sel.options[sel.options.length - 1].value;
+        sel.value = v; sel.dispatchEvent(new Event("change", { bubbles: true }));
+        const saved = UiH._array(RecordPanel.SCHEMAS[kind].data)[RecordPanel.idx()].status === v;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        out[kind] = [rows > 0, open, saved, !RecordPanel.isOpen()].join();
+      }
+      openPromptDialog("t", "abc", v => { window.__pv = v; }); await new Promise(r => setTimeout(r, 100));
+      document.getElementById("promptDialogField").value = "xyz"; closePromptDialog(true); out.prompt = window.__pv;
+      const b = document.createElement("button"); b.setAttribute("data-btn", "excel-down"); b.setAttribute("data-click", "GShell.closeMenus"); document.body.appendChild(b); b.click();
+      out.busy = b.classList.contains("is-busy"); b.remove();
+      out.themes = typeof THEMES !== "undefined" && document.querySelectorAll(".g-swatch").length === THEMES.length && document.querySelectorAll("#cfgThemeSelect option").length === THEMES.length;
+      return out;
+    });
+    check("Right detail panel for REQ · VOC · deliverables (open, edit, Esc); in-app prompt; busy lock on download buttons; theme pickers drawn from the registry",
+      Object.keys(rp).filter(k => ["req", "voc", "deliv"].includes(k)).every(k => rp[k] === "true,true,true,true" || /^rows:0$/.test(rp[k])) && rp.prompt === "xyz" && rp.busy && rp.themes, JSON.stringify(rp));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

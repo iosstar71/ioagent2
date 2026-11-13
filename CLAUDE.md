@@ -11,7 +11,10 @@
 - **위치 지도** (찾기 전에 여기부터)
   | 무엇 | 어디 |
   |---|---|
-  | 테마 목록 · 예전 값 변환 | `static/js/common/tabs-theme.js` (`STANDARD_THEMES`, `normalizeTheme`) |
+  | 테마 목록(한 곳) · 예전 값 변환 | `static/js/common/tabs-theme.js` (`THEMES`, `THEME_ALIASES`) — 견본 버튼 · 선택 상자는 여기서 그려짐 |
+  | 목록 오른쪽 상세 패널(REQ · VOC · 산출물) | `static/js/common/record-panel.js` (`RecordPanel.SCHEMAS` 에 정의 추가 + 표 끝에서 `decorate`) |
+  | 입력 대화상자 · 오류 표시 · 작업 중 버튼 | `common/app-base.js` (`openPromptDialog`, `UiForm`), `common/ui-events.js` (`_busy`, `_validate`) |
+  | 화면이 그대로인지 확인 | `node tools/tests/css_safety_net.js --compare <예전 css>` (5개 테마 × 모든 화면의 실제 스타일 비교) |
   | 테마 색 · 차트 색 토큰 | `style.css` 끝부분: `[data-theme="..."]` 블록, `--chart-*`, `--tint-*` |
   | 선 아이콘(이모지 → SVG) | `static/js/common/icons.js` (`Icons.MAP`) |
   | 메뉴 묶음 · 첫 화면 | `static/js/common/g-shell.js` (`GROUPS`), `modules/home/home.js` (`LANDING`) |
@@ -29,6 +32,7 @@
 - 사용자가 설명만 원하면 코드를 고치지 않는다. 큰 디자인 변경은 **실제 화면에 임시 CSS 를 입힌 전/후 캡처**로 먼저 확인받는다.
 
 ## 2. 화면 스타일 규칙 (UI 부채 줄이기)
+- 브라우저 `prompt()` · `confirm()` · `alert()` 를 쓰지 않는다 (`openPromptDialog` · `openConfirmDialog` · `showToast`).
 - **새 코드에 `!important` · 인라인 `style=""` · 고정 색(#hex)을 쓰지 않는다.** 색은 테마 변수만:
   `--primary --bg-main --bg-card --border-color --text-main/sub/muted --success --warning --danger --tint-info(-text) --chip-bg --chart-*`.
   - 예외: 이미 있는 `!important` 규칙을 덮어야 할 때만 (그 자리에 이유 주석).

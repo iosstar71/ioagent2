@@ -2,8 +2,8 @@
  "css_important": 623,
  "html": {
   "shell": {
-   "inline": 31,
-   "inline_hex": 15
+   "inline": 26,
+   "inline_hex": 5
   },
   "tab-config": {
    "inline": 309,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 967,
-  "html_inline_hex": 203,
+  "html_inline": 962,
+  "html_inline_hex": 193,
   "js_hex": 115
  }
 }

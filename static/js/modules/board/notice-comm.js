@@ -101,13 +101,12 @@ var NoticeCommManager = {
       showToast("⚠️ 본인이 작성한 게시글이거나 관리자/PM 권한만 수정할 수 있습니다.", "warning");
       return;
     }
-    const newContent = prompt("수정할 게시판 내용을 입력하세요:", post.content);
-    if (newContent !== null && newContent.trim()) {
-      post.content = newContent.trim();
+    openPromptDialog("✏️ 게시글 수정", post.content, newContent => {
+      post.content = newContent;
       persistChanges();
       this.renderCommunications();
       showToast("✅ 소통 게시글이 수정되었습니다.");
-    }
+    }, { multiline: true });
   },
 
   deleteCommPost(id) {
@@ -151,25 +150,26 @@ var NoticeCommManager = {
       showToast("기본 '전체' 채널명은 변경할 수 없습니다.", "warning");
       return;
     }
-    const newName = prompt(`[# ${oldName}] 채널의 새로운 명칭을 입력하세요:`, oldName);
-    if (newName && newName.trim() && newName.trim() !== oldName) {
-      const cleanName = newName.trim().replace(/^#\s*/, "");
-      if (projectConfig.channels.includes(cleanName)) {
-        showToast("이미 존재하는 채널명입니다.", "warning");
-        return;
+    openPromptDialog(`# ${oldName} 채널 이름 바꾸기`, oldName, newName => {
+      if (newName && newName.trim() && newName.trim() !== oldName) {
+        const cleanName = newName.trim().replace(/^#\s*/, "");
+        if (projectConfig.channels.includes(cleanName)) {
+          showToast("이미 존재하는 채널명입니다.", "warning");
+          return;
+        }
+        const idx = projectConfig.channels.indexOf(oldName);
+        if (idx !== -1) {
+          projectConfig.channels[idx] = cleanName;
+          // update communications channel if needed
+          communicationsData.forEach(c => { if (c.channel === oldName) c.channel = cleanName; });
+          if (this.activeChannel === oldName) this.activeChannel = cleanName;
+          this.renderChannelOptions();
+          this.renderCommunications();
+          persistChanges();
+          showToast(`✅ 채널명이 [# ${cleanName}]으로 변경되었습니다.`);
+        }
       }
-      const idx = projectConfig.channels.indexOf(oldName);
-      if (idx !== -1) {
-        projectConfig.channels[idx] = cleanName;
-        // update communications channel if needed
-        communicationsData.forEach(c => { if (c.channel === oldName) c.channel = cleanName; });
-        if (this.activeChannel === oldName) this.activeChannel = cleanName;
-        this.renderChannelOptions();
-        this.renderCommunications();
-        persistChanges();
-        showToast(`✅ 채널명이 [# ${cleanName}]으로 변경되었습니다.`);
-      }
-    }
+    });
   },
 
   currentSubTab: "NOTICES", // NOTICES | FEED
