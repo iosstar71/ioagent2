@@ -12,8 +12,9 @@
   | 무엇 | 어디 |
   |---|---|
   | 테마 목록(한 곳) · 예전 값 변환 | `static/js/common/tabs-theme.js` (`THEMES`, `THEME_ALIASES`) — 견본 버튼 · 선택 상자는 여기서 그려짐 |
-  | 목록 오른쪽 상세 패널(REQ · VOC · 산출물) | `static/js/common/record-panel.js` (`RecordPanel.SCHEMAS` 에 정의 추가 + 표 끝에서 `decorate`) |
+  | 목록 오른쪽 상세 패널(REQ · VOC · 산출물 · Action Item) | `static/js/common/record-panel.js` (`RecordPanel.SCHEMAS` 에 정의 추가 + 표 끝에서 `decorate`) |
   | 입력 대화상자 · 오류 표시 · 작업 중 버튼 | `common/app-base.js` (`openPromptDialog`, `UiForm`), `common/ui-events.js` (`_busy`, `_validate`) |
+  | 엑셀 · 워드 양식 색상(Navy · Gray · Mint) | `modules/dataio/excel-sync.js` (`EXPORT_THEME_DEFS`, `normalizeExportTheme`) |
   | 화면이 그대로인지 확인 | `node tools/tests/css_safety_net.js --compare <예전 css>` (5개 테마 × 모든 화면의 실제 스타일 비교) |
   | 테마 색 · 차트 색 토큰 | `style.css` 끝부분: `[data-theme="..."]` 블록, `--chart-*`, `--tint-*` |
   | 선 아이콘(이모지 → SVG) | `static/js/common/icons.js` (`Icons.MAP`) |
