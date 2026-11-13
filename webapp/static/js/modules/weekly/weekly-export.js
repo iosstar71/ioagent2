@@ -450,7 +450,10 @@ var ReportTabs = {
     document.querySelectorAll("[data-rp-tab]").forEach(b => b.classList.toggle("active", b.getAttribute("data-rp-tab") === name));
     document.querySelectorAll("#tab-weekly-report [data-rp-pane]").forEach(p => p.classList.toggle("active", p.getAttribute("data-rp-pane") === name));
     if (name === "deck") this.renderDeck();
-    if (name === "settings" && typeof SharedPanes !== "undefined") SharedPanes.place("report", "report");
+    if (name === "settings") {
+      if (typeof SharedPanes !== "undefined") SharedPanes.place("report", "report");
+      if (typeof DeckSettings !== "undefined") DeckSettings.render();
+    }
   },
   // 다른 화면에서 바로 열기 (프로젝트 설정의 [보고서 설정 →] 등)
   open(name) {
@@ -480,6 +483,7 @@ var ReportTabs = {
     const total = (f.done || []).length + (f.missing || []).length;
     if (info) info.innerHTML = `
       <div class="exec-report-line"><b>${escapeHtml(rep.weekLabel || "")}</b> · 장표 ${deck.slides.length}장</div>
+      <div class="exec-report-line">구성: <b>${escapeHtml((ExecDeck.preset(deck.opt.preset) || { name: "직접 선택" }).name)}</b> · 디자인: <b>${escapeHtml(ExecDeck.design(deck.opt.design).name)}</b></div>
       <div class="exec-report-line">주간보고: 서브시스템 ${(f.done || []).length} / ${total} 작성 완료</div>
       <div class="exec-report-line exec-report-file">파일: <code>${escapeHtml(deck.c.docNo)}_PPT.pptx</code></div>`;
     if (list) list.innerHTML = deck.slides.map(s => `<li>${escapeHtml(s.title || s.name || "장표")}</li>`).join("");

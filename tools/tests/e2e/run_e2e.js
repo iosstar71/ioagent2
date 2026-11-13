@@ -438,6 +438,32 @@ async function localMain() {
     return o; });
   check("Menu 보고: weekly report / summary report (PPT) / report settings in one place; settings for PM and above only; old settings tab redirects here",
     ph2.label === "보고" && ph2.tabs === "weekly,deck,settings" && ph2.deck && ph2.file && ph2.settings && ph2.oneplace && ph2.redirect === "tab-weekly-report/settings" && ph2.member === "weekly/true", JSON.stringify(ph2));
+  // 3차: 종합보고서 구성(요약형 · 종합형 · 상세형 · 직접 선택)과 디자인 세트 5종, 상세 패널 자리
+  const ph3 = await page.evaluate(async () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), o = {}, wn = ExecDeck.week();
+    const keep = JSON.stringify((projectConfig.exportSettings || {}).deck || null);
+    o.def = ExecDeck.options().preset + "/" + ExecDeck.options().design;
+    ReportTabs.open("settings"); await wait(400);
+    o.ui = [document.querySelectorAll("#deckPresetBox .deck-preset").length, document.querySelectorAll("#deckSectionBox input").length, document.querySelectorAll("#deckDesignBox .deck-design").length].join();
+    const names = () => ExecDeck.build(wn).slides.map(x => x.name);
+    DeckSettings.setPreset("brief"); o.brief = names().join();
+    DeckSettings.setPreset("standard"); const st = names(); o.standard = st.indexOf("목차") === 1 && st.indexOf("S-커브") !== -1 && st.indexOf("서브시스템") === -1 && !st.some(n => getAllSubsystemNames().indexOf(n) !== -1);
+    document.querySelector('#deckSectionBox input[data-change-args*="scurve"]').click(); await wait(100);
+    o.custom = ExecDeck.options().preset + "/" + (names().indexOf("S-커브") === -1);
+    DeckSettings.setPreset("detail");
+    o.designs = ExecDeck.DESIGNS.map(d => { DeckSettings.setDesign(d.id); const deck = ExecDeck.build(wn); return deck.c.design === d.id && ExecDeck.toPptxBlob(deck).size > 5000 && ExecDeck.toHtml(deck).length > 5000; }).join();
+    DeckSettings.setDesign("sidebar"); const sb = ExecDeck.build(wn).slides[2].els.filter(e => !e.fixed); o.sidebar = sb.every(e => e.x >= 2.29 && e.x + e.w <= ExecDeck.W + 0.01);
+    projectConfig.exportSettings.deck = JSON.parse(keep) || undefined; if (!projectConfig.exportSettings.deck) delete projectConfig.exportSettings.deck;
+    DeckSettings.render(); ReportTabs.show("weekly");
+    reqMasterData = (reqMasterData || []).concat([{ id: "REQ-PD", system: "A", name: "p", type: "기능", priority: "중", accept: "수용", status: "대기" }]);
+    GShell.go("tab-req"); renderReqMasterTable(); await wait(300);
+    document.querySelector("#reqMasterTableBody .rec-open-btn").click(); await wait(400);
+    const pn = document.getElementById("recPanel").getBoundingClientRect(), hd = document.querySelector("#tab-req > .sub-header-bar").getBoundingClientRect();
+    o.dock = pn.top >= hd.bottom && pn.top - hd.bottom < 20 && hd.right > pn.left + 100;
+    RecordPanel.close(); reqMasterData = reqMasterData.filter(r => r.id !== "REQ-PD"); renderReqMasterTable();
+    return o; });
+  check("Summary report: default keeps the old contents (detailed, Classic Band); presets brief / standard / detailed + per-slide choice; 5 design sets build PPT and preview; detail panel starts under the screen header",
+    ph3.def === "detail/classic" && ph3.ui === "4,9,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
     UiScale.set(1.3); const over = [];

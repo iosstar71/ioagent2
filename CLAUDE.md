@@ -16,6 +16,9 @@
   | 목록 오른쪽 상세 패널(REQ · VOC · 산출물 · Action Item) | `static/js/common/record-panel.js` (`RecordPanel.SCHEMAS` 에 정의 추가 + 표 끝에서 `decorate`) |
   | 입력 대화상자 · 오류 표시 · 작업 중 버튼 | `common/app-base.js` (`openPromptDialog`, `UiForm`), `common/ui-events.js` (`_busy`, `_validate`) |
   | 엑셀 · 워드 양식 색상(Navy · Gray · Mint) | `modules/dataio/excel-sync.js` (`EXPORT_THEME_DEFS`, `normalizeExportTheme`) |
+  | 종합보고서(PPT) 구성 · 디자인 | `modules/report/exec-deck.js` (`SECTIONS` · `PRESETS` · `DESIGNS`, `_head` · `_cover`, 설정 화면 `DeckSettings`) |
+  | 오른쪽 상세 패널이 시작하는 자리 | `common/neo.js` (`PanelDock` — 화면 머리글 아래, `--panel-top`) |
+  | [보고] 메뉴 서브탭 | `modules/weekly/weekly-export.js` (`ReportTabs`) |
   | 테마 색 · 차트 색 토큰 | `style.css` 끝부분: `[data-theme="..."]` 블록, `--chart-*`, `--tint-*` |
   | 선 아이콘(이모지 → SVG) | `static/js/common/icons.js` (`Icons.MAP`) |
   | 메뉴 묶음 · 첫 화면 | `static/js/common/g-shell.js` (`GROUPS`), `modules/home/home.js` (`LANDING`) |
