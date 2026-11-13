@@ -1863,7 +1863,7 @@ header.g-header > .g-brand { flex: 0 0 auto; }
 .neo-detail { position: fixed; top: 96px; right: 0; bottom: 0; width: 380px; z-index: 80; display: flex; flex-direction: column; background: var(--bg-card); color: var(--text-main); border-left: 1px solid var(--border-color); box-shadow: -8px 0 24px rgba(15,23,42,0.14); }
 .neo-detail[hidden] { display: none; }
 body.g-edition[data-layout="sidebar-left"] .neo-detail { top: 52px; }
-body.neo-detail-open #tab-wbs.active { margin-right: 384px; }
+body.neo-detail-open #tab-wbs.active { margin-right: 396px; }
 .neo-detail-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border-color); background: var(--bg-main); }
 .neo-detail-title { display: flex; align-items: center; gap: 6px; font-weight: 800; }
 .neo-detail-title code { font-size: var(--fs-base, 13px); color: var(--text-main); }
@@ -2972,7 +2972,8 @@ textarea.prompt-field { resize: vertical; min-height: 110px; }
 .prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* 목록 오른쪽 상세 패널 (요구사항 · VOC · 산출물) — WBS 상세 패널(.neo-detail)과 같은 틀 */
-body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.rec-panel-open #tab-deliverables.active { margin-right: 384px; }
+/* 화면 머리글은 그대로 두고, 그 아래 내용만 패널 너비만큼 좁힘 */
+body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.rec-panel-open #tab-deliverables.active { margin-right: 396px; }
 .rec-panel .neo-field select { width: 100%; box-sizing: border-box; padding: 5px 7px; font: inherit; font-size: calc(12.5px * var(--fs-scale, 1)); font-weight: 500; }
 .rec-panel .neo-detail-title b { margin-left: 4px; }
 .rec-status { background: var(--st-neutral-bg); color: var(--text-sub); }
@@ -3022,7 +3023,7 @@ body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.r
 .ai-act { white-space: nowrap; }
 .ai-status { font-size: var(--fs-xs, 11px); padding: 2px 4px; font-weight: 700; color: var(--tint-info-text); }
 .ai-status[data-state="done"] { color: var(--st-ok-fg); }
-body.rec-panel-open #tab-meeting.active { margin-right: 384px; }
+body.rec-panel-open #tab-meeting.active { margin-right: 396px; }
 #aiTrackerTableBody tr.ai-row:hover td { background-color: rgba(100,116,139,0.06); cursor: pointer; }
 #aiTrackerTableBody tr.ai-row:hover .rec-open-btn { background: var(--primary); color: var(--bg-card); border-color: var(--primary); }
 #aiTrackerTableBody tr.neo-sel td { background-color: rgba(100,116,139,0.12); }
@@ -3044,3 +3045,9 @@ body.rec-panel-open #tab-meeting.active { margin-right: 384px; }
 .rp-deck-sub { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-muted); margin: 10px 0 4px; }
 .rp-deck-slides { margin: 0 0 10px; padding-left: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 18px; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
 .master-subtab-link { margin-left: auto; color: var(--text-muted); }
+
+/* ── 3차: 오른쪽 상세 패널은 화면 내용 영역 안에서 시작 (PanelDock 가 --panel-top 을 잡음) ── */
+[data-theme] .neo-detail, body.g-edition[data-layout="sidebar-left"] .neo-detail { top: var(--panel-top, 150px); right: 12px; bottom: 12px; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+/* 화면 머리글은 전체 너비 그대로, 그 아래 내용만 패널 너비만큼 좁아짐 */
+body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab-pane.active > .sub-header-bar { margin-right: -396px; }
+@media (max-width: 1180px) { body.rec-panel-open .tab-pane.active { margin-right: 0; } body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab-pane.active > .sub-header-bar { margin-right: 0; } }
