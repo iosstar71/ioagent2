@@ -14,6 +14,53 @@ var ExecDeck = {
   W: 13.333, H: 7.5, // 16:9 (inch)
 
   // ---------------------------------------------------------------------------
+  // 내용(구성)과 디자인은 따로 고름 — 보고 > 보고서 설정 (projectConfig.exportSettings.deck 에 저장)
+  //  · 장표를 늘리려면 SECTIONS 에 한 줄 추가 + build() 에서 on("<키>") 로 감쌈
+  //  · 디자인을 늘리려면 DESIGNS 에 한 줄 추가 + _head() / _cover() 에 모양 추가
+  // ---------------------------------------------------------------------------
+  SECTIONS: [
+    { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "종합 공정 S-커브" },
+    { k: "bullet", l: "서브시스템별 계획 대비 실적" }, { k: "reqvoc", l: "요구사항 · VOC 진척" },
+    { k: "sdlc", l: "단계별 종합 공정 매트릭스 (SDLC)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
+    { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
+  ],
+  PRESETS: [
+    { id: "brief", name: "요약형", note: "표지 · 종합 진척 · 지연/마일스톤", sections: ["summary", "delay"] },
+    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "delay"] },
+    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "delay", "sys"] }
+  ],
+  DESIGNS: [
+    { id: "classic", name: "Classic Band", note: "색 띠 제목 · 보고서 표준 (엑셀 · 워드 색상을 따름)" },
+    { id: "minimal", name: "Minimal Line", note: "흰 바탕 + 가는 선 · 흑백 인쇄에 무난",
+      pal: { primary: "111827", secondary: "374151", accent: "6B7280", headerBg: "111827", subHeaderBg: "F3F4F6", border: "D1D5DB", headerTextColor: "FFFFFF" } },
+    { id: "sidebar", name: "Side Bar", note: "왼쪽 세로 띠에 장 제목",
+      pal: { primary: "0F766E", secondary: "14B8A6", accent: "5EEAD4", headerBg: "0F766E", subHeaderBg: "F0FDFA", border: "B6E3DC", headerTextColor: "FFFFFF" },
+      shift: { dx: 2.3, dy: -0.5, fs: 0.9 } },
+    { id: "dark", name: "Dark Cover", note: "어두운 표지 + 포인트 색 · 발표 화면용",
+      pal: { primary: "B45309", secondary: "D97706", accent: "F59E0B", headerBg: "111827", subHeaderBg: "F3F4F6", border: "D1D5DB", headerTextColor: "FFFFFF" } },
+    { id: "soft", name: "Soft Card", note: "연한 민트 바탕 + 둥근 카드 · 파스텔",
+      pal: { primary: "2F7D6B", secondary: "4FA08C", accent: "7CC4B0", headerBg: "BFE3D6", subHeaderBg: "EEF8F4", border: "BFDDD3", headerTextColor: "1F4D43" } }
+  ],
+  design(id) { return this.DESIGNS.find(d => d.id === id) || this.DESIGNS[0]; },
+  preset(id) { return this.PRESETS.find(x => x.id === id) || null; },
+  // 저장된 설정 → { design, preset, sections } (예전 프로젝트 = Classic Band · 상세형 = 지금까지의 구성)
+  options() {
+    const exp = (typeof projectConfig !== "undefined" && projectConfig.exportSettings) || {};
+    const d = exp.deck || {};
+    const all = this.SECTIONS.map(x => x.k);
+    const pre = this.preset(d.preset);
+    let sections = pre ? pre.sections : (Array.isArray(d.sections) ? d.sections.filter(k => all.indexOf(k) !== -1) : null);
+    if (!sections) sections = this.preset("detail").sections;
+    return { design: this.design(d.design).id, preset: pre ? pre.id : (Array.isArray(d.sections) ? "custom" : "detail"), sections: all.filter(k => sections.indexOf(k) !== -1) };
+  },
+  saveOptions(next) {
+    if (typeof HomeScreenManager !== "undefined") HomeScreenManager.ensureConfig();
+    projectConfig.exportSettings = projectConfig.exportSettings || {};
+    projectConfig.exportSettings.deck = Object.assign({}, projectConfig.exportSettings.deck || {}, next);
+    if (typeof persistChanges === "function") persistChanges();
+  },
+
+  // ---------------------------------------------------------------------------
   // 자료 모으기
   // ---------------------------------------------------------------------------
   collect(weekNum) {
@@ -45,6 +92,10 @@ var ExecDeck = {
   build(weekNum) {
     const c = this.collect(weekNum);
     if (!c) return null;
+    const opt = this.options(), D = this.design(opt.design);
+    const on = k => opt.sections.indexOf(k) !== -1;
+    if (D.pal) c.pal = Object.assign({}, c.pal, D.pal);
+    c.design = D.id;
     const P = c.pal, C = P.primary, H = P.headerBg, SUB = P.subHeaderBg, B = P.border;
     const slides = [];
     const T = (x, y, w, h, paras, o = {}) => Object.assign({ t: "text", x, y, w, h, paras }, o);
@@ -52,14 +103,7 @@ var ExecDeck = {
     const p = (text, size, o = {}) => ({ text: String(text === undefined || text === null ? "" : text), size, bold: !!o.bold, color: o.color || "1F2937", align: o.align || "l", bullet: !!o.bullet });
     const num = v => parseFloat(String(v === undefined || v === null ? 0 : v).replace(/%/g, "")) || 0;
     const pct = v => `${num(v)}%`;
-    const head = (title, sub) => [
-      R(0, 0, this.W, 0.9, H),
-      T(0.45, 0.12, 9.5, 0.66, [p(title, 24, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
-      T(9.4, 0.12, 3.5, 0.66, [p(sub || c.wObj.fullLabel, 11, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
-      R(0, this.H - 0.32, this.W, 0.32, SUB),
-      T(0.45, this.H - 0.32, 8, 0.32, [p(`${c.projName} · 종합보고서`, 9, { color: "475569" })], { anchor: "ctr" }),
-      T(this.W - 3.2, this.H - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "475569", align: "r" })], { anchor: "ctr" })
-    ];
+    const head = (title, sub) => this._head(D.id, c, title, sub, T, R, p).map(e => Object.assign(e, { fixed: true }));
     // 표 그리기 (머리줄 + 줄무늬 행)
     const table = (els, x, y, cols, rows, rh, o = {}) => {
       let xx = x;
@@ -78,26 +122,15 @@ var ExecDeck = {
     const rateColor = r => r >= 90 ? "15803D" : r >= 70 ? "B45309" : "B91C1C";
 
     // 1. 표지
-    slides.push({ name: "표지", els: [
-      R(0, 0, this.W, this.H, "FFFFFF"),
-      R(0, 0, 0.35, this.H, H),
-      R(0.35, 2.15, this.W - 0.35, 0.06, C),
-      T(1.0, 1.0, 11.3, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
-      T(1.0, 2.45, 11.3, 1.1, [p("종합보고서", 44, { bold: true, color: C })]),
-      T(1.0, 3.65, 11.3, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
-      T(1.0, 4.4, 11.3, 0.5, [p(`차주: ${c.integ.nextStartDate} ~ ${c.integ.nextEndDate}`, 14, { color: "475569" })]),
-      T(1.0, 6.0, 11.3, 0.9, [
-        p(`작성자 ${c.author || "-"}  ·  자료 기준 ${c.data.live ? "현재 자료" : "작성 완료 시점 " + c.data.takenAt}`, 11, { color: "64748B" }),
-        p(`문서 번호 ${c.docNo}`, 11, { color: "64748B" })])
-    ] });
+    slides.push({ name: "표지", els: this._cover(D.id, c, T, R, p) });
     const agenda = { name: "목차", els: [] };
-    slides.push(agenda);
+    if (on("toc")) slides.push(agenda);
     const toc = [];
     const mark = title => toc.push([title, slides.length + 1]);
 
     // 3. 종합 진척 현황 — 핵심 지표 + 과업 상태 분포
-    mark("종합 진척 현황");
-    {
+    if (on("summary")) {
+      mark("종합 진척 현황");
       const els = head("종합 진척 현황");
       const kpi = [["전체 계획", pct(c.m.totalPlan)], ["전체 실적", pct(c.m.totalActual)], ["계획 대비 달성률", `${c.m.achieveRate || 0}%`], ["지연 Task", `${c.m.cntDel || 0}건`], ["주간보고 작성", `${c.done.length} / ${c.order.length}`]];
       kpi.forEach(([k, v], i) => {
@@ -128,8 +161,8 @@ var ExecDeck = {
     }
 
     // 4. 종합 공정 S-커브
-    mark("종합 공정 S-커브");
-    {
+    if (on("scurve")) {
+      mark("종합 공정 S-커브");
       const els = head("종합 공정 S-커브 (누적 계획 대비 실적)");
       const sc = this.scurve(c);
       const gx = 1.1, gy = 1.3, gw = 11.6, gh = 4.9;
@@ -160,8 +193,8 @@ var ExecDeck = {
     const rows = (c.m.subsystemRows || []);
     const bchunks = [];
     for (let i = 0; i < Math.max(1, rows.length); i += 10) bchunks.push(rows.slice(i, i + 10));
-    mark("서브시스템별 계획 대비 실적");
-    bchunks.forEach((ch, ci) => {
+    if (on("bullet")) mark("서브시스템별 계획 대비 실적");
+    (on("bullet") ? bchunks : []).forEach((ch, ci) => {
       const els = head(`서브시스템별 계획 대비 실적${bchunks.length > 1 ? ` (${ci + 1}/${bchunks.length})` : ""}`);
       const gx = 1.9, gw = 8.9, top = 1.45, rowH = Math.min(0.5, 5.0 / Math.max(1, ch.length));
       [0, 25, 50, 75, 100].forEach(v => els.push(T(gx + gw * v / 100 - 0.3, 1.1, 0.6, 0.3, [p(`${v}%`, 9, { color: "64748B", align: "ctr" })])));
@@ -185,8 +218,8 @@ var ExecDeck = {
     });
 
     // 6. 서브시스템별 요구사항 · 추가 VOC 진척
-    mark("서브시스템별 요구사항 · 추가 VOC 진척");
-    {
+    if (on("reqvoc")) {
+      mark("서브시스템별 요구사항 · 추가 VOC 진척");
       const els = head("서브시스템별 요구사항 · 추가 VOC 진척");
       const domainOf = sys => ((rows.find(r => r[1] === sys) || [])[0]) || (typeof WBSEngine !== "undefined" ? WBSEngine.getSubsystemDomain(sys) : "");
       const reqs = c.data.reqs || [], vocs = c.data.vocs || [];
@@ -207,9 +240,9 @@ var ExecDeck = {
     }
 
     // 7. 단계별 종합 공정 매트릭스 (SDLC 서브시스템만)
-    mark("단계별 종합 공정 매트릭스 (SDLC)");
-    const groups = (c.data.sdlc && c.data.sdlc.length ? c.data.sdlc : WeeklyExport._sdlc());
-    if (!groups.length) {
+    if (on("sdlc")) mark("단계별 종합 공정 매트릭스 (SDLC)");
+    const groups = on("sdlc") ? (c.data.sdlc && c.data.sdlc.length ? c.data.sdlc : WeeklyExport._sdlc()) : [];
+    if (on("sdlc") && !groups.length) {
       const els = head("단계별 종합 공정 매트릭스 (SDLC)");
       els.push(T(0.8, 2.8, 11.7, 1.0, [p("SDLC 유형 서브시스템이 없습니다.", 18, { color: "64748B", align: "ctr" })], { anchor: "ctr" }));
       slides.push({ name: "SDLC 매트릭스", els });
@@ -229,8 +262,8 @@ var ExecDeck = {
     });
 
     // 8. 지연 과업 · 주요 마일스톤
-    mark("지연 Task · 주요 마일스톤");
-    {
+    if (on("delay")) {
+      mark("지연 Task · 주요 마일스톤");
       const els = head("지연 Task · 주요 마일스톤");
       const del = (c.data.delayed || []).slice(0, 12);
       els.push(T(0.45, 1.15, 7.3, 0.35, [p(`지연 Task ${c.m.cntDel || 0}건${del.length < (c.m.cntDel || 0) ? ` (상위 ${del.length}건)` : ""}`, 13, { bold: true, color: "B91C1C" })]));
@@ -246,9 +279,9 @@ var ExecDeck = {
 
     // 9~. 서브시스템별 주간보고 (작성 완료분)
     const sysStart = slides.length + 1;
-    toc.push(["서브시스템별 주간보고", sysStart]);
-    c.sysReps.forEach(rep => slides.push(this.sysSlide(c, rep, head, T, R, p, pct)));
-    if (!c.sysReps.length) {
+    if (on("sys")) toc.push(["서브시스템별 주간보고", sysStart]);
+    (on("sys") ? c.sysReps : []).forEach(rep => slides.push(this.sysSlide(c, rep, head, T, R, p, pct)));
+    if (on("sys") && !c.sysReps.length) {
       const els = head("서브시스템별 주간보고");
       els.push(T(0.8, 2.6, 11.7, 1.5, [p("작성 완료된 서브시스템 주간보고가 없습니다.", 20, { bold: true, color: "64748B", align: "ctr" }),
         p(`미작성: ${c.missing.join(", ") || "-"}`, 13, { color: "64748B", align: "ctr" })], { anchor: "ctr" }));
@@ -259,11 +292,111 @@ var ExecDeck = {
     agenda.els = head("목차").concat([
       T(1.0, 1.3, 11.3, 5.6, this.fit([
         ...toc.map(([t, n], i) => p(`${i + 1}. ${t} ············ ${n}`, 18, { bold: true, color: C })),
-        ...c.sysReps.map((r, i) => p(`${r.scopeValue} ····· ${sysStart + i}`, 12, { color: "334155", bullet: true })),
-        ...(c.missing.length ? [p(`미작성 서브시스템 (장표 제외): ${c.missing.join(", ")}`, 11, { color: "B45309" })] : [])
+        ...(on("sys") ? c.sysReps : []).map((r, i) => p(`${r.scopeValue} ····· ${sysStart + i}`, 12, { color: "334155", bullet: true })),
+        ...(on("sys") && c.missing.length ? [p(`미작성 서브시스템 (장표 제외): ${c.missing.join(", ")}`, 11, { color: "B45309" })] : [])
       ], 11.3, 5.6))
     ]);
-    return { c, slides };
+    // 디자인에 따라 본문 자리 옮기기 (예: Side Bar — 왼쪽 띠만큼 오른쪽으로, 조금 작게)
+    if (D.shift) {
+      const sx = (this.W - D.shift.dx) / this.W, fs = D.shift.fs || 1;
+      slides.slice(1).forEach(sl => sl.els.forEach(e => {
+        if (e.fixed) return;
+        e.x = D.shift.dx + e.x * sx; e.w = e.w * sx; e.y = e.y + (D.shift.dy || 0);
+        if (e.paras) e.paras.forEach(q => { q.size = Math.round(q.size * fs * 10) / 10; });
+      }));
+    }
+    return { c, slides, opt };
+  },
+
+  // 장표 머리 · 바닥 (디자인별)
+  _head(id, c, title, sub, T, R, p) {
+    const P = c.pal, W = this.W, Hh = this.H, subT = sub || c.wObj.fullLabel, foot = `${c.projName} · 종합보고서`;
+    if (id === "minimal") return [
+      T(0.6, 0.14, 9.2, 0.66, [p(title, 24, { bold: true, color: "111827" })], { anchor: "ctr" }),
+      T(9.4, 0.3, 3.35, 0.5, [p(subT, 11, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
+      R(0.6, 0.86, W - 1.2, 0.025, "111827"),
+      R(0.6, Hh - 0.36, W - 1.2, 0.01, "D1D5DB"),
+      T(0.6, Hh - 0.34, 8, 0.32, [p(foot, 9, { color: "9CA3AF" })], { anchor: "ctr" }),
+      T(W - 3.35, Hh - 0.34, 2.75, 0.32, [p(c.docNo, 9, { color: "9CA3AF", align: "r" })], { anchor: "ctr" })];
+    if (id === "sidebar") return [
+      R(0, 0, 2.3, Hh, P.headerBg),
+      T(0.22, 0.45, 1.9, 2.2, [p(title, 17, { bold: true, color: "FFFFFF" })]),
+      T(0.22, 2.75, 1.9, 0.9, [p(subT, 9.5, { color: "CCFBF1" })]),
+      T(0.22, Hh - 1.0, 1.9, 0.8, [p(c.projName, 9, { color: "CCFBF1" }), p(c.docNo, 7.5, { color: "99F6E4" })])];
+    if (id === "dark") return [
+      R(0.5, 0.34, 0.22, 0.22, P.accent, { shape: "ellipse" }),
+      T(0.85, 0.12, 8.9, 0.66, [p(title, 24, { bold: true, color: "111827" })], { anchor: "ctr" }),
+      T(9.4, 0.12, 3.5, 0.66, [p(subT, 11, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
+      R(0, Hh - 0.32, W, 0.32, "111827"),
+      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "D1D5DB" })], { anchor: "ctr" }),
+      T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "D1D5DB", align: "r" })], { anchor: "ctr" })];
+    if (id === "soft") return [
+      R(0, 0, W, Hh, "F1F7F5"),
+      T(0.45, 0.12, 9.0, 0.66, [p(title, 24, { bold: true, color: "1F4D43" })], { anchor: "ctr" }),
+      R(W - 3.75, 0.27, 3.3, 0.36, P.headerBg, { shape: "round" }),
+      T(W - 3.75, 0.27, 3.3, 0.36, [p(subT, 10, { bold: true, color: "1F4D43", align: "ctr" })], { anchor: "ctr" }),
+      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "7B8C87" })], { anchor: "ctr" }),
+      T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "7B8C87", align: "r" })], { anchor: "ctr" })];
+    return [
+      R(0, 0, W, 0.9, P.headerBg),
+      T(0.45, 0.12, 9.5, 0.66, [p(title, 24, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
+      T(9.4, 0.12, 3.5, 0.66, [p(subT, 11, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
+      R(0, Hh - 0.32, W, 0.32, P.subHeaderBg),
+      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "475569" })], { anchor: "ctr" }),
+      T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "475569", align: "r" })], { anchor: "ctr" })];
+  },
+
+  // 표지 (디자인별)
+  _cover(id, c, T, R, p) {
+    const P = c.pal, W = this.W, Hh = this.H;
+    const next = `차주: ${c.integ.nextStartDate} ~ ${c.integ.nextEndDate}`;
+    const meta = dark => [
+      p(`작성자 ${c.author || "-"}  ·  자료 기준 ${c.data.live ? "현재 자료" : "작성 완료 시점 " + c.data.takenAt}`, 11, { color: dark ? "9CA3AF" : "64748B" }),
+      p(`문서 번호 ${c.docNo}`, 11, { color: dark ? "9CA3AF" : "64748B" })];
+    if (id === "minimal") return [
+      R(0, 0, W, Hh, "FFFFFF"),
+      T(0.9, 0.9, 11.5, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { color: "6B7280" })]),
+      T(0.9, 1.4, 11.5, 0.6, [p(c.projName, 18, { bold: true, color: "374151" })]),
+      T(0.9, 3.4, 11.5, 1.1, [p("종합보고서", 44, { bold: true, color: "111827" })]),
+      T(0.9, 4.6, 11.5, 0.6, [p(`${c.wObj.fullLabel}   ·   ${next}`, 16, { color: "4B5563" })]),
+      R(0.9, 5.45, W - 1.8, 0.025, "111827"),
+      T(0.9, 5.7, 11.5, 0.9, meta(false))];
+    if (id === "sidebar") return [
+      R(0, 0, W, Hh, "FFFFFF"),
+      R(0, 0, 5.0, Hh, P.headerBg),
+      T(0.6, Hh - 1.9, 3.8, 1.3, [p("WEEKLY", 13, { color: "CCFBF1" }), p("SUMMARY", 13, { color: "CCFBF1" }), p("REPORT", 13, { color: "CCFBF1" })]),
+      T(5.7, 1.5, 7.0, 0.6, [p(c.projName, 18, { bold: true, color: "475569" })]),
+      T(5.7, 2.5, 7.0, 1.1, [p("종합보고서", 42, { bold: true, color: "134E4A" })]),
+      T(5.7, 3.7, 7.0, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
+      T(5.7, 4.4, 7.0, 0.5, [p(next, 14, { color: "475569" })]),
+      T(5.7, 6.0, 7.0, 0.9, meta(false))];
+    if (id === "dark") return [
+      R(0, 0, W, Hh, "111827"),
+      R(W - 4.3, Hh - 4.0, 3.7, 3.7, P.accent, { shape: "ellipse" }),
+      T(0.9, 1.0, 9.0, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { bold: true, color: P.accent })]),
+      T(0.9, 1.5, 9.0, 0.6, [p(c.projName, 18, { bold: true, color: "D1D5DB" })]),
+      T(0.9, 2.5, 9.0, 1.1, [p("종합보고서", 44, { bold: true, color: "FFFFFF" })]),
+      T(0.9, 3.7, 9.0, 0.7, [p(c.wObj.fullLabel, 22, { bold: true, color: "F3F4F6" })]),
+      T(0.9, 4.4, 9.0, 0.5, [p(next, 14, { color: "9CA3AF" })]),
+      T(0.9, 6.0, 8.0, 0.9, meta(true))];
+    if (id === "soft") return [
+      R(0, 0, W, Hh, "F1F7F5"),
+      R(1.1, 1.0, W - 2.2, Hh - 2.0, "FFFFFF", { shape: "round", line: P.border }),
+      R(1.8, 1.55, 3.4, 0.4, P.headerBg, { shape: "round" }),
+      T(1.8, 1.55, 3.4, 0.4, [p(c.projName, 11, { bold: true, color: "1F4D43", align: "ctr" })], { anchor: "ctr" }),
+      T(1.8, 2.3, 9.8, 1.1, [p("종합보고서", 42, { bold: true, color: P.primary })]),
+      T(1.8, 3.5, 9.8, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
+      T(1.8, 4.2, 9.8, 0.5, [p(next, 14, { color: "5B6B66" })]),
+      T(1.8, 5.3, 9.8, 0.9, meta(false))];
+    return [
+      R(0, 0, W, Hh, "FFFFFF"),
+      R(0, 0, 0.35, Hh, P.headerBg),
+      R(0.35, 2.15, W - 0.35, 0.06, P.primary),
+      T(1.0, 1.0, 11.3, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
+      T(1.0, 2.45, 11.3, 1.1, [p("종합보고서", 44, { bold: true, color: P.primary })]),
+      T(1.0, 3.65, 11.3, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
+      T(1.0, 4.4, 11.3, 0.5, [p(next, 14, { color: "475569" })]),
+      T(1.0, 6.0, 11.3, 0.9, meta(false))];
   },
 
   // S-커브 자료: 계획선은 작성 시점 계획(없으면 지금 계획), 실적은 주차별 주간보고 작성 시점 실적을 이어 그림
@@ -374,7 +507,7 @@ var ExecDeck = {
       const nid = id++;
       const fill = el.fill ? `<a:solidFill><a:srgbClr val="${el.fill}"/></a:solidFill>` : "<a:noFill/>";
       const line = el.line ? `<a:ln w="9525"><a:solidFill><a:srgbClr val="${el.line}"/></a:solidFill></a:ln>` : "<a:ln><a:noFill/></a:ln>";
-      const geo = `<a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${E(Math.max(0.01, el.w))}" cy="${E(Math.max(0.01, el.h))}"/></a:xfrm><a:prstGeom prst="${el.shape === "ellipse" ? "ellipse" : "rect"}"><a:avLst/></a:prstGeom>`;
+      const geo = `<a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${E(Math.max(0.01, el.w))}" cy="${E(Math.max(0.01, el.h))}"/></a:xfrm><a:prstGeom prst="${el.shape === "ellipse" ? "ellipse" : el.shape === "round" ? "roundRect" : "rect"}"><a:avLst/></a:prstGeom>`;
       if (el.t === "poly") {
         const PW = 100000, PH = 100000;
         const pts = el.pts.map(([px, py]) => `<a:pt x="${Math.round(px * PW)}" y="${Math.round(py * PH)}"/>`);
@@ -462,7 +595,7 @@ var ExecDeck = {
     const el = e => {
       const box = `left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};${e.fill ? `background:#${e.fill};` : ""}${e.line ? `border:1px solid #${e.line};` : ""}`;
       if (e.t === "poly") return `<svg class="r" style="left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};overflow:visible" viewBox="0 0 1000 1000" preserveAspectRatio="none"><polyline points="${e.pts.map(([a, b]) => `${(a * 1000).toFixed(1)},${(b * 1000).toFixed(1)}`).join(" ")}" fill="none" stroke="#${e.color}" stroke-width="${(e.width || 2) * 1.33}" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
-      if (e.t === "rect") return `<div class="r" style="${box}${e.shape === "ellipse" ? "border-radius:50%;" : ""}"></div>`;
+      if (e.t === "rect") return `<div class="r" style="${box}${e.shape === "ellipse" ? "border-radius:50%;" : e.shape === "round" ? "border-radius:10pt;" : ""}"></div>`;
       const ps = e.paras.map(q => `<p style="font-size:${q.size}pt;${q.bold ? "font-weight:700;" : ""}color:#${q.color};text-align:${q.align === "ctr" ? "center" : q.align === "r" ? "right" : "left"};${q.bullet ? "padding-left:12pt;text-indent:-9pt;" : ""}">${q.bullet ? "• " : ""}${esc(q.text)}</p>`).join("");
       return `<div class="t" style="${box}justify-content:${e.anchor === "ctr" ? "center" : "flex-start"};">${ps}</div>`;
     };
@@ -493,6 +626,14 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
   },
   // 주간보고 화면 [⬇ 내려받기]: 왼쪽 목록에서 고른 주차
   downloadPptxSelected() { return this.downloadPptx(WeeklyReportManager.listWeek || this.week()); },
+  // 보고서 설정 [미리보기]: 같은 장표를 새 창에 (인쇄 창은 띄우지 않음)
+  openPreview(weekNum) {
+    const deck = this.build(weekNum || this.week());
+    if (!deck) return showToast("⚠️ 보고 주차를 찾을 수 없습니다.");
+    const w = window.open("", "_blank");
+    if (!w) return showToast("⚠️ 팝업이 차단되어 미리보기 창을 열 수 없습니다. 브라우저에서 이 프로그램의 팝업을 허용하세요.");
+    w.document.open(); w.document.write(this.toHtml(deck)); w.document.close();
+  },
   openPdf(weekNum) {
     const deck = this.build(weekNum || this.week());
     if (!deck) return showToast("⚠️ 보고 주차를 찾을 수 없습니다.");
@@ -506,3 +647,41 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
   }
 };
 window.ExecDeck = ExecDeck;
+
+// =============================================================================
+// 보고 > 보고서 설정: 종합보고서 구성 · 디자인 고르기 (PM 이상)
+// =============================================================================
+var DeckSettings = {
+  render() {
+    const pb = document.getElementById("deckPresetBox"), sb = document.getElementById("deckSectionBox"), db = document.getElementById("deckDesignBox");
+    if (!pb || !sb || !db) return;
+    const o = ExecDeck.options();
+    pb.innerHTML = ExecDeck.PRESETS.map(x => `<button type="button" class="deck-preset${o.preset === x.id ? " active" : ""}" data-click="DeckSettings.setPreset" data-click-args="${UiEvents.args(x.id)}"><b>${escapeHtml(x.name)}</b><small>${escapeHtml(x.note)}</small></button>`).join("")
+      + `<span class="deck-preset deck-preset-custom${o.preset === "custom" ? " active" : ""}"><b>직접 선택</b><small>아래 체크한 장표만</small></span>`;
+    sb.innerHTML = `<label class="deck-section is-fixed"><input type="checkbox" checked disabled> 표지</label>`
+      + ExecDeck.SECTIONS.map(x => `<label class="deck-section"><input type="checkbox"${o.sections.indexOf(x.k) !== -1 ? " checked" : ""} data-change="DeckSettings.toggleSection" data-change-args="${UiEvents.args(x.k, "$checked")}"> ${escapeHtml(x.l)}</label>`).join("");
+    db.innerHTML = ExecDeck.DESIGNS.map(d => `<button type="button" class="deck-design${o.design === d.id ? " active" : ""}" data-design="${d.id}" data-click="DeckSettings.setDesign" data-click-args="${UiEvents.args(d.id)}">
+      <span class="deck-thumb"><i class="dt-a"></i><i class="dt-b"></i><i class="dt-c"></i><i class="dt-d"></i></span><b>${escapeHtml(d.name)}</b><small>${escapeHtml(d.note)}</small></button>`).join("");
+    if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(document.getElementById("deckSetCard"));
+  },
+  _done(msg) { this.render(); if (typeof ReportTabs !== "undefined" && ReportTabs.cur === "deck") ReportTabs.renderDeck(); showToast(msg); },
+  setPreset(id) {
+    const x = ExecDeck.preset(id); if (!x) return;
+    ExecDeck.saveOptions({ preset: x.id, sections: x.sections.slice() });
+    this._done(`📽 종합보고서 구성: ${x.name}`);
+  },
+  toggleSection(k, checked) {
+    const cur = ExecDeck.options().sections.filter(s => s !== k);
+    if (checked) cur.push(k);
+    const same = ExecDeck.PRESETS.find(x => x.sections.length === cur.length && x.sections.every(s => cur.indexOf(s) !== -1));
+    ExecDeck.saveOptions({ preset: same ? same.id : "custom", sections: cur });
+    this._done(`📽 종합보고서 구성: ${same ? same.name : "직접 선택"} (장표 종류 ${cur.length + 1}개)`);
+  },
+  setDesign(id) {
+    const d = ExecDeck.design(id);
+    ExecDeck.saveOptions({ design: d.id });
+    this._done(`🎨 종합보고서 디자인: ${d.name}`);
+  },
+  preview() { ExecDeck.openPreview(); }
+};
+window.DeckSettings = DeckSettings;

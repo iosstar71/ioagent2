@@ -2922,3 +2922,36 @@ body.rec-panel-open #tab-meeting.active { margin-right: 396px; }
 /* 화면 머리글은 전체 너비 그대로, 그 아래 내용만 패널 너비만큼 좁아짐 */
 body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab-pane.active > .sub-header-bar { margin-right: -396px; }
 @media (max-width: 1180px) { body.rec-panel-open .tab-pane.active { margin-right: 0; } body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab-pane.active > .sub-header-bar { margin-right: 0; } }
+
+/* ── 3차: 종합보고서 구성 · 디자인 고르기 (보고 > 보고서 설정) ─────────────────── */
+.deck-set-sec { margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px; }
+.deck-set-label { font-size: var(--fs-sm, 12px); font-weight: 800; color: var(--text-main); margin-bottom: 8px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.deck-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.deck-preset, .deck-design { display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); color: var(--text-main); font: inherit; cursor: pointer; }
+.deck-preset b, .deck-design b { font-size: var(--fs-base, 13px); }
+.deck-preset small, .deck-design small { font-size: var(--fs-xs, 11px); color: var(--text-muted); line-height: 1.4; }
+.deck-preset:hover, .deck-design:hover { border-color: var(--primary); }
+.deck-preset.active, .deck-design.active { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--tint-info); }
+.deck-preset-custom { cursor: default; border-style: dashed; }
+.deck-sections { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 14px; margin-top: 10px; }
+.deck-section { font-size: var(--fs-sm, 12px); color: var(--text-sub); display: flex; align-items: center; gap: 6px; }
+.deck-section.is-fixed { color: var(--text-muted); }
+.deck-designs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .deck-designs { grid-template-columns: repeat(3, minmax(0, 1fr)); } .deck-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); } .deck-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 디자인 견본 (작은 장표 그림 — 내려받는 PPT 의 색이라 화면 테마와 무관하게 고정) */
+.deck-thumb { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; background: #FFFFFF; border: 1px solid #D1D5DB; margin-bottom: 6px; }
+.deck-thumb i { position: absolute; display: block; }
+.deck-thumb .dt-c { left: 8%; right: 8%; top: 38%; height: 9%; background: #E5E7EB; box-shadow: 0 14px 0 #E5E7EB, 0 28px 0 #E5E7EB; border-radius: 1px; }
+[data-design="classic"] .dt-a { left: 0; right: 0; top: 0; height: 22%; background: #1E3A8A; }
+[data-design="classic"] .dt-b { left: 0; right: 0; bottom: 0; height: 7%; background: #EEF2F8; }
+[data-design="minimal"] .dt-a { left: 8%; right: 8%; top: 22%; height: 2px; background: #111827; }
+[data-design="minimal"] .dt-b { left: 8%; top: 9%; width: 34%; height: 8%; background: #111827; border-radius: 1px; }
+[data-design="sidebar"] .dt-a { left: 0; top: 0; bottom: 0; width: 22%; background: #0F766E; }
+[data-design="sidebar"] .dt-c { left: 30%; top: 16%; }
+[data-design="dark"] .dt-a { left: 8%; top: 9%; width: 8%; aspect-ratio: 1; border-radius: 50%; background: #F59E0B; }
+[data-design="dark"] .dt-b { left: 0; right: 0; bottom: 0; height: 9%; background: #111827; }
+[data-design="dark"] .dt-d { left: 20%; top: 10%; width: 34%; height: 8%; background: #111827; border-radius: 1px; }
+[data-design="soft"] .deck-thumb { background: #F1F7F5; }
+[data-design="soft"] .dt-a { left: 8%; top: 9%; width: 34%; height: 8%; background: #2F7D6B; border-radius: 1px; }
+[data-design="soft"] .dt-b { right: 8%; top: 8%; width: 22%; height: 10%; background: #BFE3D6; border-radius: 99px; }
+[data-design="soft"] .dt-c { background: #FFFFFF; box-shadow: 0 14px 0 #FFFFFF, 0 28px 0 #FFFFFF; border-radius: 3px; }
