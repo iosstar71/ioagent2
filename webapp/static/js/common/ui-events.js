@@ -92,7 +92,32 @@ var UiEvents = {
     return target.fn.apply(target.owner, args);
   },
 
+  // 작업 중인 버튼은 다시 눌리지 않음: 결과가 Promise 면 끝날 때까지,
+  // 다운로드 · 내보내기 버튼(data-btn="...-down", data-busy)은 최소 0.9초 동안 잠그고 돌아가는 표시
+  _busy(el, result) {
+    if (!el || el.tagName !== "BUTTON") return;
+    const isPromise = result && typeof result.then === "function";
+    const lock = isPromise || /-down$/.test(el.getAttribute("data-btn") || "") || el.hasAttribute("data-busy");
+    if (!lock) return;
+    el.classList.add("is-busy"); el.setAttribute("aria-busy", "true");
+    const done = () => { el.classList.remove("is-busy"); el.removeAttribute("aria-busy"); };
+    const minWait = new Promise(r => setTimeout(r, 900));
+    Promise.all([isPromise ? result.catch(() => {}) : null, minWait]).then(done);
+  },
+  // 숫자 칸(min · max)과 필수 칸(required): 벗어나면 빨간 테두리 + 안내 (값은 각 화면 규칙대로 처리)
+  _validate(el) {
+    if (!el || el.tagName !== "INPUT") return;
+    let msg = "";
+    if (el.required && !String(el.value).trim()) msg = "필수 입력입니다";
+    else if (el.type === "number" && el.value !== "") {
+      const v = parseFloat(el.value), lo = el.min !== "" ? parseFloat(el.min) : null, hi = el.max !== "" ? parseFloat(el.max) : null;
+      if (isNaN(v) || (lo !== null && v < lo) || (hi !== null && v > hi)) msg = `${lo !== null ? lo : ""} ~ ${hi !== null ? hi : ""} 사이 값`;
+    }
+    if (typeof UiForm !== "undefined") { if (msg) UiForm.invalid(el, msg); else UiForm.clear(el); }
+  },
+
   dispatch(type, e) {
+    if ((type === "input" || type === "change") && e.target && e.target.tagName === "INPUT") this._validate(e.target);
     let el = e.target;
     while (el && el !== document && el.nodeType === 1) {
       if (el.hasAttribute("data-" + type)) {
@@ -100,8 +125,10 @@ var UiEvents = {
         if (!key || key.split("|").indexOf(e.key) !== -1) {
           if (type === "click" && el.tagName === "A" && el.getAttribute("href") === "#") e.preventDefault();
           if (el.hasAttribute(`data-${type}-prevent`)) e.preventDefault();
+          if (type === "click" && el.classList && el.classList.contains("is-busy")) { e.preventDefault(); break; }
           try {
-            this.run(el, type, e);
+            const result = this.run(el, type, e);
+            if (type === "click") this._busy(el, result);
           } catch (err) {
             console.error(err);
           }

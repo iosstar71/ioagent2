@@ -616,6 +616,7 @@ var MeetingManager = {
   },
 
   switchSubTab(tabName) {
+    if (tabName !== "actionitems" && typeof RecordPanel !== "undefined" && RecordPanel._kind === "action") RecordPanel.close();
     if (this.activeSubTab === "minutes" && tabName !== "minutes" && !this.confirmLeave(() => this.switchSubTab(tabName))) return;
     this.activeSubTab = tabName;
     document.querySelectorAll(".meeting-sub-tab").forEach(btn => {
@@ -1492,39 +1493,48 @@ var MeetingManager = {
       const tr = document.createElement("tr");
       const isDelayed = (act.status === "진행중" && act.targetDate && act.targetDate < repDate);
       const sysTag = act.system || act.meetingSystem || "ALL";
-      const sysColor = this.getSubsystemColor(sysTag);
-
+      tr.setAttribute("data-rec-key", String(act.id));
+      tr.className = "ai-row";
+      tr.title = "행을 누르면 오른쪽에서 수정합니다";
+      const opt = v => `<option value="${v}"${act.status === v ? " selected" : ""}>${v}</option>`;
       tr.innerHTML = `
-        <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.id)}</td>
-        <td style="text-align:center;">
-          <span class="badge" style="background:${sysColor}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(sysTag)}</span>
-        </td>
-        <td>
-          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(act.meetingId))}" style="color:var(--tint-info-text); text-decoration:none; font-size:var(--fs-xs, 11px);">
-            ${escapeHtml(act.meetingTitle || "-")}
-          </a>
-        </td>
-        <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(act.meetingDate || "-")}</td>
-        <td style="font-weight:bold;">${escapeHtml(act.title)}</td>
-        <td style="font-size:var(--fs-xs, 11px); color:var(--text-sub);">${escapeHtml(act.content || "-")}</td>
-        <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(act.requester || "-")}</td>
-        <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.assignee || "-")}</td>
-        <td style="text-align:center;">
-          <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${isDelayed ? "var(--chart-bad-text)" : "var(--text-sub)"}; ${isDelayed ? "background:#fee2e2; padding:2px 6px; border-radius:4px;" : ""}">
-            ${escapeHtml(act.targetDate || "-")} ${isDelayed ? "⚠️지연" : ""}
-          </span>
-        </td>
-        <td style="text-align:center;">
-          <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "var(--chart-good-text)" : "var(--primary)"};">
-            <option value="진행중" ${act.status === "진행중" ? "selected" : ""}>진행중</option>
-            <option value="완료" ${act.status === "완료" ? "selected" : ""}>완료</option>
-            <option value="삭제" ${act.status === "삭제" ? "selected" : ""}>삭제</option>
-          </select>
+        <td class="ai-c">${idx + 1}</td>
+        <td class="ai-c ai-id">${escapeHtml(act.id)}</td>
+        <td class="ai-c"><span class="badge ai-sys" data-sys-color="${escapeAttr(this.getSubsystemColor(sysTag))}">${escapeHtml(sysTag)}</span></td>
+        <td><a href="#" class="ai-link" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(act.meetingId))}">${escapeHtml(act.meetingTitle || "-")}</a></td>
+        <td class="ai-c ai-sm">${escapeHtml(act.meetingDate || "-")}</td>
+        <td class="ai-title">${escapeHtml(act.title)}</td>
+        <td class="ai-sm ai-sub">${escapeHtml(act.content || "-")}</td>
+        <td class="ai-c ai-sm">${escapeHtml(act.requester || "-")}</td>
+        <td class="ai-c ai-id">${escapeHtml(act.assignee || "-")}</td>
+        <td class="ai-c"><span class="ai-due${isDelayed ? " is-late" : ""}">${escapeHtml(act.targetDate || "-")} ${isDelayed ? "⚠️지연" : ""}</span></td>
+        <td class="ai-c ai-act">
+          <select class="ai-status" data-state="${act.status === "완료" ? "done" : "open"}" data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}">${opt("진행중")}${opt("완료")}${opt("삭제")}</select>
         </td>
       `;
+      const sys = tr.querySelector(".ai-sys");
+      if (sys) sys.style.background = sys.getAttribute("data-sys-color");
       tbody.appendChild(tr);
     });
+    if (typeof RecordPanel !== "undefined") RecordPanel.decorate("action");
+  },
+
+  // 오른쪽 패널에서 고친 값 반영 (Action Item 목록 · 회의록 화면 공통)
+  updateActionItemField(actionId, field, value) {
+    const ok = ["title", "content", "requester", "assignee", "targetDate", "status"];
+    if (ok.indexOf(field) === -1) return;
+    if (field === "title" && !String(value || "").trim()) { showToast("⚠️ Action Item 명칭은 비울 수 없습니다.", "warning"); return; }
+    let hit = null;
+    (meetingsData || []).forEach(m => (m.actionItems || []).forEach(a => { if (String(a.id) === String(actionId)) hit = a; }));
+    if (!hit) return;
+    hit[field] = field === "targetDate" || field === "status" ? value : String(value || "").trim();
+    this._saveNow();
+    this.render();
+  },
+  // 패널의 [회의록 열기]
+  openMinutesFromPanel(meetingId) {
+    if (typeof RecordPanel !== "undefined") RecordPanel.close();
+    this.openMinutesForMeeting(meetingId);
   },
 
   openAddActionItemModal(meetingId) {

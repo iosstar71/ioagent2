@@ -388,9 +388,33 @@ async function localMain() {
     out.fold = { f1, w1, f2, ownerShown, foldCols, dow: document.querySelectorAll("#wbsTableBody .wbs-dow").length > 0 };
     return out;
   });
-  check("v3.1.0: 5 report themes (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Official Navy,Office Blue,Office Gray,Office Green,Matte Slate" && ui310.oldMapped === "Office Green,Matte Slate,Official Navy" && ui310.btnWide && ui310.swatches === 5 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+  check("v3.1.0: 3 report colours Navy · Gray · Mint (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
+    ui310.exportThemes === "Navy,Gray,Mint" && ui310.oldMapped === "Mint,Gray,Navy" && ui310.btnWide && ui310.swatches === 5 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
     ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
+  // 1차 정리: 표기 규칙 묶음 · Action Item 수정 패널 · 보고서 카드 · 양식 색상 3가지 · Navy 왼쪽 메뉴
+  const ph1 = await page.evaluate(async () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+    const keep = meetingsData;
+    meetingsData = [{ id: "M-T", title: "t", date: "2027-05-20", system: "ALL", actionItems: [{ id: "ACT-T1", meetingId: "M-T", title: "a", status: "진행중", targetDate: "2027-05-25" }] }];
+    GShell.go("tab-meeting"); MeetingManager.switchSubTab("actionitems"); await wait(300);
+    o.noAdd = !document.querySelector('#meeting-panel-actionitems [data-click="MeetingManager.openAddActionItemModal"]');
+    document.querySelector("#aiTrackerTableBody td.ai-title").click(); await wait(200);
+    o.open = RecordPanel.isOpen() && RecordPanel._kind === "action";
+    const ta = document.querySelector("#recPanel textarea"); ta.value = "b"; ta.dispatchEvent(new Event("change", { bubbles: true })); await wait(400);
+    const sel = document.querySelector("#recPanel select"); sel.value = "완료"; sel.dispatchEvent(new Event("change", { bubbles: true })); await wait(200);
+    const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
+    RecordPanel.close(); meetingsData = keep; MeetingManager.render();
+    const c = document.getElementById("ruleCard");
+    o.rule = !!c && !!c.querySelector("#weekFmtBox") && c.querySelectorAll(".rule-id-box").length === 4;
+    o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
+    o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
+    const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
+    const probe = document.createElement("button"); probe.className = "g-side-item"; document.body.appendChild(probe);
+    o.navy = getComputedStyle(probe).color; probe.remove(); document.body.setAttribute("data-theme", th);
+    return o; });
+  check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
+    ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
+    && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
     UiScale.set(1.3); const over = [];

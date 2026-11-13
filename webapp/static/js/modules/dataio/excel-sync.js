@@ -2,7 +2,17 @@ const ExcelSync = {
   // =========================================================================
   // [ver1.0 요건] Excel & Word DOCX 통합 시각 테마 및 폰트 팔레트
   // =========================================================================
-  EXPORT_THEMES: ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"],
+  // 엑셀 · 워드 양식 색상 3가지 (한 곳에서 정의 — 설정 화면 선택 상자도 여기서 그려짐)
+  //  예전 값: Official Navy · Office Blue → Navy / Office Gray · Matte Slate → Gray / Office Green → Mint
+  EXPORT_THEME_DEFS: [
+    { id: "Navy", name: "Navy — 네이비 (보고서 표준, 기본)", pal: { primary: "1E3A8A", secondary: "2563EB", accent: "0284C7", headerBg: "1E3A8A", subHeaderBg: "EEF2F8", border: "B4C2DC", headerTextColor: "FFFFFF" } },
+    { id: "Gray", name: "Gray — 그레이 (흑백 인쇄에 무난)", pal: { primary: "3A3A3A", secondary: "595959", accent: "7F7F7F", headerBg: "595959", subHeaderBg: "F2F2F2", border: "BFBFBF", headerTextColor: "FFFFFF" } },
+    { id: "Mint", name: "Mint — 민트 (파스텔)", pal: { primary: "2F7D6B", secondary: "4FA08C", accent: "7CC4B0", headerBg: "BFE3D6", subHeaderBg: "EEF8F4", border: "BFDDD3", headerTextColor: "1F4D43" } }
+  ],
+  get EXPORT_THEMES() { return this.EXPORT_THEME_DEFS.map(t => t.id); },
+  fillExportThemeSelect(sel) {
+    if (sel) sel.innerHTML = this.EXPORT_THEME_DEFS.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+  },
   // [v3.3.0] 내려받는 파일 이름 표준: {파일약칭}_{대상}[_범위…]_{기준일 yyyyMMdd}.{확장자}
   //  (주간보고는 WeeklyExport 의 주차 규칙) — 공백·괄호·특수문자 없이
   stdName(kind, parts, ext, stamp) {
@@ -16,11 +26,9 @@ const ExcelSync = {
   normalizeExportTheme(v) {
     const r = String(v || "");
     if (this.EXPORT_THEMES.indexOf(r) !== -1) return r;
-    if (/Matte|Brown|Mocha|Sepia/i.test(r)) return "Matte Slate";
-    if (/Sky|Ocean|Office Blue/i.test(r)) return "Office Blue";
-    if (/Mint|Emerald|Teal|Green/i.test(r)) return "Office Green";
-    if (/Charcoal|Slate|Gray|Grey/i.test(r)) return "Office Gray";
-    return "Official Navy";
+    if (/Mint|Emerald|Teal|Green|Pastel/i.test(r)) return "Mint";
+    if (/Matte|Brown|Mocha|Sepia|Charcoal|Slate|Gray|Grey/i.test(r)) return "Gray";
+    return "Navy";
   },
   getExportThemePalette() {
     const expCfg = (typeof projectConfig !== "undefined" && projectConfig.exportSettings) ? projectConfig.exportSettings : {};
@@ -29,17 +37,8 @@ const ExcelSync = {
     const fontSize = parseInt(expCfg.exportFontSize || expCfg.docxFontSize || expCfg.xlsxFontSize, 10) || 10;
     const fontName = expCfg.exportFont || expCfg.docxFont || expCfg.xlsxFont || "맑은 고딕";
 
-    // [v3.1.0] 보고서 테마 5가지 (시중 보고서에서 흔히 쓰는 4가지 + 화면 Matte 테마와 비슷한 무광 1가지)
-    //  예전 테마 이름은 가까운 테마로 바꿔 씀
-    const THEMES = {
-      "Official Navy": { primary: "1E3A8A", secondary: "2563EB", accent: "0284C7", headerBg: "1E3A8A", subHeaderBg: "EEF2F8", border: "B4C2DC", headerTextColor: "FFFFFF" },
-      "Office Blue":   { primary: "2F5597", secondary: "4472C4", accent: "5B9BD5", headerBg: "4472C4", subHeaderBg: "DDEBF7", border: "9BC2E6", headerTextColor: "FFFFFF" },
-      "Office Gray":   { primary: "3A3A3A", secondary: "595959", accent: "7F7F7F", headerBg: "595959", subHeaderBg: "F2F2F2", border: "BFBFBF", headerTextColor: "FFFFFF" },
-      "Office Green":  { primary: "375623", secondary: "548235", accent: "70AD47", headerBg: "548235", subHeaderBg: "E2EFDA", border: "A9D08E", headerTextColor: "FFFFFF" },
-      "Matte Slate":   { primary: "3E4A55", secondary: "4F6475", accent: "6F8597", headerBg: "4F6475", subHeaderBg: "ECEAE5", border: "D3D0C9", headerTextColor: "FFFFFF" }
-    };
     const themeName = this.normalizeExportTheme(rawTheme);
-    const t = THEMES[themeName];
+    const t = this.EXPORT_THEME_DEFS.find(x => x.id === themeName).pal;
     const { primary, secondary, accent, headerBg, subHeaderBg, border, headerTextColor } = t;
     const isPastel = false;
     return { themeName, fontSize, fontName, primary, secondary, accent, headerBg, subHeaderBg, border, headerTextColor, isPastel };

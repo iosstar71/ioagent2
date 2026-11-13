@@ -22,6 +22,7 @@ function renderDeliverablesTable() {
     if (typeof StatusChips !== "undefined" && !StatusChips.match("deliv", row)) return;
 
     const tr = document.createElement("tr");
+    tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel)
     const pDay = WBSEngine.getDayOfWeekText(row.pDate);
     const aDay = WBSEngine.getDayOfWeekText(row.aDate);
 
@@ -71,6 +72,7 @@ function renderDeliverablesTable() {
   });
   if (typeof StatusChips !== "undefined") StatusChips.render("deliv", chipScope);
   if (typeof AttachManager !== "undefined") AttachManager.refreshSummary();  // 첨부파일 수 (서버 방식, 처음 한 번)
+  if (typeof RecordPanel !== "undefined") RecordPanel.decorate("deliv");
 }
 
 function addNewDeliverable() {

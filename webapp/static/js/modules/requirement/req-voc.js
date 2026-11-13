@@ -37,6 +37,7 @@ function renderReqMasterTable() {
     else if (row.status === "삭제") tagClass = "tag-del";
 
     const tr = document.createElement("tr");
+    tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel)
     tr.innerHTML = `
       <td><input type="text" value="${escapeHtml(row.id)}" style="width:98px; font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "id", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
       <td>
@@ -94,6 +95,7 @@ function renderReqMasterTable() {
   document.getElementById("tab-req-stat-completed").innerText = statComp;
   document.getElementById("tab-req-stat-hold").innerText = statHold;
   document.getElementById("tab-req-stat-deleted").innerText = statDel;
+  if (typeof RecordPanel !== "undefined") RecordPanel.decorate("req");
 }
 
 function addNewReq() {
@@ -156,6 +158,7 @@ function renderVocTable() {
     else if (row.status === "삭제") tagClass = "tag-del";
 
     const tr = document.createElement("tr");
+    tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel)
     tr.innerHTML = `
       <td><strong>${escapeHtml(row.id)}</strong></td>
       <td>
@@ -218,6 +221,7 @@ function renderVocTable() {
   document.getElementById("tab-voc-stat-hold").innerText = statHold;
   document.getElementById("tab-voc-stat-deleted").innerText = statDel;
   document.getElementById("tab-voc-stat-rate").innerText = `${achieveRate}%`;
+  if (typeof RecordPanel !== "undefined") RecordPanel.decorate("voc");
 }
 
 function addNewVoc() {

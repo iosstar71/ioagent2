@@ -158,12 +158,7 @@
       <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
-        <div class="g-theme-swatches" role="group" aria-label="테마">
-          <button type="button" class="g-swatch" data-theme-pick="urban-slate" data-click="UiScale.pickTheme" data-click-args='["urban-slate"]'><i style="background:linear-gradient(135deg,#FFFFFF 50%,#335C81 50%)"></i>Slate</button>
-          <button type="button" class="g-swatch" data-theme-pick="brown" data-click="UiScale.pickTheme" data-click-args='["brown"]'><i style="background:linear-gradient(135deg,#F1E9DF 50%,#7A5236 50%)"></i>Walnut</button>
-          <button type="button" class="g-swatch" data-theme-pick="classic" data-click="UiScale.pickTheme" data-click-args='["classic"]'><i style="background:linear-gradient(135deg,#0B1F44 50%,#2F6BD8 50%)"></i>Navy</button>
-          <button type="button" class="g-swatch" data-theme-pick="dark" data-click="UiScale.pickTheme" data-click-args='["dark"]'><i style="background:linear-gradient(135deg,#181B20 50%,#849CB0 50%)"></i>Obsidian</button>
-          <button type="button" class="g-swatch" data-theme-pick="electric" data-click="UiScale.pickTheme" data-click-args='["electric"]'><i style="background:linear-gradient(135deg,#FFD60A 50%,#FF3D8B 50%)"></i>Pop</button>
+        <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
         </div>
         <div class="g-menu-title">글자 크기</div>
         <div class="g-scale-btns" role="group" aria-label="글자 크기">
@@ -174,12 +169,7 @@
         <div class="g-menu-hint">글자 크기는 멤버마다 기억합니다. 넓은 표(WBS 등)는 가로로 스크롤될 수 있습니다.</div>
         <div class="g-menu-sep"></div>
         <label class="g-menu-field g-hidden-field">테마 (목록)
-          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]'>
-            <option value="urban-slate">Slate (기본)</option>
-            <option value="brown">Walnut (따뜻한 원목)</option>
-            <option value="classic">Navy (클래식)</option>
-            <option value="dark">Obsidian (다크)</option>
-            <option value="electric">Pop (팝아트)</option>
+          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
           </select>
         </label>
         <label class="g-menu-field">메뉴 위치
@@ -461,28 +451,25 @@
               </table>
             </div>
           </div>
-          <!-- [v3.1.0] 임원 보고: 기준일 주차의 통합 주간보고 (주간보고 화면 위쪽 다운로드와 같은 결과) -->
-          <div class="card exec-report-card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
+          <!-- 보고서: 종합보고서(PPT) · 주간보고(워드, 표 포함) — 기준일 주차 -->
+          <div class="card exec-report-card">
             <div>
               <div class="card-title">
-                <span style="font-weight:700;">📑 임원 보고 (주간 보고 장표)</span>
+                <span class="exec-report-title">📑 보고서</span>
                 <button class="btn btn-xs" data-btn="nav" data-click="ExecReport.openWeekly" title="주간보고 화면에서 작성 현황 보기">주간보고 열기 →</button>
               </div>
               <div id="execReportInfo" class="exec-report-info"></div>
+              <div class="exec-report-sub">종합보고서</div>
               <div class="exec-report-btns exec-deck-btns">
-                <button class="btn" data-btn="nav" data-click="ExecDeck.downloadPptx" title="표지 · 목차 · 종합 진척(그래프) · 서브시스템별 주간보고 장표 (PowerPoint)">📽 임원 보고 PPT</button>
-                <button class="btn" data-btn="nav" data-click="ExecDeck.openPdf" title="같은 장표를 인쇄 화면으로 열어 [PDF로 저장]">🖨 임원 보고 PDF</button>
+                <button class="btn" data-btn="nav" data-click="ExecDeck.downloadPptx" title="표지 · 목차 · 종합 진척(그래프) · 서브시스템별 주간보고 장표 (PowerPoint)">📽 종합보고서 PPT</button>
               </div>
-              <div class="exec-report-sub">주간보고 문서 (엑셀 · 워드)</div>
+              <div class="exec-report-sub">주간보고</div>
               <div class="exec-report-btns">
-                <button class="btn" data-btn="word-down" data-click="ExecReport.download" data-click-args='["WORD"]' title="표가 들어간 워드 보고서">📄 워드 (표 포함)</button>
-                <button class="btn" data-btn="word-down" data-click="ExecReport.download" data-click-args='["WORD_TEXT"]' title="표 없이 문장으로 정리한 워드 보고서">📝 워드 (서술형)</button>
-                <button class="btn" data-btn="excel-down" data-click="ExecReport.download" data-click-args='["EXCEL"]' title="같은 목차를 시트로 나눈 엑셀 보고서">📊 엑셀</button>
-                <button class="btn" data-btn="excel-down" data-click="MeetingManager.exportActionItemsExcel" title="전체 Action Item 현황 엑셀">⚡ Action Item 엑셀</button>
+                <button class="btn" data-btn="word-down" data-click="ExecReport.download" data-click-args='["WORD"]' title="표가 들어간 워드 주간보고">📄 주간보고 워드 (표 포함)</button>
               </div>
             </div>
             <div class="exec-report-note">
-              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만들고, 작성 완료 시점 자료로 다운로드합니다. 테마·글꼴·파일 약칭은 [시스템 설정 &gt; 보고서 템플릿]에서 정합니다.
+              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [프로젝트 설정 &gt; 보고서 양식]에서 정합니다.
             </div>
           </div>
         </div>
@@ -1185,7 +1172,7 @@
           <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
           <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
           <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="ExecDeck.downloadPptxSelected" title="선택 주차의 주간 임원 보고 장표 (PowerPoint)">📥 임원 보고 장표 (PPT)</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="ExecDeck.downloadPptxSelected" title="선택 주차의 종합보고서 (PowerPoint)">📥 종합보고서 (PPT)</button>
         </div>
       </div>
 
@@ -1517,26 +1504,26 @@
       <!-- 서브탭 3: Action Item 현황 (통합 트래커) -->
       <div id="meeting-panel-actionitems" class="meeting-sub-panel" style="display:none;">
         <!-- KPI 통계 카드 -->
-        <div class="grid-4" style="margin-bottom:12px; grid-template-columns: repeat(5, 1fr);">
-          <div class="kpi-card" style="border-left-color: var(--primary);">
+        <div class="grid-4 ai-kpis">
+          <div class="kpi-card kpi-tone-info">
             <div class="kpi-title">총 Action Item</div>
-            <div class="kpi-value" id="aiKpiTotal" style="color:var(--tint-info-text);">0건</div>
+            <div class="kpi-value" id="aiKpiTotal">0건</div>
           </div>
-          <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-card kpi-tone-info">
             <div class="kpi-title">진행중 Task</div>
-            <div class="kpi-value" id="aiKpiProg" style="color:var(--primary);">0건</div>
+            <div class="kpi-value" id="aiKpiProg">0건</div>
           </div>
-          <div class="kpi-card" style="border-left-color: #15803d;">
+          <div class="kpi-card kpi-tone-ok">
             <div class="kpi-title">완료 Task</div>
-            <div class="kpi-value" id="aiKpiDone" style="color:#15803d;">0건</div>
+            <div class="kpi-value" id="aiKpiDone">0건</div>
           </div>
-          <div class="kpi-card" style="border-left-color: #059669;">
+          <div class="kpi-card kpi-tone-ok">
             <div class="kpi-title">조치 완료율</div>
-            <div class="kpi-value" id="aiKpiRate" style="color:#059669;">0%</div>
+            <div class="kpi-value" id="aiKpiRate">0%</div>
           </div>
-          <div class="kpi-card" style="border-left-color: #dc2626;">
+          <div class="kpi-card kpi-tone-bad">
             <div class="kpi-title">지연 주의 Task</div>
-            <div class="kpi-value" id="aiKpiDelay" style="color:#dc2626;">0건</div>
+            <div class="kpi-value" id="aiKpiDelay">0건</div>
           </div>
         </div>
 
@@ -1545,10 +1532,10 @@
           <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span>⚡ 회의 도출 Action Item 전사 통합 관리 대장</span>
+              <span class="lk-hint">추가는 회의록 작성에서 · 행을 누르면 오른쪽에서 수정</span>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-success btn-xs" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 다운로드 (Action Item)</button>
-              <button class="btn btn-primary btn-xs" data-click="MeetingManager.openAddActionItemModal">➕ Action Item 등록</button>
             </div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #e2e8f0;">
@@ -1595,7 +1582,7 @@
                   <th style="width:90px;">요청자</th>
                   <th style="width:95px;">담당자</th>
                   <th style="width:105px;">완료목표일</th>
-                  <th style="width:90px;">상태</th>
+                  <th style="width:120px;">상태</th>
                 </tr>
               </thead>
               <tbody id="aiTrackerTableBody"></tbody>
@@ -2169,29 +2156,6 @@
               </div>
             </div>
 
-            <!-- [Workgroup 0.1] 주차 표시 방식 (엑셀 사용자 지정 형식처럼) -->
-            <div id="weekFmtBox" class="wk-box">
-              <div class="wk-head"><b>📅 주차 표시 방식</b> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 위 설정)</span></div>
-              <div class="wk-grid">
-                <div>
-                  <div class="wk-label">① 주차 기준</div>
-                  <label class="bk-check"><input type="radio" name="wkBasis" value="ANNUAL" data-change="WeekFmt.preview"> 연간 주차 — 1월 1일이 들어 있는 주 = W1 (엑셀 WEEKNUM)</label>
-                  <label class="bk-check"><input type="radio" name="wkBasis" value="PROJECT" data-change="WeekFmt.preview"> 프로젝트 주차 — 프로젝트 시작일이 들어 있는 주 = W1</label>
-                  <div class="wk-label" style="margin-top:8px;">② 2개 연도 이상일 때</div>
-                  <label class="bk-check"><input type="radio" name="wkMulti" value="PREFIX" data-change="WeekFmt.preview"> 해마다 W1 부터, 앞에 연도 — 27W52, 28W1</label>
-                  <label class="bk-check"><input type="radio" name="wkMulti" value="CONTINUE" data-change="WeekFmt.preview"> 이어서 — W52, W53, W54</label>
-                  <div class="lk-hint" id="wkSpanNote"></div>
-                </div>
-                <div>
-                  <div class="wk-label">③ 표시 형식 (엑셀 사용자 지정 형식처럼)</div>
-                  <select id="wkFormatPreset" data-change="WeekFmt.preview" style="width:100%;"></select>
-                  <input type="text" id="wkFormatCustom" maxlength="40" placeholder='예: yy"W"ww' data-input="WeekFmt.preview" style="width:100%; margin-top:6px; display:none;">
-                  <div class="lk-hint" style="margin-top:4px;">yyyy · yy = 연도, ww = 두 자리 주차, w = 주차, "…" 안의 글자는 그대로</div>
-                  <table class="m-table" style="margin-top:6px;"><thead><tr><th>날짜</th><th></th><th style="width:110px;">표시</th></tr></thead><tbody id="wkPreviewBody"></tbody></table>
-                  <div style="text-align:right; margin-top:6px;"><button class="btn btn-sm" data-btn="save" data-click="WeekFmt.save">💾 주차 표시 저장</button></div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -2248,34 +2212,57 @@
           </div>
         </div>
 
-        <!-- [1-7] WBS · REQ · VOC 코드 채번 Prefix 규칙 -->
-        <div class="card" style="border-left: 4px solid var(--primary);">
+        <!-- [1-7] 표기 규칙: ID 접두사 + 주차 표시 (번호 · 날짜를 적는 방식을 한 곳에) -->
+        <div class="card rule-card" id="ruleCard">
           <div class="card-title">
-            <div>
-              <strong>WBS · REQ · VOC 코드 ID 규칙 (ID Prefix)</strong>
-            </div>
-            <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button>
+            <div><strong>표기 규칙</strong> <span class="lk-hint">ID 접두사 · 주차 표시 — 번호와 주차를 화면 · 보고서에 적는 방식</span></div>
           </div>
-          <div class="grid-4" style="gap:12px; grid-template-columns: repeat(4, 1fr);">
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:var(--fs-sm, 12px); margin-bottom:4px; color:var(--primary);">1. WBS ID 접두사:</strong>
-              <input type="text" id="cfgWbsPrefix" placeholder="접두사 없음" style="width:100%; margin-bottom:4px;" data-change="updateIdPrefixConfig">
-              <label style="font-size:var(--fs-xs, 11px);"><input type="checkbox" id="cfgWbsUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+          <div class="rule-sec">
+            <div class="wk-head rule-sec-head"><b>🏷️ ID 규칙</b> <span class="lk-hint">WBS · REQ · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span>
+              <button class="btn btn-warning btn-sm rule-sec-btn" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button></div>
+            <div class="rule-id-grid">
+            <div class="rule-id-box">
+              <strong class="rule-id-name ">1. WBS ID 접두사</strong>
+              <input type="text" id="cfgWbsPrefix" placeholder="접두사 없음" data-change="updateIdPrefixConfig">
+              <label class="rule-id-check"><input type="checkbox" id="cfgWbsUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
             </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:var(--fs-sm, 12px); margin-bottom:4px; color:#0f766e;">2. REQ ID 접두사:</strong>
-              <input type="text" id="cfgReqPrefix" value="REQ" style="width:100%; margin-bottom:4px;" data-change="updateIdPrefixConfig">
-              <label style="font-size:var(--fs-xs, 11px);"><input type="checkbox" id="cfgReqUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+            <div class="rule-id-box">
+              <strong class="rule-id-name ">2. REQ ID 접두사</strong>
+              <input type="text" id="cfgReqPrefix" value="REQ" data-change="updateIdPrefixConfig">
+              <label class="rule-id-check"><input type="checkbox" id="cfgReqUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
             </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:var(--fs-sm, 12px); margin-bottom:4px; color:#d97706;">3. VOC ID 접두사:</strong>
-              <input type="text" id="cfgVocPrefix" value="VOC" style="width:100%; margin-bottom:4px;" data-change="updateIdPrefixConfig">
-              <label style="font-size:var(--fs-xs, 11px);"><input type="checkbox" id="cfgVocUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+            <div class="rule-id-box">
+              <strong class="rule-id-name ">3. VOC ID 접두사</strong>
+              <input type="text" id="cfgVocPrefix" value="VOC" data-change="updateIdPrefixConfig">
+              <label class="rule-id-check"><input type="checkbox" id="cfgVocUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
             </div>
-            <div style="padding:8px; border:1px solid var(--border-color); border-radius:6px; background:var(--lvl-4-bg, #f8fafc);">
-              <strong style="display:block; font-size:var(--fs-sm, 12px); margin-bottom:4px; color:#4338ca;">4. Action Item 접두사:</strong>
-              <input type="text" id="cfgActPrefix" value="ACT" style="width:100%; margin-bottom:4px;" data-change="updateIdPrefixConfig">
-              <label style="font-size:var(--fs-xs, 11px);"><input type="checkbox" id="cfgActUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+            <div class="rule-id-box">
+              <strong class="rule-id-name ">4. Action Item 접두사</strong>
+              <input type="text" id="cfgActPrefix" value="ACT" data-change="updateIdPrefixConfig">
+              <label class="rule-id-check"><input type="checkbox" id="cfgActUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+            </div>
+            </div>
+          </div>
+          <div id="weekFmtBox" class="wk-box rule-sec">
+            <div class="wk-head"><b>📅 주차 표시 방식</b> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 기본정보에서 설정)</span></div>
+            <div class="wk-grid">
+              <div>
+                <div class="wk-label">① 주차 기준</div>
+                <label class="bk-check"><input type="radio" name="wkBasis" value="ANNUAL" data-change="WeekFmt.preview"> 연간 주차 — 1월 1일이 들어 있는 주 = W1 (엑셀 WEEKNUM)</label>
+                <label class="bk-check"><input type="radio" name="wkBasis" value="PROJECT" data-change="WeekFmt.preview"> 프로젝트 주차 — 프로젝트 시작일이 들어 있는 주 = W1</label>
+                <div class="wk-label wk-gap">② 2개 연도 이상일 때</div>
+                <label class="bk-check"><input type="radio" name="wkMulti" value="PREFIX" data-change="WeekFmt.preview"> 해마다 W1 부터, 앞에 연도 — 27W52, 28W1</label>
+                <label class="bk-check"><input type="radio" name="wkMulti" value="CONTINUE" data-change="WeekFmt.preview"> 이어서 — W52, W53, W54</label>
+                <div class="lk-hint" id="wkSpanNote"></div>
+              </div>
+              <div>
+                <div class="wk-label">③ 표시 형식 (엑셀 사용자 지정 형식처럼)</div>
+                <select id="wkFormatPreset" data-change="WeekFmt.preview" class="wk-wide"></select>
+                <input type="text" id="wkFormatCustom" maxlength="40" placeholder='예: yy"W"ww' data-input="WeekFmt.preview" class="wk-wide wk-gap6" hidden>
+                <div class="lk-hint wk-gap4">yyyy · yy = 연도, ww = 두 자리 주차, w = 주차, "…" 안의 글자는 그대로</div>
+                <table class="m-table wk-gap6"><thead><tr><th>날짜</th><th></th><th class="wk-col-out">표시</th></tr></thead><tbody id="wkPreviewBody"></tbody></table>
+                <div class="wk-save"><button class="btn btn-sm" data-btn="save" data-click="WeekFmt.save">💾 주차 표시 저장</button></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2711,12 +2698,7 @@
             </div>
             <div>
               <label style="display:block; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; margin-bottom:4px;">🎨 테마:</label>
-              <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]'>
-                <option value="urban-slate">Slate (기본)</option>
-                <option value="brown">Walnut (따뜻한 원목)</option>
-                <option value="classic">Navy (클래식)</option>
-                <option value="dark">Obsidian (다크)</option>
-                <option value="electric">Pop (팝아트)</option>
+              <select id="cfgThemeSelect" style="width:100%; font-weight:bold;" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
               </select>
             </div>
           </div>
@@ -2735,13 +2717,8 @@
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:14px;">
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
               <div>
-                <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:700; color:var(--tint-info-text); display:block; margin-bottom:5px;">🎨 공통 보고서 스타일 테마:</label>
+                <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:700; color:var(--tint-info-text); display:block; margin-bottom:5px;">🎨 엑셀 · 워드 양식 색상:</label>
                                 <select id="cfgExportUnifiedTheme" data-change="HomeScreenManager.onExportSettingChange" data-change-args='["exportTheme", "$value"]' style="font-size:calc(11.5px * var(--fs-scale, 1)); padding:6px 10px; width:100%; border:1px solid #cbd5e1; border-radius:4px; font-weight:600; background:#ffffff;">
-                  <option value="Official Navy">1. 네이비 (공공·기업 보고서 표준, 기본)</option>
-                  <option value="Office Blue">2. 오피스 블루 (엑셀·워드 기본 파랑)</option>
-                  <option value="Office Gray">3. 그레이 (흑백 인쇄에 무난한 회색)</option>
-                  <option value="Office Green">4. 그린 (오피스 녹색)</option>
-                  <option value="Matte Slate">5. 매트 슬레이트 (화면 Matte 테마와 비슷한 무광 회청색)</option>
                 </select>
               </div>
               <div>
@@ -3535,6 +3512,7 @@
   <script src="static/js/common/legal-notice.js"></script>
   <script src="static/js/common/g-shell.js"></script>
   <script src="static/js/common/neo.js"></script>
+  <script src="static/js/common/record-panel.js"></script>
   <script src="static/js/modules/todo/todo-center.js"></script>
   <script src="static/js/core/access-control.js"></script>
   <script src="static/js/common/ui-standards.js"></script>

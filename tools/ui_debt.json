@@ -2,8 +2,8 @@
  "css_important": 623,
  "html": {
   "shell": {
-   "inline": 38,
-   "inline_hex": 17
+   "inline": 33,
+   "inline_hex": 7
   },
   "tab-config": {
    "inline": 402,
@@ -22,20 +22,20 @@
    "inline_hex": 0
   },
   "tab-home": {
-   "inline": 14,
+   "inline": 12,
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 147,
-   "inline_hex": 26
+   "inline": 122,
+   "inline_hex": 19
   },
   "tab-matrix": {
    "inline": 23,
    "inline_hex": 5
   },
   "tab-meeting": {
-   "inline": 86,
-   "inline_hex": 13
+   "inline": 75,
+   "inline_hex": 7
   },
   "tab-merge": {
    "inline": 51,
@@ -75,7 +75,7 @@
   "js/modules/deliverable": 0,
   "js/modules/home": 0,
   "js/modules/master": 10,
-  "js/modules/meeting": 42,
+  "js/modules/meeting": 41,
   "js/modules/progress": 15,
   "js/modules/report": 5,
   "js/modules/requirement": 3,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 1115,
-  "html_inline_hex": 218,
-  "js_hex": 128
+  "html_inline": 1072,
+  "html_inline_hex": 195,
+  "js_hex": 127
  }
 }
