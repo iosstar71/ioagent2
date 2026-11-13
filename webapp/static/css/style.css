@@ -3029,3 +3029,18 @@ body.rec-panel-open #tab-meeting.active { margin-right: 384px; }
 #aiTrackerTableBody tr.neo-sel td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
 .rec-meeting { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
 .rec-meeting .btn { margin-left: auto; }
+
+/* ── 2차: [보고] 메뉴 — 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정 ───────────── */
+.rp-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rp-tabs { margin-bottom: 0; }
+.rp-pane { display: none; }
+.rp-pane.active { display: block; }
+.rp-export-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.rp-export-label { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+.rp-deck-card { max-width: 760px; }
+.rp-deck-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.rp-deck-label { font-size: var(--fs-sm, 12px); font-weight: 700; color: var(--text-sub); }
+.rp-deck-row select { min-width: 240px; }
+.rp-deck-sub { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-muted); margin: 10px 0 4px; }
+.rp-deck-slides { margin: 0 0 10px; padding-left: 20px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 18px; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.master-subtab-link { margin-left: auto; color: var(--text-muted); }

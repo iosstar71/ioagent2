@@ -62,7 +62,7 @@
    "inline_hex": 0
   },
   "tab-weekly-report": {
-   "inline": 72,
+   "inline": 69,
    "inline_hex": 14
   }
  },
@@ -85,7 +85,7 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 1072,
+  "html_inline": 1069,
   "html_inline_hex": 195,
   "js_hex": 127
  }

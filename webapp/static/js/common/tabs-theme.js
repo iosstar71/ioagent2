@@ -39,6 +39,7 @@ function activateTab(tabId) {
       break;
     case "tab-weekly-report":
       WeeklyReportManager.init();
+      if (typeof ReportTabs !== "undefined") { ReportTabs.sync(); if (ReportTabs.cur === "deck") ReportTabs.renderDeck(); }
       break;
     case "tab-meeting":
       MeetingManager.init();

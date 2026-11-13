@@ -426,3 +426,65 @@ var ExecReport = {
   }
 };
 window.ExecReport = ExecReport;
+
+// =============================================================================
+// [보고] 메뉴의 서브탭: 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정(PM 이상)
+// =============================================================================
+var ReportTabs = {
+  cur: "weekly",
+  canSettings() {
+    const r = typeof AuthManager !== "undefined" ? AuthManager.getCurrentRole() : "";
+    return r === "SYS_ADMIN" || r === "PM";
+  },
+  // 권한에 맞춰 [보고서 설정] 탭 보이기 (화면을 열 때마다)
+  sync() {
+    const b = document.querySelector('[data-rp-tab="settings"]');
+    if (b) b.hidden = !this.canSettings();
+    if (this.cur === "settings" && !this.canSettings()) this.show("weekly");
+  },
+  show(name) {
+    if (["weekly", "deck", "settings"].indexOf(name) === -1) name = "weekly";
+    if (name === "settings" && !this.canSettings()) { showToast("⚠️ 보고서 설정은 PM 이상만 바꿀 수 있습니다.", "warning"); name = "weekly"; }
+    if (this.cur === "weekly" && name !== "weekly" && !WeeklyReportManager.confirmLeave(() => this.show(name))) return;
+    this.cur = name;
+    document.querySelectorAll("[data-rp-tab]").forEach(b => b.classList.toggle("active", b.getAttribute("data-rp-tab") === name));
+    document.querySelectorAll("#tab-weekly-report [data-rp-pane]").forEach(p => p.classList.toggle("active", p.getAttribute("data-rp-pane") === name));
+    if (name === "deck") this.renderDeck();
+    if (name === "settings" && typeof SharedPanes !== "undefined") SharedPanes.place("report", "report");
+  },
+  // 다른 화면에서 바로 열기 (프로젝트 설정의 [보고서 설정 →] 등)
+  open(name) {
+    if (typeof GShell !== "undefined") GShell.go("tab-weekly-report"); else switchTab("tab-weekly-report");
+    setTimeout(() => this.show(name), 0);
+  },
+  deckWeek() {
+    const sel = document.getElementById("rpDeckWeek");
+    return sel && sel.value ? parseInt(sel.value, 10) : (WeeklyReportManager.listWeek || ExecReport.week());
+  },
+  renderDeck() {
+    const sel = document.getElementById("rpDeckWeek");
+    if (!sel) return;
+    const keep = sel.value || String(WeeklyReportManager.listWeek || ExecReport.week() || "");
+    sel.innerHTML = WeeklyReportManager.getAllWeeks().map(w => `<option value="${w.weekNum}">${escapeHtml(w.fullLabel)}</option>`).join("");
+    if (keep && sel.querySelector(`option[value="${keep}"]`)) sel.value = keep;
+    const info = document.getElementById("rpDeckInfo"), list = document.getElementById("rpDeckSlides");
+    const wn = this.deckWeek();
+    let deck = null;
+    try { deck = wn ? ExecDeck.build(wn) : null; } catch (e) { deck = null; }
+    if (!deck) {
+      if (info) info.innerHTML = `<div class="exec-report-line">⚠️ 보고 주차를 찾을 수 없습니다. 프로젝트 기간과 기준일을 확인하세요.</div>`;
+      if (list) list.innerHTML = "";
+      return;
+    }
+    const rep = WeeklyReportManager.buildWeekIntegrated(wn) || {}, f = rep.integratedFrom || {};
+    const total = (f.done || []).length + (f.missing || []).length;
+    if (info) info.innerHTML = `
+      <div class="exec-report-line"><b>${escapeHtml(rep.weekLabel || "")}</b> · 장표 ${deck.slides.length}장</div>
+      <div class="exec-report-line">주간보고: 서브시스템 ${(f.done || []).length} / ${total} 작성 완료</div>
+      <div class="exec-report-line exec-report-file">파일: <code>${escapeHtml(deck.c.docNo)}_PPT.pptx</code></div>`;
+    if (list) list.innerHTML = deck.slides.map(s => `<li>${escapeHtml(s.title || s.name || "장표")}</li>`).join("");
+    if (typeof I18N !== "undefined" && I18N.translateTree) { if (info) I18N.translateTree(info); }
+  },
+  downloadDeck() { return ExecDeck.downloadPptx(this.deckWeek()); }
+};
+window.ReportTabs = ReportTabs;

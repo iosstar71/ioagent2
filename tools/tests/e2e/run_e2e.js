@@ -415,6 +415,29 @@ async function localMain() {
   check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
     ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
     && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
+  // 2차: [보고] 메뉴 — 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정(PM 이상)
+  const ph2 = await page.evaluate(async () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+    GShell.go("tab-weekly-report"); await wait(400);
+    o.label = GShell.label("tab-weekly-report");
+    o.tabs = [...document.querySelectorAll("[data-rp-tab]")].filter(b => !b.hidden).map(b => b.getAttribute("data-rp-tab")).join();
+    ReportTabs.show("deck"); await wait(300);
+    o.deck = document.getElementById("rpDeckWeek").options.length > 0 && document.querySelectorAll("#rpDeckSlides li").length >= 3;
+    const og = ExcelSync._triggerDownload; let name = ""; ExcelSync._triggerDownload = (b, n) => { name = n; };
+    try { ReportTabs.downloadDeck(); } finally { ExcelSync._triggerDownload = og; }
+    o.file = /_종합보고서_\d{4}W\d{2}_PPT\.pptx$/.test(name);
+    ReportTabs.show("settings"); await wait(300);
+    const sel = document.getElementById("cfgExportUnifiedTheme");
+    o.settings = document.getElementById("reportSub-settings").contains(sel) && !!sel.offsetParent && sel.options.length === 3;
+    o.oneplace = !document.querySelector('.master-subtab-btn[data-subtab="ui-report"]') && !!document.querySelector(".master-subtab-link");
+    MasterSubTabs.show("ui-report"); await wait(300);
+    o.redirect = document.querySelector(".tab-pane.active").id + "/" + ReportTabs.cur;
+    const role = AuthManager.getCurrentRole; AuthManager.getCurrentRole = () => "MEMBER"; ReportTabs.sync();
+    o.member = ReportTabs.cur + "/" + document.querySelector('[data-rp-tab="settings"]').hidden;
+    AuthManager.getCurrentRole = role; ReportTabs.sync(); ReportTabs.show("weekly");
+    return o; });
+  check("Menu 보고: weekly report / summary report (PPT) / report settings in one place; settings for PM and above only; old settings tab redirects here",
+    ph2.label === "보고" && ph2.tabs === "weekly,deck,settings" && ph2.deck && ph2.file && ph2.settings && ph2.oneplace && ph2.redirect === "tab-weekly-report/settings" && ph2.member === "weekly/true", JSON.stringify(ph2));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
     UiScale.set(1.3); const over = [];
@@ -596,12 +619,10 @@ async function localMain() {
     check("Neo: every screen has the unified header (title with a one-line purpose, save status on the right)", heads.length === 0, JSON.stringify(heads));
 
     await page.evaluate(() => GShell.go("tab-weekly-report")); await page.waitForTimeout(600);
-    await page.click('#tab-weekly-report .neo-dd[data-dd="down"] .neo-dd-btn'); await page.waitForTimeout(200);
-    const dd = await page.evaluate(() => { const m = document.querySelector('#tab-weekly-report .neo-dd[data-dd="down"] .neo-dd-menu'); return { open: !m.hidden, items: m.querySelectorAll(".neo-dd-item").length, loose: document.querySelectorAll('#tab-weekly-report .neo-ph-actions > button[data-btn$="-down"]').length }; });
     const dl0 = page.downloads.length;
-    await page.click('#tab-weekly-report .neo-dd-menu .neo-dd-item[data-click-args*="EXCEL"]'); await page.waitForTimeout(1500);
-    const ddClosed = await page.evaluate(() => document.querySelector('#tab-weekly-report .neo-dd-menu').hidden);
-    check("Neo: header download buttons grouped in the [⬇ Download] menu; item downloads and closes the menu", dd.open && dd.items === 4 && dd.loose === 0 && page.downloads.length > dl0 && ddClosed, JSON.stringify({ dd, ddClosed, dl: page.downloads.length - dl0 }));
+    const exBtns = await page.evaluate(() => document.querySelectorAll('#tab-weekly-report [data-rp-pane="weekly"] .rp-export-bar button[data-btn$="-down"]').length);
+    await page.click('#tab-weekly-report .rp-export-bar button[data-click-args*="EXCEL"]'); await page.waitForTimeout(1500);
+    check("보고 > weekly report: the three export buttons (Excel, Word with tables, Word text) sit above the report and download", exBtns === 3 && page.downloads.length > dl0, JSON.stringify({ exBtns, dl: page.downloads.length - dl0 }));
 
     const split = await page.evaluate(() => { const l = document.getElementById("wrListCard").getBoundingClientRect(), d = document.getElementById("wrDetailPanel").getBoundingClientRect(); return { side: l.right <= d.left + 1 && Math.abs(l.top - d.top) < 40, sw: document.documentElement.scrollWidth <= window.innerWidth }; });
     await page.click('#wrSavedListBody tr.wr-list-row:nth-child(3)'); await page.waitForTimeout(900);
@@ -729,7 +750,7 @@ async function localMain() {
     return out;
   });
   check("v3.3.0: integrated weekly report has only completed subsystems; gantt milestone row pinned; executive deck (cover, agenda, progress, per-subsystem) as PPT and print page; standard Excel menus, file names and scoped upload",
-    v330.onlyDone && v330.msPinned && v330.deck.slides >= 6 && v330.deck.sys === v330.done.split(",").filter(Boolean).length && v330.deck.html && /_경영보고_\d{4}W\d{2}_PPT\.pptx$/.test(v330.deck.file) && v330.deck.size > 5000 &&
+    v330.onlyDone && v330.msPinned && v330.deck.slides >= 6 && v330.deck.sys === v330.done.split(",").filter(Boolean).length && v330.deck.html && /_종합보고서_\d{4}W\d{2}_PPT\.pptx$/.test(v330.deck.file) && v330.deck.size > 5000 &&
     v330.menus === "2,2,2,2" && /^[A-Za-z0-9-]+_요구사항_W1_\d{8}\.xlsx$/.test(v330.reqFile) && v330.up.after === v330.up.before && v330.up.othersAfter === v330.up.others, JSON.stringify(v330));
 
   // [v3.4.0] 간트 B안 막대 · 불릿 차트(대시보드 · 브리핑 홈) · 경영 보고 장표 구성
