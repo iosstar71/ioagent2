@@ -49,7 +49,11 @@ function candidates(css) {
     if (/:hover|:focus|:active|:visited|::|:-webkit-|:-moz-/.test(r.sel)) return;
     const body = css.slice(r.bodyStart, r.bodyEnd);
     const re = /\s*!important/g; let m;
-    while ((m = re.exec(body))) out.push({ id: out.length, rule: ri, sel: r.sel, at: r.bodyStart + m.index, len: m[0].length });
+    while ((m = re.exec(body))) {
+      const before = body.slice(0, m.index); const d = before.slice(Math.max(before.lastIndexOf(";"), before.lastIndexOf("{")) + 1);
+      const prop = d.slice(0, d.indexOf(":")).trim().toLowerCase();
+      out.push({ id: out.length, rule: ri, sel: r.sel, prop, decl: d.trim(), at: r.bodyStart + m.index, len: m[0].length });
+    }
   });
   return out;
 }
@@ -96,7 +100,9 @@ async function openApp() {
       "marginTop","marginRight","marginBottom","marginLeft","display","width","height","minWidth","maxWidth","boxShadow","opacity","textDecorationLine","visibility","position","top","left","gap","cursor",
       "whiteSpace","textAlign","verticalAlign","zIndex","overflowX","overflowY","transform","filter","outlineStyle","flexDirection","justifyContent","alignItems","fill","stroke"];
     // 메모리를 아끼려고 문자열을 모으지 않고 바로 해시에 섞음
-    window.__snap = (theme) => {
+    window.__ALLP = P;
+    window.__snap = (theme, props) => {
+      const P = props || window.__ALLP;
       document.body.setAttribute("data-theme", theme);
       let x = 2166136261, n = 0;
       const mix = str => { for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } };
@@ -119,18 +125,18 @@ async function openApp() {
 async function setCss(page, css) { await page.evaluate(c => { document.getElementById("cssUnderTest").textContent = c; }, css); }
 
 // state x theme -> hash (only states in `only`, if given)
-async function snapshot(page, only) {
-  return page.evaluate(async ([themes, only]) => {
+async function snapshot(page, only, props, themes) {
+  return page.evaluate(async ([themes, only, props]) => {
     const res = {};
     for (let si = 0; si < window.__STATES.length; si++) {
       if (only && !only.includes(si)) continue;
       const st = window.__STATES[si];
       st.run(); await new Promise(r => setTimeout(r, 60));
-      for (const th of themes) res[si + "|" + th] = window.__snap(th);
+      for (const th of themes) res[si + "|" + th] = window.__snap(th, props);
       if (st.after) st.after();
     }
     return res;
-  }, [THEMES, only || null]);
+  }, [themes || THEMES, only || null, props || null]);
 }
 async function matchesPerState(page, sels) {
   return page.evaluate(async sels => {
@@ -144,6 +150,31 @@ async function matchesPerState(page, sels) {
   }, sels);
 }
 const same = (a, b, keys) => keys.every(k => a[k] === b[k]);
+// 선언 속성이 바꿀 수 있는 계산 스타일 (크기 · 위치는 항상 함께 봄 — 밀려나는 것 확인)
+const SIDES = ["Top", "Right", "Bottom", "Left"];
+function propsFor(list) {
+  const out = new Set(["width", "height", "display", "visibility"]);
+  const camel = p => p.replace(/-([a-z])/g, (m, c) => c.toUpperCase());
+  list.forEach(c => {
+    const p = c.prop;
+    if (p === "background") ["backgroundColor", "backgroundImage"].forEach(x => out.add(x));
+    else if (p === "border" || /^border-(top|right|bottom|left)$/.test(p) || p === "border-color" || p === "border-width" || p === "border-style")
+      SIDES.forEach(s => ["Color", "Width", "Style"].forEach(k => out.add("border" + s + k)));
+    else if (p === "border-radius") ["borderTopLeftRadius", "borderBottomRightRadius", "borderTopRightRadius", "borderBottomLeftRadius"].forEach(x => out.add(x));
+    else if (p === "padding" || p === "margin") SIDES.forEach(s => out.add(p + s));
+    else if (p === "font") ["fontSize", "fontWeight", "fontStyle", "lineHeight", "fontFamily"].forEach(x => out.add(x));
+    else if (p === "overflow") ["overflowX", "overflowY"].forEach(x => out.add(x));
+    else if (p === "text-decoration") out.add("textDecorationLine");
+    else if (p === "flex") ["flexGrow", "flexShrink", "flexBasis"].forEach(x => out.add(x));
+    else if (p === "gap") ["rowGap", "columnGap"].forEach(x => out.add(x));
+    else if (p === "outline") ["outlineStyle", "outlineWidth", "outlineColor"].forEach(x => out.add(x));
+    else if (p === "inset") ["top", "right", "bottom", "left"].forEach(x => out.add(x));
+    else out.add(camel(p));
+    if (p === "color") ["borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor", "fill", "stroke", "outlineColor", "textDecorationColor", "caretColor"].forEach(x => out.add(x));
+    if (/^(font|line-height|letter-spacing)/.test(p)) ["lineHeight", "fontSize"].forEach(x => out.add(x));
+  });
+  return [...out];
+}
 
 async function compare(oldCss) {
   const { page, close } = await openApp();
@@ -169,23 +200,24 @@ async function prune() {
   const statesOf = c => per.map((row, si) => (row[selIdx.get(c.sel)] ? si : -1)).filter(x => x >= 0);
   const live = cand.filter(c => statesOf(c).length);
   console.log(`!important total=${(css.match(/!important/g) || []).length}  candidates=${cand.length}  shown on screens=${live.length}`);
-  const base = await snapshot(page);
-  const allKeys = Object.keys(base);
+  const names = await page.evaluate(() => window.__STATES.map(s => s.name));
+  void names;
   let accepted = [];
   const keysFor = list => { const s = new Set(); list.forEach(c => statesOf(c).forEach(x => s.add(x))); return [...s]; };
-  async function ok(list) {
-    const only = keysFor(list);
+  async function safe(fn) {
     for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        await setCss(page, withRemoved(css, accepted.concat(list)));
-        const snap = await snapshot(page, only);
-        return same(snap, base, Object.keys(snap));
-      } catch (e) {   // 브라우저가 멈춤 → 다시 열고 재시도
-        try { await close(); } catch (x) {}
-        ({ page, close } = await openApp());
-      }
+      try { return await fn(); } catch (e) { try { await close(); } catch (x) {} ({ page, close } = await openApp()); }
     }
-    return false;
+    throw new Error("browser kept crashing");
+  }
+  // 한 묶음 시험: 그 묶음이 나타나는 화면에서, 그 속성과 관련된 스타일만 (지우기 전/후)
+  async function ok(list) {
+    const only = keysFor(list), props = propsFor(list);
+    return safe(async () => {
+      await setCss(page, withRemoved(css, accepted)); const before = await snapshot(page, only, props);
+      await setCss(page, withRemoved(css, accepted.concat(list))); const after = await snapshot(page, only, props);
+      return same(after, before, Object.keys(before));
+    });
   }
   async function tryChunk(chunk) {
     if (!chunk.length) return;
@@ -194,21 +226,33 @@ async function prune() {
     const mid = Math.ceil(chunk.length / 2);
     await tryChunk(chunk.slice(0, mid)); await tryChunk(chunk.slice(mid));
   }
-  const SIZE = 24;
+  const SIZE = 16;
   for (let i = 0; i < live.length; i += SIZE) {
     await tryChunk(live.slice(i, i + SIZE));
     console.log(`  checked ${Math.min(i + SIZE, live.length)}/${live.length}, removable ${accepted.length}`);
   }
-  console.log("");
-  // 전체 다시 확인
-  await setCss(page, withRemoved(css, accepted));
-  const fin = await snapshot(page);
-  const bad = allKeys.filter(k => fin[k] !== base[k]);
+  // 전체 확인: 모든 화면 x 테마 x 모든 속성
+  const fin = await safe(async () => {
+    await setCss(page, css); const a0 = await snapshot(page);
+    await setCss(page, withRemoved(css, accepted)); const a1 = await snapshot(page);
+    return Object.keys(a0).filter(k => a0[k] !== a1[k]);
+  });
   await close();
-  if (bad.length) { console.log(`[FAIL] final check differs in ${bad.length} states — nothing written`); return 1; }
-  const out = withRemoved(css, accepted);
-  fs.writeFileSync(CSS_FILE, out);
-  console.log(`[OK] removed ${accepted.length} !important (${(css.match(/!important/g) || []).length} -> ${(out.match(/!important/g) || []).length}); screens unchanged in all ${allKeys.length} states`);
+  if (fin.length) { console.log(`[FAIL] final check differs in ${fin.length} states — nothing written`); return 1; }
+  // 지금 파일(그동안 고쳐졌을 수 있음)에 같은 규칙 · 같은 선언을 찾아 !important 만 지움
+  let cur = fs.readFileSync(CSS_FILE, "utf8"); let done = 0;
+  const rulesNow = scanRules(cur);
+  const edits = [];
+  accepted.forEach(c => {
+    const r = rulesNow.find(x => x.sel === c.sel && cur.slice(x.bodyStart, x.bodyEnd).includes(c.decl + " !important") && !edits.some(e => e.rule === x && e.decl === c.decl));
+    if (!r) return;
+    const at = r.bodyStart + cur.slice(r.bodyStart, r.bodyEnd).indexOf(c.decl + " !important") + c.decl.length;
+    edits.push({ rule: r, decl: c.decl, at });
+  });
+  edits.sort((x, y) => y.at - x.at).forEach(e => { cur = cur.slice(0, e.at) + cur.slice(e.at + " !important".length); done++; });
+  fs.writeFileSync(CSS_FILE, cur);
+  fs.writeFileSync(path.join(os.tmpdir(), "css_prune_removed.json"), JSON.stringify(accepted.map(c => ({ sel: c.sel, decl: c.decl }))));
+  console.log(`[OK] removed ${done} !important (now ${(cur.match(/!important/g) || []).length}); screens unchanged in every state x theme`);
   return 0;
 }
 
