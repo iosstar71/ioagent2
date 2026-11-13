@@ -1594,6 +1594,10 @@
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
         <!-- [v4.1.0] 📋 자료 다운로드·업로드 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
+        <ol class="mt-guide" aria-label="순서">
+          <li><b>1</b> 범위 고르기</li><li><b>2</b> 자료 체크</li><li><b>3</b> 다운로드 · 업로드</li><li><b>4</b> 미리 보기 확인 후 반영</li>
+          <li class="mt-guide-side">백업 · 복원은 <button type="button" class="btn btn-xs" data-btn="nav" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원 →</button></li>
+        </ol>
         <div class="card mt-card">
           <div class="mt-scope">
             <span class="mt-step">1 범위</span>
@@ -2372,23 +2376,21 @@
     <div id="tab-config" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">화면 모양 · 프로젝트 목록 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
+          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">프로젝트 목록 · 전체 멤버 · SDLC 유형 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 관리자(SYS_ADMIN) 전용 메뉴</span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
       </div>
 
       <div class="master-subtab-bar" data-group="config">
-        <button class="master-subtab-btn active" data-subtab="screen" data-click="SubTabs.show" data-click-args='["config", "screen"]'>🖥️ 화면·테마</button>
-        <button class="master-subtab-btn" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
+        <button class="master-subtab-btn active" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 멤버</button>
         <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 SDLC 유형</button>
-        <button class="master-subtab-btn" data-subtab="report" data-click="SubTabs.show" data-click-args='["config", "report"]'>📊 보고서 템플릿</button>
         <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
-        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
         <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
-        <button class="master-subtab-btn" data-subtab="channel" data-click="SubTabs.show" data-click-args='["config", "channel"]'>💬 게시판 채널</button>
+        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
       </div>
+      <div class="cfg-scope-note">화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트마다 다르게 정하므로 <button type="button" class="btn btn-xs" data-btn="nav" data-click="GShell.go" data-click-args='["tab-master"]'>프로젝트 설정 →</button> 에 있습니다.</div>
 
       <!-- [v3.9.0] SDLC 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 관리자 -->
       <div class="master-subpane" data-group="config" data-subpane="process">
@@ -2429,14 +2431,14 @@
         </div>
       </div>
 
-      <div class="master-subpane" data-group="config" data-subpane="project">
+      <div class="master-subpane active" data-group="config" data-subpane="project">
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
       </div>
 
-      <div class="master-subpane active" data-group="config" data-subpane="screen">
+      <div class="master-subpane" data-group="config" data-subpane="screen">
         <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="card" style="border-left:4px solid #475569;">
           <div class="card-title"><span>🎛️ 버튼 · 바로가기 스타일 표준</span></div>
@@ -2670,6 +2672,7 @@
 
       <!-- 🗄️ 데이터 관리 (관리자) — 사용 용량 · 프로젝트 초기화 -->
       <div class="master-subpane" data-group="config" data-subpane="data" id="dataAdminPane">
+        <div class="cfg-scope-note">백업 · 복원은 한 곳에서 합니다 — <button type="button" class="btn btn-xs" data-btn="nav" data-click="ProjectData.goBackup">파일 Merge › 💾 백업 · 복원 →</button></div>
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title"><span>💽 이 브라우저 저장 용량</span>
             <button class="btn btn-sm" data-btn="neutral" data-click="DataAdmin.usage">🔄 다시 계산</button></div>

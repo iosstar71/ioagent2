@@ -3215,3 +3215,13 @@ body[data-theme="electric"] { background: #FFFDF7; }
 [data-theme="electric"] header.g-header input, [data-theme="electric"] header.g-header select { border-color: #FFFDF7; }
 /* 어두운 화면: [추가] 버튼은 밝은 상자 대신 차분한 청회색 */
 [data-theme="dark"] { --btn-add-bg: #4F6475; --btn-add-fg: #F8FAFC; }
+
+/* 설정 화면 정리: 프로젝트별 설정 안내 · 파일 Merge 순서 안내 */
+.cfg-scope-note { margin: 0 0 12px; padding: 8px 12px; border: 1px dashed var(--border-color); border-radius: 8px; font-size: var(--fs-sm, 12px); color: var(--text-sub); background: var(--bg-card); }
+.mt-guide { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 12px; padding: 10px 14px; list-style: none;
+  border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.mt-guide li { display: inline-flex; align-items: center; gap: 6px; }
+.mt-guide li + li:not(.mt-guide-side)::before { content: "→"; color: var(--text-muted); margin-right: 8px; }
+.mt-guide b { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; font-size: var(--fs-2xs, 10px); }
+.mt-guide-side { margin-left: auto; }
+

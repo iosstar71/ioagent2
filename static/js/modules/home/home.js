@@ -119,13 +119,13 @@ var HomeScreenManager = {
   setSessionMode(mode) { this.setStyle(mode); },
 
   openSettings() {
-    if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-config"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-config")) {
-      showToast("ℹ️ 역할별 첫 화면은 관리자가 정합니다. 메뉴에서 My Work · Summary · Dashboard 로 바로 갈 수 있습니다.");
+    if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-master"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-master")) {
+      showToast("ℹ️ 역할별 첫 화면은 관리자 · PM 이 정합니다. 메뉴에서 My Work · Summary · Dashboard 로 바로 갈 수 있습니다.");
       return;
     }
-    switchTab("tab-config");
+    switchTab("tab-master");
     setTimeout(() => {
-      try { SubTabs.show("config", "screen"); } catch (e) {}
+      try { MasterSubTabs.show("ui-screen"); } catch (e) {}
       const el = document.getElementById("cfgRoleHomeSysAdmin");
       const card = el && el.closest(".card");
       if (card) { card.scrollIntoView({ behavior: "smooth", block: "start" }); card.classList.add("g-flash-card"); setTimeout(() => card.classList.remove("g-flash-card"), 1800); }
