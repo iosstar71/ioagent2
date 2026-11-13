@@ -1,0 +1,92 @@
+{
+ "css_important": 623,
+ "html": {
+  "shell": {
+   "inline": 26,
+   "inline_hex": 5
+  },
+  "tab-config": {
+   "inline": 309,
+   "inline_hex": 100
+  },
+  "tab-dashboard": {
+   "inline": 55,
+   "inline_hex": 8
+  },
+  "tab-deliverables": {
+   "inline": 20,
+   "inline_hex": 0
+  },
+  "tab-gantt": {
+   "inline": 8,
+   "inline_hex": 0
+  },
+  "tab-home": {
+   "inline": 12,
+   "inline_hex": 1
+  },
+  "tab-master": {
+   "inline": 121,
+   "inline_hex": 20
+  },
+  "tab-matrix": {
+   "inline": 23,
+   "inline_hex": 5
+  },
+  "tab-meeting": {
+   "inline": 75,
+   "inline_hex": 7
+  },
+  "tab-merge": {
+   "inline": 28,
+   "inline_hex": 2
+  },
+  "tab-mywork": {
+   "inline": 44,
+   "inline_hex": 17
+  },
+  "tab-notices": {
+   "inline": 62,
+   "inline_hex": 1
+  },
+  "tab-req": {
+   "inline": 17,
+   "inline_hex": 0
+  },
+  "tab-voc": {
+   "inline": 20,
+   "inline_hex": 0
+  },
+  "tab-wbs": {
+   "inline": 32,
+   "inline_hex": 0
+  },
+  "tab-weekly-report": {
+   "inline": 69,
+   "inline_hex": 14
+  }
+ },
+ "js_hex": {
+  "js/common": 2,
+  "js/core": 1,
+  "js/modules/admin": 0,
+  "js/modules/board": 32,
+  "js/modules/dataio": 1,
+  "js/modules/deliverable": 0,
+  "js/modules/home": 0,
+  "js/modules/master": 10,
+  "js/modules/meeting": 41,
+  "js/modules/progress": 15,
+  "js/modules/report": 5,
+  "js/modules/requirement": 3,
+  "js/modules/todo": 0,
+  "js/modules/wbs": 3,
+  "js/modules/weekly": 1
+ },
+ "total": {
+  "css_important": 623,
+  "html_inline": 921,
+  "html_inline_hex": 180,
+  "js_hex": 114
+ }
+}
