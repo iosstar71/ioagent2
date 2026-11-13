@@ -158,6 +158,9 @@ function renderProjectTitles() {
   if (hSys) hSys.textContent = APP_VERSION.name;
   const hVer = document.getElementById("headerVersionBadge");
   if (hVer) hVer.textContent = (APP_VERSION.variant ? APP_VERSION.variant + " " : "") + "v" + APP_VERSION.version;
+  // 버전은 머리말에서 빼고 사용자 메뉴에 표시
+  const uVer = document.getElementById("gUserVer");
+  if (uVer) uVer.textContent = `${APP_VERSION.brand || "IOSTAR-PM"} ${APP_VERSION.editionName || APP_VERSION.variant || ""} v${APP_VERSION.version}`;
   if (hProj) hProj.textContent = projName;
   if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
 

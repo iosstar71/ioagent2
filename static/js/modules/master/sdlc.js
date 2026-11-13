@@ -86,17 +86,17 @@ function renderCustomSdlcCards() {
   summaryDiv.className = "phase-summary-box";
   summaryDiv.style.marginBottom = "12px";
   summaryDiv.style.padding = "8px 12px";
-  summaryDiv.style.background = "#f0fdf4";
+  summaryDiv.style.background = "var(--tint-ok)";
   summaryDiv.style.border = "1px solid #bbf7d0";
   summaryDiv.style.borderRadius = "6px";
   summaryDiv.style.display = "flex";
   summaryDiv.style.justifyContent = "space-between";
   summaryDiv.style.alignItems = "center";
   summaryDiv.innerHTML = `
-    <span style="font-size:var(--fs-sm, 12px); color:#166534; font-weight:bold;">
+    <span style="font-size:var(--fs-sm, 12px); color:var(--chart-good-text); font-weight:bold;">
       📋 시스템 SDLC 유형: <b>${masterList.length}개</b> | 이 프로젝트 활성화: <b>${activeCodes.length}/4개</b>
     </span>
-    <span style="font-size:var(--fs-xs, 11px); color:#15803d;">
+    <span style="font-size:var(--fs-xs, 11px); color:var(--chart-good-text);">
       (유형 추가 · 단계 수정은 [시스템 설정 &gt; 🔄 SDLC 유형] · 이 화면에서는 활성화와 단계별 계획 일정만)
     </span>
   `;
@@ -107,7 +107,7 @@ function renderCustomSdlcCards() {
     const card = document.createElement("div");
     card.className = "step-card";
     card.style.background = isActive ? "rgba(16,185,129,0.03)" : "rgba(100,116,139,0.03)";
-    card.style.border = isActive ? "1px solid #6ee7b7" : "1px solid #cbd5e1";
+    card.style.border = isActive ? "1px solid #6ee7b7" : "1px solid var(--border-color)";
     card.style.position = "relative";
 
     const assignedCount = subsystemsMeta.filter(s => s.type !== "REQ" && s.sdlcCode === sdlc.code).length;
@@ -116,15 +116,15 @@ function renderCustomSdlcCards() {
     card.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span class="badge" style="background:${isActive ? "#059669" : "#64748b"}; color:#fff; font-size:var(--fs-2xs, 10px);">
+          <span class="badge" style="background:${isActive ? "var(--chart-good-text)" : "var(--text-muted)"}; color:#fff; font-size:var(--fs-2xs, 10px);">
             ${isActive ? "✅ 프로젝트 활성" : "사용 안 함"}
           </span>
-          ${sdlc.isRecommended ? '<span class="badge" style="background:#0284c7; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">⭐ 추천타입</span>' : ''}
+          ${sdlc.isRecommended ? '<span class="badge" style="background:var(--primary); color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">⭐ 추천타입</span>' : ''}
           <strong style="font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sdlc.name)}</strong>
           <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
         </div>
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-          ${sdlc._projectOnly ? '<span class="badge" style="background:#b45309; color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 SDLC 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
+          ${sdlc._projectOnly ? '<span class="badge" style="background:var(--chart-warn-text); color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 SDLC 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
           ${isActive && canEdit && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(sdlc.code) ? `<button class="btn btn-warning btn-sm" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(String(sdlc.code))}" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
           ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 일정</button>` : ""}
           ${canEdit ? `<button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
@@ -133,9 +133,9 @@ function renderCustomSdlcCards() {
         </div>
       </div>
       <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
-      <div style="padding:6px 8px; background:rgba(0,0,0,0.02); border-radius:6px; font-size:var(--fs-xs, 11px); color:${isActive ? "#047857" : "#475569"}; line-height:1.5;">
+      <div style="padding:6px 8px; background:rgba(0,0,0,0.02); border-radius:6px; font-size:var(--fs-xs, 11px); color:${isActive ? "#047857" : "var(--text-sub)"}; line-height:1.5;">
         <b>공정 파이프라인:</b> ${escapeHtml(phaseNames || "정의된 단계 없음")}<br>
-        <span style="color:#64748b;">• 소속 서브시스템 수: <b>${assignedCount}개</b> | 단계 수: <b>${(sdlc.phases || []).length}단계</b></span>
+        <span style="color:var(--text-muted);">• 소속 서브시스템 수: <b>${assignedCount}개</b> | 단계 수: <b>${(sdlc.phases || []).length}단계</b></span>
       </div>
     `;
     container.appendChild(card);

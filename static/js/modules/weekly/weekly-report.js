@@ -617,8 +617,8 @@ var WeeklyReportManager = {
     const saved = (weeklyReportsData || []).some(r => r.id === rep.id);
     const dirty = this._canon(rep) !== this._draftBase;
     el.innerHTML = `📝 <b>${escapeHtml(rep.weekLabel)}</b> · 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b>
-      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:#d97706; font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
-      ${writable ? "" : ` · <span style="color:#dc2626; font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
+      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:var(--chart-warn-text); font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
+      ${writable ? "" : ` · <span style="color:var(--chart-bad-text); font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
       ${rep.snapshot ? `<span class="wr-basis snap" title="지표·요구사항·VOC·회의·Action Item 은 작성 완료 시점 자료로 표시·다운로드 합니다.">📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})</span>`
         : `<span class="wr-basis live" title="작성 완료하면 그 시점의 자료가 보고서와 함께 저장됩니다.">⏱ 현재 자료 기준</span>`}
       <div class="wr-docno">문서 번호 <code>${escapeHtml(WeeklyExport.docNo(rep))}</code></div>`;
@@ -636,13 +636,13 @@ var WeeklyReportManager = {
     const k = `'${kind}', '${id}'`;
     const sysCell = t.manual
       ? `<select style="font-size:var(--fs-xs, 11px); width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
-      : `<span class="badge" style="background:#f1f5f9; color:#334155;">${escapeHtml(t.system)}</span>`;
+      : `<span class="badge" style="background:var(--bg-main); color:var(--text-sub);">${escapeHtml(t.system)}</span>`;
     const nameCell = t.manual
       ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:var(--fs-xs, 11px); font-weight:bold;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
       : escapeHtml(t.name);
     const sched = t.manual
       ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:var(--fs-2xs, 10px); width:120px;" title="목표일 (선택)" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "pEnd", "$value")}">`
-      : `<span style="font-size:var(--fs-2xs, 10px); color:#475569; white-space:nowrap; background:#f8fafc; padding:2px 5px; border-radius:3px; border:1px solid #e2e8f0;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
+      : `<span style="font-size:var(--fs-2xs, 10px); color:var(--text-sub); white-space:nowrap; background:var(--bg-main); padding:2px 5px; border-radius:3px; border:1px solid var(--border-color);">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
     const detail = `<textarea class="wr-detail" rows="2" maxlength="1000" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}">${escapeHtml(t.detail || "")}</textarea>`;
@@ -738,7 +738,7 @@ var WeeklyReportManager = {
               <td><strong>${escapeHtml(m.title)}</strong></td>
               <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
               <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:var(--fs-xs, 11px); color:#1e293b;">${decs || escapeHtml(m.summary || "정상 완료")}</td>
+              <td style="font-size:var(--fs-xs, 11px); color:var(--text-main);">${decs || escapeHtml(m.summary || "정상 완료")}</td>
             `;
             curMtgsBody.appendChild(tr);
           });
@@ -764,7 +764,7 @@ var WeeklyReportManager = {
               <td><strong>${escapeHtml(m.title)}</strong></td>
               <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
               <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:var(--fs-xs, 11px); color:#475569;">${escapeHtml(agds || m.summary || "공정 협의")}</td>
+              <td style="font-size:var(--fs-xs, 11px); color:var(--text-sub);">${escapeHtml(agds || m.summary || "공정 협의")}</td>
             `;
             nxtMtgsBody.appendChild(tr);
           });
@@ -921,23 +921,23 @@ var WeeklyReportManager = {
       item.style.padding = "10px 12px";
       item.style.marginBottom = "8px";
       item.style.borderRadius = "6px";
-      item.style.border = isSel ? "2px solid #2563eb" : "1px solid #e2e8f0";
+      item.style.border = isSel ? "2px solid var(--primary)" : "1px solid var(--border-color)";
       item.style.cursor = "pointer";
-      item.style.background = isSel ? "#eff6ff" : "#ffffff";
+      item.style.background = isSel ? "var(--tint-info)" : "#ffffff";
       item.style.transition = "all 0.15s ease";
       item.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <strong style="font-size:calc(12.5px * var(--fs-scale, 1)); color:${isSel ? "#1e40af" : "#1e293b"};">📅 ${escapeHtml(r.weekLabel)}</strong>
-          <span class="badge" style="background:#e0f2fe; color:#0369a1; font-size:var(--fs-2xs, 10px);">${escapeHtml(r.reportDate || "")}</span>
+          <strong style="font-size:calc(12.5px * var(--fs-scale, 1)); color:${isSel ? "var(--tint-info-text)" : "var(--text-main)"};">📅 ${escapeHtml(r.weekLabel)}</strong>
+          <span class="badge" style="background:var(--tint-info); color:var(--tint-info-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(r.reportDate || "")}</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:#64748b; margin-bottom:4px;">
+        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-bottom:4px;">
           👤 작성: ${escapeHtml(r.author || "PM")} | 갱신: ${escapeHtml(r.updatedAt ? r.updatedAt.substring(0, 10) : "-")}
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:#334155; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
           ${escapeHtml(r.currentWeekSummary || "(요약 없음)")}
         </div>
         <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-          <button class="btn btn-outline btn-xs" style="color:#2563eb; border-color:#93c5fd; background:#fff; font-size:calc(10.5px * var(--fs-scale, 1));" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
+          <button class="btn btn-outline btn-xs" style="color:var(--primary); border-color:var(--border-color); background:var(--bg-card); font-size:calc(10.5px * var(--fs-scale, 1));" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
             📋 바로 복사
           </button>
         </div>
@@ -971,12 +971,12 @@ var WeeklyReportManager = {
     const nCount = Array.isArray(r.nextWeekTasks) ? r.nextWeekTasks.length : 0;
 
     prevEl.innerHTML = `
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-bottom:12px;">
+      <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <h4 style="margin:0; font-size:var(--fs-md, 14px); color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
-          <span class="badge" style="background:#dbeafe; color:#1e40af; font-size:var(--fs-xs, 11px);">Task: 금주 ${cCount}건 / 차주 ${nCount}건</span>
+          <span class="badge" style="background:var(--tint-info); color:var(--tint-info-text); font-size:var(--fs-xs, 11px);">Task: 금주 ${cCount}건 / 차주 ${nCount}건</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:#475569; display:flex; gap:16px;">
+        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); display:flex; gap:16px;">
           <span><b>작성자:</b> ${escapeHtml(r.author || "PM")}</span>
           <span><b>기준일자:</b> ${escapeHtml(r.reportDate || "-")}</span>
           <span><b>금주기간:</b> ${escapeHtml(r.startDate || "")} ~ ${escapeHtml(r.endDate || "")}</span>
@@ -984,25 +984,25 @@ var WeeklyReportManager = {
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e40af; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--tint-info-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>🎯</span> 【금주 중점 추진 실적 총괄 요약】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
-        <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#0369a1; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--tint-info-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>🚀</span> 【차주 중점 추진 목표 및 계획 요약】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
-        <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:#b45309; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
+          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--chart-warn-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <span>⚠️</span> 【주요 현안 및 지원 요청사항】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:#1e293b; white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
+          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
         </div>
       </div>
 

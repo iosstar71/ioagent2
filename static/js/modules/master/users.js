@@ -236,7 +236,7 @@ var ProgressBasisManager = {
     if (!sel || !st) return;
     const pending = sel.value !== this.current();
     st.innerHTML = pending
-      ? `<span style="color:#d97706; font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
+      ? `<span style="color:var(--chart-warn-text); font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
       : `현재 적용: <b>${this.LABELS[this.current()]}</b>`;
   },
   apply() {

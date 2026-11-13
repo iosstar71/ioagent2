@@ -86,6 +86,9 @@ async function main() {
   const web = await startStatic();
   const PWD = {};
   try {
+    // UI 스타일 부채(!important · 인라인 스타일 · 고정 색)가 늘지 않았는지 (CLAUDE.md 규칙)
+    { let out = "", ok = true; try { out = execFileSync(PY, [path.join(ROOT, "tools", "check_ui_debt.py")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
+      check("UI style debt did not go up (!important · inline styles · fixed colours per screen)", ok, out.trim().split("\n").slice(-4).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
     check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.0.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
@@ -384,7 +387,7 @@ async function main() {
     const th = await wc.evaluate(() => {
       const r = { opts: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), def: defaultTheme(),
         legacy: ["green", "navy", "matte", "mocha", "graphite"].map(normalizeTheme).join(",") };
-      changeTheme("nordic-sage");
+      changeTheme("brown");
       r.body = document.body.getAttribute("data-theme");
       r.chart = ChartTheme.get().actual;
       r.logo = getComputedStyle(document.querySelector(".brand-logo")).content || "";
@@ -395,9 +398,26 @@ async function main() {
       r.btnEmoji = btn ? /[\u{1F300}-\u{1FAFF}]/u.test(btn.textContent) : true;
       return r;
     });
-    check("Themes: 6 (modern Urban Slate default · Nordic Sage · Brown, bold Electric, traditional Classic, dark Obsidian); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
-      th.opts === "urban-slate,nordic-sage,brown,electric,classic,dark" && th.def === "urban-slate" && th.legacy === "nordic-sage,classic,urban-slate,brown,dark"
-      && th.body === "nordic-sage" && th.chart && th.chart !== th.chartDark && /iostar_mono/.test(th.logo) && !/iostar_mono/.test(th.logoDark) && th.icons > 20 && !th.btnEmoji, JSON.stringify(th));
+    check("Themes: 5 (Slate default · Walnut · Navy · Obsidian · Pop); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
+      th.opts === "urban-slate,brown,classic,dark,electric" && th.def === "urban-slate" && th.legacy === "urban-slate,classic,urban-slate,brown,dark"
+      && th.body === "brown" && th.chart && th.chart !== th.chartDark && /iostar_mono/.test(th.logo) && !/iostar_mono/.test(th.logoDark) && th.icons > 20 && !th.btnEmoji, JSON.stringify(th));
+    const ux = await wc.evaluate(async () => {
+      GShell.go("tab-home"); await new Promise(r => setTimeout(r, 300));
+      const r = { ver: (document.getElementById("gUserVer") || {}).textContent || "", verHidden: getComputedStyle(document.getElementById("headerVersionBadge")).display === "none",
+        dotW: Math.round(document.getElementById("storageStatusBox").getBoundingClientRect().width), dotTitle: document.getElementById("storageStatusBox").title,
+        heroInline: document.querySelectorAll("#execHeroBanner [style]").length, heroLevel: document.getElementById("execHeroStatusBadge").getAttribute("data-level") };
+      GShell.go("tab-mywork"); await new Promise(r => setTimeout(r, 300));
+      const h = document.getElementById("mwHello"); r.hello = !!h && !h.hidden && /오늘의 핵심|Today/.test(h.textContent);
+      GShell.go("tab-wbs"); await new Promise(r => setTimeout(r, 400));
+      r.openBtns = document.querySelectorAll("#wbsTableBody .wbs-open-btn").length; r.rows = document.querySelectorAll("#wbsTableBody tr").length;
+      const tr = document.querySelectorAll("#wbsTableBody tr")[2]; const td = tr && tr.querySelector("td:nth-child(6)");
+      if (td) td.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await new Promise(r => setTimeout(r, 300));
+      r.panel = NeoDetail.isOpen() && tr.classList.contains("neo-sel"); NeoDetail.close();
+      return r;
+    });
+    check("UX: version in the member menu (not the header), save status is a dot with a tooltip, Summary header uses classes, My Work greeting, WBS open button + row click opens the detail panel",
+      /v\d/.test(ux.ver) && ux.verHidden && ux.dotW <= 34 && !!ux.dotTitle && ux.heroInline === 0 && !!ux.heroLevel && ux.hello && ux.openBtns > 0 && ux.openBtns === ux.rows && ux.panel, JSON.stringify(ux));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

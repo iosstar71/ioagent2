@@ -196,6 +196,7 @@ var HomeScreenManager = {
     if (typeof TodoCenter !== "undefined") TodoCenter.render();
     this.renderPortal();
     if (typeof TodoCenter !== "undefined") TodoCenter.updateCounts();
+    if (typeof MyWorkHello !== "undefined") MyWorkHello.render();
   },
 
   renderExecutive() {
@@ -233,20 +234,20 @@ var HomeScreenManager = {
     if (heroAchieve) heroAchieve.textContent = `${achieveRate}%`;
     if (heroGap) {
       heroGap.textContent = `공정 GAP: ${gap >= 0 ? "+" : ""}${gap}%p (${gap >= 0 ? "목표 초과" : "계획 대비 지연"})`;
-      heroGap.style.color = gap >= 0 ? "#86efac" : (gap >= -5 ? "#fde047" : "#fca5a5");
+      heroGap.setAttribute("data-level", gap >= 0 ? "ok" : (gap >= -5 ? "warn" : "bad"));
     }
     if (heroPlan) heroPlan.textContent = `${totalPlan}%`;
     if (heroActual) heroActual.textContent = `${totalActual}%`;
     if (heroBadge) {
       if (achieveNum >= 90) {
         heroBadge.textContent = "🟢 정상 공정 궤도";
-        heroBadge.style.cssText += "background:rgba(34,197,94,0.16); color:#86EFAC; border:1px solid rgba(134,239,172,0.45);";
+        heroBadge.setAttribute("data-level", "ok");
       } else if (achieveNum >= 70) {
         heroBadge.textContent = "🟡 주의 및 경계 관리";
-        heroBadge.style.cssText += "background:rgba(234,179,8,0.16); color:#FDE68A; border:1px solid rgba(253,230,138,0.45);";
+        heroBadge.setAttribute("data-level", "warn");
       } else {
         heroBadge.textContent = "🔴 공정 지연 리스크";
-        heroBadge.style.cssText += "background:rgba(239,68,68,0.18); color:#FCA5A5; border:1px solid rgba(252,165,165,0.5);";
+        heroBadge.setAttribute("data-level", "bad");
       }
     }
 

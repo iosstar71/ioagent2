@@ -153,12 +153,13 @@ function renderWbsTable() {
       <td class="col-fold"><input type="text" value="${escapeHtml(row.output || "")}" style="width:106px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
-          <button class="btn-xs" style="background:#fef3c7; color:#b45309; border-color:#fde68a;" title="이 Task만 계획일정/진척률(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
+          <button type="button" class="btn-xs wbs-open-btn" title="상세 열기 (오른쪽 패널) — 행의 빈 곳을 눌러도 열림" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}"><svg class="iostar-ico ico-solo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg></button>
+          <button class="btn-xs wbs-fill-btn" title="이 Task만 계획일정/진척률(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
           <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>↳</button>
           <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">＋</button>
           <button class="btn-xs" title="위로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, -1)}" ${row.level === 1 ? "disabled" : ""}>▲</button>
           <button class="btn-xs" title="아래로 이동" data-click="moveTaskOrder" data-click-args="${UiEvents.args(idx, 1)}" ${row.level === 1 ? "disabled" : ""}>▼</button>
-          <button class="btn btn-danger btn-sm" style="padding:2px 5px;" title="Task 삭제" data-click="deleteWbsRow" data-click-args="${UiEvents.args(idx)}">×</button>
+          <button class="btn btn-danger btn-sm wbs-del-btn" title="Task 삭제" data-click="deleteWbsRow" data-click-args="${UiEvents.args(idx)}">×</button>
         </div>
       </td>
     `;

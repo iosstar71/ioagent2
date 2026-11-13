@@ -43,7 +43,7 @@ var DataAdmin = {
     if (!el) return;
     if (!res || !res.ok) { el.textContent = this.isServer() ? "사용 용량을 읽지 못했습니다." : "로컬 저장소 방식: 서버 용량 없음"; return; }
     const pct = Math.round(res.total / (res.limit || this.LIMIT) * 100);
-    el.innerHTML = `프로그램 폴더 전체 <b>${this.size(res.total)}</b> / 한도 ${this.size(res.limit || this.LIMIT)} (<b style="color:${pct >= 90 ? "#dc2626" : pct >= 75 ? "#d97706" : "#059669"}">${pct}%</b>) · 그중 DB ${this.size(res.db)}`
+    el.innerHTML = `프로그램 폴더 전체 <b>${this.size(res.total)}</b> / 한도 ${this.size(res.limit || this.LIMIT)} (<b style="color:${pct >= 90 ? "var(--chart-bad-text)" : pct >= 75 ? "var(--chart-warn-text)" : "var(--chart-good-text)"}">${pct}%</b>) · 그중 DB ${this.size(res.db)}`
       + (pct >= 75 ? ` — ⚠️ 한도에 가깝습니다. 끝난 프로젝트를 백업(💾 백업 · 복원)한 뒤 지우고 [🧹 DB 정리]를 누르세요.` : "");
   },
   async usage(silent) {

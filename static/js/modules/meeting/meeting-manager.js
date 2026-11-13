@@ -384,14 +384,14 @@ var MeetingManager = {
     // [ver1.0.4 시인성 고도화] 캘린더 요일 헤더 및 날짜/회의 시인성 100% 보장
     const calCard = document.getElementById("meetingCalendarCard");
     if (calCard) {
-      calCard.style.cssText = "background:var(--bg-card, #ffffff); border:1px solid var(--border-color, #cbd5e1); border-radius:8px; overflow:hidden; margin-bottom:14px; width:100%; box-sizing:border-box; color:var(--text-main); box-shadow:0 2px 6px rgba(0,0,0,0.05);";
+      calCard.style.cssText = "background:var(--bg-card, #ffffff); border:1px solid var(--border-color, var(--border-color)); border-radius:8px; overflow:hidden; margin-bottom:14px; width:100%; box-sizing:border-box; color:var(--text-main); box-shadow:0 2px 6px rgba(0,0,0,0.05);";
       const calNav = calCard.querySelector(".cal-nav-bar");
       if (calNav) {
-        calNav.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--lvl-1-bg, #f1f5f9); border-bottom:2px solid var(--primary, #1e3a8a); flex-wrap:wrap; gap:10px; color:var(--text-main);";
+        calNav.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:var(--lvl-1-bg, var(--bg-main)); border-bottom:2px solid var(--primary, var(--tint-info-text)); flex-wrap:wrap; gap:10px; color:var(--text-main);";
       }
       const titleSpan = document.getElementById("meetingCalTitle");
       if (titleSpan) {
-        titleSpan.style.color = "var(--primary, #1e3a8a)";
+        titleSpan.style.color = "var(--primary, var(--tint-info-text))";
         titleSpan.style.fontWeight = "800";
       }
     }
@@ -410,22 +410,22 @@ var MeetingManager = {
 
     const headerRow = document.createElement("div");
     headerRow.className = "cal-header-row";
-    headerRow.style.cssText = "display:grid !important; grid-template-columns:repeat(7, 1fr) !important; width:100%; background:var(--lvl-1-bg, #f1f5f9); border-bottom:2px solid var(--border-color, #cbd5e1); box-sizing:border-box;";
+    headerRow.style.cssText = "display:grid !important; grid-template-columns:repeat(7, 1fr) !important; width:100%; background:var(--lvl-1-bg, var(--bg-main)); border-bottom:2px solid var(--border-color, var(--border-color)); box-sizing:border-box;";
     headerRow.innerHTML = daysArr.map((d, idx) => `
-      <div class="cal-header-cell ${d.isSun ? "sunday" : (d.isSat ? "saturday" : "")}" style="padding:10px 4px; text-align:center; font-size:var(--fs-base, 13px); font-weight:800; color:${d.color} !important; background:${d.bg}; border-right:${idx < 6 ? "1px solid var(--border-color, #e2e8f0)" : "none"};">${d.name}</div>
+      <div class="cal-header-cell ${d.isSun ? "sunday" : (d.isSat ? "saturday" : "")}" style="padding:10px 4px; text-align:center; font-size:var(--fs-base, 13px); font-weight:800; color:${d.color} !important; background:${d.bg}; border-right:${idx < 6 ? "1px solid var(--border-color, var(--border-color))" : "none"};">${d.name}</div>
     `).join("");
     gridEl.appendChild(headerRow);
 
     // Days container with strict 7-column grid
     const daysGrid = document.createElement("div");
     daysGrid.className = "cal-days-grid";
-    daysGrid.style.cssText = "display:grid !important; grid-template-columns:repeat(7, 1fr) !important; width:100%; box-sizing:border-box; background:var(--border-color, #e2e8f0); gap:1px;";
+    daysGrid.style.cssText = "display:grid !important; grid-template-columns:repeat(7, 1fr) !important; width:100%; box-sizing:border-box; background:var(--border-color, var(--border-color)); gap:1px;";
 
     // Blank cells before first day
     for (let i = 0; i < firstDay; i++) {
       const blank = document.createElement("div");
       blank.className = "cal-cell empty";
-      blank.style.cssText = "min-height:96px; padding:6px; box-sizing:border-box; background:var(--bg-main, #f8fafc); opacity:0.55; cursor:default;";
+      blank.style.cssText = "min-height:96px; padding:6px; box-sizing:border-box; background:var(--bg-main, var(--bg-main)); opacity:0.55; cursor:default;";
       daysGrid.appendChild(blank);
     }
 
@@ -463,11 +463,11 @@ var MeetingManager = {
       if (isHoliday) {
         cell.style.backgroundColor = isCustomHoliday ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)";
       } else if (isToday) {
-        cell.style.backgroundColor = "var(--lvl-2-bg, #eff6ff)";
-        cell.style.outline = "2px solid var(--primary, #3b82f6)";
+        cell.style.backgroundColor = "var(--lvl-2-bg, var(--tint-info))";
+        cell.style.outline = "2px solid var(--primary, var(--primary))";
         cell.style.zIndex = "1";
       }
-      cell.onmouseenter = () => { if (!isToday) cell.style.backgroundColor = "var(--lvl-3-bg, #f1f5f9)"; };
+      cell.onmouseenter = () => { if (!isToday) cell.style.backgroundColor = "var(--lvl-3-bg, var(--bg-main))"; };
       cell.onmouseleave = () => { if (!isToday) cell.style.backgroundColor = isHoliday ? (isCustomHoliday ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)") : "var(--bg-card, #ffffff)"; };
 
       // [ver1.0.4 요건 2] 서브시스템 필터 적용된 일자별 회의 목록
@@ -492,16 +492,16 @@ var MeetingManager = {
                data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(mtg.id))}" data-click-stop="1" 
                title="[${mtg.system}] ${escapeHtml(mtg.title)} (${mtg.startTime}~${mtg.endTime})">
             <span class="cal-sys-tag" style="background:${sysColor}; color:#ffffff !important; padding:1px 4px; border-radius:3px; font-size:calc(8.5px * var(--fs-scale, 1)); font-weight:800; flex-shrink:0;">${escapeHtml(mtg.system)}</span>
-            <span class="cal-time" style="font-size:calc(9.5px * var(--fs-scale, 1)); font-weight:700; color:var(--text-sub, #475569) !important; flex-shrink:0;">${escapeHtml(mtg.startTime || "")}</span>
-            <span class="cal-title" style="font-size:var(--fs-xs, 11px); font-weight:700; color:var(--text-main, #0f172a) !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtml(mtg.title)}</span>
+            <span class="cal-time" style="font-size:calc(9.5px * var(--fs-scale, 1)); font-weight:700; color:var(--text-sub, var(--text-sub)) !important; flex-shrink:0;">${escapeHtml(mtg.startTime || "")}</span>
+            <span class="cal-title" style="font-size:var(--fs-xs, 11px); font-weight:700; color:var(--text-main, var(--text-main)) !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtml(mtg.title)}</span>
           </div>
         `;
       });
 
       cell.innerHTML = `
         <div class="cal-date-header">
-          <span class="cal-day-num ${isToday ? "badge-today" : ""}" style="font-size:calc(12.5px * var(--fs-scale, 1)); font-weight:800; color:${isToday ? "#ffffff !important" : ((isSun || isHoliday) ? "#dc2626 !important" : (isSat ? "#0284c7 !important" : "var(--text-main, #1e293b) !important"))};">${day}</span>
-          ${isHoliday ? `<span class="cal-holiday-tag" title="${escapeHtml(holidayName)}" style="background:${isCustomHoliday ? "#fef3c7" : "#fee2e2"}; color:${isCustomHoliday ? "#b45309" : "#dc2626"}; font-size:var(--fs-2xs, 10px); padding:1px 5px; border-radius:4px; font-weight:bold; margin-left:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:68px; display:inline-block;">${escapeHtml(holidayName)}</span>` : ""}
+          <span class="cal-day-num ${isToday ? "badge-today" : ""}" style="font-size:calc(12.5px * var(--fs-scale, 1)); font-weight:800; color:${isToday ? "#ffffff !important" : ((isSun || isHoliday) ? "var(--chart-bad-text) !important" : (isSat ? "var(--primary) !important" : "var(--text-main, var(--text-main)) !important"))};">${day}</span>
+          ${isHoliday ? `<span class="cal-holiday-tag" title="${escapeHtml(holidayName)}" style="background:${isCustomHoliday ? "var(--tint-warn)" : "#fee2e2"}; color:${isCustomHoliday ? "var(--chart-warn-text)" : "var(--chart-bad-text)"}; font-size:var(--fs-2xs, 10px); padding:1px 5px; border-radius:4px; font-weight:bold; margin-left:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:68px; display:inline-block;">${escapeHtml(holidayName)}</span>` : ""}
           <button class="cal-quick-add-btn" data-click="MeetingManager.openNewMeetingModal" data-click-args="${UiEvents.args(String(dateStr))}" title="이 날짜에 회의 등록">＋</button>
         </div>
         <div class="cal-meetings-list">${mtgsHtml}</div>
@@ -582,7 +582,7 @@ var MeetingManager = {
           <span class="badge" style="background:${sysColor}; color:white; font-size:var(--fs-xs, 11px); padding:2px 6px;">${escapeHtml(m.system)}</span>
         </td>
         <td>
-          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="font-weight:bold; color:#1e40af; text-decoration:none;">
+          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="font-weight:bold; color:var(--tint-info-text); text-decoration:none;">
             ${escapeHtml(m.title)}
           </a>
         </td>
@@ -591,7 +591,7 @@ var MeetingManager = {
         <td>${escapeHtml(m.location || "-")}</td>
         <td style="text-align:center;">${escapeHtml(m.host || "-")}</td>
         <td style="text-align:center;">
-          <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${stColor}; background:${m.status === "완료" ? "#f0fdf4" : "#eff6ff"}; padding:2px 8px; border-radius:12px; border:1px solid ${stColor};">
+          <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${stColor}; background:${m.status === "완료" ? "var(--tint-ok)" : "var(--tint-info)"}; padding:2px 8px; border-radius:12px; border:1px solid ${stColor};">
             ${m.status}
           </span>
         </td>
@@ -771,7 +771,7 @@ var MeetingManager = {
         const minSys = (document.getElementById("minutesFilterSubsystem") && document.getElementById("minutesFilterSubsystem").value) || "ALL";
         const minMonth = (document.getElementById("minutesFilterMonth") && document.getElementById("minutesFilterMonth").value) || "ALL";
         container.innerHTML = `
-          <div style="text-align:center; padding:40px; color:var(--text-muted); background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
+          <div style="text-align:center; padding:40px; color:var(--text-muted); background:var(--bg-main); border:1px dashed var(--border-color); border-radius:8px;">
             📅 선택된 조회 조건(서브시스템: <b>${minSys === "ALL" ? "전체" : minSys}</b>, 회의 월: <b>${minMonth === "ALL" ? "전체" : minMonth}</b>)에 해당하는 회의 일정이 없습니다.
             <br><br>
             <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal">➕ 해당 월에 신규 회의 등록</button>
@@ -801,7 +801,7 @@ var MeetingManager = {
 
     if (!mtg) {
       container.innerHTML = `
-        <div style="text-align:center; padding:40px; color:var(--text-muted); background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px;">
+        <div style="text-align:center; padding:40px; color:var(--text-muted); background:var(--bg-main); border:1px dashed var(--border-color); border-radius:8px;">
           📅 선택된 회의가 없습니다. 상단에서 회의를 선택하거나 신규 회의 일정을 먼저 등록해주세요.
           <br><br>
           <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal">➕ 신규 회의 일정 등록</button>
@@ -814,8 +814,8 @@ var MeetingManager = {
     mtg = this._ensureDraft(mtg.id);
     const sysColor = this.getSubsystemColor(mtg.system);
     const stBadge = mtg.status === "완료"
-      ? `<span class="badge" style="background:#15803d; color:white;">완료</span>`
-      : `<span class="badge" style="background:#2563eb; color:white;">${mtg.status}</span>`;
+      ? `<span class="badge" style="background:var(--chart-good-text); color:white;">완료</span>`
+      : `<span class="badge" style="background:var(--primary); color:white;">${mtg.status}</span>`;
 
     container.innerHTML = `
       <!-- 1) 회의 기본 정보 카드 -->
@@ -823,7 +823,7 @@ var MeetingManager = {
         <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="badge" style="background:${sysColor}; color:white; font-size:var(--fs-sm, 12px);">${escapeHtml(mtg.system)}</span>
-            <span style="font-size:var(--fs-lg, 16px); font-weight:bold; color:#0f172a;">${escapeHtml(mtg.title)}</span>
+            <span style="font-size:var(--fs-lg, 16px); font-weight:bold; color:var(--text-main);">${escapeHtml(mtg.title)}</span>
             ${stBadge}
           </div>
           <div style="display:flex; gap:6px;">
@@ -833,15 +833,15 @@ var MeetingManager = {
             </button>
           </div>
         </div>
-        <div class="grid-4" style="margin-top:8px; font-size:var(--fs-sm, 12px); background:#f8fafc; padding:10px; border-radius:6px; border:1px solid #e2e8f0;">
-          <div><b style="color:#64748b;">📅 회의 일자:</b> <strong>${mtg.date}</strong></div>
-          <div><b style="color:#64748b;">⏰ 회의 시간:</b> ${mtg.startTime} ~ ${mtg.endTime}</div>
-          <div><b style="color:#64748b;">📍 회의 장소:</b> ${escapeHtml(mtg.location || "-")}</div>
-          <div><b style="color:#64748b;">👤 주관/발표:</b> <strong>${escapeHtml(mtg.host || "-")}</strong></div>
+        <div class="grid-4" style="margin-top:8px; font-size:var(--fs-sm, 12px); background:var(--bg-main); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+          <div><b style="color:var(--text-muted);">📅 회의 일자:</b> <strong>${mtg.date}</strong></div>
+          <div><b style="color:var(--text-muted);">⏰ 회의 시간:</b> ${mtg.startTime} ~ ${mtg.endTime}</div>
+          <div><b style="color:var(--text-muted);">📍 회의 장소:</b> ${escapeHtml(mtg.location || "-")}</div>
+          <div><b style="color:var(--text-muted);">👤 주관/발표:</b> <strong>${escapeHtml(mtg.host || "-")}</strong></div>
         </div>
         <div style="margin-top:8px; font-size:var(--fs-sm, 12px);">
-          <b style="color:#475569;">💡 회의 목적 및 총괄 요약:</b>
-          <input type="text" id="minutesSummaryInput" value="${escapeHtml(mtg.summary || mtg.title)}" data-change="MeetingManager.updateMinutesSummary" data-change-args='["$value"]' style="width:100%; margin-top:4px; font-size:var(--fs-sm, 12px); padding:4px 8px; border:1px solid #cbd5e1; border-radius:4px;">
+          <b style="color:var(--text-sub);">💡 회의 목적 및 총괄 요약:</b>
+          <input type="text" id="minutesSummaryInput" value="${escapeHtml(mtg.summary || mtg.title)}" data-change="MeetingManager.updateMinutesSummary" data-change-args='["$value"]' style="width:100%; margin-top:4px; font-size:var(--fs-sm, 12px); padding:4px 8px; border:1px solid var(--border-color); border-radius:4px;">
         </div>
       </div>
 
@@ -860,15 +860,15 @@ var MeetingManager = {
         </div>
         <div id="attendeesChipsContainer" style="display:flex; flex-wrap:wrap; gap:8px; padding-top:6px;">
           ${((mtg.attendees || []).map((att, aIdx) => `
-            <div class="attendee-chip" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:20px; padding:4px 10px; font-size:var(--fs-xs, 11px); display:inline-flex; align-items:center; gap:6px;">
-              <span style="font-weight:bold; color:#1e3a8a;">${escapeHtml(att.name)}</span>
-              <span style="color:#64748b; font-size:var(--fs-2xs, 10px);">(${escapeHtml(att.dept || "부서")}/${escapeHtml(att.role || "참석")})</span>
-              <select data-change="MeetingManager.updateAttendance" data-change-args="${UiEvents.args(aIdx, "$value")}" style="font-size:var(--fs-2xs, 10px); padding:1px 3px; border:none; background:transparent; font-weight:bold; color:${att.attendance === "불참" ? "#dc2626" : "#15803d"};">
+            <div class="attendee-chip" style="background:var(--tint-info); border:1px solid var(--border-color); border-radius:20px; padding:4px 10px; font-size:var(--fs-xs, 11px); display:inline-flex; align-items:center; gap:6px;">
+              <span style="font-weight:bold; color:var(--tint-info-text);">${escapeHtml(att.name)}</span>
+              <span style="color:var(--text-muted); font-size:var(--fs-2xs, 10px);">(${escapeHtml(att.dept || "부서")}/${escapeHtml(att.role || "참석")})</span>
+              <select data-change="MeetingManager.updateAttendance" data-change-args="${UiEvents.args(aIdx, "$value")}" style="font-size:var(--fs-2xs, 10px); padding:1px 3px; border:none; background:transparent; font-weight:bold; color:${att.attendance === "불참" ? "var(--chart-bad-text)" : "var(--chart-good-text)"};">
                 <option value="참석" ${att.attendance !== "불참" && att.attendance !== "위임" ? "selected" : ""}>참석</option>
                 <option value="불참" ${att.attendance === "불참" ? "selected" : ""}>불참</option>
                 <option value="위임" ${att.attendance === "위임" ? "selected" : ""}>위임</option>
               </select>
-              <span data-click="MeetingManager.removeAttendee" data-click-args="${UiEvents.args(aIdx)}" style="cursor:pointer; color:#94a3b8; font-weight:bold; margin-left:2px;" title="참석자 삭제">✕</span>
+              <span data-click="MeetingManager.removeAttendee" data-click-args="${UiEvents.args(aIdx)}" style="cursor:pointer; color:var(--text-muted); font-weight:bold; margin-left:2px;" title="참석자 삭제">✕</span>
             </div>
           `)).join("")}
         </div>
@@ -882,26 +882,26 @@ var MeetingManager = {
         </div>
         <div id="agendasContainer" style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
           ${((mtg.agendas || []).map((agd, gIdx) => `
-            <div class="agenda-item-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:6px;">
+            <div class="agenda-item-card" style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:12px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid var(--bg-main); padding-bottom:6px;">
                 <div style="display:flex; align-items:center; gap:8px; width:75%;">
-                  <span style="background:#1e3a8a; color:white; font-size:var(--fs-xs, 11px); font-weight:bold; padding:2px 8px; border-radius:10px;">안건 #${gIdx + 1}</span>
-                  <input type="text" value="${escapeHtml(agd.title)}" data-change="MeetingManager.updateAgendaTitle" data-change-args="${UiEvents.args(gIdx, "$value")}" placeholder="안건 명칭을 입력하세요" style="font-weight:bold; font-size:var(--fs-base, 13px); width:100%; border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px;">
+                  <span style="background:var(--tint-info-text); color:white; font-size:var(--fs-xs, 11px); font-weight:bold; padding:2px 8px; border-radius:10px;">안건 #${gIdx + 1}</span>
+                  <input type="text" value="${escapeHtml(agd.title)}" data-change="MeetingManager.updateAgendaTitle" data-change-args="${UiEvents.args(gIdx, "$value")}" placeholder="안건 명칭을 입력하세요" style="font-weight:bold; font-size:var(--fs-base, 13px); width:100%; border:1px solid var(--border-color); border-radius:4px; padding:3px 8px;">
                 </div>
                 <button class="btn btn-outline btn-xs" data-click="MeetingManager.removeAgenda" data-click-args="${UiEvents.args(gIdx)}" style="color:var(--danger);" title="안건 삭제">🗑️ 안건 삭제</button>
               </div>
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div>
-                  <label style="font-size:var(--fs-xs, 11px); font-weight:bold; color:#1e40af; display:block; margin-bottom:4px;">
+                  <label style="font-size:var(--fs-xs, 11px); font-weight:bold; color:var(--tint-info-text); display:block; margin-bottom:4px;">
                     💬 논의 내용 및 주요 발언 요지
                   </label>
-                  <textarea rows="4" data-change="MeetingManager.updateAgendaDiscussion" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical;" placeholder="회의 중 논의된 기술적 쟁점, 원인 분석, 상호 발언 요점을 상세히 기록하세요.">${escapeHtml(agd.discussion || "")}</textarea>
+                  <textarea rows="4" data-change="MeetingManager.updateAgendaDiscussion" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid var(--border-color); border-radius:4px; resize:vertical;" placeholder="회의 중 논의된 기술적 쟁점, 원인 분석, 상호 발언 요점을 상세히 기록하세요.">${escapeHtml(agd.discussion || "")}</textarea>
                 </div>
                 <div>
-                  <label style="font-size:var(--fs-xs, 11px); font-weight:bold; color:#166534; display:block; margin-bottom:4px;">
+                  <label style="font-size:var(--fs-xs, 11px); font-weight:bold; color:var(--chart-good-text); display:block; margin-bottom:4px;">
                     ✅ 결정 사항 및 실행 합의 내용
                   </label>
-                  <textarea rows="4" data-change="MeetingManager.updateAgendaDecision" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid #cbd5e1; border-radius:4px; resize:vertical; background:#f0fdf4;" placeholder="안건 논의 결과 도출된 합의 사항, 후속 일정, 정책 결정을 구체적으로 기록하세요.">${escapeHtml(agd.decision || "")}</textarea>
+                  <textarea rows="4" data-change="MeetingManager.updateAgendaDecision" data-change-args="${UiEvents.args(gIdx, "$value")}" style="width:100%; font-size:var(--fs-xs, 11px); padding:6px; border:1px solid var(--border-color); border-radius:4px; resize:vertical; background:var(--tint-ok);" placeholder="안건 논의 결과 도출된 합의 사항, 후속 일정, 정책 결정을 구체적으로 기록하세요.">${escapeHtml(agd.decision || "")}</textarea>
                 </div>
               </div>
             </div>
@@ -934,14 +934,14 @@ var MeetingManager = {
                 ? `<tr><td colspan="8" style="text-align:center; padding:18px; color:var(--text-muted);">ℹ️ 본 회의에서 도출된 Action Item이 없습니다.</td></tr>`
                 : (mtg.actionItems || []).map((act, actIdx) => `
                   <tr>
-                    <td style="text-align:center; font-weight:bold; color:#1e40af;">${escapeHtml(act.id)}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.id)}</td>
                     <td style="font-weight:bold;">${escapeHtml(act.title)}</td>
                     <td>${escapeHtml(act.content || "-")}</td>
                     <td style="text-align:center;">${escapeHtml(act.requester || "-")}</td>
-                    <td style="text-align:center; font-weight:bold; color:#0369a1;">${escapeHtml(act.assignee || "-")}</td>
+                    <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.assignee || "-")}</td>
                     <td style="text-align:center;">${escapeHtml(act.targetDate || "-")}</td>
                     <td style="text-align:center;">
-                      <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
+                      <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "var(--chart-good-text)" : "var(--primary)"};">
                         <option value="진행중" ${act.status === "진행중" ? "selected" : ""}>진행중</option>
                         <option value="완료" ${act.status === "완료" ? "selected" : ""}>완료</option>
                         <option value="삭제" ${act.status === "삭제" ? "selected" : ""}>삭제</option>
@@ -959,14 +959,14 @@ var MeetingManager = {
       </div>
 
       <!-- 5) 하단 회의록 전용 내보내기 툴바 -->
-      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; padding:12px 16px; border-radius:8px;">
-        <span style="font-size:var(--fs-sm, 12px); color:#64748b;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); padding:12px 16px; border-radius:8px;">
+        <span style="font-size:var(--fs-sm, 12px); color:var(--text-muted);">
           💡 회의록 작성 후 [✅ 작성 완료 (저장)] 버튼을 눌러야 저장됩니다. 저장하지 않고 다른 회의록을 선택하면 저장 여부를 확인합니다.
         </span>
         <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" data-click="MeetingManager.completeMinutes" data-click-args='[true]'>✅ 작성 완료 (저장)</button>
           <button class="btn btn-secondary btn-sm" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:#2563eb; color:white; border-color:#2563eb;">📥 워드 다운로드 (회의록)</button>
+          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:var(--primary); color:white; border-color:var(--primary);">📥 워드 다운로드 (회의록)</button>
           <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 다운로드 (회의록)</button>
         </div>
       </div>
@@ -1196,27 +1196,27 @@ var MeetingManager = {
 
       tr.innerHTML = `
         <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-align:center; font-weight:bold; color:#1e40af;">${escapeHtml(act.id)}</td>
+        <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.id)}</td>
         <td style="text-align:center;">
           <span class="badge" style="background:${sysColor}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(sysTag)}</span>
         </td>
         <td>
-          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(act.meetingId))}" style="color:#0369a1; text-decoration:none; font-size:var(--fs-xs, 11px);">
+          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(act.meetingId))}" style="color:var(--tint-info-text); text-decoration:none; font-size:var(--fs-xs, 11px);">
             ${escapeHtml(act.meetingTitle || "-")}
           </a>
         </td>
         <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(act.meetingDate || "-")}</td>
         <td style="font-weight:bold;">${escapeHtml(act.title)}</td>
-        <td style="font-size:var(--fs-xs, 11px); color:#475569;">${escapeHtml(act.content || "-")}</td>
+        <td style="font-size:var(--fs-xs, 11px); color:var(--text-sub);">${escapeHtml(act.content || "-")}</td>
         <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(act.requester || "-")}</td>
-        <td style="text-align:center; font-weight:bold; color:#1e40af;">${escapeHtml(act.assignee || "-")}</td>
+        <td style="text-align:center; font-weight:bold; color:var(--tint-info-text);">${escapeHtml(act.assignee || "-")}</td>
         <td style="text-align:center;">
-          <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${isDelayed ? "#dc2626" : "#334155"}; ${isDelayed ? "background:#fee2e2; padding:2px 6px; border-radius:4px;" : ""}">
+          <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${isDelayed ? "var(--chart-bad-text)" : "var(--text-sub)"}; ${isDelayed ? "background:#fee2e2; padding:2px 6px; border-radius:4px;" : ""}">
             ${escapeHtml(act.targetDate || "-")} ${isDelayed ? "⚠️지연" : ""}
           </span>
         </td>
         <td style="text-align:center;">
-          <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "#15803d" : "#2563eb"};">
+          <select data-change="MeetingManager.updateActionItemStatusDirect" data-change-args="${UiEvents.args(String(act.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px; font-weight:bold; color:${act.status === "완료" ? "var(--chart-good-text)" : "var(--primary)"};">
             <option value="진행중" ${act.status === "진행중" ? "selected" : ""}>진행중</option>
             <option value="완료" ${act.status === "완료" ? "selected" : ""}>완료</option>
             <option value="삭제" ${act.status === "삭제" ? "selected" : ""}>삭제</option>

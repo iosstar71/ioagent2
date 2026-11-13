@@ -50,7 +50,7 @@ function renderDomainChips() {
     chip.style.fontSize = "var(--fs-xs, 11px)";
     chip.innerHTML = `
       <b>${escapeHtml(d)}</b>
-      <button type="button" style="background:none;border:none;color:#dc2626;cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="도메인 삭제">×</button>
+      <button type="button" style="background:none;border:none;color:var(--chart-bad-text);cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="도메인 삭제">×</button>
     `;
     container.appendChild(chip);
   });
@@ -373,10 +373,10 @@ function renderStandardDeliverablesMetaTable() {
           <th style="width: 45px; text-align:center;">No</th>
           <th style="width: 140px;">표준 Phase</th>
           <th>필수 표준 산출물 명칭</th>
-          <th style="width: 75px; text-align:center;">1차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">2차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">3차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">4차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:#94a3b8;">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">1차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">2차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">3차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
+          <th style="width: 75px; text-align:center;">4차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
           <th style="width: 125px;">기준일자</th>
           <th style="width: 140px;">비고</th>
           <th style="width: 50px; text-align:center;">삭제</th>
@@ -407,8 +407,8 @@ function renderStandardDeliverablesMetaTable() {
       const isEnabled = rNum <= maxR;
       if (!isEnabled) {
         return `
-          <td style="text-align:center; opacity:0.38; background:#f8fafc; cursor:not-allowed;">
-            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:#94a3b8; cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
+          <td style="text-align:center; opacity:0.38; background:var(--bg-main); cursor:not-allowed;">
+            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:var(--text-muted); cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
               <input type="checkbox" disabled style="cursor:not-allowed;">
               <span style="font-size:var(--fs-2xs, 10px);">${rNum}차</span>
             </label>
