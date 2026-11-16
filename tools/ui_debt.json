@@ -38,7 +38,7 @@
    "inline_hex": 7
   },
   "tab-merge": {
-   "inline": 28,
+   "inline": 25,
    "inline_hex": 2
   },
   "tab-mywork": {
@@ -85,7 +85,7 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 911,
+  "html_inline": 908,
   "html_inline_hex": 180,
   "js_hex": 113
  }

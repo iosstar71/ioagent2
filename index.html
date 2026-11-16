@@ -1603,7 +1603,13 @@
           <div class="mt-scope">
             <span class="mt-step">1 범위</span>
             <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]'></select>
-            <select id="workDataSubsysSelect" class="merge-scope-select" style="min-width:240px;"></select>
+            <select id="workDataSubsysSelect" class="merge-scope-select mt-scope-sys"></select>
+            <span class="mt-presets" role="group" aria-label="자료 묶음 고르기">
+              <span class="mt-presets-label">자료 묶음</span>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["work"]' title="WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록">작업데이터</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["base"]' title="프로젝트 설정 · 서브시스템 · 멤버 · 공지 · 게시판">기준정보 / 공지</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["all"]' title="모든 자료 = 마스터 파일">마스터 파일 (전체)</button>
+            </span>
             <label class="mt-auto"><input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'> 💾 올리기 전 백업 파일도 받기</label>
           </div>
           <div class="table-container" style="max-height:none;">
@@ -1621,33 +1627,15 @@
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
               <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
-              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick">📤 파일 업로드 → 미리 보기</button>
-            </div>
-            <div class="mt-quick">
-              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["sys"]'>서브시스템 단위만</button>
-              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["prj"]'>프로젝트 단위만</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 마스터 파일: 프로젝트 전체 한 파일 (모든 멤버 다운로드 · 로컬 저장소 방식은 가져오기) -->
-        <div class="card mt-card mt-pkg">
-          <div class="mt-pkg-row">
-            <div><b>📦 마스터 파일</b> — 프로젝트 설정 · 업무 · 멤버 · 협업 자료 전체를 한 파일로</div>
-            <div class="mt-btns">
-              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>📥 엑셀 (전체)</button>
-              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>📥 JSON (전체)</button>
-              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["SERVER"]' title="PM · 관리자: 배포 폴더 pprjmgmt/shared/ 에 넣어 올리면 멤버가 화면을 열 때 자동으로 받는 최신 마스터 파일">🌐 배포용 latest.json</button>
-              <span id="consolidateBox" style="display:none;">
-                <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
-                <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]' title="로컬 저장소 방식: PM 이 나눠 준 마스터 파일을 내 브라우저에 반영 (내 담당 서브시스템 자료는 그대로)">📥 마스터 파일 적용</button>
-              </span>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick" title="엑셀 · JSON 파일을 올리면 미리 보기에서 확인한 뒤 반영합니다">📤 파일 업로드</button>
             </div>
           </div>
         </div>
 
         <!-- 레거시 호환용 히든 요소 -->
         <div style="display:none;">
+          <!-- 머리글 [📦 마스터 파일 ▾ > 가져오기] 가 쓰는 파일 입력 -->
+          <span id="consolidateBox"><input type="file" id="consolidateInput" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'></span>
           <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
           <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
           <select id="masterPkgDomainSelect"></select>
@@ -2202,6 +2190,16 @@
               </thead>
               <tbody id="standardDeliverablesBody"></tbody>
             </table>
+          </div>
+          <!-- 차수별 제출 계획일 일괄 변경 (PM · 관리자) -->
+          <div class="deliv-bulk" id="delivBulkBox">
+            <b class="deliv-bulk-title">📅 차수별 제출일 일괄 변경</b>
+            <label>차수 <select id="delivBulkRound"></select></label>
+            <label>서브시스템 <select id="delivBulkSys"></select></label>
+            <label>새 제출 계획일 <input type="date" id="delivBulkDate"></label>
+            <label class="deliv-bulk-chk"><input type="checkbox" id="delivBulkSkipDone" checked> 이미 제출한 산출물은 그대로</label>
+            <button class="btn btn-sm" data-btn="warn" data-click="DelivBulkDate.apply">일괄 변경</button>
+            <span class="lk-hint" id="delivBulkInfo"></span>
           </div>
         </div>
         </div>

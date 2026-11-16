@@ -2990,3 +2990,12 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
   .g-header .lk-badge { max-width: 64px; }
 }
 .pm-panel[hidden] { display: none; }
+
+/* Import · Export: 범위 옆 자료 묶음 고르기 */
+.mt-scope-sys { min-width: 240px; }
+.mt-presets { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-left: 10px; margin-left: 4px; border-left: 1px solid var(--border-color); }
+.mt-presets-label { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-sub); }
+.deliv-bulk { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.deliv-bulk[hidden] { display: none; }
+.deliv-bulk-title { color: var(--text-main); }
+.deliv-bulk label { display: inline-flex; align-items: center; gap: 5px; }
