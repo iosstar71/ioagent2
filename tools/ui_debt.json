@@ -2,11 +2,11 @@
  "css_important": 623,
  "html": {
   "shell": {
-   "inline": 26,
+   "inline": 25,
    "inline_hex": 5
   },
   "tab-config": {
-   "inline": 309,
+   "inline": 308,
    "inline_hex": 100
   },
   "tab-dashboard": {
@@ -26,7 +26,7 @@
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 121,
+   "inline": 119,
    "inline_hex": 20
   },
   "tab-matrix": {
@@ -85,7 +85,7 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 915,
+  "html_inline": 911,
   "html_inline_hex": 180,
   "js_hex": 113
  }

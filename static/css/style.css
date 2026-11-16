@@ -2962,3 +2962,31 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .feed-view-label { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-sub); }
 .g-user-who { font-weight: 700; color: var(--text-main); }
 .g-user-ver { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+
+/* ── 머리글 정리: 새로고침 단추 · 시스템 타이틀 · 프로젝트 관리(탭 안) ─────────────── */
+.g-header .storage-status-box { cursor: default; }
+.sys-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sys-title-row input { width: 280px; max-width: 100%; font-weight: 700; }
+.pm-admin-card { border-left: 4px solid var(--primary); }
+.pm-list-wrap { max-height: 320px; margin-top: 8px; }
+.pm-c-id { width: 70px; } .pm-c-st { width: 80px; } .pm-c-mem { width: 110px; } .pm-c-date { width: 140px; } .pm-c-act { width: 300px; }
+.pm-create-foot { display: flex; justify-content: flex-end; }
+/* 좁은 화면(태블릿 · 폰): 머리글 한 줄이 화면 폭을 넘지 않게 — 넘으면 브라우저가 화면 전체를 줄여 오른쪽이 빈 띠로 보임 */
+.g-header .lk-badge { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-header #headerCurrentUserBadge { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+@media (max-width: 1180px) {
+  .g-header { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .g-header .report-date-label, .g-header .g-search > span, .g-header .g-search > kbd { display: none; }
+  .g-header #btnHeaderSaveAll, .g-header #btnHeaderRefreshAll, .g-header .g-pkg-btn { font-size: 0; padding: 0 8px; gap: 0; }
+  .g-header #btnHeaderSaveAll svg, .g-header #btnHeaderRefreshAll svg, .g-header .g-pkg-btn svg { width: 15px; height: 15px; margin: 0; }
+  .g-header .lk-badge { max-width: 96px; }
+  .g-header #headerCurrentUserBadge { max-width: 84px; }
+  .g-header .header-project-select { flex: 0 1 150px; min-width: 84px; }
+}
+@media (max-width: 860px) {
+  .g-header #globalReportDayOfWeek, .g-header .g-notice { font-size: 0; }
+  .g-header .g-notice svg { width: 15px; height: 15px; }
+  .g-header #headerSystemTitleText { display: none; }
+  .g-header .lk-badge { max-width: 64px; }
+}
+.pm-panel[hidden] { display: none; }

@@ -125,72 +125,17 @@ var ProjectManager = {
   },
 
   // ---- 관리 창 ----
-  _modal() {
-    let m = document.getElementById("projectManagerModal");
-    if (m) return m;
-    m = document.createElement("div");
-    m.id = "projectManagerModal";
-    m.className = "modal-overlay pm-modal";
-    m.innerHTML = `
-      <div class="modal-content pm-modal-box">
-        <div class="pm-modal-head">
-          <h3>🗂️ 프로젝트 관리</h3>
-          <button class="btn btn-sm" data-btn="cancel" data-click="ProjectManager.close">닫기</button>
-        </div>
-        <div class="pm-hint">프로젝트마다 WBS·요구사항·VOC·산출물·회의·주간보고·공지·프로젝트 설정을 따로 관리합니다. 멤버 계정은 모든 프로젝트 공통이며, 역할·담당 서브시스템은 [프로젝트 설정 &gt; d. 멤버 정보]에서 프로젝트별로 지정합니다.</div>
-        <div class="table-container" style="max-height:300px;">
-          <table class="matrix-table pm-table">
-            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">멤버</th><th style="width:140px;">만든 날</th><th style="width:300px;">관리</th></tr></thead>
-            <tbody id="pmListBody"></tbody>
-          </table>
-        </div>
-        <div id="pmMembersPanel" class="pm-panel" style="display:none;"></div>
-        <div id="pmCreatePanel" class="pm-panel">
-          <div class="pm-panel-title">➕ 새 프로젝트</div>
-          <div class="pm-form">
-            <label>프로젝트 이름 <input type="text" id="pmNewName" maxlength="100" placeholder="예: 28년 설비 예지보전 구축"></label>
-            <label>시작일 <input type="date" id="pmNewStart"></label>
-            <label>종료일 <input type="date" id="pmNewEnd"></label>
-          </div>
-          <div class="pm-form">
-            <label class="pm-check"><input type="checkbox" id="pmNewCopy" checked> 현재 프로젝트의 프로젝트 설정 복사 (도메인·서브시스템·SDLC·ID 규칙·휴일·표준 산출물)</label>
-            <span class="pm-check">👥 멤버는 프로젝트별로 관리합니다. 만든 뒤 [프로젝트 설정 &gt; 멤버 정보]에서 추가하거나 다른 프로젝트에서 복사하세요.</span>
-          </div>
-          <div style="display:flex; justify-content:flex-end;">
-            <button class="btn btn-sm" data-btn="add" data-click="ProjectManager.create">➕ 프로젝트 만들기</button>
-          </div>
-        </div>
-      </div>`;
-    document.body.appendChild(m);
-    return m;
-  },
-
+  // 프로젝트 관리는 Admin > 프로젝트 탭 안에서 (예전 팝업 창 대신)
   async open() {
-    const m = this._modal();
-    await this.refreshList();
-    this.renderList();
-    const start = document.getElementById("pmNewStart");
-    const end = document.getElementById("pmNewEnd");
-    if (start && !start.value) start.value = projectConfig.projectStartDate || "";
-    if (end && !end.value) end.value = projectConfig.projectEndDate || "";
-    const create = document.getElementById("pmCreatePanel");
-    if (create) create.style.display = this.canCreate() ? "" : "none";
-    document.getElementById("pmMembersPanel").style.display = "none";
-    m.style.display = "flex";
-    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
-    if (typeof I18N !== "undefined") I18N.translateTree(m);
+    if (!this.isAdmin()) return showToast("⚠️ 프로젝트 관리는 관리자만 할 수 있습니다.");
+    if (typeof GShell !== "undefined") GShell.go("tab-config"); else switchTab("tab-config");
+    if (typeof SubTabs !== "undefined") SubTabs.show("config", "project");
+    await this.renderPanels();
   },
-  // [Standard v1.0.1] 시스템 설정·기준정보에서 바로 새 프로젝트 등록 (관리 창을 열고 이름 칸으로 이동)
   async openNew() {
     await this.open();
-    const panel = document.getElementById("pmCreatePanel");
     const name = document.getElementById("pmNewName");
-    if (panel && panel.style.display !== "none") {
-      panel.scrollIntoView({ block: "nearest" });
-      if (name) name.focus();
-    } else {
-      showToast("⚠️ 새 프로젝트는 관리자 또는 PM만 만들 수 있습니다.");
-    }
+    if (name) { name.scrollIntoView({ block: "center" }); name.focus(); }
   },
 
   // [Standard v1.0.1] 시스템 설정 > 🗂️ 프로젝트, 기준정보 > 기본정보의 프로젝트 요약 카드
@@ -207,26 +152,34 @@ var ProjectManager = {
     boxes.forEach(box => {
       const compact = box.getAttribute("data-project-panel") === "compact";
       const rows = compact ? "" : `
-        <div class="table-container" style="max-height:260px;">
+        <div class="pm-hint">프로젝트마다 WBS · 요구사항 · VOC · 산출물 · 회의 · 주간보고 · 공지 · 프로젝트 설정을 따로 관리합니다.</div>
+        <div class="table-container pm-list-wrap">
           <table class="matrix-table pm-table">
-            <thead><tr><th style="width:70px;">ID</th><th>프로젝트</th><th style="width:80px;">상태</th><th style="width:130px;">멤버</th><th style="width:90px;"></th></tr></thead>
-            <tbody>${list.map(p => `<tr class="${p.id === ProjectContext.current ? "pm-current" : ""}">
-              <td><code>${escapeHtml(p.id)}</code></td>
-              <td><b>${escapeHtml(p.name || p.id)}</b>${p.id === ProjectContext.current ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
-              <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="작업자 선택 화면의 프로젝트 목록에 나오지 않고, 관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
-              <td>멤버 ${this.memberCount(p)}명</td>
-              <td>${p.id === ProjectContext.current ? "" : `<button class="btn btn-xs" data-btn="nav" data-click="ProjectManager.switchTo" data-click-args="${UiEvents.args(p.id)}">열기</button>`}</td>
-            </tr>`).join("")}</tbody>
+            <thead><tr><th class="pm-c-id">ID</th><th>프로젝트</th><th class="pm-c-st">상태</th><th class="pm-c-mem">멤버</th><th class="pm-c-date">만든 날</th><th class="pm-c-act">관리</th></tr></thead>
+            <tbody id="pmListBody"></tbody>
           </table>
-        </div>`;
+        </div>
+        <div id="pmMembersPanel" class="pm-panel" hidden></div>
+        ${canCreate ? `<div id="pmCreatePanel" class="pm-panel">
+          <div class="pm-panel-title">➕ 새 프로젝트</div>
+          <div class="pm-form">
+            <label>프로젝트 이름 <input type="text" id="pmNewName" maxlength="100" placeholder="예: 28년 설비 예지보전 구축"></label>
+            <label>시작일 <input type="date" id="pmNewStart" value="${escapeAttr(projectConfig.projectStartDate || "")}"></label>
+            <label>종료일 <input type="date" id="pmNewEnd" value="${escapeAttr(projectConfig.projectEndDate || "")}"></label>
+          </div>
+          <div class="pm-form">
+            <label class="pm-check"><input type="checkbox" id="pmNewCopy" checked> 현재 프로젝트의 프로젝트 설정 복사 (도메인·서브시스템·SDLC·ID 규칙·휴일·표준 산출물)</label>
+            <span class="pm-check">👥 멤버는 프로젝트별로 관리합니다. 만든 뒤 [프로젝트 설정 &gt; 멤버 정보]에서 추가하거나 다른 프로젝트에서 복사하세요.</span>
+          </div>
+          <div class="pm-create-foot"><button class="btn btn-sm" data-btn="add" data-click="ProjectManager.create">➕ 프로젝트 만들기</button></div>
+        </div>` : ""}`;
       box.innerHTML = `
         <div class="pm-summary">
           <div class="pm-summary-item"><span>현재 프로젝트</span><b>${escapeHtml(cur ? (cur.name || cur.id) : "-")}</b><code>${escapeHtml(cur ? cur.id : "")}</code></div>
           <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small>사용 중 ${active} · 사용 중지 ${list.length - active}</small></div>
           <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
           <div class="pm-summary-actions">
-            ${canManage ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 열기</button>' : ""}
-            ${canCreate ? '<button class="btn btn-sm" data-btn="add" data-click="ProjectManager.openNew">➕ 새 프로젝트 등록</button>' : ""}
+            ${canManage && compact ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 →</button>' : ""}
             ${canCreate && typeof SampleProject !== "undefined" && SyncManager.isLocal() ? '<button class="btn btn-sm" data-click="SampleProject.add" title="교육 · 시연용 샘플 프로젝트를 새 프로젝트로 추가 (지금 프로젝트는 그대로)">🧪 샘플 프로젝트 추가</button>' : ""}
             ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 관리자 또는 PM만 할 수 있습니다.</span>' : ""}
           </div>
@@ -234,12 +187,10 @@ var ProjectManager = {
       if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
       if (typeof I18N !== "undefined") I18N.translateTree(box);
     });
+    this.renderList();
   },
 
-  close() {
-    const m = document.getElementById("projectManagerModal");
-    if (m) m.style.display = "none";
-  },
+  close() {},
 
   renderList() {
     const body = document.getElementById("pmListBody");
@@ -258,7 +209,8 @@ var ProjectManager = {
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}
           ${manage ? btn("이름 변경", "rename", "neutral", [p.id]) : ""}
           ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn(p.status === "ARCHIVED" ? "다시 사용" : "사용 중지", "toggleArchive", "warn", [p.id]) : ""}
-          ${this.isAdmin() && p.id !== ProjectContext.DEFAULT && !cur ? btn("삭제", "remove", "danger", [p.id]) : ""}
+          ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn("삭제", "remove", "danger", [p.id]) : ""}
+          ${this.isAdmin() && p.id === ProjectContext.DEFAULT && cur ? btn("데이터 초기화", "resetDefault", "danger", []) : ""}
         </td>
       </tr>`;
     }).join("");
@@ -385,27 +337,36 @@ var ProjectManager = {
       : `[${p.name}] 프로젝트를 다시 사용 중으로 바꾸시겠습니까?`, () => this._update(pid, { status: next }));
   },
 
+  // 프로젝트 삭제: 프로젝트와 그 안의 자료를 모두 지움 (지금 열려 있는 프로젝트면 지운 뒤 기본 프로젝트로 이동)
   remove(pid) {
     const p = ProjectContext.info(pid);
-    if (!p || pid === ProjectContext.DEFAULT || pid === ProjectContext.current) return;
-    openConfirmDialog(`[${p.name}] 프로젝트와 그 안의 모든 데이터(WBS·요구사항·VOC·산출물·회의·주간보고·공지·채팅)를 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?\n(삭제 전 [시스템 설정 > 백업]으로 다운로드해 두는 것을 권장합니다)`, async () => {
+    if (!p || pid === ProjectContext.DEFAULT || !this.isAdmin()) return;
+    const isCur = pid === ProjectContext.current;
+    openConfirmDialog(`[${p.name}] 프로젝트와 그 안의 모든 데이터(WBS·요구사항·VOC·산출물·회의·주간보고·공지·채팅)를 삭제합니다. 되돌릴 수 없습니다.${isCur ? "\n지금 열려 있는 프로젝트입니다 — 삭제한 뒤 기본 프로젝트로 이동합니다." : ""}\n계속하시겠습니까?`, async () => {
+      if (isCur) {   // 지우는 동안 자동저장이 지운 자료를 다시 쓰지 않게 멈춤
+        this._switching = true;
+        if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
+        SyncManager._suspendAuto = true;
+      }
       if (this.isServer()) {
         const res = await ServerBackend.request("/api/projects/delete", { id: pid });
-        if (!res.ok) return showToast("❌ 삭제 실패: " + (res.message || ""));
+        if (!res.ok) { this._switching = false; SyncManager._suspendAuto = false; return showToast("❌ 삭제 실패: " + (res.message || "")); }
       } else {
         LocalBackend.removeProjectStore(pid);
         ProjectContext.saveLocalList(ProjectContext.localList().filter(x => x.id !== pid));
         let changed = false;
         projectUsers.forEach(u => { if (u.projectRoles && u.projectRoles[pid]) { delete u.projectRoles[pid]; changed = true; } });
-        if (changed) await SyncManager.save(["projectUsers"], { notify: false });
+        if (changed && !isCur) await SyncManager.save(["projectUsers"], { notify: false });
       }
       showToast(`🗑️ [${p.name}] 프로젝트를 삭제했습니다.`);
+      if (isCur) { ProjectContext.set(ProjectContext.DEFAULT); AppStore.reload(); return; }
       await this.refreshList();
-      this.renderList();
       this.renderSelector();
       this.renderPanels();
     });
   },
+  // 기본 프로젝트는 지울 수 없으므로 자료만 처음 상태로
+  resetDefault() { if (typeof ProjectData !== "undefined") ProjectData.resetProject(); },
 
   // ---- 참여자 ----
   editMembers(pid) {
@@ -422,13 +383,13 @@ var ProjectManager = {
         <button class="btn btn-sm" data-btn="cancel" data-click="ProjectManager.closeMembers">취소</button>
         <button class="btn btn-sm" data-btn="save" data-click="ProjectManager.saveMembers">참여자 저장</button>
       </div>`;
-    panel.style.display = "block";
+    panel.hidden = false;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(panel);
     if (typeof I18N !== "undefined") I18N.translateTree(panel);
   },
   closeMembers() {
     const panel = document.getElementById("pmMembersPanel");
-    if (panel) panel.style.display = "none";
+    if (panel) panel.hidden = true;
     this._editingMembers = null;
   },
   async saveMembers() {

@@ -104,29 +104,23 @@
     </div>
     <span class="g-grow"></span>
     <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·멤버 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
-    <div class="g-menu-wrap">
-      <button type="button" class="storage-status-box g-status" id="storageStatusBox" data-click="GShell.toggleMenu" data-click-args='["gStatusMenu"]' data-click-stop="1" title="저장 상태 · 새로고침 · 동기화">
-        <span class="storage-icon" id="storageIcon">💾</span>
-        <span class="storage-text" id="storageStatusText">자동저장 켬</span> ▾
-      </button>
-      <div class="g-menu" id="gStatusMenu" hidden>
-        <div class="g-menu-title">저장소</div>
-        <div class="g-menu-row"><span id="headerDbStatusBadge" class="status-badge-chip chip-hold">🟡 DB: SQLite(대기)</span></div>
-        <div class="g-menu-row"><span id="fileSyncBadge" class="status-badge-chip chip-ready" style="display:none;">동기화 대기</span></div>
-        <button type="button" id="btnHeaderRefreshAll" class="g-menu-item" data-click="SyncManager.refresh" data-click-args='[null]'>🔄 전체 새로고침</button>
-        <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (프로젝트 설정 다시 적용)</button>
-      </div>
-    </div>
+    <!-- 저장 상태 표시 (점) — 새로고침은 [전체 저장] 옆 단추 -->
+    <span class="storage-status-box g-status" id="storageStatusBox" title="저장 상태">
+      <span class="storage-icon" id="storageIcon">💾</span>
+      <span class="storage-text" id="storageStatusText">자동저장 켬</span>
+    </span>
+    <span hidden><span id="headerDbStatusBadge" class="status-badge-chip chip-hold"></span><span id="fileSyncBadge" class="status-badge-chip chip-ready"></span></span>
     <!-- [Local] 마스터 파일(최신 자료 파일) 다운로드 · 가져오기 — 자주 쓰므로 상단에 -->
     <div class="g-menu-wrap">
       <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="마스터 파일(최신 자료 파일) 다운로드 · 가져오기 · 내 작업 파일 보내기">📦 마스터 파일 ▾</button>
       <div class="g-menu g-menu-right g-pkg-menu" id="gPkgMenu" hidden></div>
     </div>
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
+    <button type="button" id="btnHeaderRefreshAll" class="btn btn-sm g-refresh-btn" data-btn="refresh" data-click="SyncManager.refresh" data-click-args='[null]' title="저장된 자료를 다시 읽어 모든 화면을 새로 그립니다 (고른 조건은 그대로)">🔄 전체 새로고침</button>
     <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <!-- [v3.1.0] 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
+      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🖥️ <span class="g-lbl">화면</span></button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
@@ -162,7 +156,6 @@
       <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
-        <button type="button" id="btnProjectManager" class="g-menu-item" data-click="ProjectManager.open">🗂️ 프로젝트 관리</button>
         <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 오픈소스 고지</button>
       </div>
     </div>
@@ -1964,10 +1957,6 @@
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <div class="grid-2" style="gap: 8px;">
               <div>
-                <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="PM Hub · IOSTAR-PM Standalone" readonly style="width:100%;" data-change="updateProjectTitles">
-              </div>
-              <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
                 <input type="text" id="cfgProjectName" value="프로젝트" style="width:100%; font-weight:bold;" data-change="updateProjectTitles">
               </div>
@@ -2431,7 +2420,16 @@
       </div>
 
       <div class="master-subpane active" data-group="config" data-subpane="project">
-        <div class="card" style="border-left:4px solid var(--primary);">
+        <div class="card sys-title-card">
+          <div class="card-title"><span>🏷️ 시스템 타이틀</span></div>
+          <div class="sys-title-row">
+            <input type="text" id="cfgSystemTitle" maxlength="40" placeholder="PM Hub" data-change="SystemTitle.save">
+            <button class="btn btn-sm" data-btn="save" data-click="SystemTitle.save">💾 적용</button>
+            <button class="btn btn-sm" data-btn="neutral" data-click="SystemTitle.reset">기본값으로</button>
+            <span class="lk-hint">화면 왼쪽 위와 브라우저 탭에 나오는 이름입니다. 모든 프로젝트에 똑같이 적용됩니다.</span>
+          </div>
+        </div>
+        <div class="card pm-admin-card">
           <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>
