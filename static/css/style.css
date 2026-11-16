@@ -1973,13 +1973,13 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 .channel-scope-note { margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-main); font-size: var(--fs-sm, 12px); color: var(--text-sub); }
 
 /* [v3.0.2] 단계별 진척 — SDLC 단계 머리글은 테마 색 (고정 남색 제거) */
-.matrix-table th.sdlc-ph { background: var(--header-bg); color: #fff !important; font-weight: bold; vertical-align: middle; }
-.matrix-table th.sdlc-ph.sdlc-ph-alt { background: var(--primary); }
-.matrix-table th.sdlc-ph-total { background: var(--text-main); color: var(--bg-card) !important; vertical-align: middle; }
+/* Phase 진척표의 제목 행: 모든 표가 같은 규칙 — 묶음 제목은 테마의 옅은 색(--tint-*), 합계는 바탕색. 진한 고정 색을 쓰지 않음 */
+.matrix-table .sdlc-ph { background: var(--tint-info); color: var(--tint-info-text); font-weight: bold; vertical-align: middle; }
+.matrix-table .sdlc-ph-total { background: var(--bg-main); color: var(--text-main); vertical-align: middle; }
+.matrix-table .col-req { background: var(--tint-ok); color: var(--tint-ok-text); }
+.matrix-table .col-voc { background: var(--tint-warn); color: var(--tint-warn-text); }
+.matrix-table .col-deliv { background: var(--tint-info); color: var(--tint-info-text); }
 .matrix-table td.sdlc-sum { background: var(--bg-main); }
-[data-theme="dark"] .matrix-table th.sdlc-ph { background: #1e293b; color: #e2e8f0 !important; }
-[data-theme="dark"] .matrix-table th.sdlc-ph.sdlc-ph-alt { background: #312e81; }
-[data-theme="dark"] .matrix-table th.sdlc-ph-total { background: #0f172a; color: #e2e8f0 !important; }
 /* [v3.0.2] 머리글 기준일 옆 요일: 어두운 머리글(Electric · Navy · Graphite)에서도 보이게 */
 .g-header .global-report-date-box .day-of-week-tag { color: #F1F5F9 !important; background: rgba(255,255,255,0.16) !important; font-weight: 700; }
 .g-header .global-report-date-box .day-of-week-tag.day-sat { color: #93C5FD !important; }
@@ -3020,3 +3020,5 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .g-menu-link { display: flex; align-items: center; gap: 6px; text-decoration: underline; text-underline-offset: 3px; color: var(--tint-info-text); }
 .g-menu-link .g-ext { margin-left: auto; font-weight: 700; }
 .da-run { text-align: center; white-space: nowrap; }
+/* 맨 위 화면(팔레트) · 관리(톱니바퀴) 버튼: 아이콘만으로 알아볼 수 있게 조금 크게 */
+.g-header #gUiBtn svg.iostar-ico, .g-header #gAdminBtn svg.iostar-ico { width: 18px; height: 18px; }

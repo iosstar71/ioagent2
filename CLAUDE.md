@@ -46,27 +46,32 @@
 - 이모지는 화면에 그대로 써도 `icons.js` 가 같은 모양의 선 아이콘으로 바꾼다. 새 이모지를 쓰면 `Icons.MAP` 에 아이콘을 추가.
 - 새 한국어 화면 문구는 `i18n-en.js` 의 `exact` 에 영어를 함께 넣는다.
 
-## 3. 테마 (5가지, 확정)
+## 3. 테마 (6가지, 확정)
 | 화면 이름 | 내부 값 | 성격 |
 |---|---|---|
 | Slate (기본) | `urban-slate` | 흰 바탕 · 회청, 납작한 글자 헤더 |
 | Walnut | `brown` | 따뜻한 종이색 바탕 · 갈색 메뉴 필 · 띠 |
-| Navy | `classic` | 네이비 머리말 · 얇은 네이비 배너 (전통) |
+| Navy | `navy` | Walnut 과 같은 틀의 블루 계열 (규칙을 함께 씀: `:is([data-theme="brown"], [data-theme="navy"])`, 색은 `--pf-N`) |
+| Classic | `classic` | 예전 IT 시스템 스타일: 남색 머리말 · 색 버튼 · 색 이모지(선 아이콘으로 바꾸지 않음, `THEMES` 의 `emoji: true`) |
 | Obsidian | `dark` | 어두운 화면 · 납작한 헤더 |
 | Pop | `electric` | 팝아트: 흰 바탕 · 노란 배너 · 원색 띠 · 굵은 먹선(배너 · 고른 메뉴 · 주 버튼에만) |
-- 내부 값은 바꾸지 않는다(저장된 프로젝트 호환). 예전 값: navy→classic, matte·green·nordic-sage→urban-slate, graphite·obsidian→dark.
-- 새 화면 요소를 만들면 5개 테마에서 모두 확인(특히 Obsidian 의 밝은 상자, Pop 의 테두리).
+- 내부 값은 바꾸지 않는다(저장된 프로젝트 호환). 예전 값: matte·green·nordic-sage→urban-slate, graphite·obsidian→dark, ocean·purple→classic.
+- 새 화면 요소를 만들면 **6개 테마 모두**에서 확인(특히 Obsidian 의 밝은 상자, Pop 의 테두리, Classic 의 진한 표 머리).
+- 표 제목 행에 진한 고정 색을 쓰지 않는다: 묶음 제목은 `--tint-*` 클래스(`.col-phase` `.col-req` `.col-voc` `.col-deliv`), 합계는 `.col-total`.
 
 ## 4. 용어 · 이름
 Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업 파일 · 프로젝트 설정 · 도메인 · 스냅샷 · Phase · 실제 시작/종료 ·
 대기(예전 착수전) · N차(예전 N회차) · 보고 · 게시판 · 체크할 일 · Admin · Dashboard · Gantt.
 엑셀 시트 이름(`0_프로젝트기준정보` 등)과 읽기 규칙은 예전 이름도 받아야 한다(멤버 시트: 사용자/작업자/멤버).
 
-## 5. 두 판에 함께 적용하기
-- Standalone 에서 먼저 고치고 시험 → 같은 변경을 Workgroup 에: Standalone 쪽 `git diff <from> <to> -- static index.html` 을
-  Workgroup 작업 폴더에서 `git apply --directory=webapp -3` (충돌은 Workgroup 내용을 살리고 색 · 클래스만 반영).
-- Workgroup 만의 것: 서버(`server/`), 체크아웃 잠금, 채팅. Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB.
-- 두 판 공통 도구(`tools/app_config.py` 등)를 바꾸면 Workgroup 에서 `python tools/check_shared_files.py --update`.
+## 5. 두 판 운영 (사용자 결정)
+- **평소에는 Standalone 만 고치고 시험한다.** Workgroup 은 사용자가 "동기화"를 요청할 때만 맞춘다 (매번 두 판을 시험하지 않는다 — Workgroup E2E 는 ~20분).
+- 동기화할 때: Standalone 쪽 `git diff <지난 동기화 커밋> HEAD -- static index.html` 을 Workgroup 작업 폴더에서
+  `git apply --directory=webapp -3` (충돌은 Workgroup 내용을 살리고 색 · 클래스만 반영) → Workgroup E2E · 서버 시험 1회.
+  지난 동기화 커밋은 Workgroup 커밋 메시지의 `Synced from Standalone <hash>` 로 찾는다.
+- Workgroup 만의 것: 서버(`server/`), 체크아웃 잠금, 채팅, 도움말 내장(manual-viewer). Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB.
+- 저장: 두 판 모두 자동저장 없음 — [저장]을 눌러야 기록. 화면 설정(기준일 · 테마)과 프로그램이 한 자료 변환만 조용히 기록(`SyncManager.saveSettingsQuiet`).
+- 초기 암호는 두 판 모두 `1234`, 처음 들어올 때 변경 필수. 설치본은 샘플 없이 빈 상태(Workgroup 시험은 `tools/tests/fixtures/initial_sample.json`).
 
 ## 6. 시험 · 배포
 - Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>`

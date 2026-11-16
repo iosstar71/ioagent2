@@ -45,7 +45,7 @@ async function waitApp(page) {
 async function pickWorker(page, emp, store, project) {
   if (project) await page.selectOption("#inputLoginProject", project).catch(() => {});
   await page.fill("#inputSecurityEmpNo", emp);
-  await page.fill("#inputSecurityPassword", store[emp] || (emp + "123!"));
+  await page.fill("#inputSecurityPassword", store[emp] || "1234");
   await page.click("#btnLockSubmit");
   await page.waitForTimeout(1300);
   const forced = await page.$eval("#pwdChangeFormPane", e => getComputedStyle(e).display !== "none").catch(() => false);
@@ -99,13 +99,13 @@ async function main() {
     const login = await pm.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), start: !!document.getElementById("localStartInput"),
       brand: document.querySelector(".login-brand-name").textContent }));
     check("Worker selection: only admin, [start from 종합본] button, Local shown", login.workers === "admin" && login.start && login.brand.includes("Standalone"), JSON.stringify(login));
-    await pm.fill("#inputSecurityEmpNo", "admin"); await pm.fill("#inputSecurityPassword", "1234");
+    await pm.fill("#inputSecurityEmpNo", "admin"); await pm.fill("#inputSecurityPassword", "admin123!");
     await pm.click("#btnLockSubmit"); await pm.waitForTimeout(900);
     const pw = await pm.evaluate(() => ({ err: (document.getElementById("lockErrorMessage") || {}).textContent || "", hint: document.getElementById("lockModalDesc").textContent,
-      noReuse: !!AuthManager.validateNewPassword("hong123!", "hong"), ok: AuthManager.validateNewPassword("Hong2026x", "hong") === "" }));
-    check("Initial password is worker ID + 123! (old 1234 rejected; cannot be kept as the new password)", /일치하지/.test(pw.err) && pw.hint.includes("123!") && pw.noReuse && pw.ok, JSON.stringify(pw));
+      noReuse: !!AuthManager.validateNewPassword("1234", "hong"), ok: AuthManager.validateNewPassword("Hong2026x", "hong") === "" }));
+    check("Initial password is 1234 for every member (old ID+123! rejected; cannot be kept as the new password)", /일치하지/.test(pw.err) && pw.hint.includes("1234") && pw.noReuse && pw.ok, JSON.stringify(pw));
     await pickWorker(pm, "admin", PWD);
-    check("Local: picking a worker with the initial password does not force a password change", !PWD.admin && await pm.evaluate(() => !!(AuthManager.currentUser && AuthManager.currentUser.empNo === "admin")), JSON.stringify(PWD));
+    check("First login with the initial password forces a password change (same as Workgroup)", !!PWD.admin && await pm.evaluate(() => !!(AuthManager.currentUser && AuthManager.currentUser.empNo === "admin")), JSON.stringify(PWD));
     const st = await pm.evaluate(() => ({ ver: document.getElementById("headerVersionBadge").textContent, title: document.title, mode: DbConnector.config.mode, wbs: wbsData.length, subs: subsystemsMeta.length,
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));

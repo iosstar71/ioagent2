@@ -46,7 +46,7 @@
         <datalist id="workerPickList"></datalist>
         <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
         <label class="login-label">③ 멤버 암호:</label>
-        <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 멤버 ID + 123!)" autocomplete="off" class="login-input"
+        <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 1234)" autocomplete="off" class="login-input"
                data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
         <div id="lockErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-top: 2px; display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 14px;">
@@ -120,7 +120,7 @@
     <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <!-- [v3.1.0] 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🖥️ <span class="g-lbl">화면</span></button>
+      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
@@ -681,7 +681,7 @@
       <!-- [A-2] Section 1 (Top): 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 통합 진척 현황표 -->
       <div class="card" id="integratedProgressCard">
         <div class="card-title">
-          <span>📋 [1] 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 통합 진척 현황표</span>
+          <span>📋 [1] 서브시스템별 진척율 (WBS · 요구사항 · VOC · 산출물)</span>
         </div>
         <div class="table-container">
           <table class="matrix-table" id="integratedProgressTable">
@@ -2647,7 +2647,7 @@
 
             <div style="display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--border-color); padding-left:16px;">
               <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(멤버 선택 멤버) 암호 변경:</label>
-              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 멤버 ID + 123!)" autocomplete="off" style="width:100%;">
+              <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 1234)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgNewPassword" placeholder="새 암호 입력 (8자 이상, 영문+숫자)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgConfirmPassword" placeholder="새 암호 확인 입력" autocomplete="off" style="width:100%;">
               <button class="btn btn-primary btn-sm" data-btn="save" style="margin-top:4px; padding:8px; justify-content:center;" data-click="AuthManager.changePassword">🔑 암호 변경</button>
@@ -2846,7 +2846,7 @@
             🗂️ 옵션 2. LocalStorage 내 JSON 데이터만 보존하고 기타 저장소 항목(암호·캐시 등) 모두 삭제
           </div>
           <p style="font-size: var(--fs-xs, 11px); color: var(--text-sub); margin-bottom: 8px; line-height: 1.4;">
-            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>멤버 ID + 123!</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
+            브라우저 저장소의 프로젝트 JSON 데이터(<code>WBS_ENTERPRISE_SYSTEM_DATA_V9</code>)는 100% 보존하고, 암호 해시(기본값 <code>1234</code>로 초기화) 및 기타 불필요한 저장소 항목만 모두 지웁니다.
           </p>
           <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; padding: 8px;" data-click="StorageManager.clearStorageExceptJsonKey">
             🧹 기타 캐시 삭제
@@ -2970,7 +2970,7 @@
       </div>
       <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
       <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
-      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(멤버 ID + 123!)으로 되돌림 — 바꾸고 싶으면 멤버가 [🔑 암호 변경]에서 바꿈</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(1234)으로 되돌림 — 바꾸고 싶으면 멤버가 [🔑 암호 변경]에서 바꿈</label>
       <div class="ua-sub-title">프로젝트별 권한</div>
       <div class="pm-hint" id="uaAdminNote" style="display:none;">관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
       <div class="table-container" style="max-height: 300px;">

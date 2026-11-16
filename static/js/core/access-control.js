@@ -115,23 +115,27 @@ var AuthManager = {
     return this._sha256PureJs(bytes);
   },
 
-  // 초기 암호 = 멤버 ID + "123!" (예: hong → hong123!) — 암호를 정하지 않았거나 초기화한 작업자
-  INITIAL_PWD_SUFFIX: "123!",
-  INITIAL_PWD_HINT: "멤버 ID + 123!",
-  initialPassword(empNo) { return String(empNo || "") + this.INITIAL_PWD_SUFFIX; },
+  // 초기 암호 = 1234 (두 판 공통) — 암호를 정하지 않았거나 초기화한 멤버. 처음 들어올 때 반드시 바꿈
+  INITIAL_PWD: "1234",
+  INITIAL_PWD_HINT: "1234",
+  initialPassword(empNo) { void empNo; return this.INITIAL_PWD; },
   // 새 암호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 암호 사용 불가
   PWD_MIN_LENGTH: 8,
   validateNewPassword(pwd, empNo) {
     const p = String(pwd || "");
-    if (empNo && p.toLowerCase() === this.initialPassword(empNo).toLowerCase()) return "초기 암호(멤버 ID + 123!)는 새 암호로 쓸 수 없습니다.";
+    if (empNo && p.toLowerCase() === this.initialPassword(empNo).toLowerCase()) return "초기 암호(1234)는 새 암호로 쓸 수 없습니다.";
     if (p.length < this.PWD_MIN_LENGTH) return `암호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
     if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "암호는 영문과 숫자를 모두 포함해야 합니다.";
     if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 암호는 사용할 수 없습니다.";
     return "";
   },
-  // 초기 암호 사용 중이거나 관리자가 지정한 임시 암호이면 첫 작업자 선택 때 변경 필수
-  // [Local] 작업자 선택 때 암호 변경을 강제하지 않음 (초기 암호 = 멤버 ID + 123! 그대로 써도 됨, 바꾸려면 [🔑 암호 변경])
-  mustChangeLocal(u) { void u; return false; },
+  // 초기 암호(1234)를 쓰고 있거나 관리자가 초기화한 암호이면 처음 멤버를 고를 때 변경 필수 (Workgroup 과 같음)
+  mustChangeLocal(u) {
+    if (!u) return false;
+    if (u.pwdHash && !u.pwdTemp) return false;
+    if (!u.pwdHash && String(u.empNo).toLowerCase() === "admin") { try { if (AppStore.getItem(this.LEGACY_ADMIN_HASH_KEY)) return false; } catch (e) {} }
+    return true;
+  },
 
   // ---------------------------------------------------------------------------
   // 보안 정책
@@ -322,7 +326,7 @@ var AuthManager = {
     this._setText("lockModalTitle", title || "🔐 멤버 선택");
     this._setText("lockModalDesc",
       (desc || "멤버 ID과 암호를 입력하여 멤버를 선택하세요.") +
-      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>멤버 ID + 123!</b> (예: admin → admin123!)</span>`, true);
+      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>1234</b></span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
@@ -924,8 +928,8 @@ var WorkerPick = {
     if (row) { row.name = it.name; ProjectContext.saveLocalList(l2); }
     try { AppStore.setItem(AuthManager.LOGIN_PROJECT_KEY, pid); } catch (err) {}
     try { AppStore.removeItem(this.PENDING_KEY); } catch (err) {}
-    try { AppStore.setItem("PPRJMGMT_START_MSG", `${label || "📥 마스터 파일"} [${it.name}]으로 시작합니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 멤버 ID + 123!).`); } catch (err) {}
-    showToast(`📥 [${it.name}] 마스터 파일을 이 브라우저에 넣었습니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 멤버 ID + 123!).`);
+    try { AppStore.setItem("PPRJMGMT_START_MSG", `${label || "📥 마스터 파일"} [${it.name}]으로 시작합니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 1234).`); } catch (err) {}
+    showToast(`📥 [${it.name}] 마스터 파일을 이 브라우저에 넣었습니다 — 멤버 ${it.users.length}명. 내 이름을 골라 시작하세요 (처음 암호: 1234).`);
     setTimeout(() => AppStore.reload(), 900);
   },
   _pending() { try { return JSON.parse(AppStore.getItem(this.PENDING_KEY) || "null"); } catch (e) { return null; } },

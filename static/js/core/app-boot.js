@@ -136,7 +136,11 @@ var AppBoot = {
     WeeklyReportManager.scope = null;
     WeeklyReportManager.currentWeekReport = null;
     if (document.getElementById("tab-weekly-report").classList.contains("active")) WeeklyReportManager.init();
-    if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) rebuildAll(true);   // 예전 가중치 자료 한 번 전환
+    if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) {
+      rebuildAll(true);
+      // 프로그램이 자료 형식을 바꾼 것(사용자가 고친 것이 아님)은 묻지 않고 바로 기록
+      if (typeof SyncManager !== "undefined" && SyncManager.isLocal()) setTimeout(() => SyncManager.save(null, { notify: false }), 300);
+    }   // 예전 가중치 자료 한 번 전환
     AuthManager.applyTabPermissions();
     if (typeof HomeScreenManager !== "undefined") {
       HomeScreenManager.applyRoleMode();

@@ -1,7 +1,7 @@
 // =============================================================================
 // [Standalone] 🧪 샘플 프로젝트 추가 — 교육 · 시연용 (관리자 · PM)
 //  - 처음 상태에는 넣지 않고, 버튼을 누를 때만 새 프로젝트로 추가 (지금 프로젝트는 그대로)
-//  - 샘플 멤버는 그 프로젝트 참여자로 추가 (처음 암호: 멤버 ID + 123!)
+//  - 샘플 멤버는 그 프로젝트 참여자로 추가 (처음 암호: 1234)
 //  - 예전 용어 · 가중치 값은 불러올 때 자동으로 바뀜 (대기 · N차 · 서브시스템 100 기준)
 // =============================================================================
 var SampleProject = {
@@ -22,7 +22,7 @@ var SampleProject = {
         const pid = await ProjectTransfer.create(this.NAME, snap.projectConfig);
         ProjectTransfer.writeLocal(pid, { name: this.NAME, data: snap, users });
         if (typeof ProjectManager.refreshList === "function") await ProjectManager.refreshList();
-        showToast(`✅ 샘플 프로젝트를 추가했습니다 (멤버 ${users.length}명, 처음 암호: 멤버 ID + 123!). 머리말 프로젝트 목록에서 고르세요.`);
+        showToast(`✅ 샘플 프로젝트를 추가했습니다 (멤버 ${users.length}명, 처음 암호: 1234). 머리말 프로젝트 목록에서 고르세요.`);
         if (typeof ProjectManager.renderSummary === "function") ProjectManager.renderSummary();
       } catch (e) {
         showToast("⚠️ 샘플 프로젝트를 추가하지 못했습니다: " + e.message);

@@ -51,7 +51,7 @@ function renderProjectUsersTable() {
           <div style="display:flex; gap:4px; align-items:center;">
             <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:var(--fs-xs, 11px);">
             <button class="btn btn-sm" data-btn="save" data-click="updateProjectUserPassword" data-click-args="${UiEvents.args(idx)}">변경</button>
-            <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(멤버 ID + 123!)으로 초기화합니다.">🔄 초기화</button>
+            <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
         <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='기본 관리자(admin)와 관리자 계정은 관리자만 삭제할 수 있습니다.'" : "title='이 프로젝트에서 빼기 (다른 프로젝트 참여는 유지)'"}>×</button></td>
@@ -265,13 +265,13 @@ function addNewProjectUser() {
   const sub = subsystemsMeta[0] ? subsystemsMeta[0].name : "ALL";
   projectUsers.push({
     empNo: newEmpNo, name: `신규담당자${seq}`, role: "MEMBER", subsystem: sub, dept: "", lang: "ko",
-    pwdHash: "", // 초기 암호: 멤버 ID + 123!
+    pwdHash: "", // 초기 암호: 1234
     projectRoles: { [pid]: { role: "MEMBER", subsystem: sub, dept: "프로젝트 수행팀" } },
     _new: true
   });
   renderProjectUsersTable();
   persistChanges();
-  showToast(`신규 멤버 [${newEmpNo}] 을(를) 이 프로젝트에 추가했습니다. 멤버 ID을 바꿀 수 있습니다. (초기 암호: 멤버 ID + 123!)`);
+  showToast(`신규 멤버 [${newEmpNo}] 을(를) 이 프로젝트에 추가했습니다. 멤버 ID을 바꿀 수 있습니다. (초기 암호: 1234)`);
 }
 
 async function updateProjectUserPassword(idx) {
@@ -294,17 +294,17 @@ async function updateProjectUserPassword(idx) {
   showToast(`[${u.name}(${u.empNo})] 인력의 암호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
 }
 
-// [v1.0.7] 작업자별 암호 초기화 (초기 암호: 멤버 ID + 123!)
+// [v1.0.7] 작업자별 암호 초기화 (초기 암호: 1234)
 function resetProjectUserPassword(idx) {
   const u = projectUsers[idx];
   if (!u) return;
-  openConfirmDialog(`[${u.name}(${u.empNo})] 멤버의 암호를 초기값(${u.empNo}123!)으로 초기화하시겠습니까?`, () => {
+  openConfirmDialog(`[${u.name}(${u.empNo})] 멤버의 암호를 초기값(1234)으로 초기화하시겠습니까?`, () => {
     u.pwdHash = "";
     u.pwdTemp = false;
     u.pwdReset = true;
     if (String(u.empNo).toLowerCase() === "admin") { try { AppStore.removeItem(AuthManager.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
     persistChanges();
-    showToast(`🔄 [${u.name}(${u.empNo})] 암호가 ${u.empNo}123! 로 초기화되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
+    showToast(`🔄 [${u.name}(${u.empNo})] 암호가 1234 로 초기화되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
   });
 }
 
