@@ -50,7 +50,10 @@ def copy_program(dst, lock_mode="off", lock_hours=None):
                      for l in text.split("\n"))
     ini.write_text(text, encoding="utf-8")
     (dst / "data").mkdir()
-    shutil.copy(ROOT / "data" / "initial_data.json", dst / "data" / "initial_data.json")
+    # the package starts empty; tests start from the sample fixture
+    sample = (ROOT / "tools" / "tests" / "fixtures" / "initial_sample.json").read_text(encoding="utf-8")
+    (dst / "data" / "initial_data.json").write_text(sample, encoding="utf-8")
+    (dst / "webapp" / "static" / "js" / "core" / "initial-data.js").write_text("window.AX_INITIAL_DATA = " + sample + ";\n", encoding="utf-8")
 
 
 class ServerApiTest(unittest.TestCase):

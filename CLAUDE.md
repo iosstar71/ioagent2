@@ -63,11 +63,13 @@ Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업
 대기(예전 착수전) · N차(예전 N회차) · 보고 · 게시판 · 체크할 일 · Admin · Dashboard · Gantt.
 엑셀 시트 이름(`0_프로젝트기준정보` 등)과 읽기 규칙은 예전 이름도 받아야 한다(멤버 시트: 사용자/작업자/멤버).
 
-## 5. 두 판에 함께 적용하기
-- 화면 변경은 Standalone 에서 먼저 고치고 시험한 뒤 여기로 가져온다: Standalone 쪽 `git diff <from> <to> -- static index.html` 을
-  이 저장소에서 `git apply --directory=webapp -3` (충돌은 Workgroup 내용 — 서버 · 첨부 · 체크아웃 — 을 살리고 색 · 클래스만 반영).
-- Workgroup 만의 것: 서버(`server/`), 체크아웃 잠금, 채팅. Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB.
-- 두 판 공통 도구(`tools/app_config.py` 등)를 바꾸면 `python tools/check_shared_files.py --update` (API 시험이 검사).
+## 5. 두 판 운영 (사용자 결정)
+- 평소 수정은 **Standalone 에서만** 한다. 이 Workgroup 판은 사용자가 "동기화"를 요청할 때만 맞춘다 (E2E ~20분이라 매번 돌리지 않음).
+- 동기화: Standalone 쪽 `git diff <지난 동기화 커밋> HEAD -- static index.html` 을 여기서 `git apply --directory=webapp -3`
+  (충돌은 Workgroup 내용 · 용어(로그인 · 비밀번호 · 시스템관리자)를 살림) → `node tools/tests/e2e/run_e2e.js` · `python tools/tests/test_server_api.py` 1회.
+  지난 동기화 커밋은 커밋 메시지의 `Synced from Standalone <hash>` 로 찾는다.
+- 설치본은 샘플 없이 빈 상태(`data/initial_data.json`). 시험은 `tools/tests/fixtures/initial_sample.json` 을 초기 자료로 넣고 시작한다.
+- 두 판 공통 도구(`tools/app_config.py` 등)를 바꾸면 `python tools/check_shared_files.py --update`.
 
 ## 6. 시험 · 배포
 - Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>`

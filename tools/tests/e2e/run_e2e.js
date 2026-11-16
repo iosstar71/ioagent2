@@ -826,7 +826,7 @@ async function localMain() {
   });
   check("v3.4.0: gantt bars show actual fill, plan marker, delay hatching and summary bars; bullet chart on the dashboard (not on home); executive deck order (progress → S-curve → bullet → REQ·VOC → SDLC matrix → delays → subsystems)",
     v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet === 0 &&
-    /^표지,목차,종합 진척 현황,S-커브,불릿 차트,요구사항·VOC,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
+    /^표지,목차,종합 진척 현황,S-커브,불릿 차트,서브시스템별 진척율,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
 
   // 로그인 프로젝트 선택 · 암호 초기화 · 프로젝트별 테마 · 백업/복원/초기화는 서버 시나리오에서 시험 ([Workgroup 0.4])
   await page.evaluate(async () => { try { await SyncManager.save(null, { notify: false, force: true }); } catch (e) {} AuthManager.manualLock(); }); await page.waitForTimeout(300);
@@ -924,7 +924,10 @@ function copyApp(dst, lockMode = "off") {
   const ini = path.join(dst, "conf", "app.ini");
   fs.writeFileSync(ini, fs.readFileSync(ini, "utf8").replace(/^lock_mode=.*$/m, "lock_mode=" + lockMode));
   fs.mkdirSync(path.join(dst, "data"));
-  fs.copyFileSync(path.join(ROOT, "data", "initial_data.json"), path.join(dst, "data", "initial_data.json"));
+  // 설치본은 빈 상태로 시작하므로, 시험은 샘플 자료(fixtures/initial_sample.json)를 초기 자료로 넣고 시작
+  const sample = fs.readFileSync(path.join(ROOT, "tools", "tests", "fixtures", "initial_sample.json"), "utf8");
+  fs.writeFileSync(path.join(dst, "data", "initial_data.json"), sample);
+  fs.writeFileSync(path.join(dst, "webapp", "static", "js", "core", "initial-data.js"), "window.AX_INITIAL_DATA = " + sample + ";\n");
 }
 
 async function serverScenarios() {

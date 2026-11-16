@@ -35,15 +35,15 @@ function renderPhaseMatrix() {
           <th rowspan="2" style="width: 130px;">서브시스템</th>
           <th rowspan="2" style="width: 110px;">관리유형</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
-          <th colspan="4" style="background:var(--tint-ok); color:var(--tint-ok-text);">🎯 요구사항(REQ) 진척</th>
-          <th colspan="${activeRounds.length + 2}" style="background:var(--tint-info); color:var(--tint-info-text);">📑 산출물 제출 진척 (${activeRounds.length}차 운영)</th>
-          <th colspan="5" style="background:var(--tint-warn); color:var(--tint-warn-text);">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
+          <th colspan="4" class="col-req">🎯 요구사항(REQ) 진척</th>
+          <th colspan="5" class="col-voc">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
+          <th colspan="${activeRounds.length + 2}" class="col-deliv">📑 산출물 제출 진척 (${activeRounds.length}차 운영)</th>
         </tr>
         <tr>
           <th>계획</th><th>실적</th><th>달성률</th>
           <th>전체</th><th>진행</th><th>완료</th><th>완료율</th>
-          ${roundThs}<th>검토/작성중</th><th>완료율</th>
           <th>유효전체</th><th>대기</th><th>진행중</th><th>완료·제외</th><th>달성률</th>
+          ${roundThs}<th>검토/작성중</th><th>완료율</th>
         </tr>
       `;
     }
@@ -113,14 +113,14 @@ function renderPhaseMatrix() {
       <td>${rPrg}건</td>
       <td><strong>${rCmp}건</strong></td>
       <td style="font-weight:bold; color:var(--tint-ok-text);">${rRate}%</td>
-      ${roundTds}
-      <td>${dIng}건</td>
-      <td style="font-weight:bold; color:var(--tint-info-text);">${dRate}%</td>
       <td>${sVocs.length}건</td>
       <td style="color:var(--chart-warn-text);">${vWait}건</td>
       <td style="color:var(--primary);">${vProg}건</td>
       <td><strong>${vDone}건</strong></td>
       <td style="font-weight:bold; color:var(--tint-warn-text);">${vRate}%</td>
+      ${roundTds}
+      <td>${dIng}건</td>
+      <td style="font-weight:bold; color:var(--tint-info-text);">${dRate}%</td>
     `;
     intTbody.appendChild(tr);
   });
@@ -144,14 +144,14 @@ function renderPhaseMatrix() {
     <td><b>${sumReqPrg}건</b></td>
     <td><b>${sumReqCmp}건</b></td>
     <td style="color:var(--tint-ok-text);"><b>${totRRate}%</b></td>
-    ${sumRoundTds}
-    <td><b>${sumDIng}건</b></td>
-    <td style="color:var(--tint-info-text);"><b>${totDRate}%</b></td>
     <td><b>${sumVocTot}건</b></td>
     <td style="color:var(--chart-warn-text);"><b>${sumVocWait}건</b></td>
     <td style="color:var(--primary);"><b>${sumVocProg}건</b></td>
     <td><b>${sumVocDone}건</b></td>
     <td style="color:var(--tint-warn-text);"><b>${totVRate}%</b></td>
+    ${sumRoundTds}
+    <td><b>${sumDIng}건</b></td>
+    <td style="color:var(--tint-info-text);"><b>${totDRate}%</b></td>
   `;
   intTbody.appendChild(sumRow);
 

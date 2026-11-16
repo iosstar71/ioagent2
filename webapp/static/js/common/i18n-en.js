@@ -13,6 +13,8 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "📋 [1] 서브시스템별 진척율 (WBS · 요구사항 · VOC · 산출물)": "📋 [1] Progress by subsystem (WBS · requirements · VOC · deliverables)",
+    "서브시스템별 진척율 (WBS · 요구사항 · VOC)": "Progress by subsystem (WBS · requirements · VOC)",
     "🗑️ 프로젝트 삭제": "🗑️ Delete project",
     "다른 프로젝트 · 멤버 계정": "Other projects · member accounts",
     "새 창에서 사용자 매뉴얼을 엽니다": "Opens the user manual in a new window",
@@ -2902,15 +2904,14 @@ var I18N_EN = (function () {
     "프로젝트 일정 · 산출물 · 요구사항 · 주간보고 협업": "Schedules · deliverables · requirements · weekly reports",
     "멤버 ID과 암호를 입력하여 멤버를 선택하세요.": "Enter your member ID and password.",
     "* 초기 암호:": "* Initial password:",
-    "멤버 ID + 123!": "member ID + 123!",
-    "(예: admin → admin123!)": "(e.g. admin → admin123!)",
+    "1234": "1234",
     "💻 Standalone — 자료는 이 PC 브라우저에만 저장됩니다. PM 과는 마스터 파일 · 내 작업 파일로 주고받습니다.": "💻 Standalone — data is stored only in this PC's browser. Exchange master files and work files with the PM.",
     "관리자는 프로젝트를 고르지 않아도 됩니다.": "Admins do not need to pick a project.",
     "이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.": "Choose your member in this program. This is separate from the company SSO account.",
     "📥 PM 이 보낸 마스터 파일 업로드 (최신 자료 받기)": "📥 Upload the PM's master file (get latest)",
     "처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 마스터 파일을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.": "Use on a new PC, when your name is missing, or when the PM sends a new master file. If this PC has data you choose to update or keep it.",
     "멤버 선택 (처음: admin)": "Choose member (first: admin)",
-    "멤버 암호 (처음: 멤버 ID + 123!)": "Password (first: member ID + 123!)",
+    "멤버 암호 (처음: 1234)": "Password (first: 1234)",
     "기준일의 주차 (프로젝트 설정 > 기본정보 > 주차 표시 방식)": "Week of the report date (Project settings > Basic > week format)",
     "마스터 파일(최신 자료 파일) 다운로드 · 가져오기 · 내 작업 파일 보내기": "Master file: download · apply · send my work file",
     "멤버 (언어 · 암호 · 잠금)": "Member (language · password · lock)",

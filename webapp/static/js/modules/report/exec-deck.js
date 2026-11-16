@@ -20,7 +20,7 @@ var ExecDeck = {
   // ---------------------------------------------------------------------------
   SECTIONS: [
     { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "종합 공정 S-커브" },
-    { k: "bullet", l: "서브시스템별 계획 대비 실적" }, { k: "reqvoc", l: "요구사항 · VOC 진척" },
+    { k: "bullet", l: "서브시스템별 계획 대비 실적" }, { k: "reqvoc", l: "서브시스템별 진척율 (WBS · 요구사항 · VOC)" },
     { k: "sdlc", l: "단계별 종합 공정 매트릭스 (SDLC)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
     { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
   ],
@@ -219,24 +219,32 @@ var ExecDeck = {
 
     // 6. 서브시스템별 요구사항 · 추가 VOC 진척
     if (on("reqvoc")) {
-      mark("서브시스템별 요구사항 · 추가 VOC 진척");
-      const els = head("서브시스템별 요구사항 · 추가 VOC 진척");
+      // Phase 진척 화면의 [1] 서브시스템별 진척율 과 같은 내용 (산출물 작성 현황은 뺌): WBS · 요구사항 · VOC
+      mark("서브시스템별 진척율");
+      const els = head("서브시스템별 진척율 (WBS · 요구사항 · VOC)");
       const domainOf = sys => ((rows.find(r => r[1] === sys) || [])[0]) || (typeof WBSEngine !== "undefined" ? WBSEngine.getSubsystemDomain(sys) : "");
       const reqs = c.data.reqs || [], vocs = c.data.vocs || [];
+      const na = { text: "-", color: "94A3B8" };
       const tr = c.order.map(sys => {
-        const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys);   // 삭제 요구사항은 완료율에서 뺌
+        const row = rows.find(r => r[1] === sys) || [];
+        const wp = num(row[6]), wa = num(row[7]), wNA = wp <= 0 && wa <= 0, wr = wp > 0 ? Math.round(wa / wp * 100) : 100;   // 계획 전이면 "-"
+        const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys && v.status !== "삭제");
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
-        const vw = vc.filter(v => v.status === "대기" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
+        const vw = vc.filter(v => v.status === "대기" || v.status === "보류" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
         const rr = rq.length ? Math.round(rd / rq.length * 100) : 0, vr = vc.length ? Math.round(vd / vc.length * 100) : 0;
-        return [domainOf(sys), sys, `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
+        return [domainOf(sys), sys, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
+          `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       // 그룹 머리글
-      els.push(R(0.45, 1.15, 2.8, 0.36, H)); els.push(T(0.45, 1.15, 2.8, 0.36, [p("구분", 11, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" }));
-      els.push(R(3.25, 1.15, 4.6, 0.36, C)); els.push(T(3.25, 1.15, 4.6, 0.36, [p("🎯 요구사항 (REQ) 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
-      els.push(R(7.85, 1.15, 5.0, 0.36, "B45309")); els.push(T(7.85, 1.15, 5.0, 0.36, [p("💬 추가 VOC · 이슈 진척", 11, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
+      const grp = (x, w, text, fill, fg) => { els.push(R(x, 1.15, w, 0.36, fill)); els.push(T(x, 1.15, w, 0.36, [p(text, 11, { bold: true, color: fg, align: "ctr" })], { anchor: "ctr" })); };
+      grp(0.45, 2.5, "구분", H, P.headerTextColor);
+      grp(2.95, 2.55, "WBS 공정 진척", "475569", "FFFFFF");
+      grp(5.5, 3.4, "요구사항 (REQ) 진척", C, "FFFFFF");
+      grp(8.9, 3.95, "추가 VOC · 이슈 진척", "B45309", "FFFFFF");
       const rh = Math.min(0.42, 5.0 / Math.max(1, tr.length + 1));
-      table(els, 0.45, 1.51, [["도메인", 1.3, "l"], ["서브시스템", 1.5, "l"], ["전체", 1.1], ["진행", 1.1], ["완료", 1.1], ["완료율", 1.3], ["유효 전체", 1.0], ["대기", 1.0], ["진행중", 1.0], ["완료·제외", 1.0], ["달성률", 1.0]], tr, rh);
-      slides.push({ name: "요구사항·VOC", els });
+      table(els, 0.45, 1.51, [["도메인", 1.2, "l"], ["서브시스템", 1.3, "l"], ["계획", 0.85], ["실적", 0.85], ["달성률", 0.85], ["전체", 0.85], ["진행", 0.85], ["완료", 0.85], ["완료율", 0.85],
+        ["유효 전체", 0.79], ["대기", 0.79], ["진행중", 0.79], ["완료·제외", 0.79], ["달성률", 0.79]], tr, rh, { headSize: 10, size: 10 });
+      slides.push({ name: "서브시스템별 진척율", els });
     }
 
     // 7. 단계별 종합 공정 매트릭스 (SDLC 서브시스템만)
