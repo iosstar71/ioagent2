@@ -97,7 +97,7 @@ var ProjectManager = {
     const retry = () => this.switchTo(pid, onCancel);
     if (typeof WeeklyReportManager !== "undefined" && WeeklyReportManager.currentWeekReport && !WeeklyReportManager.confirmLeave(retry)) { if (onCancel) onCancel(); return; }
     if (typeof MeetingManager !== "undefined" && MeetingManager.confirmLeave && !MeetingManager.confirmLeave(retry)) { if (onCancel) onCancel(); return; }
-    if (SyncManager.isLocal()) {
+    if (SyncManager.isAutoSave()) {
       await SyncManager.flushAutoSave();
     } else if (SyncManager.isDirty()) {
       const choice = await SyncUI.ask("🗂️ 프로젝트 전환", `저장하지 않은 변경 ${SyncManager.dirtyCount()}건이 있습니다.\n프로젝트를 전환하기 전에 저장하시겠습니까?`, [

@@ -153,7 +153,7 @@ async function main() {
       && !!viaMenu && JSON.parse(viaMenu.text).targetScope === "W1", JSON.stringify({ pmMenu, waMenu, n: viaMenu && viaMenu.name }));
     check("Worker sees the same project data (own subsystem W1) and the package version", wst.subs === 2 && wst.wbs === 4 && wst.own === "W1" && wst.stamp === j1.packageStamp, JSON.stringify(wst));
     // 작업자: 담당 자료 고치고 파일로 내려받기
-    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 수정)"; rebuildAll(true); persistChanges(true); });
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 수정)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     const mine = await grab(wa, '(async () => { GShell.go("tab-merge"); SubTabs.show("merge", "merge"); const s = document.getElementById("workDataSubsysSelect"); s.value = "W1"; SmartMergeCenter.updateCountBadges(); MergeTable.selectUnit("sys"); MergeTable.download("JSON"); })()');
     const jm = JSON.parse(mine.text);
     check("Worker downloads own-subsystem data (JSON) marked with the package it was based on", jm.targetScope === "W1" && jm.basedOn === j1.packageStamp && jm.wbsData.every(t => t.system === "W1"), mine.name);
@@ -171,7 +171,7 @@ async function main() {
     await pm.evaluate(() => MergeTable.close());
     check("A file based on an older 종합본 shows a warning in the preview", warn.includes("이전 마스터 파일"), warn);
     // 작업자 자료를 엑셀로 보내도 됨: 파일정보 시트(기준 종합본 · 보낸 사람)로 같은 경고, 미리 보기로 반영
-    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").aProg = 30; rebuildAll(true); persistChanges(true); });
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").aProg = 30; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     const xl = await wa.evaluate(async () => {
       const o = ExcelSync._triggerDownload; let got = null;
       ExcelSync._triggerDownload = (b, n) => { got = { b, n }; };
@@ -187,9 +187,9 @@ async function main() {
     check("Worker data can also go as Excel: the file carries its 종합본 version and sender (stale warning), PM merges it through the preview",
       /\.xlsx$/.test(xl.name) && pvx.note.includes("이전 마스터 파일") && pvx.note.includes("가작업") && parseInt(pvx.wbs, 10) > 0 && xa === 30, JSON.stringify({ n: xl.name, pvx, xa }));
     // 작업자가 새 종합본을 가져와도 내 담당(W1) 작업은 그대로, W2 는 종합본대로
-    await pm.evaluate(() => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 수정)"; rebuildAll(true); persistChanges(true); });
+    await pm.evaluate(async () => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 수정)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     const pkg3 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
-    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 2차)"; rebuildAll(true); persistChanges(true); });
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 2차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     await wa.evaluate(async t => { await SmartMergeCenter.importConsolidated({ target: { files: [new File([t], "pkg3.json")], value: "" } }); }, pkg3.text);
     await wa.waitForTimeout(300);
     await wa.click("#confirmDialogOkBtn"); await wa.waitForTimeout(800);
@@ -206,7 +206,7 @@ async function main() {
     await pm.waitForTimeout(1100);
     const pkg4 = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("JSON")');
     const s4 = JSON.parse(pkg4.text).packageStamp;
-    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 3차)"; rebuildAll(true); persistChanges(true); });
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 3차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     await wa.waitForTimeout(500);
     const toLogin = async () => { await wa.evaluate(() => { AuthManager._clearSession(); return AppStore.reload(); }); await wa.waitForTimeout(1800); };
     const choice = () => wa.evaluate(() => { const b = document.getElementById("localPkgChoice"); return { shown: getComputedStyle(b).display !== "none", text: b.textContent }; });
@@ -240,7 +240,7 @@ async function main() {
     check("[종합본으로 전부 바꾸기] asks once more, then this PC matches the 종합본 exactly (same-version note shown)",
       same.text.includes("같습니다") && warnR.text.includes("사라집니다") && r1 === "W1 설계 (가작업 수정)", JSON.stringify({ r1, same: same.text.slice(0, 120) }));
     // 배포 폴더의 최신 종합본(shared/latest.json): 화면을 열 때 자동으로 읽음
-    await pm.evaluate(() => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 4차)"; rebuildAll(true); persistChanges(true); });
+    await pm.evaluate(async () => { wbsData.find(t => t.id === "2.1").name = "W2 설계 (PM 4차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     await pm.waitForTimeout(1100);
     const lj = await grab(pm, 'SmartMergeCenter.downloadMasterPackage("SERVER")');
     const s5 = JSON.parse(lj.text).packageStamp;
@@ -254,7 +254,7 @@ async function main() {
     const nb2 = await wb.evaluate(() => ({ wbs: wbsData.length, w2: wbsData.find(t => t.id === "2.1").name, own: Permission.ownSubsystem() }));
     check("New PC opening the site starts from the server 종합본 automatically (no file to pass around)",
       nb.workers.includes("wg_b") && nb.proj.includes(j1.projectName) && nb2.wbs === 4 && nb2.w2 === "W2 설계 (PM 4차)" && nb2.own === "W2", JSON.stringify({ nb, nb2 }));
-    await wa.evaluate(() => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 4차)"; rebuildAll(true); persistChanges(true); });
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 4차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     await wa.waitForTimeout(500);
     await toLogin(); await wa.waitForTimeout(1500);
     const sn = await choice();
@@ -290,7 +290,7 @@ async function main() {
     check("Changing an upper weight rescales its lower Tasks (a1 60→50: a11/a12 25/25); sibling sum ≠ 100 is flagged",
       c1.a11 === 25 && c1.a12 === 25 && c1.warn === 2 && c1.chip, JSON.stringify(c1));
     await wc.evaluate(() => WbsWeight.set(wbsData.findIndex(t => t.name === "a11"), "33.33"));
-    await wc.waitForTimeout(1200); await wc.evaluate(() => AppStore.flush());
+    await wc.waitForTimeout(1200); await wc.evaluate(async () => { await SyncManager.save(null, { notify: false }); await AppStore.flush(); });
     await wc.reload(); await wc.waitForTimeout(1500); await waitApp(wc); await wc.evaluate(() => GShell.go("tab-wbs")); await wc.waitForTimeout(600);
     const c2 = await W();
     check("Weights keep 1 decimal (33.33→33.3); warning colours stay after saving and reloading", c2.a11 === 33.3 && c2.warn === 4 && c2.chip, JSON.stringify(c2));
