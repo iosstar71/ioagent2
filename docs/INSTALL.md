@@ -29,7 +29,7 @@ git clone -b claude/vibrant-euler-g6wez3 https://github.com/iosstar71/ioagent2.g
 ```
 
 ```bash
-cd ioagent2/olap-pilot
+cd ioagent2
 ```
 
 ## 3. 빌드
@@ -72,8 +72,8 @@ java -jar target/olap-pilot-0.1.0.jar 9000 data/my.duckdb
 
 ## 6. 개발하기
 
-- **IDE에서 열기**: `olap-pilot/pom.xml`을 Maven 프로젝트로 엽니다. 프로젝트 JDK는 11 이상으로 지정합니다.
-- **IDE에서 실행**: `pilot.olap.Main` 클래스를 실행합니다. 작업 디렉터리를 `olap-pilot`으로 두면 `data/` 아래에 DB 파일이 생깁니다.
+- **IDE에서 열기**: 받은 폴더의 `pom.xml`을 Maven 프로젝트로 엽니다. 프로젝트 JDK는 11 이상으로 지정합니다.
+- **IDE에서 실행**: `pilot.olap.Main` 클래스를 실행합니다. 작업 디렉터리를 프로젝트 폴더로 두면 `data/` 아래에 DB 파일이 생깁니다.
 - **테스트**: `mvn test`
 - **화면 수정**: `src/main/resources/web/`의 파일을 고칩니다. 화면 파일은 jar 안에서 읽으므로, 고친 뒤 다시 빌드하고 서버를 재시작해야 반영됩니다.
 - **차원·측정값 변경**: `src/main/resources/pivot-meta.json`을 고친 뒤 다시 빌드합니다.
