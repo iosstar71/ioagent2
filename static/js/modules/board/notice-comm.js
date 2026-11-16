@@ -205,19 +205,7 @@ var NoticeCommManager = {
     ["NOTICES", "FEED"].forEach(t => {
       const btn = document.getElementById(`subtabBtn_${t}`);
       const pane = document.getElementById(`subpane_${t}`);
-      if (btn) {
-        if (t === tabName) {
-          btn.classList.add("active");
-          btn.style.background = "var(--primary)";
-          btn.style.color = "#ffffff";
-          btn.style.borderColor = "var(--primary)";
-        } else {
-          btn.classList.remove("active");
-          btn.style.background = "var(--bg-main)";
-          btn.style.color = "var(--text-sub)";
-          btn.style.borderColor = "var(--border-color)";
-        }
-      }
+      if (btn) btn.classList.toggle("active", t === tabName);
       if (pane) {
         pane.style.display = t === tabName ? "block" : "none";
       }

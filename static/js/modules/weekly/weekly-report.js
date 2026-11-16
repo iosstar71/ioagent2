@@ -60,6 +60,9 @@ var WeeklyReportManager = {
       this.selectedWeek = wObj ? wObj.weekNum : 1;
       this.openReport(this.selectedWeek, this.scope, this.scopeValue);
     }
+    // 목록의 처음 주차 = 기준일의 주차 (기준일을 바꾸면 그 주차로 다시 맞춤)
+    const baseW = this.findWeekForDate(projectConfig.reportDate);
+    if (baseW && this._listBase !== projectConfig.reportDate) { this.listWeek = baseW.weekNum; this._listBase = projectConfig.reportDate; }
     if (!this.listWeek) this.listWeek = this.selectedWeek;
     this.populateWeekDropdown();
     this.populateSubsystemDropdown();
@@ -689,6 +692,7 @@ var WeeklyReportManager = {
     const inIssues = document.getElementById("wrIssuesNotes");
 
     if (inAuthor) inAuthor.value = rep.author || "";
+    this._openedAuthor = rep.author || "";
     if (inCurSum) inCurSum.value = rep.currentWeekSummary || "";
     if (inNxtSum) inNxtSum.value = rep.nextWeekSummary || "";
     if (inIssues) inIssues.value = rep.issuesNotes || "";
@@ -798,7 +802,9 @@ var WeeklyReportManager = {
     rep.status = "DONE";
     rep.updatedAt = new Date().toISOString().replace("T", " ").substring(0, 19);
     rep.updatedBy = u.empNo || "";
-    if (!rep.author) rep.author = u.name || "";
+    // 작성자: 직접 고쳐 적지 않았다면 저장한 사람 이름으로 (다른 사람이 고쳐 저장하면 작성자도 바뀜)
+    if (!rep.author || rep.author === this._openedAuthor) rep.author = u.name || rep.author || "";
+    this._openedAuthor = rep.author;
     // [v3.1.0] 판 번호 + 작성 시점 자료 (지난 주간보고는 이 자료로 보여 주고 내려받음)
     rep.revision = (parseInt(rep.revision, 10) || 0) + 1;
     rep.snapshot = WeeklyExport.takeSnapshot(rep);

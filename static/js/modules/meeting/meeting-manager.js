@@ -321,7 +321,7 @@ var MeetingManager = {
     if (tabName !== "actionitems" && typeof RecordPanel !== "undefined" && RecordPanel._kind === "action") RecordPanel.close();
     if (this.activeSubTab === "minutes" && tabName !== "minutes" && !this.confirmLeave(() => this.switchSubTab(tabName))) return;
     this.activeSubTab = tabName;
-    document.querySelectorAll(".meeting-sub-tab").forEach(btn => {
+    document.querySelectorAll("#meetingSubTabs [data-subtab]").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.subtab === tabName);
     });
     document.querySelectorAll(".meeting-sub-panel").forEach(panel => {
@@ -379,6 +379,7 @@ var MeetingManager = {
 
     const y = this.calendarYear;
     const m = this.calendarMonth;
+    const calStatus = (document.getElementById("meetingFilterStatus") || {}).value || "ALL";
     const firstDay = new Date(y, m - 1, 1).getDay(); // 0(Sun) ~ 6(Sat)
     const totalDays = new Date(y, m, 0).getDate();
 
@@ -475,6 +476,7 @@ var MeetingManager = {
       const dayMtgs = (meetingsData || []).filter(item => {
         if (item.date !== dateStr) return false;
         if (sysFilter !== "ALL" && item.system !== sysFilter) return false;
+        if (calStatus !== "ALL" && item.status !== calStatus) return false;   // 상태 필터는 캘린더와 목록에 함께 적용
         return true;
       });
 
@@ -556,6 +558,13 @@ var MeetingManager = {
       }
       return true;
     });
+    // 상태 버튼(칩): 상태를 뺀 나머지 조건에 맞는 회의 수
+    if (typeof StatusChips !== "undefined") StatusChips.render("mtg", (meetingsData || []).filter(m => {
+      if (sysFilter !== "ALL" && m.system !== sysFilter) return false;
+      if (monthFilter !== "ALL" && (!m.date || !m.date.startsWith(monthFilter))) return false;
+      if (searchWord && !`${m.title} ${m.location} ${m.host} ${m.system} ${m.notes || ""}`.toLowerCase().includes(searchWord)) return false;
+      return true;
+    }));
 
     // Sort by date desc, then startTime
     filtered.sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime));

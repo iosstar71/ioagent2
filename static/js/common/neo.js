@@ -475,6 +475,9 @@ var StatusChips = {
     deliv: { box: "delivStatusChips", run: "renderDeliverablesTable",
       list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["작성전", "작성전", "chip-ready"], ["작성중", "작성중", "chip-progress"], ["검토요청", "검토요청", "chip-hold"], ["보완완료", "보완완료", "chip-completed"]],
       of: r => [r.status || "작성전", StatusChips._late(r.pDate, r.status === "보완완료" || !!r.aDate) ? "지연" : ""] },
+    mtg: { box: "meetingStatusChips", run: "MeetingManager.onFilterChanged", select: "meetingFilterStatus",
+      list: [["ALL", "전체", ""], ["예정", "예정", "chip-ready"], ["진행중", "진행중", "chip-progress"], ["완료", "완료", "chip-completed"], ["취소", "취소", "chip-hold"]],
+      of: r => [r.status || "예정"] },
     ai: { box: "aiStatusChips", run: "MeetingManager.renderActionItemsTracker", select: "aiFilterStatus",
       list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["완료", "완료", "chip-completed"]],
       of: r => [r.status, r.status === "진행중" && StatusChips._late(r.targetDate, false) ? "지연" : ""] }

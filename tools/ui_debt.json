@@ -34,7 +34,7 @@
    "inline_hex": 5
   },
   "tab-meeting": {
-   "inline": 75,
+   "inline": 73,
    "inline_hex": 7
   },
   "tab-merge": {
@@ -42,11 +42,11 @@
    "inline_hex": 2
   },
   "tab-mywork": {
-   "inline": 44,
+   "inline": 43,
    "inline_hex": 17
   },
   "tab-notices": {
-   "inline": 62,
+   "inline": 59,
    "inline_hex": 1
   },
   "tab-req": {
@@ -70,7 +70,7 @@
   "js/common": 2,
   "js/core": 1,
   "js/modules/admin": 0,
-  "js/modules/board": 32,
+  "js/modules/board": 31,
   "js/modules/dataio": 1,
   "js/modules/deliverable": 0,
   "js/modules/home": 0,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 921,
+  "html_inline": 915,
   "html_inline_hex": 180,
-  "js_hex": 114
+  "js_hex": 113
  }
 }

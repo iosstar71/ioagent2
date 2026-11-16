@@ -2955,3 +2955,10 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 [data-design="soft"] .dt-a { left: 8%; top: 9%; width: 34%; height: 8%; background: #2F7D6B; border-radius: 1px; }
 [data-design="soft"] .dt-b { right: 8%; top: 8%; width: 22%; height: 10%; background: #BFE3D6; border-radius: 99px; }
 [data-design="soft"] .dt-c { background: #FFFFFF; box-shadow: 0 14px 0 #FFFFFF, 0 28px 0 #FFFFFF; border-radius: 3px; }
+
+/* ── 화면 표준: 서브메뉴는 화면 이름 줄 바로 아래 한 줄 (.sub-tabs), 모든 화면 같은 모양 ── */
+.sub-tabs { margin: 0 0 12px; }
+.feed-view-switch { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.feed-view-label { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-sub); }
+.g-user-who { font-weight: 700; color: var(--text-main); }
+.g-user-ver { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
