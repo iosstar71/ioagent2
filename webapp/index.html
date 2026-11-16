@@ -184,7 +184,7 @@
       <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
-        <button type="button" id="btnHeaderManual" class="g-menu-item" data-click="ManualViewer.openManualWindow">❔ 도움말 (사용자 매뉴얼)</button>
+        <a class="g-menu-item g-menu-link" id="btnHeaderManual" href="manual.html" target="_blank" rel="noopener" title="새 창에서 사용자 매뉴얼을 엽니다">❔ 도움말 (사용자 매뉴얼) <span class="g-ext" aria-hidden="true">↗</span></a>
         <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 법적 고지</button>
       </div>
     </div>
@@ -2065,7 +2065,7 @@
       <div class="master-subtab-bar" data-group="master">
         <button class="master-subtab-btn active" data-subtab="basic" data-click="MasterSubTabs.show" data-click-args='["basic"]'>📋 프로젝트 기본정보</button>
         <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>🧩 프로젝트 부가정보</button>
-        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 Phase, 산출물</button>
+        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 Phase · 산출물</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 · 채팅 채널</button>

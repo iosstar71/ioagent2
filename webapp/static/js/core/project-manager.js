@@ -342,7 +342,14 @@ var ProjectManager = {
     const p = ProjectContext.info(pid);
     if (!p || pid === ProjectContext.DEFAULT || !this.isAdmin()) return;
     const isCur = pid === ProjectContext.current;
-    openConfirmDialog(`[${p.name}] 프로젝트와 그 안의 모든 데이터(WBS·요구사항·VOC·산출물·회의·주간보고·공지·채팅)를 삭제합니다. 되돌릴 수 없습니다.${isCur ? "\n지금 열려 있는 프로젝트입니다 — 삭제한 뒤 기본 프로젝트로 이동합니다." : ""}\n계속하시겠습니까?`, async () => {
+    openConfirmDialog(`[${p.name}] 프로젝트와 그 안의 모든 데이터(WBS·요구사항·VOC·산출물·회의·주간보고·공지·채팅)를 삭제합니다. 되돌릴 수 없습니다.${isCur ? "\n지금 열려 있는 프로젝트입니다 — 삭제한 뒤 기본 프로젝트로 이동합니다." : ""}\n계속하시겠습니까?`, () => this.removeNow(pid));
+  },
+  // 확인을 마친 뒤 실제 삭제 (Admin > 프로젝트 목록 · 데이터 관리에서 함께 씀)
+  async removeNow(pid) {
+    const p = ProjectContext.info(pid);
+    if (!p || pid === ProjectContext.DEFAULT || !this.isAdmin()) return;
+    const isCur = pid === ProjectContext.current;
+    {
       if (isCur) {   // 지우는 동안 자동저장이 지운 자료를 다시 쓰지 않게 멈춤
         this._switching = true;
         if (SyncManager._autoTimer) { clearTimeout(SyncManager._autoTimer); SyncManager._autoTimer = null; }
@@ -363,7 +370,7 @@ var ProjectManager = {
       await this.refreshList();
       this.renderSelector();
       this.renderPanels();
-    });
+    }
   },
   // 기본 프로젝트는 지울 수 없으므로 자료만 처음 상태로
   resetDefault() { if (typeof ProjectData !== "undefined") ProjectData.resetProject(); },

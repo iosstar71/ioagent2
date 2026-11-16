@@ -468,7 +468,9 @@ async function localMain() {
   const rq = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     o.subTabs = ["meetingSubTabs", "rpTabs", "boardSubTabs"].every(id => { const e = document.getElementById(id); return e && e.classList.contains("master-subtab-bar") && !e.closest(".sub-header-bar"); });
-    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector("#gAdminMenu #btnHeaderManual");
+    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector('#gAdminMenu a#btnHeaderManual[href="manual.html"]') && /법적 고지/.test(document.querySelector("#gAdminMenu a#btnHeaderManual").nextElementSibling.textContent);
+    GShell.go("tab-config"); SubTabs.show("config", "data"); await wait(400);
+    o.delRow = /프로젝트 삭제/.test(document.getElementById("daActions").textContent) && typeof DataAdmin.removeProject === "function";
     o.who = document.getElementById("gUserWho").textContent.includes("—");
     await ProjectManager.open(); await wait(600);
     o.admin = document.querySelector(".tab-pane.active").id === "tab-config" && !!document.getElementById("pmNewName") && !document.getElementById("projectManagerModal");
@@ -487,7 +489,7 @@ async function localMain() {
     changeTheme(cur); await wait(300);
     return o; });
   check("0.6.0 requests: sub menus in one row; header refresh button, help in the admin menu, member name - role; project management and system title (stored on the server) in Admin; data set presets; settings tab names; user manual with release notes (no Word file); Classic emoji / Navy",
-    rq.subTabs && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.served && rq.groups && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase, 산출물/.test(rq.tabs) && rq.manual && rq.classic && rq.navy, JSON.stringify(rq));
+    rq.subTabs && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.served && rq.groups && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase · 산출물/.test(rq.tabs) && rq.manual && rq.classic && rq.navy && rq.delRow, JSON.stringify(rq));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
     UiScale.set(1.3); const over = [];
