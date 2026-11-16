@@ -539,6 +539,9 @@ async function main() {
       document.getElementById("delivBulkRound").value = "1차"; document.getElementById("delivBulkDate").value = "2027-03-31"; DelivBulkDate.apply(); await wait(200);
       document.getElementById("confirmDialogOkBtn").click(); await wait(300);
       o.bulk = deliverablesData[0].pDate === "2027-03-31" && deliverablesData[1].pDate === "2027-01-01"; deliverablesData = keepD;
+      const hl = document.querySelector("#gAdminMenu a#btnHeaderManual"); o.help = !!hl && hl.getAttribute("href") === "manual.html" && hl.nextElementSibling && /오픈소스 고지/.test(hl.nextElementSibling.textContent) && /사용자 매뉴얼/.test(await (await fetch("manual.html")).text());
+      GShell.go("tab-config"); SubTabs.show("config", "data"); await wait(400);
+      o.delRow = /프로젝트 삭제/.test(document.getElementById("daActions").textContent) && typeof DataAdmin.removeProject === "function" && typeof ProjectManager.removeNow === "function";
       o.tabs = [...document.querySelectorAll('.master-subtab-bar[data-group="master"] .master-subtab-btn')].slice(0, 3).map(x => x.textContent.trim()).join("|");
       await SyncManager.refresh(null, { skipConfirm: true, silent: true });
       const cur = document.body.getAttribute("data-theme");
@@ -547,7 +550,7 @@ async function main() {
       changeTheme(cur); await wait(300);
       return o; });
     check("Requests: sub menus in one row; no autosave (edit → dirty → refresh restores); header refresh button, member name; project management and system title in Admin; data set presets; bulk submit dates; 6 themes (Classic shows emoji, Navy palette)",
-      rq.subTabs && rq.noAuto && rq.dirty && rq.reverted && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.groups && rq.bulk && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase, 산출물/.test(rq.tabs) && rq.classic && rq.navy, JSON.stringify(rq));
+      rq.subTabs && rq.noAuto && rq.dirty && rq.reverted && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.groups && rq.bulk && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase · 산출물/.test(rq.tabs) && rq.classic && rq.navy && rq.help && rq.delRow, JSON.stringify(rq));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

@@ -84,7 +84,29 @@ var DataAdmin = {
           ? `<span class="mt-lock">🔒 ${escapeHtml(why)}</span>`
           : `<button class="btn btn-sm" data-btn="${k === "tasks" ? "warn" : "danger"}" data-click="DataAdmin.run" data-click-args="${UiEvents.args(k)}">실행</button>`}</td>
       </tr>`;
-    }).join("");
+    }).join("") + this._deleteRow(t);
+  },
+  // 프로젝트 삭제 (프로젝트 자체와 자료 전부) — 기본 프로젝트는 지울 수 없어 초기화만
+  _deleteRow(t) {
+    const why = t.all ? "프로젝트 하나를 고르세요" : (t.pid === ProjectContext.DEFAULT ? "기본 프로젝트는 삭제할 수 없음 (초기화만)" : "");
+    return `<tr class="${why ? "mp-off" : ""}">
+        <td><b>🗑️ 프로젝트 삭제</b></td>
+        <td class="mt-desc">프로젝트 자체와 그 안의 모든 자료 (WBS · 요구사항 · VOC · 산출물 · 회의 · 주간보고 · 공지 · 프로젝트 설정 · 멤버 배정)</td>
+        <td class="mt-desc">다른 프로젝트 · 멤버 계정</td>
+        <td class="da-run">${why
+          ? `<span class="mt-lock">🔒 ${escapeHtml(why)}</span>`
+          : `<button class="btn btn-sm" data-btn="danger" data-click="DataAdmin.removeProject">삭제</button>`}</td>
+      </tr>`;
+  },
+  removeProject() {
+    if (!this.isAdmin()) return showToast("🚫 데이터 관리는 관리자만 할 수 있습니다.");
+    const t = this.target();
+    if (t.all || !t.pid || t.pid === ProjectContext.DEFAULT) return;
+    const lines = [`대상: ${t.name}${t.current ? " (지금 프로젝트 — 삭제한 뒤 기본 프로젝트로 이동합니다)" : ""}`,
+      "· 프로젝트와 그 안의 모든 자료를 삭제합니다. 프로젝트 목록에서도 사라집니다.",
+      "· 남기려면 먼저 💾 백업 · 복원에서 다운로드하세요.",
+      "되돌릴 수 없습니다. 확인을 위해 아래에 대상 이름을 그대로 입력하세요."];
+    this.ask(`🗑️ 프로젝트 삭제 — ${t.name}`, lines, t.name, async () => { await ProjectManager.removeNow(t.pid); this.render(); });
   },
 
   // ---- 이름 입력 확인 창 ----

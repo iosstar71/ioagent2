@@ -13,8 +13,12 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "🗑️ 프로젝트 삭제": "🗑️ Delete project",
+    "다른 프로젝트 · 멤버 계정": "Other projects · member accounts",
+    "새 창에서 사용자 매뉴얼을 엽니다": "Opens the user manual in a new window",
+    "프로젝트 자체와 그 안의 모든 자료 (WBS · 요구사항 · VOC · 산출물 · 회의 · 주간보고 · 공지 · 프로젝트 설정 · 멤버 배정)": "The project itself and everything in it (WBS, requirements, VOC, deliverables, meetings, weekly reports, notices, settings, member assignments)",
     "🧩 프로젝트 부가정보": "🧩 Project extras",
-    "🔄 Phase, 산출물": "🔄 Phase, deliverables",
+    "🔄 Phase · 산출물": "🔄 Phase, deliverables",
     "SDLC 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)": "SDLC types — enable the types this project uses (up to 4)",
     "달성률 -": "Rate -",
     "🗓️ 회의일정": "🗓️ Schedule",

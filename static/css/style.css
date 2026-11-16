@@ -3017,3 +3017,6 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 /* SDLC 유형: 설명 줄은 위에 한 줄 전체, 유형 카드는 그 아래 2열 */
 #customSdlcCardsContainer > .phase-summary-box { grid-column: 1 / -1; }
 .rate-na { color: var(--text-muted); text-align: center; }
+.g-menu-link { display: flex; align-items: center; gap: 6px; text-decoration: underline; text-underline-offset: 3px; color: var(--tint-info-text); }
+.g-menu-link .g-ext { margin-left: auto; font-weight: 700; }
+.da-run { text-align: center; white-space: nowrap; }
