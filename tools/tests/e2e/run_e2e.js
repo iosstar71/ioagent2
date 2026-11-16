@@ -90,7 +90,7 @@ async function main() {
     { let out = "", ok = true; try { out = execFileSync(PY, [path.join(ROOT, "tools", "check_ui_debt.py")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
       check("UI style debt did not go up (!important · inline styles · fixed colours per screen)", ok, out.trim().split("\n").slice(-4).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.0.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.1.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -110,7 +110,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Standalone v1.0.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.1.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -514,6 +514,40 @@ async function main() {
       return o; });
     check("Summary report: default keeps the old contents (detailed, Classic Band); presets brief / standard / detailed + per-slide choice; 5 design sets build PPT and preview; detail panel starts under the screen header",
       ph3.def === "detail/classic" && ph3.ui === "4,9,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
+    // 요건 반영: 서브메뉴 줄 통일 · 저장 방식 · 머리글 · Admin 프로젝트 · 자료 묶음 · 제출일 일괄 변경 · 테마 6종 · 달성률 "-"
+    const rq = await wc.evaluate(async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+      o.subTabs = ["meetingSubTabs", "rpTabs", "boardSubTabs"].every(id => { const e = document.getElementById(id); return e && e.classList.contains("master-subtab-bar") && !e.closest(".sub-header-bar"); });
+      o.noAuto = SyncManager.isAutoSave() === false;
+      await SyncManager.save(null, { notify: false });
+      const before = JSON.stringify(reqMasterData || []);
+      reqMasterData = (reqMasterData || []).concat([{ id: "REQ-RV", system: "A", name: "revert me", status: "대기" }]); persistChanges();
+      await wait(700); o.dirty = SyncManager.isDirty();
+      GShell.go("tab-req"); await wait(300); const f = document.getElementById("reqSearchInput") || document.querySelector("#tab-req input[type=text]");
+      await SyncManager.refresh(null, { skipConfirm: true, silent: true }); await wait(300);
+      o.reverted = JSON.stringify(reqMasterData || []) === before && !SyncManager.isDirty();
+      o.header = !!document.getElementById("btnHeaderRefreshAll") && document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager");
+      o.who = document.getElementById("gUserWho").textContent.includes("—") && !/admin\)/.test(document.getElementById("headerCurrentUserBadge").textContent);
+      await ProjectManager.open(); await wait(500);
+      o.admin = document.querySelector(".tab-pane.active").id === "tab-config" && !!document.getElementById("pmNewName") && !!document.getElementById("cfgSystemTitle") && !document.getElementById("projectManagerModal");
+      document.getElementById("cfgSystemTitle").value = "E2E 타이틀"; SystemTitle.save(); o.title = document.getElementById("headerSystemTitleText").textContent; SystemTitle.reset();
+      GShell.go("tab-merge"); SubTabs.show("merge", "merge"); await wait(400);
+      MergeTable.selectGroup("work"); const w = MergeTable.selected().join(); MergeTable.selectGroup("base"); const b2 = MergeTable.selected().join();
+      o.groups = w === "wbs,req,deliverables,voc,weekly,meetings" && /config/.test(b2) && !/wbs/.test(b2) && !document.querySelector(".mt-pkg");
+      const keepD = deliverablesData; deliverablesData = [{ id: 1, round: "1차", system: "A", name: "d1", pDate: "2027-01-01", status: "작성전" }, { id: 2, round: "1차", system: "A", name: "d2", pDate: "2027-01-01", aDate: "2027-01-02", status: "보완완료" }];
+      GShell.go("tab-master"); MasterSubTabs.show("phase"); await wait(300);
+      document.getElementById("delivBulkRound").value = "1차"; document.getElementById("delivBulkDate").value = "2027-03-31"; DelivBulkDate.apply(); await wait(200);
+      document.getElementById("confirmDialogOkBtn").click(); await wait(300);
+      o.bulk = deliverablesData[0].pDate === "2027-03-31" && deliverablesData[1].pDate === "2027-01-01"; deliverablesData = keepD;
+      o.tabs = [...document.querySelectorAll('.master-subtab-bar[data-group="master"] .master-subtab-btn')].slice(0, 3).map(x => x.textContent.trim()).join("|");
+      await SyncManager.refresh(null, { skipConfirm: true, silent: true });
+      const cur = document.body.getAttribute("data-theme");
+      changeTheme("classic"); await wait(300); o.classic = document.querySelectorAll("svg[data-ico]").length === 0;
+      changeTheme("navy"); await wait(300); o.navy = document.body.getAttribute("data-theme") === "navy" && document.querySelectorAll("svg[data-ico]").length > 10 && getComputedStyle(document.body).getPropertyValue("--pf-14").trim() !== "#7A5236";
+      changeTheme(cur); await wait(300);
+      return o; });
+    check("Requests: sub menus in one row; no autosave (edit → dirty → refresh restores); header refresh button, member name; project management and system title in Admin; data set presets; bulk submit dates; 6 themes (Classic shows emoji, Navy palette)",
+      rq.subTabs && rq.noAuto && rq.dirty && rq.reverted && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.groups && rq.bulk && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase, 산출물/.test(rq.tabs) && rq.classic && rq.navy, JSON.stringify(rq));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);
