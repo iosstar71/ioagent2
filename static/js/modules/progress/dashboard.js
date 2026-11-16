@@ -40,7 +40,7 @@ function renderDashboard() {
 
   document.getElementById("kpi-plan").innerText = `${totalPlan}%`;
   document.getElementById("kpi-actual").innerText = `${totalActual}%`;
-  document.getElementById("kpi-rate").innerText = `${achieveRate}%`;
+  document.getElementById("kpi-rate").innerText = totalPlan <= 0 && totalActual <= 0 ? "-" : `${achieveRate}%`;   // 계획 전이면 "-"
   document.getElementById("kpi-delayed").innerText = `${delayedTasks.length} 건`;
 
   let cntTotal = scopeTasks.length, cntComp = 0, cntProg = 0, cntDel = 0, cntReady = 0;

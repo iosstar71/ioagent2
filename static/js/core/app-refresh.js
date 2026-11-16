@@ -72,13 +72,17 @@ function syncGlobalDate(newDate) {
   projectConfig.reportDate = newDate;
   renderReportDateLabels();
   rebuildAll();
+  if (typeof SyncManager !== "undefined") SyncManager.saveSettingsQuiet();
 }
 
 // 전체 재계산 + 전 화면 재렌더링 (변경 알림 포함)
 function rebuildAll(forceImmediateSave = false) {
-  if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) forceImmediateSave = true;   // 예전 가중치 자료 한 번 전환
+  const migrated = typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded();   // 예전 가중치 자료 한 번 변환
+  if (migrated) forceImmediateSave = true;
   MasterSyncEngine.syncAll(false, "rebuildAll", forceImmediateSave);
   if (typeof HomeScreenManager !== "undefined") HomeScreenManager.render();
+  // 프로그램이 자료 형식을 바꾼 경우(사용자가 고친 것이 아님)는 묻지 않고 바로 기록
+  if (migrated && typeof SyncManager !== "undefined" && SyncManager.isLocal()) setTimeout(() => SyncManager.save(null, { notify: false }), 0);
 }
 
 // 홈 / 대시보드 / 단계별 진척 [🔄 실적 새로고침] → 저장소 최신본 재조회 후 진척률 재계산

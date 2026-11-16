@@ -206,12 +206,15 @@ function renderPhaseMatrix() {
             const eSum = wSum > 0 ? wSum : phTasks.length;
             pAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.pProg * ew(t)), 0) / eSum);
             aAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.aProg * ew(t)), 0) / eSum);
-            // 단계 합계는 서브시스템 가중치를 곱해 합침 (서브시스템 안은 100 기준 점수)
-            const sf = WBSEngine.sysWeight(sys) || 1;
-            totalStats[ph.key].p += pAvg * eSum * sf;
-            totalStats[ph.key].a += aAvg * eSum * sf;
-            totalStats[ph.key].w += eSum * sf;
+            // 단계 합계는 서브시스템 가중치를 곱해 합침 (서브시스템 안은 100 기준 점수) — 아직 계획 전(계획 0 · 실적 0)인 칸은 합계에서 뺌
+            if (!(pAvg <= 0 && aAvg <= 0)) {
+              const sf = WBSEngine.sysWeight(sys) || 1;
+              totalStats[ph.key].p += pAvg * eSum * sf;
+              totalStats[ph.key].a += aAvg * eSum * sf;
+              totalStats[ph.key].w += eSum * sf;
+            }
           }
+          if (pAvg <= 0 && aAvg <= 0) { phTds += `<td class="rate-na">-</td><td class="rate-na">-</td><td class="rate-na">-</td>`; return; }   // 계획 전
           const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
           phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`;
           sysTotalP += pAvg * wSum;
@@ -223,21 +226,24 @@ function renderPhaseMatrix() {
         const rootP = sysRoot ? sysRoot.pProg : (sysTotalW > 0 ? Math.round(sysTotalP / sysTotalW) : 0);
         const rootA = sysRoot ? sysRoot.aProg : (sysTotalW > 0 ? Math.round(sysTotalA / sysTotalW) : 0);
         const rootRate = rootP > 0 ? Math.round((rootA / rootP) * 100) : 100;
+        const rootNA = rootP <= 0 && rootA <= 0;   // 계획 전: "-" 로 표시하고 합계에서 뺌
 
         // 전체 = 서브시스템 진척률 × 서브시스템 가중치 (기준정보)
         const sysW = WBSEngine.sysWeight(sys) || 1;
-        totalStats.all.p += rootP * sysW;
-        totalStats.all.a += rootA * sysW;
-        totalStats.all.w += sysW;
+        if (!rootNA) {
+          totalStats.all.p += rootP * sysW;
+          totalStats.all.a += rootA * sysW;
+          totalStats.all.w += sysW;
+        }
 
         groupRowsHtml += `
           <tr>
             <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
             <td><strong>${escapeHtml(sys)}</strong></td>
             ${phTds}
-            <td class="col-total">${rootP}%</td>
+            ${rootNA ? `<td class="col-total rate-na">-</td><td class="col-total rate-na">-</td><td class="col-total rate-na">-</td>` : `<td class="col-total">${rootP}%</td>
             <td class="col-total"><strong>${rootA}%</strong></td>
-            <td class="col-total" style="color:${rootRate >= 90 ? "var(--chart-good-text)" : (rootRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rootRate}%</td>
+            <td class="col-total" style="color:${rootRate >= 90 ? "var(--chart-good-text)" : (rootRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rootRate}%</td>`}
           </tr>
         `;
       });
@@ -245,6 +251,7 @@ function renderPhaseMatrix() {
       // 그룹 소계
       let sumPhTds = "";
       spec.phases.forEach(ph => {
+        if (!totalStats[ph.key].w) { sumPhTds += `<td class="rate-na">-</td><td class="rate-na">-</td><td class="rate-na">-</td>`; return; }
         const totW = totalStats[ph.key].w || 1;
         const totP = Math.round(totalStats[ph.key].p / totW);
         const totA = Math.round(totalStats[ph.key].a / totW);
@@ -323,6 +330,7 @@ function renderPhaseMatrix() {
         const pAvg = taskCount > 0 ? Math.round(linkedTasks.reduce((acc, t) => acc + t.pProg, 0) / taskCount) : 0;
         const aAvg = taskCount > 0 ? Math.round(linkedTasks.reduce((acc, t) => acc + t.aProg, 0) / taskCount) : 0;
         const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : (aAvg >= 100 ? 100 : 0);
+        const rateNA = pAvg <= 0 && aAvg <= 0;   // 계획 전
 
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -333,7 +341,7 @@ function renderPhaseMatrix() {
           <td style="text-align:center;"><b>${taskCount}</b>개</td>
           <td style="text-align:right;">${pAvg}%</td>
           <td style="text-align:right;"><strong>${aAvg}%</strong></td>
-          <td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>
+          ${rateNA ? `<td class="rate-na" style="text-align:right;">-</td>` : `<td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`}
           <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
         `;
         enhTbody.appendChild(row);
@@ -373,7 +381,7 @@ function renderSubsystemCards(systems) {
           <b>${escapeHtml(sys)}</b>
           <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"} · 가중치 ${meta.weight}% · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
-        <span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>
+        ${pVal <= 0 && aVal <= 0 ? `<span class="status-tag tag-ready">달성률 -</span>` : `<span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>`}
       </div>
       <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:var(--fs-sm, 12px);">
         <span>계획 진척률: <b>${pVal}%</b></span>

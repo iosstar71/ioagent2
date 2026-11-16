@@ -231,7 +231,8 @@ var HomeScreenManager = {
       }
       heroMeta.innerHTML = `공정 기준일: <b>${repDate} (${repDay})</b> | 대상: <b>${wLabel}</b> | 총괄 PM: <b>${escapeHtml(((projectUsers || []).find(u => AuthManager.normalizeRole(u.role) === "PM") || {}).name || "-")}</b>`;
     }
-    if (heroAchieve) heroAchieve.textContent = `${achieveRate}%`;
+    const achieveText = totalPlan <= 0 && totalActual <= 0 ? "-" : `${achieveRate}%`;   // 계획 전이면 "-"
+    if (heroAchieve) heroAchieve.textContent = achieveText;
     if (heroGap) {
       heroGap.textContent = `공정 GAP: ${gap >= 0 ? "+" : ""}${gap}%p (${gap >= 0 ? "목표 초과" : "계획 대비 지연"})`;
       heroGap.setAttribute("data-level", gap >= 0 ? "ok" : (gap >= -5 ? "warn" : "bad"));
@@ -259,7 +260,7 @@ var HomeScreenManager = {
     const elKpiActual = document.getElementById("execKpiWbsActual");
     const elKpiSub = document.getElementById("execKpiWbsSub");
     if (elKpiActual) elKpiActual.textContent = `${totalActual}%`;
-    if (elKpiSub) elKpiSub.textContent = `목표 계획: ${totalPlan}% (달성률 ${achieveRate}%)`;
+    if (elKpiSub) elKpiSub.textContent = `목표 계획: ${totalPlan}% (달성률 ${totalPlan <= 0 && totalActual <= 0 ? "-" : achieveRate + "%"})`;
 
     const elKpiDelay = document.getElementById("execKpiDelayed");
     const elKpiDelaySub = document.getElementById("execKpiDelayedSub");
@@ -353,7 +354,7 @@ var HomeScreenManager = {
           </div>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">달성률</span>
-            <span style="font-size:calc(20px * var(--fs-scale, 1)); font-weight:900; color:${rateColor};">${rate}%</span>
+            <span style="font-size:calc(20px * var(--fs-scale, 1)); font-weight:900; color:${rateColor};">${pProg <= 0 && aProg <= 0 ? "-" : rate + "%"}</span>
           </div>
           <div style="width:100%; background:var(--track); height:6px; border-radius:3px; overflow:hidden; margin-bottom:8px;">
             <div style="width:${Math.min(100, aProg)}%; background:${cardBorder}; height:100%;"></div>

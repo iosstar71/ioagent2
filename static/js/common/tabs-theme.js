@@ -96,14 +96,15 @@ function switchTab(tabId) {
 var THEMES = [
   { id: "urban-slate", name: "Slate", note: "기본", lightHeader: true },
   { id: "brown", name: "Walnut", note: "따뜻한 원목", lightHeader: true },
-  { id: "classic", name: "Navy", note: "클래식" },
+  { id: "navy", name: "Navy", note: "블루", lightHeader: true },
+  { id: "classic", name: "Classic", note: "예전 스타일", emoji: true },
   { id: "dark", name: "Obsidian", note: "다크" },
   { id: "electric", name: "Pop", note: "팝아트" }
 ];
 // 예전 버전에서 쓰던 값 → 지금 테마
 var THEME_ALIASES = {
   obsidian: "dark", graphite: "dark", "cyber-neon": "dark", charcoal: "dark",
-  navy: "classic", ocean: "classic", purple: "classic",
+  ocean: "classic", purple: "classic",
   "nordic-sage": "urban-slate", green: "urban-slate", emerald: "urban-slate", forest: "urban-slate", sage: "urban-slate", matte: "urban-slate", slate: "urban-slate",
   sepia: "brown", mocha: "brown"
 };
@@ -144,4 +145,5 @@ function changeTheme(theme) {
   renderGantt();
   MeetingManager.renderCalendar();
   persistChanges();
+  if (typeof SyncManager !== "undefined") SyncManager.saveSettingsQuiet();
 }

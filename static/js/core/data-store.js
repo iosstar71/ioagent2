@@ -904,6 +904,12 @@ var SyncManager = {
   },
 
   // ---- 새로고침 ----
+  // 화면 설정(기준일 · 테마)과 처음 열 때의 기본값 정리는 묻지 않고 바로 기록 (Standalone — 작업 자료는 [저장]을 눌러야 기록)
+  async saveSettingsQuiet() {
+    if (!this.isLocal() || this._busy || this._suspendAuto) return;
+    if (typeof AuthManager !== "undefined" && !AuthManager.currentUser) return;
+    if (this.isDirty(["projectConfig"])) await this.save(["projectConfig"], { notify: false });
+  },
   // [저장]을 누르면 작성 중인 주간보고 · 회의록 초안도 저장 (그대로 두면 화면을 옮길 때마다 "미저장"을 물음)
   async _saveDrafts(scopeKeys) {
     try {

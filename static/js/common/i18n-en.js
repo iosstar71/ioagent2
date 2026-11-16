@@ -13,6 +13,10 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "🧩 프로젝트 부가정보": "🧩 Project extras",
+    "🔄 Phase, 산출물": "🔄 Phase, deliverables",
+    "SDLC 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)": "SDLC types — enable the types this project uses (up to 4)",
+    "달성률 -": "Rate -",
     "🗓️ 회의일정": "🗓️ Schedule",
     "📝 회의록 작성 · 상세": "📝 Minutes",
     "📋 회의 목록": "📋 Meeting list",

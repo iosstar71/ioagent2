@@ -56,6 +56,7 @@ var ProjectManager = {
       }
     }
     this.renderSelector();
+    setTimeout(() => SyncManager.saveSettingsQuiet(), 600);   // 처음 열 때 채워진 기본값(기준일 등)은 변경으로 세지 않음
     return true;
   },
 

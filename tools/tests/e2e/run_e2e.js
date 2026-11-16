@@ -399,7 +399,7 @@ async function main() {
       return r;
     });
     check("Themes: 5 (Slate default · Walnut · Navy · Obsidian · Pop); old values map over; logo · chart colours follow the theme; emoji drawn as line icons",
-      th.opts === "urban-slate,brown,classic,dark,electric" && th.def === "urban-slate" && th.legacy === "urban-slate,classic,urban-slate,brown,dark"
+      th.opts === "urban-slate,brown,navy,classic,dark,electric" && th.def === "urban-slate" && th.legacy === "urban-slate,navy,urban-slate,brown,dark"
       && th.body === "brown" && th.chart && th.chart !== th.chartDark && /iostar_mono/.test(th.logo) && !/iostar_mono/.test(th.logoDark) && th.icons > 20 && !th.btnEmoji, JSON.stringify(th));
     const ux = await wc.evaluate(async () => {
       GShell.go("tab-home"); await new Promise(r => setTimeout(r, 300));
