@@ -312,7 +312,6 @@ function populateConfigInputsFromState() {
   const inReport = document.getElementById("reportDateInput");
   const inMaxR = document.getElementById("cfgMaxDeliverableRounds");
 
-  if (inSys && projectConfig.systemTitle) inSys.value = projectConfig.systemTitle;
   if (inProj && projectConfig.projectName) inProj.value = projectConfig.projectName;
   if (inStart && projectConfig.projectStartDate) inStart.value = projectConfig.projectStartDate;
   if (inEnd && projectConfig.projectEndDate) inEnd.value = projectConfig.projectEndDate;
@@ -425,7 +424,6 @@ var MasterSyncEngine = {
     const inReport = document.getElementById("reportDateInput");
     const inMaxR = document.getElementById("cfgMaxDeliverableRounds");
 
-    if (inSys && inSys.value.trim()) projectConfig.systemTitle = inSys.value.trim();
     if (inProj && inProj.value.trim()) projectConfig.projectName = inProj.value.trim();
     if (inStart && inStart.value) projectConfig.projectStartDate = inStart.value;
     if (inEnd && inEnd.value) projectConfig.projectEndDate = inEnd.value;

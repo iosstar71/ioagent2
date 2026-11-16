@@ -663,7 +663,8 @@ var SyncManager = {
     return (typeof DbConnector !== "undefined" && DbConnector.isServerMode()) ? ServerBackend : LocalBackend;
   },
   isLocal() { return this.backend() === LocalBackend; },
-  isAutoSave() { return this.isLocal(); }, // 실시간 자동저장은 로컬 저장소 모드에서만
+  // 자동저장은 쓰지 않음: 두 판 모두 [저장]을 눌러야 기록 → [새로고침]으로 마지막 저장 상태로 되돌릴 수 있음
+  isAutoSave() { return false; },
 
   whoAmI() {
     const u = Permission.user();
@@ -787,6 +788,7 @@ var SyncManager = {
       return { ok: false, archived: true };
     }
     const scopeKeys = keys || DataRegistry.KEYS;
+    if (opts.notify) await this._saveDrafts(scopeKeys);   // [저장] 단추: 작성 중인 주간보고 · 회의록도 함께
     const d = this.diff(scopeKeys);
     const blockedList = this.blockedSummary(d);
     const changes = {};
@@ -918,12 +920,50 @@ var SyncManager = {
   },
 
   // ---- 새로고침 ----
+  // 화면 설정(기준일 · 테마)과 처음 열 때의 기본값 정리는 묻지 않고 바로 기록 (Standalone — 작업 자료는 [저장]을 눌러야 기록)
+  async saveSettingsQuiet() {
+    if (!this.isLocal() || this._busy || this._suspendAuto) return;
+    if (typeof AuthManager !== "undefined" && !AuthManager.currentUser) return;
+    if (this.isDirty(["projectConfig"])) await this.save(["projectConfig"], { notify: false });
+  },
+  // [저장]을 누르면 작성 중인 주간보고 · 회의록 초안도 저장 (그대로 두면 화면을 옮길 때마다 "미저장"을 물음)
+  async _saveDrafts(scopeKeys) {
+    try {
+      if (scopeKeys.indexOf("weeklyReportsData") !== -1 && typeof WeeklyReportManager !== "undefined" && WeeklyReportManager.currentWeekReport && WeeklyReportManager.isDirty()) await WeeklyReportManager.completeReport(false);
+      if (scopeKeys.indexOf("meetingsData") !== -1 && typeof MeetingManager !== "undefined" && MeetingManager.isDraftDirty && MeetingManager.isDraftDirty()) await MeetingManager.completeMinutes(false);
+    } catch (e) { console.warn("[SyncManager] draft save failed", e); }
+  },
+  // 새로고침 때 화면에서 고른 조건(필터 · 검색어)은 그대로 둠: 다시 그린 뒤 같은 값으로 되돌림
+  _captureUiState() {
+    const out = [];
+    document.querySelectorAll(".tab-pane select[id], .tab-pane input[id]").forEach(el => {
+      if (!/filter|search|select|view|sort|level|range|month|week/i.test(el.id) || /^cfg|^pm|^reg|^modal|^new/i.test(el.id)) return;
+      if (el.type === "file" || el.type === "password") return;
+      out.push([el.id, el.type === "checkbox" ? el.checked : el.value]);
+    });
+    return out;
+  },
+  _restoreUiState(saved) {
+    const changed = [];
+    saved.forEach(([id, v]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === "checkbox") { if (el.checked !== v) { el.checked = v; changed.push(el); } return; }
+      if (el.value === v) return;
+      if (el.tagName === "SELECT" && !Array.prototype.some.call(el.options, o => o.value === v)) return;
+      el.value = v; changed.push(el);
+    });
+    this._suspendAuto = true;
+    try { changed.forEach(el => el.dispatchEvent(new Event(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "keyup", { bubbles: true }))); }
+    finally { this._suspendAuto = false; }
+  },
+
   async refresh(keys, opts = {}) {
     const scopeKeys = keys || DataRegistry.KEYS;
     if (!opts.skipConfirm && this.isDirty(scopeKeys)) {
       const choice = await SyncUI.ask(
         "🔄 새로고침 확인",
-        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 다른 멤버가 저장한 최신 데이터로 화면이 바뀝니다.`,
+        `저장하지 않은 변경 ${this.dirtyCount(scopeKeys)}건이 있습니다.\n새로고침하면 마지막으로 저장된 자료로 화면이 바뀝니다 (저장하지 않은 변경은 사라짐).`,
         [
           { id: "save", label: "💾 저장 후 새로고침", cls: "btn-primary" },
           { id: "discard", label: "🗑️ 변경 버리고 새로고침", cls: "btn-danger" },
@@ -944,8 +984,10 @@ var SyncManager = {
       return res;
     }
     const loadedKeys = scopeKeys.filter(k => k in res.data);
+    const uiState = this._captureUiState();
     DataRegistry.apply(res.data, loadedKeys);
     this.afterDataApplied(loadedKeys, false, res.revs);
+    this._restoreUiState(uiState);
     this.setStatus(`최신 (${new Date().toLocaleTimeString()})`, "ok");
     if (!opts.silent) {
       const where = keys ? loadedKeys.map(k => DataRegistry.DEFS[k].label).join(", ") : "전체 데이터";
@@ -1114,7 +1156,7 @@ var SyncUI = {
   },
 
   refreshIndicators() {
-    const local = SyncManager.isLocal();
+    const local = SyncManager.isAutoSave();
     document.querySelectorAll(".sync-toolbar-state").forEach(el => {
       const ks = el.getAttribute("data-keys");
       const keys = ks ? ks.split(",") : null;

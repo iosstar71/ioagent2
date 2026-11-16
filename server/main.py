@@ -19,6 +19,17 @@ class WbsServer(ThreadingHTTPServer):
     daemon_threads = True
     ssl_context = None
 
+    def handle_error(self, request, client_address):
+        """요청 하나에서 난 오류로 서버가 멈추지 않게: 연결 끊김은 한 줄, 그 밖의 오류는 로그 파일에 원인만 남김 (콘솔에 긴 오류문을 쏟지 않음)"""
+        import sys
+        import traceback
+        etype, e = sys.exc_info()[:2]
+        if etype and issubclass(etype, (BrokenPipeError, ConnectionAbortedError, ConnectionResetError, TimeoutError)):
+            write_server_log(f"[NET] Connection closed by client {client_address[0]} ({etype.__name__})")
+            return
+        last = traceback.format_exc().strip().splitlines()[-3:]
+        write_server_log(f"[ERROR] Request from {client_address[0]} failed: {' | '.join(x.strip() for x in last)}")
+
     def finish_request(self, request, client_address):
         if not self.ssl_context:
             return super().finish_request(request, client_address)
@@ -99,10 +110,15 @@ def main():
     print(f"  * SQLite DB file     : {settings.DB_PATH}")
     print("  * Initial admin      : admin / 1234  (change the password after first login)")
     print("============================================================================")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n[SHUTDOWN] Server stopped by user request.")
+    while True:
+        try:
+            server.serve_forever()
+            break
+        except KeyboardInterrupt:
+            print("\n[SHUTDOWN] Server stopped by user request.")
+            break
+        except Exception as e:   # 예기치 못한 오류로 대기 루프가 끝나면 다시 대기 (서버가 꺼지지 않게)
+            write_server_log(f"[ERROR] Server loop error, resuming: {e.__class__.__name__}: {e}")
 
 
 if __name__ == "__main__":

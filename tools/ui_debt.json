@@ -2,11 +2,11 @@
  "css_important": 623,
  "html": {
   "shell": {
-   "inline": 33,
+   "inline": 32,
    "inline_hex": 7
   },
   "tab-config": {
-   "inline": 402,
+   "inline": 401,
    "inline_hex": 103
   },
   "tab-dashboard": {
@@ -26,7 +26,7 @@
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 122,
+   "inline": 120,
    "inline_hex": 19
   },
   "tab-matrix": {
@@ -34,20 +34,20 @@
    "inline_hex": 5
   },
   "tab-meeting": {
-   "inline": 75,
+   "inline": 73,
    "inline_hex": 7
   },
   "tab-merge": {
-   "inline": 51,
+   "inline": 48,
    "inline_hex": 4
   },
   "tab-mywork": {
-   "inline": 44,
+   "inline": 43,
    "inline_hex": 16
   },
   "tab-notices": {
-   "inline": 85,
-   "inline_hex": 11
+   "inline": 81,
+   "inline_hex": 10
   },
   "tab-req": {
    "inline": 17,
@@ -70,7 +70,7 @@
   "js/common": 2,
   "js/core": 1,
   "js/modules/admin": 0,
-  "js/modules/board": 45,
+  "js/modules/board": 44,
   "js/modules/dataio": 1,
   "js/modules/deliverable": 0,
   "js/modules/home": 0,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 623,
-  "html_inline": 1069,
-  "html_inline_hex": 195,
-  "js_hex": 127
+  "html_inline": 1055,
+  "html_inline_hex": 194,
+  "js_hex": 126
  }
 }

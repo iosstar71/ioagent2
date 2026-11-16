@@ -737,16 +737,16 @@ body[data-density="spacious"] table td {
 .btn[data-btn="refresh"] { background:var(--bg-card) !important; border-color:var(--primary) !important; color:var(--primary) !important; }
 .btn[data-btn="add"] { background:var(--btn-add-bg, var(--text-main)) !important; border-color:var(--btn-add-bg, var(--text-main)) !important; color:var(--btn-add-fg, var(--bg-card)) !important; }
 .btn[data-btn="danger"] { background:#dc2626 !important; border-color:#b91c1c !important; color:#fff !important; }
-.btn[data-btn="warn"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--chart-warn-text) !important; }
+.btn[data-btn="warn"] { background:var(--btn-warn-bg, var(--bg-card)) !important; border-color:var(--btn-warn-bg, var(--border-color)) !important; color:var(--btn-warn-fg, var(--chart-warn-text)) !important; }
 .btn[data-btn="cancel"] { background:#fff !important; border-color:#cbd5e1 !important; color:#475569 !important; }
 .btn[data-btn="neutral"] { background:#f8fafc !important; border-color:#cbd5e1 !important; color:#334155 !important; }
 .btn[data-btn="nav"] { background:var(--tint-info) !important; border-color:var(--border-color) !important; color:var(--tint-info-text) !important; }
-.btn[data-btn="excel-down"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
-.btn[data-btn="excel-up"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
-.btn[data-btn="word-down"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
-.btn[data-btn="word-up"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
-.btn[data-btn="json-down"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
-.btn[data-btn="json-up"] { background:var(--bg-card) !important; border-color:var(--border-color) !important; color:var(--text-main) !important; }
+.btn[data-btn="excel-down"] { background:var(--btn-excel-bg, var(--bg-card)) !important; border-color:var(--btn-excel-bg, var(--border-color)) !important; color:var(--btn-excel-fg, var(--text-main)) !important; }
+.btn[data-btn="excel-up"] { background:var(--btn-excel-bg, var(--bg-card)) !important; border-color:var(--btn-excel-bg, var(--border-color)) !important; color:var(--btn-excel-fg, var(--text-main)) !important; }
+.btn[data-btn="word-down"] { background:var(--btn-word-bg, var(--bg-card)) !important; border-color:var(--btn-word-bg, var(--border-color)) !important; color:var(--btn-word-fg, var(--text-main)) !important; }
+.btn[data-btn="word-up"] { background:var(--btn-word-bg, var(--bg-card)) !important; border-color:var(--btn-word-bg, var(--border-color)) !important; color:var(--btn-word-fg, var(--text-main)) !important; }
+.btn[data-btn="json-down"] { background:var(--btn-json-bg, var(--bg-card)) !important; border-color:var(--btn-json-bg, var(--border-color)) !important; color:var(--btn-json-fg, var(--text-main)) !important; }
+.btn[data-btn="json-up"] { background:var(--btn-json-bg, var(--bg-card)) !important; border-color:var(--btn-json-bg, var(--border-color)) !important; color:var(--btn-json-fg, var(--text-main)) !important; }
 header .btn[data-btn="refresh"], header .btn[data-btn="cancel"], header .btn[data-btn="neutral"] { background:rgba(255,255,255,0.92) !important; }
 .btn-legend { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:var(--fs-xs, 11px); }
 .server-offline-bar { display:none; position:sticky; top:0; z-index:9000; background:#dc2626; color:#fff; padding:8px 16px; font-size:var(--fs-base, 13px); text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.25); }
@@ -2562,8 +2562,8 @@ svg.iostar-ico.ico-solo, svg.iostar-dot.ico-solo,
 .g-icon-btn svg.iostar-ico { width: 1.15em; height: 1.15em; vertical-align: 0; }
 
 /* 로고: 밝은 머리말 테마(Urban Slate · Nordic Sage)는 무채색 매트 아이콘, 나머지는 원래 색 로고 */
-[data-theme="urban-slate"] .brand-logo, [data-theme="brown"] .brand-logo { content: url("../img/iostar_mono_64.png"); filter: none; }
-[data-theme="urban-slate"] .brand-logo-lg, [data-theme="brown"] .brand-logo-lg { content: url("../img/iostar_mono_256.png"); filter: drop-shadow(0 4px 10px rgba(15,23,42,0.18)); }
+[data-theme="urban-slate"] .brand-logo, :is([data-theme="brown"], [data-theme="navy"]) .brand-logo { content: url("../img/iostar_mono_64.png"); filter: none; }
+[data-theme="urban-slate"] .brand-logo-lg, :is([data-theme="brown"], [data-theme="navy"]) .brand-logo-lg { content: url("../img/iostar_mono_256.png"); filter: drop-shadow(0 4px 10px rgba(15,23,42,0.18)); }
 [data-theme="dark"] .brand-logo-lg { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
 
 /* Obsidian 대비 보정: 흐린 글자 · 흰 상자 정리 */
@@ -2610,7 +2610,7 @@ svg.iostar-ico.ico-solo, svg.iostar-dot.ico-solo,
 /* Obsidian: 무광 톤에 맞춰 초록 · 노랑을 낮춤 */
 [data-theme="dark"] { --success: #6FBF9A; --warning: #D9AE3F; }
 [data-theme="dark"] { --chart-rate-fill: rgba(217,174,63,0.18); --chart-rate-line: #A88A3A; --chart-rate-text: #D9AE3F; --chart-warn: #D9AE3F; --chart-warn-text: #D9AE3F; }
-[data-theme="urban-slate"] .g-pin, [data-theme="brown"] .g-pin { color: var(--warning); }
+[data-theme="urban-slate"] .g-pin, :is([data-theme="brown"], [data-theme="navy"]) .g-pin { color: var(--warning); }
 .g-pin svg.iostar-ico { color: inherit; }
 
 /* 시작할 때 저장된 테마를 적용한 뒤 보여 줌 (스크립트가 멈춰도 2초 뒤에는 보임) */
@@ -2618,69 +2618,69 @@ body:not(.theme-ready) { visibility: hidden; animation: themeReveal 0s linear 2s
 @keyframes themeReveal { to { visibility: visible; } }
 
 /* Brown — 따뜻한 무광 브라운 (Urban Slate 와 같은 구조, 색만 다름) */
-[data-theme="brown"] {
-  --hero-bg-from: #2E2219; --hero-bg-mid: #4A3627; --hero-bg-to: #6B4E37;
-  --bg-main: #F5F1EC; --bg-card: #FFFDFA; --border-color: #E6DDD2;
-  --text-main: #2B211A; --text-sub: #4E4036; --text-muted: #85766A;
-  --primary: #7A5236; --primary-light: #96694A; --accent: #7A5236;
-  --success: #4F7A4A; --warning: #A26B26; --danger: #A4483F;
-  --header-bg: #2E2219;
-  --lvl-1-bg: #F1E8DE; --lvl-1-border: #7A5236; --lvl-1-text: #2B211A;
-  --lvl-2-bg: #F5EEE6; --lvl-2-border: #9A7458; --lvl-2-text: #2B211A;
-  --lvl-3-bg: #F8F3EE; --lvl-3-border: #B8A08A; --lvl-3-text: #2E2219;
-  --lvl-4-bg: #FBF8F4; --lvl-4-border: #D9CCBE; --lvl-4-text: #4E4036;
-  --lvl-5-bg: #FFFDFA; --lvl-5-border: #ECE3D8; --lvl-5-text: #85766A;
+:is([data-theme="brown"], [data-theme="navy"]) {
+  --hero-bg-from: var(--pf-26); --hero-bg-mid: var(--pf-33); --hero-bg-to: var(--pf-34);
+  --bg-main: var(--pf-35); --bg-card: var(--pf-1); --border-color: var(--pf-3);
+  --text-main: var(--pf-2); --text-sub: var(--pf-9); --text-muted: var(--pf-13);
+  --primary: var(--pf-14); --primary-light: var(--pf-36); --accent: var(--pf-14);
+  --success: var(--pf-12); --warning: var(--pf-37); --danger: var(--pf-38);
+  --header-bg: var(--pf-26);
+  --lvl-1-bg: var(--pf-15); --lvl-1-border: var(--pf-14); --lvl-1-text: var(--pf-2);
+  --lvl-2-bg: var(--pf-39); --lvl-2-border: var(--pf-27); --lvl-2-text: var(--pf-2);
+  --lvl-3-bg: var(--pf-40); --lvl-3-border: var(--pf-16); --lvl-3-text: var(--pf-26);
+  --lvl-4-bg: var(--pf-7); --lvl-4-border: var(--pf-6); --lvl-4-text: var(--pf-9);
+  --lvl-5-bg: var(--pf-1); --lvl-5-border: var(--pf-8); --lvl-5-text: var(--pf-13);
 }
-[data-theme="brown"] header.g-header { background: #FFFDFA; color: #2B211A; border-bottom: 1px solid #E6DDD2; }
-[data-theme="brown"] .g-header .g-ver { background: #F1EBE4; color: #5E4E42; }
-[data-theme="brown"] .header-project-select { border-color: #D9CCBE; background: #FBF8F4; color: #2B211A; }
-[data-theme="brown"] .global-report-date-box { background: transparent; border-color: #D9CCBE; }
-[data-theme="brown"] .report-date-label { color: #5E4E42; }
-[data-theme="brown"] .global-report-date-box input[type="date"] { border-color: #D9CCBE; color: #2B211A; background: #FBF8F4; }
-[data-theme="brown"] .g-search { border-color: #D9CCBE; background: #FBF8F4; color: #5E4E42; }
-[data-theme="brown"] .g-search kbd { background: #ECE3D8; color: #4E4036; }
-[data-theme="brown"] .g-icon-btn { background: #F3EDE6; color: #2B211A; }
-[data-theme="brown"] .g-icon-btn:hover, [data-theme="brown"] .g-search:hover { background: #ECE3D8; }
-[data-theme="brown"] .g-user { color: #2B211A; }
-[data-theme="brown"] .storage-status-box { background: transparent; border-color: #D9CCBE; color: #5E4E42; }
-[data-theme="brown"] .storage-status-box.saved { border-color: #A9BFA0; color: #4F7A4A; }
-[data-theme="brown"] .g-nav { background: #FFFDFA; border-bottom-color: #E6DDD2; }
-[data-theme="brown"] .g-groups { background: transparent; border: 0; border-right: 1px solid #E6DDD2; border-radius: 0; padding: 0 14px 0 0; margin: 0; gap: 12px; }
-[data-theme="brown"] .g-group { border-radius: 6px; color: #85766A; }
-[data-theme="brown"] .g-group:hover { background: #F3EDE6; color: #2B211A; box-shadow: none; }
-[data-theme="brown"] .g-group.active, [data-theme="brown"] .g-group.active:hover { background: #F1EBE4; color: #2B211A; box-shadow: inset 0 -2px 0 #7A5236; }
-[data-theme="brown"] .g-subs { background: transparent; gap: 4px; }
-[data-theme="brown"] .g-sub { border-radius: 6px; color: #5E4E42; }
-[data-theme="brown"] .g-sub.active { background: #2B211A; color: #FFFDFA; border-bottom: 0; }
-[data-theme="brown"] .g-side-group.cur .g-side-title { background: #2B211A; color: #FFFDFA; }
-[data-theme="brown"] .g-side-item.active { background: #F1E8DE; color: #2B211A; border-left-color: #7A5236; }
-[data-theme="brown"] .card, [data-theme="brown"] .kpi-card { background: #FFFDFA; border-color: #E6DDD2; }
-[data-theme="brown"] .btn-primary, [data-theme="brown"] .btn[data-btn="save"] { background: #7A5236 !important; border-color: #7A5236 !important; color: #FFFDFA !important; }
-[data-theme="brown"] .g-header .global-report-date-box .day-of-week-tag { color: #2B211A !important; background: #ECE3D8 !important; }
-[data-theme="brown"] {
-  --chart-grid: #E6DDD2; --chart-axis: #85766A; --chart-label: #4E4036; --chart-sub: #B8A08A;
-  --chart-plan: #B8A08A; --chart-actual: #7A5236; --chart-today: #A4483F;
-  --chart-rate-fill: rgba(162,107,38,0.22); --chart-rate-line: #B88A4E; --chart-rate-text: #8A5A1E;
-  --chart-ok: #7A5236; --chart-warn: #A26B26; --chart-bad: #A4483F;
-  --chart-band-ok: #EFE5DA; --chart-band-warn: #F5EBDB; --chart-band-bad: #F3E1DD; --chart-mark: #2B211A;
-  --chart-good-text: #4F7A4A; --chart-warn-text: #A26B26; --chart-bad-text: #A4483F;
-  --tint-ok: #E8EEE4; --tint-ok-text: #4F7A4A; --tint-info: #F1E8DE; --tint-info-text: #7A5236; --tint-warn: #F5EBDB; --tint-warn-text: #7A5524;
-  --chip-bg: #F1EBE4; --chip-text: #4E4036; --track: #E6DDD2;
+:is([data-theme="brown"], [data-theme="navy"]) header.g-header { background: var(--pf-1); color: var(--pf-2); border-bottom: 1px solid var(--pf-3); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-header .g-ver { background: var(--pf-4); color: var(--pf-5); }
+:is([data-theme="brown"], [data-theme="navy"]) .header-project-select { border-color: var(--pf-6); background: var(--pf-7); color: var(--pf-2); }
+:is([data-theme="brown"], [data-theme="navy"]) .global-report-date-box { background: transparent; border-color: var(--pf-6); }
+:is([data-theme="brown"], [data-theme="navy"]) .report-date-label { color: var(--pf-5); }
+:is([data-theme="brown"], [data-theme="navy"]) .global-report-date-box input[type="date"] { border-color: var(--pf-6); color: var(--pf-2); background: var(--pf-7); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-search { border-color: var(--pf-6); background: var(--pf-7); color: var(--pf-5); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-search kbd { background: var(--pf-8); color: var(--pf-9); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-icon-btn { background: var(--pf-10); color: var(--pf-2); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-icon-btn:hover, :is([data-theme="brown"], [data-theme="navy"]) .g-search:hover { background: var(--pf-8); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-user { color: var(--pf-2); }
+:is([data-theme="brown"], [data-theme="navy"]) .storage-status-box { background: transparent; border-color: var(--pf-6); color: var(--pf-5); }
+:is([data-theme="brown"], [data-theme="navy"]) .storage-status-box.saved { border-color: var(--pf-11); color: var(--pf-12); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-nav { background: var(--pf-1); border-bottom-color: var(--pf-3); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-groups { background: transparent; border: 0; border-right: 1px solid var(--pf-3); border-radius: 0; padding: 0 14px 0 0; margin: 0; gap: 12px; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-group { border-radius: 6px; color: var(--pf-13); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-group:hover { background: var(--pf-10); color: var(--pf-2); box-shadow: none; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-group.active, :is([data-theme="brown"], [data-theme="navy"]) .g-group.active:hover { background: var(--pf-4); color: var(--pf-2); box-shadow: inset 0 -2px 0 var(--pf-14); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-subs { background: transparent; gap: 4px; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-sub { border-radius: 6px; color: var(--pf-5); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-sub.active { background: var(--pf-2); color: var(--pf-1); border-bottom: 0; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-side-group.cur .g-side-title { background: var(--pf-2); color: var(--pf-1); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-side-item.active { background: var(--pf-15); color: var(--pf-2); border-left-color: var(--pf-14); }
+:is([data-theme="brown"], [data-theme="navy"]) .card, :is([data-theme="brown"], [data-theme="navy"]) .kpi-card { background: var(--pf-1); border-color: var(--pf-3); }
+:is([data-theme="brown"], [data-theme="navy"]) .btn-primary, :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="save"] { background: var(--pf-14) !important; border-color: var(--pf-14) !important; color: var(--pf-1) !important; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-header .global-report-date-box .day-of-week-tag { color: var(--pf-2) !important; background: var(--pf-8) !important; }
+:is([data-theme="brown"], [data-theme="navy"]) {
+  --chart-grid: var(--pf-3); --chart-axis: var(--pf-13); --chart-label: var(--pf-9); --chart-sub: var(--pf-16);
+  --chart-plan: var(--pf-16); --chart-actual: var(--pf-14); --chart-today: var(--pf-17);
+  --chart-rate-fill: rgba(162,107,38,0.22); --chart-rate-line: var(--pf-18); --chart-rate-text: var(--pf-19);
+  --chart-ok: var(--pf-14); --chart-warn: var(--pf-20); --chart-bad: var(--pf-17);
+  --chart-band-ok: var(--pf-21); --chart-band-warn: var(--pf-22); --chart-band-bad: var(--pf-23); --chart-mark: var(--pf-2);
+  --chart-good-text: var(--pf-12); --chart-warn-text: var(--pf-20); --chart-bad-text: var(--pf-17);
+  --tint-ok: var(--pf-24); --tint-ok-text: var(--pf-12); --tint-info: var(--pf-15); --tint-info-text: var(--pf-14); --tint-warn: var(--pf-22); --tint-warn-text: var(--pf-25);
+  --chip-bg: var(--pf-4); --chip-text: var(--pf-9); --track: var(--pf-3);
 }
-[data-theme="brown"] .lvl-1 { background-color: #2E2219; }
-[data-theme="brown"] .lvl-1 { background-color: #2E2219; } [data-theme="brown"] .lvl-2 { background-color: #7A5236; } [data-theme="brown"] .lvl-3 { background-color: #9A7458; } [data-theme="brown"] .lvl-4 { background-color: #A08672; } [data-theme="brown"] .lvl-5 { background-color: #C9B8A6; }
+:is([data-theme="brown"], [data-theme="navy"]) .lvl-1 { background-color: var(--pf-26); }
+:is([data-theme="brown"], [data-theme="navy"]) .lvl-1 { background-color: var(--pf-26); } :is([data-theme="brown"], [data-theme="navy"]) .lvl-2 { background-color: var(--pf-14); } :is([data-theme="brown"], [data-theme="navy"]) .lvl-3 { background-color: var(--pf-27); } :is([data-theme="brown"], [data-theme="navy"]) .lvl-4 { background-color: var(--pf-28); } :is([data-theme="brown"], [data-theme="navy"]) .lvl-5 { background-color: var(--pf-29); }
 
 /* 밝은 무광 테마(Urban Slate · Nordic Sage · Brown): 고정 파랑 · 보라 버튼 · 칩을 테마 색으로 */
-[data-theme="urban-slate"] .btn[data-btn="refresh"], [data-theme="brown"] .btn[data-btn="refresh"] { background: var(--bg-card) !important; border-color: var(--primary) !important; color: var(--primary) !important; }
-[data-theme="urban-slate"] .btn[data-btn="nav"], [data-theme="brown"] .btn[data-btn="nav"] { background: var(--tint-info) !important; border-color: var(--border-color) !important; color: var(--tint-info-text) !important; }
-[data-theme="urban-slate"] .btn[data-btn="add"], [data-theme="brown"] .btn[data-btn="add"] { background: var(--hero-bg-from) !important; border-color: var(--hero-bg-from) !important; color: #FFFFFF !important; }
-[data-theme="urban-slate"] .btn[data-btn="cancel"], [data-theme="brown"] .btn[data-btn="cancel"], [data-theme="urban-slate"] .btn[data-btn="neutral"], [data-theme="brown"] .btn[data-btn="neutral"] { background: var(--bg-card) !important; border-color: var(--border-color) !important; color: var(--text-sub) !important; }
-[data-theme="urban-slate"] .chip-progress, [data-theme="brown"] .chip-progress, [data-theme="urban-slate"] .tag-progress, [data-theme="brown"] .tag-progress { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
-[data-theme="urban-slate"] .chip-excluded, [data-theme="brown"] .chip-excluded, [data-theme="urban-slate"] .tag-excluded, [data-theme="brown"] .tag-excluded { background: var(--chip-bg); color: var(--text-sub); border-color: var(--border-color); }
-[data-theme="urban-slate"] .week-chip, [data-theme="brown"] .week-chip { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
-[data-theme="urban-slate"] .current-date-badge, [data-theme="brown"] .current-date-badge { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
-[data-theme="urban-slate"] .wr-detail-title, [data-theme="brown"] .wr-detail-title { background: var(--tint-info); border-color: var(--border-color); }
-[data-theme="urban-slate"] .wbs-id-link, [data-theme="brown"] .wbs-id-link { color: var(--primary); }
+[data-theme="urban-slate"] .btn[data-btn="refresh"], :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="refresh"] { background: var(--bg-card) !important; border-color: var(--primary) !important; color: var(--primary) !important; }
+[data-theme="urban-slate"] .btn[data-btn="nav"], :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="nav"] { background: var(--tint-info) !important; border-color: var(--border-color) !important; color: var(--tint-info-text) !important; }
+[data-theme="urban-slate"] .btn[data-btn="add"], :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="add"] { background: var(--hero-bg-from) !important; border-color: var(--hero-bg-from) !important; color: #FFFFFF !important; }
+[data-theme="urban-slate"] .btn[data-btn="cancel"], :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="cancel"], [data-theme="urban-slate"] .btn[data-btn="neutral"], :is([data-theme="brown"], [data-theme="navy"]) .btn[data-btn="neutral"] { background: var(--bg-card) !important; border-color: var(--border-color) !important; color: var(--text-sub) !important; }
+[data-theme="urban-slate"] .chip-progress, :is([data-theme="brown"], [data-theme="navy"]) .chip-progress, [data-theme="urban-slate"] .tag-progress, :is([data-theme="brown"], [data-theme="navy"]) .tag-progress { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
+[data-theme="urban-slate"] .chip-excluded, :is([data-theme="brown"], [data-theme="navy"]) .chip-excluded, [data-theme="urban-slate"] .tag-excluded, :is([data-theme="brown"], [data-theme="navy"]) .tag-excluded { background: var(--chip-bg); color: var(--text-sub); border-color: var(--border-color); }
+[data-theme="urban-slate"] .week-chip, :is([data-theme="brown"], [data-theme="navy"]) .week-chip { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
+[data-theme="urban-slate"] .current-date-badge, :is([data-theme="brown"], [data-theme="navy"]) .current-date-badge { background: var(--tint-info); color: var(--tint-info-text); border-color: var(--border-color); }
+[data-theme="urban-slate"] .wr-detail-title, :is([data-theme="brown"], [data-theme="navy"]) .wr-detail-title { background: var(--tint-info); border-color: var(--border-color); }
+[data-theme="urban-slate"] .wbs-id-link, :is([data-theme="brown"], [data-theme="navy"]) .wbs-id-link { color: var(--primary); }
 
 [data-theme="classic"] {
   --hero-bg-from: #1e3a8a;
@@ -2855,13 +2855,13 @@ body.neo-side-collapsed .g-side-title { font-size: 0; padding: 4px 0; }
 [data-theme="urban-slate"] .g-group.active svg.iostar-ico { color: #fff; opacity: 1; }
 
 /* Walnut: 따뜻한 종이색 바탕 · 머리말, 갈색 메뉴 필, Summary 베이지 띠 */
-[data-theme="brown"] { --bg-main: #F1E9DF; }
-body[data-theme="brown"] { background: #F1E9DF; }
-[data-theme="brown"] header.g-header, [data-theme="brown"] .g-nav { background: #FBF6EF; }
-[data-theme="brown"] header.g-header { box-shadow: inset 0 3px 0 var(--primary); }
-[data-theme="brown"] .g-group.active, [data-theme="brown"] .g-group.active:hover { background: var(--primary); color: #fff; box-shadow: none; }
-[data-theme="brown"] .g-group.active svg.iostar-ico { color: #fff; opacity: 1; }
-[data-theme="brown"] .hero-banner { background: linear-gradient(100deg, #EADBC8 0%, var(--bg-card) 62%); border-left: 4px solid var(--primary); }
+:is([data-theme="brown"], [data-theme="navy"]) { --bg-main: var(--pf-30); }
+body:is([data-theme="brown"], [data-theme="navy"]) { background: var(--pf-30); }
+:is([data-theme="brown"], [data-theme="navy"]) header.g-header, :is([data-theme="brown"], [data-theme="navy"]) .g-nav { background: var(--pf-31); }
+:is([data-theme="brown"], [data-theme="navy"]) header.g-header { box-shadow: inset 0 3px 0 var(--primary); }
+:is([data-theme="brown"], [data-theme="navy"]) .g-group.active, :is([data-theme="brown"], [data-theme="navy"]) .g-group.active:hover { background: var(--primary); color: #fff; box-shadow: none; }
+:is([data-theme="brown"], [data-theme="navy"]) .g-group.active svg.iostar-ico { color: #fff; opacity: 1; }
+:is([data-theme="brown"], [data-theme="navy"]) .hero-banner { background: linear-gradient(100deg, var(--pf-32) 0%, var(--bg-card) 62%); border-left: 4px solid var(--primary); }
 
 /* Navy: 네이비 배너를 얇게 유지 (전통적인 업무 시스템 느낌) */
 [data-theme="classic"] .hero-banner { background: linear-gradient(135deg, var(--hero-bg-from) 0%, var(--hero-bg-mid) 55%, var(--hero-bg-to) 100%); color: #fff; border: 0; padding: 12px 22px; }
@@ -2990,6 +2990,7 @@ body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.r
 /* 테마 견본 색 (테마 등록부 THEMES 와 짝) */
 .g-swatch[data-theme-pick="urban-slate"] i { background: linear-gradient(135deg, #FFFFFF 50%, #335C81 50%); }
 .g-swatch[data-theme-pick="brown"] i { background: linear-gradient(135deg, #F1E9DF 50%, #7A5236 50%); }
+.g-swatch[data-theme-pick="navy"] i { background: linear-gradient(135deg, #E6EEFA 50%, #2B4E8C 50%); }
 .g-swatch[data-theme-pick="classic"] i { background: linear-gradient(135deg, #0B1F44 50%, #2F6BD8 50%); }
 .g-swatch[data-theme-pick="dark"] i { background: linear-gradient(135deg, #181B20 50%, #849CB0 50%); }
 .g-swatch[data-theme-pick="electric"] i { background: linear-gradient(135deg, #FFD60A 50%, #FF3D8B 50%); }
@@ -3084,3 +3085,64 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 [data-design="soft"] .dt-a { left: 8%; top: 9%; width: 34%; height: 8%; background: #2F7D6B; border-radius: 1px; }
 [data-design="soft"] .dt-b { right: 8%; top: 8%; width: 22%; height: 10%; background: #BFE3D6; border-radius: 99px; }
 [data-design="soft"] .dt-c { background: #FFFFFF; box-shadow: 0 14px 0 #FFFFFF, 0 28px 0 #FFFFFF; border-radius: 3px; }
+
+/* ── 화면 표준: 서브메뉴는 화면 이름 줄 바로 아래 한 줄 (.sub-tabs), 모든 화면 같은 모양 ── */
+.sub-tabs { margin: 0 0 12px; }
+.feed-view-switch { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.feed-view-label { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-sub); }
+.g-user-who { font-weight: 700; color: var(--text-main); }
+.g-user-ver { font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+
+/* ── 머리글 정리: 새로고침 단추 · 시스템 타이틀 · 프로젝트 관리(탭 안) ─────────────── */
+.g-header .storage-status-box { cursor: default; }
+.sys-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sys-title-row input { width: 280px; max-width: 100%; font-weight: 700; }
+.pm-admin-card { border-left: 4px solid var(--primary); }
+.pm-list-wrap { max-height: 320px; margin-top: 8px; }
+.pm-c-id { width: 70px; } .pm-c-st { width: 80px; } .pm-c-mem { width: 110px; } .pm-c-date { width: 140px; } .pm-c-act { width: 300px; }
+.pm-create-foot { display: flex; justify-content: flex-end; }
+/* 좁은 화면(태블릿 · 폰): 머리글 한 줄이 화면 폭을 넘지 않게 — 넘으면 브라우저가 화면 전체를 줄여 오른쪽이 빈 띠로 보임 */
+.g-header .lk-badge { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-header #headerCurrentUserBadge { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+@media (max-width: 1180px) {
+  .g-header { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .g-header .report-date-label, .g-header .g-search > span, .g-header .g-search > kbd { display: none; }
+  .g-header #btnHeaderSaveAll, .g-header #btnHeaderRefreshAll, .g-header .g-pkg-btn { font-size: 0; padding: 0 8px; gap: 0; }
+  .g-header #btnHeaderSaveAll svg, .g-header #btnHeaderRefreshAll svg, .g-header .g-pkg-btn svg { width: 15px; height: 15px; margin: 0; }
+  .g-header .lk-badge { max-width: 96px; }
+  .g-header #headerCurrentUserBadge { max-width: 84px; }
+  .g-header .header-project-select { flex: 0 1 150px; min-width: 84px; }
+}
+@media (max-width: 860px) {
+  .g-header #globalReportDayOfWeek, .g-header .g-notice { font-size: 0; }
+  .g-header .g-notice svg { width: 15px; height: 15px; }
+  .g-header #headerSystemTitleText { display: none; }
+  .g-header .lk-badge { max-width: 64px; }
+}
+.pm-panel[hidden] { display: none; }
+
+/* Import · Export: 범위 옆 자료 묶음 고르기 */
+.mt-scope-sys { min-width: 240px; }
+.mt-presets { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-left: 10px; margin-left: 4px; border-left: 1px solid var(--border-color); }
+.mt-presets-label { font-size: var(--fs-xs, 11px); font-weight: 700; color: var(--text-sub); }
+.deliv-bulk { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.deliv-bulk[hidden] { display: none; }
+.deliv-bulk-title { color: var(--text-main); }
+.deliv-bulk label { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ── Walnut · Navy 는 같은 틀(종이색 바탕 · 메뉴 필 · 띠)에 색만 다름: 색은 --pf-N 한 벌로 ── */
+[data-theme="brown"] { --pf-1: #FFFDFA; --pf-2: #2B211A; --pf-3: #E6DDD2; --pf-4: #F1EBE4; --pf-5: #5E4E42; --pf-6: #D9CCBE; --pf-7: #FBF8F4; --pf-8: #ECE3D8; --pf-9: #4E4036; --pf-10: #F3EDE6; --pf-11: #A9BFA0; --pf-12: #4F7A4A; --pf-13: #85766A; --pf-14: #7A5236; --pf-15: #F1E8DE; --pf-16: #B8A08A; --pf-17: #A4483F; --pf-18: #B88A4E; --pf-19: #8A5A1E; --pf-20: #A26B26; --pf-21: #EFE5DA; --pf-22: #F5EBDB; --pf-23: #F3E1DD; --pf-24: #E8EEE4; --pf-25: #7A5524; --pf-26: #2E2219; --pf-27: #9A7458; --pf-28: #A08672; --pf-29: #C9B8A6; --pf-30: #F1E9DF; --pf-31: #FBF6EF; --pf-32: #EADBC8; --pf-33: #4A3627; --pf-34: #6B4E37; --pf-35: #F5F1EC; --pf-36: #96694A; --pf-37: #A26B26; --pf-38: #A4483F; --pf-39: #F5EEE6; --pf-40: #F8F3EE; }
+[data-theme="navy"] { --pf-1: #FAFCFF; --pf-2: #121E33; --pf-3: #CCDAEC; --pf-4: #E0E9F5; --pf-5: #31486F; --pf-6: #B1C4E6; --pf-7: #F3F7FC; --pf-8: #D3E0F1; --pf-9: #283B5C; --pf-10: #E3EBF6; --pf-11: #A9BFA0; --pf-12: #4F7A4A; --pf-13: #556E9A; --pf-14: #1A4896; --pf-15: #DAE6F5; --pf-16: #7395CF; --pf-17: #A4483F; --pf-18: #B88A4E; --pf-19: #8A5A1E; --pf-20: #A26B26; --pf-21: #D5E2F4; --pf-22: #F5EBDB; --pf-23: #F3E1DD; --pf-24: #E8EEE4; --pf-25: #7A5524; --pf-26: #0F1E38; --pf-27: #3968B9; --pf-28: #587CBA; --pf-29: #95AEDA; --pf-30: #DBE6F5; --pf-31: #EDF4FD; --pf-32: #C1D6F1; --pf-33: #17305A; --pf-34: #204482; --pf-35: #E9F0F8; --pf-36: #2A5DB6; --pf-37: #A26B26; --pf-38: #A4483F; --pf-39: #E3ECF8; --pf-40: #ECF2FA; }
+
+/* ── Classic: 예전 IT 시스템 스타일 — 색이 채워진 버튼, 각진 모서리, 진한 표 머리, 색 이모지 아이콘(icons.js 가 이 테마에서는 바꾸지 않음) ── */
+[data-theme="classic"] { --btn-excel-bg: #1D6F42; --btn-excel-fg: #FFFFFF; --btn-word-bg: #2B579A; --btn-word-fg: #FFFFFF; --btn-json-bg: #B45309; --btn-json-fg: #FFFFFF;
+  --btn-warn-bg: #D97706; --btn-warn-fg: #FFFFFF; --btn-add-bg: #15803D; --btn-add-fg: #FFFFFF; }
+[data-theme="classic"] .btn { border-radius: 3px; font-weight: 700; }
+[data-theme="classic"] .card, [data-theme="classic"] .sub-header-bar.neo-ph { border-radius: 4px; }
+[data-theme="classic"] .card-title { border-bottom: 2px solid #1D3F7A; }
+[data-theme="classic"] .tab-pane th { background: #1D3F7A; color: #FFFFFF; border-color: #16325F; }
+[data-theme="classic"] .master-subtab-btn, [data-theme="classic"] .g-group, [data-theme="classic"] .g-sub { border-radius: 4px 4px 0 0; }
+[data-theme="classic"] .neo-chip { border-radius: 4px; }
+/* SDLC 유형: 설명 줄은 위에 한 줄 전체, 유형 카드는 그 아래 2열 */
+#customSdlcCardsContainer > .phase-summary-box { grid-column: 1 / -1; }
+.rate-na { color: var(--text-muted); text-align: center; }

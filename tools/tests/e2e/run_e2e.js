@@ -361,13 +361,13 @@ async function localMain() {
   const side = await page.evaluate(() => { const s = document.querySelector(".g-nav-side"); return getComputedStyle(s).display !== "none" && s.querySelectorAll(".g-side-item").length >= 14; });
   await page.evaluate(() => LayoutManager.setLayout("top-nav", false));
   const themes = await page.$$eval("#themeSelector option", o => o.map(x => x.value).join(","));
-  check("Themes: 5 — Slate (default) · Walnut · Navy · Obsidian · Pop; left menu option", side && themes === "urban-slate,brown,classic,dark,electric", themes);
+  check("Themes: 6 — Slate (default) · Walnut · Navy · Classic · Obsidian · Pop; left menu option", side && themes === "urban-slate,brown,navy,classic,dark,electric", themes);
   // [v3.1.0] 보고서 테마 5가지 · 머리글 [🎨 화면] 메뉴(테마 견본 · 글자 크기) · WBS 담당자·산출물 접기
   const ui310 = await page.evaluate(async () => {
     const out = {};
     out.exportThemes = [...document.querySelectorAll("#cfgExportUnifiedTheme option")].map(o => o.value).join(",");
     out.oldMapped = [ExcelSync.normalizeExportTheme("Pastel Mint"), ExcelSync.normalizeExportTheme("Warm Brown"), ExcelSync.normalizeExportTheme("Official Blue")].join(",");
-    const btns = ["btnHeaderManual", "gUiBtn", "gAdminBtn"].map(id => document.getElementById(id).getBoundingClientRect().width);
+    const btns = ["gUiBtn", "gAdminBtn"].map(id => document.getElementById(id).getBoundingClientRect().width);
     out.btnWide = btns.every(w => w >= 60);
     document.getElementById("gUiBtn").click(); await new Promise(r => setTimeout(r, 150));
     out.swatches = document.querySelectorAll("#gUiMenu .g-swatch").length;
@@ -389,7 +389,7 @@ async function localMain() {
     return out;
   });
   check("v3.1.0: 3 report colours Navy · Gray · Mint (old names mapped); labelled header buttons; UI menu with theme swatches and text size; WBS owner/deliverable columns fold to fit, weekdays shown",
-    ui310.exportThemes === "Navy,Gray,Mint" && ui310.oldMapped === "Mint,Gray,Navy" && ui310.btnWide && ui310.swatches === 5 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
+    ui310.exportThemes === "Navy,Gray,Mint" && ui310.oldMapped === "Mint,Gray,Navy" && ui310.btnWide && ui310.swatches === 6 && ui310.theme === "brown" && ui310.zoom === "1.3||16.9px|true" && ui310.zoomBack === "13px" &&
     ui310.fold.f1 && ui310.fold.w1 && !ui310.fold.f2 && ui310.fold.ownerShown && ui310.fold.dow && ui310.fold.foldCols === "가중치,REQ ID,담당자,산출물/조치", JSON.stringify(ui310));
   // 1차 정리: 표기 규칙 묶음 · Action Item 수정 패널 · 보고서 카드 · 양식 색상 3가지 · Navy 왼쪽 메뉴
   const ph1 = await page.evaluate(async () => {
@@ -464,6 +464,30 @@ async function localMain() {
     return o; });
   check("Summary report: default keeps the old contents (detailed, Classic Band); presets brief / standard / detailed + per-slide choice; 5 design sets build PPT and preview; detail panel starts under the screen header",
     ph3.def === "detail/classic" && ph3.ui === "4,9,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
+  // 요건 반영 (0.6.0): 서브메뉴 줄 통일 · 머리글 · Admin 프로젝트/시스템 타이틀(서버 저장) · 자료 묶음 · 설정 탭 이름 · 테마 6종
+  const rq = await page.evaluate(async () => {
+    const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
+    o.subTabs = ["meetingSubTabs", "rpTabs", "boardSubTabs"].every(id => { const e = document.getElementById(id); return e && e.classList.contains("master-subtab-bar") && !e.closest(".sub-header-bar"); });
+    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector("#gAdminMenu #btnHeaderManual");
+    o.who = document.getElementById("gUserWho").textContent.includes("—");
+    await ProjectManager.open(); await wait(600);
+    o.admin = document.querySelector(".tab-pane.active").id === "tab-config" && !!document.getElementById("pmNewName") && !document.getElementById("projectManagerModal");
+    document.getElementById("cfgSystemTitle").value = "E2E 타이틀"; await SystemTitle.save();
+    o.title = document.getElementById("headerSystemTitleText").textContent;
+    o.served = /E2E 타이틀/.test(await (await fetch("static/js/config/app-config.js", { cache: "no-store" })).text());
+    await SystemTitle.reset();
+    GShell.go("tab-merge"); SubTabs.show("merge", "merge"); await wait(400);
+    MergeTable.selectGroup("work"); const w = MergeTable.selected().join(); MergeTable.selectGroup("base"); const b2 = MergeTable.selected().join();
+    o.groups = /wbs/.test(w) && !/config/.test(w) && /config/.test(b2) && !/wbs/.test(b2) && !document.querySelector(".mt-pkg");
+    o.tabs = [...document.querySelectorAll('.master-subtab-bar[data-group="master"] .master-subtab-btn')].slice(0, 3).map(x => x.textContent.trim()).join("|");
+    o.manual = /사용자 매뉴얼/.test(ManualViewer.standaloneManualHtml) && /릴리즈 노트/.test(ManualViewer.standaloneManualHtml) && !ManualViewer.docxBase64;
+    const cur = document.body.getAttribute("data-theme");
+    changeTheme("classic"); await wait(300); o.classic = document.querySelectorAll("svg[data-ico]").length === 0;
+    changeTheme("navy"); await wait(300); o.navy = document.body.getAttribute("data-theme") === "navy" && document.querySelectorAll("svg[data-ico]").length > 10;
+    changeTheme(cur); await wait(300);
+    return o; });
+  check("0.6.0 requests: sub menus in one row; header refresh button, help in the admin menu, member name - role; project management and system title (stored on the server) in Admin; data set presets; settings tab names; user manual with release notes (no Word file); Classic emoji / Navy",
+    rq.subTabs && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.served && rq.groups && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase, 산출물/.test(rq.tabs) && rq.manual && rq.classic && rq.navy, JSON.stringify(rq));
   // [v3.2.0] 큰 글씨: 아주 크게(130%)에서도 모든 화면에 페이지 가로 넘침 없음, 머리글 한 줄, WBS 는 접으면 화면 안
   const big = await page.evaluate(async () => {
     UiScale.set(1.3); const over = [];
@@ -494,7 +518,7 @@ async function localMain() {
   const cfgOpts = await page.evaluate(() => { changeTheme("ocean"); const t = document.body.dataset.theme; LayoutManager.setLayout("focused-card", false); const l = document.body.dataset.layout;
     return { themes: [...document.querySelectorAll("#cfgThemeSelect option")].map(o => o.value).join(","), layouts: [...document.querySelectorAll("#cfgLayoutTypeSelect option")].map(o => o.value).join(","), cards: document.querySelectorAll(".layout-option-card").length, t, l, badge: document.getElementById("headerVersionBadge").textContent, ed: (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version }; });
   await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); });
-  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "urban-slate,brown,classic,dark,electric" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "classic" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
+  check("Standard: settings offer 3 themes / 2 menu positions; old values mapped; badge shows edition name", cfgOpts.themes === "urban-slate,brown,navy,classic,dark,electric" && cfgOpts.layouts === "top-nav,sidebar-left" && cfgOpts.cards === 2 && cfgOpts.t === "classic" && cfgOpts.l === "top-nav" && cfgOpts.badge === cfgOpts.ed, JSON.stringify(cfgOpts));
 
   // [Neo 2.1] 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면
   // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
@@ -951,7 +975,7 @@ async function serverScenarios() {
     check("UX: version in the member menu, save status dot, class-based Summary header, My Work greeting, WBS open button + row click",
       /v\d/.test(ux.ver) && ux.verHidden && ux.dotW <= 34 && ux.heroInline === 0 && ux.hello && ux.openBtns > 0 && ux.openBtns === ux.rows && ux.panel, JSON.stringify(ux));
     check("0.4.0: 5 themes (Slate default), line icons, theme logo and chart colours on the server screens",
-      th04.def === "urban-slate" && th04.opts === "urban-slate,brown,classic,dark,electric" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
+      th04.def === "urban-slate" && th04.opts === "urban-slate,brown,navy,classic,dark,electric" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
     check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
     await a.waitForTimeout(300);
     const barText = await a.evaluate(() => document.getElementById("gSaveBarText").textContent);
@@ -979,7 +1003,7 @@ async function serverScenarios() {
     const defW = await a.evaluate(() => wbsData.length);
     await a.evaluate(() => ProjectManager.open()); await a.waitForTimeout(500);
     await a.fill("#pmNewName", "서버 신규 프로젝트"); await a.fill("#pmNewStart", "2028-01-01"); await a.fill("#pmNewEnd", "2028-12-31");
-    await a.click('#projectManagerModal [data-click="ProjectManager.create"]'); await a.waitForTimeout(800);
+    await a.click('#cfgProjectPanel [data-click="ProjectManager.create"]'); await a.waitForTimeout(800);
     await a.evaluate(async () => { if (!SyncManager.isLocal() && SyncManager.isDirty()) await SyncManager.save(null, { notify: false }); await ProjectManager.switchTo("P001"); }); await a.waitForTimeout(800); await waitApp(a, "P001");
     const sp = await a.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, name: projectConfig.projectName, opts: document.querySelectorAll("#headerProjectSelect option").length }));
     await a.evaluate(() => { wbsData.push({ id: "1", level: 1, system: subsystemsMeta[0].name, name: "SERVER-P001-TASK", isLeaf: true, pStart: "2028-01-03", pEnd: "2028-02-01", weight: 1, aProg: 0 }); return SyncManager.save(["wbsData"]); });

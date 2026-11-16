@@ -38,6 +38,8 @@ from .session import LoginThrottle, Sessions, public_user
 # HTTP 핸들러
 # ---------------------------------------------------------------------------
 class WbsHttpHandler(SimpleHTTPRequestHandler):
+    timeout = 60   # 응답 없는 연결은 60초 뒤 닫음 (멈춘 연결이 스레드를 계속 잡고 있지 않게)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
@@ -73,13 +75,19 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def _send_json(self, status, payload):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        """응답 보내기. 받는 쪽이 이미 연결을 끊었으면(브라우저 닫힘 · 시간 초과 · 보안 프로그램 차단) 한 줄만 기록하고 끝냄
+        — 여기서 예외가 다시 나면 오류 처리 중 오류가 연쇄로 나서 로그가 넘치고 서버가 멈춘 것처럼 보임"""
+        try:
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError, TimeoutError, OSError) as e:
+            self.close_connection = True
+            write_server_log(f"[NET] Client closed the connection before the response was sent ({e.__class__.__name__}) {self.path}")
 
     def _token(self):
         auth = self.headers.get("Authorization", "")
@@ -152,6 +160,10 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
                 "version": c["version"], "defaultLang": c["default_lang"],
                 "defaultUi": c["default_ui"], "uiSwitch": c["allow_ui_switch"] == "1", "defaultTheme": c["default_theme"],
                 "selfReset": str(c.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no"), **app_features(c)}
+        try:   # 시스템 타이틀 (Admin > 프로젝트 에서 정함, 모든 멤버 공통)
+            data["systemTitle"] = str(backup._meta_get("system_title", {"title": ""}).get("title") or "")[:40]
+        except Exception:
+            data["systemTitle"] = ""
         body = ("var APP_CONFIG = " + json.dumps(data, ensure_ascii=False) + ";\n").encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/javascript; charset=utf-8")
@@ -417,6 +429,14 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         p = Store.update_project(pid, req, eff.get("baseRole") == "SYS_ADMIN")
         self._send_json(200, {"ok": True, "project": p})
 
+    def api_system_title(self, req):
+        """시스템 타이틀 (화면 왼쪽 위 · 브라우저 탭 이름) — 시스템관리자만, 모든 프로젝트 공통"""
+        self._require_user(roles={"SYS_ADMIN"}, req=req)
+        title = " ".join(str(req.get("title") or "").split())[:40]
+        backup._meta_set("system_title", {"title": title})
+        write_server_log(f"[ADMIN] System title set: {title or '(default)'}")
+        self._send_json(200, {"ok": True, "title": title})
+
     def api_projects_delete(self, req):
         self._require_user(roles={"SYS_ADMIN"})
         Store.delete_project(str(req.get("id") or ""))
@@ -444,6 +464,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         "/api/auth/logout": api_logout,
         "/api/auth/me": api_me,
         "/api/auth/register": api_register,
+        "/api/admin/system-title": api_system_title,
         "/api/auth/password": api_password,
         "/api/auth/change-password": api_change_password,
         "/api/auth/reset-password": api_reset_password,

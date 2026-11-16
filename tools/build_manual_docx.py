@@ -148,22 +148,19 @@ def build_docx(html_text: str) -> bytes:
 
 
 def build() -> int:
+    """webapp/manual.html (user manual) is embedded in manual-viewer.js so the help window opens without a server request.
+    The Word download was removed: the manual is exported with the [PDF] button (browser print)."""
     html_text = SRC.read_text(encoding="utf-8")
-    m = re.search(r"IOSTAR-PM v(\d+\.\d+\.\d+)", html_text)
-    version = m.group(1) if m else "3.5.0"
-    data = build_docx(html_text)
     js = VIEWER.read_text(encoding="utf-8")
-    js = re.sub(r'docxBase64: "[A-Za-z0-9+/=]*"', 'docxBase64: "' + base64.b64encode(data).decode() + '"', js, count=1)
-    js = re.sub(r'docxFilename: "[^"]*"', f'docxFilename: "IOSTAR-PM_v{version}_설치가이드_및_운영매뉴얼.docx"', js, count=1)
-    # [v3.5.0] 매뉴얼 HTML 은 base64 대신 JSON 문자열로 넣어 용량 절감 (base64 는 33% 커지고 압축도 잘 안 됨)
+    js = re.sub(r'docxBase64: "[A-Za-z0-9+/=]*"', 'docxBase64: ""', js, count=1)
     js = re.sub(r'standaloneManualHtmlB64: "[A-Za-z0-9+/=]*",?\n', '', js, count=1)
     js = re.sub(r'standaloneManualHtml: ".*?(?<!\\)",\n', lambda m: "", js, count=1, flags=re.S)
     js = js.replace('docxFilename:', 'standaloneManualHtml: ' + json.dumps(html_text, ensure_ascii=False) + ',\n  docxFilename:', 1)
     VIEWER.write_text(js, encoding="utf-8")
-    return len(data)
+    return len(html_text)
 
 
 if __name__ == "__main__":
     size = build()
-    print(f"[OK] Word manual built and embedded in js/manual-viewer.js ({size:,} bytes)")
+    print(f"[OK] User manual embedded in js/manual-viewer.js ({size:,} bytes)")
     sys.exit(0)

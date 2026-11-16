@@ -162,3 +162,45 @@ function generateStandardDeliverables() {
   persistChanges();
   showToast(`설정 탭의 표준산출물 프로젝트 설정을 바탕으로 총 ${createdCount}건의 산출물이 자동 생성되었습니다.`);
 }
+
+// =============================================================================
+// 차수별 산출물 제출 계획일 일괄 변경 (프로젝트 설정 > Phase 설정 > 단계별 표준 산출물) — PM · 관리자
+// =============================================================================
+var DelivBulkDate = {
+  can() { return typeof Permission !== "undefined" && Permission.isManager(); },
+  _targets() {
+    const round = (document.getElementById("delivBulkRound") || {}).value, sys = (document.getElementById("delivBulkSys") || {}).value || "ALL";
+    const skip = !!(document.getElementById("delivBulkSkipDone") || {}).checked;
+    return (deliverablesData || []).filter(d => d.round === round && (sys === "ALL" || d.system === sys) && !(skip && (d.aDate || d.status === "보완완료")));
+  },
+  render() {
+    const box = document.getElementById("delivBulkBox"), r = document.getElementById("delivBulkRound"), sy = document.getElementById("delivBulkSys");
+    if (!box || !r || !sy) return;
+    box.hidden = !this.can();
+    const keepR = r.value, keepS = sy.value;
+    r.innerHTML = getActiveDeliverableRounds().map(x => `<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`).join("");
+    sy.innerHTML = `<option value="ALL">전체 서브시스템</option>` + getAllSubsystemNames().map(x => `<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`).join("");
+    if (keepR && r.querySelector(`option[value="${keepR}"]`)) r.value = keepR;
+    if (keepS && Array.prototype.some.call(sy.options, o => o.value === keepS)) sy.value = keepS;
+    this.info();
+  },
+  info() { const el = document.getElementById("delivBulkInfo"); if (el) el.textContent = `대상 ${this._targets().length}건`; },
+  apply() {
+    if (!this.can()) return showToast("⛔ 제출일 일괄 변경은 PM · 관리자만 할 수 있습니다.", "warning");
+    const dEl = document.getElementById("delivBulkDate"), date = dEl ? dEl.value : "";
+    if (!date) { if (typeof UiForm !== "undefined" && dEl) UiForm.invalid(dEl, "날짜를 고르세요"); return showToast("⚠️ 새 제출 계획일을 고르세요.", "warning"); }
+    const list = this._targets();
+    if (!list.length) return showToast("ℹ️ 조건에 맞는 산출물이 없습니다.");
+    const round = document.getElementById("delivBulkRound").value, sys = document.getElementById("delivBulkSys").value;
+    openConfirmDialog(`${round} 산출물 ${list.length}건(${sys === "ALL" ? "전체 서브시스템" : sys})의 제출 계획일을 ${date} 로 바꿉니다. 계속하시겠습니까?`, () => {
+      list.forEach(d => { d.pDate = date; });
+      if (typeof renderDeliverablesTable === "function") renderDeliverablesTable();
+      if (typeof renderDashboard === "function") renderDashboard();
+      if (typeof persistChanges === "function") persistChanges();
+      this.info();
+      showToast(`📅 ${round} 산출물 ${list.length}건의 제출 계획일을 ${date} 로 바꿨습니다. [저장]을 누르면 기록됩니다.`);
+    });
+  }
+};
+window.DelivBulkDate = DelivBulkDate;
+document.addEventListener("change", e => { if (e.target && /^delivBulk(Round|Sys|SkipDone)$/.test(e.target.id || "")) DelivBulkDate.info(); });

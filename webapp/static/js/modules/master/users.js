@@ -114,6 +114,7 @@ var SubTabs = {
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
     if (group === "master") {
       if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); }
+      if (name === "phase" && typeof DelivBulkDate !== "undefined") DelivBulkDate.render();
       if (name === "users") renderProjectUsersTable();
       if (name === "basic") { MilestoneManager.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
       if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();

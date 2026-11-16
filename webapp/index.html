@@ -62,7 +62,7 @@
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
           <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:var(--warning);">🔑 비밀번호 변경</a>
           <span style="color:var(--text-muted); margin:0 6px;">|</span>
-          <a href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="font-weight:bold; color:#b91c1c;" title="입력한 사번의 비밀번호를 1234로 초기화 (테스트 버전 기능)">🔄 비밀번호 초기화</a>
+          <a href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="font-weight:bold; color:#b91c1c;" title="입력한 사번의 비밀번호를 1234로 초기화 — 사내망에서만 쓰는 임시 기능입니다">🔄 비밀번호 초기화 <small>(사내망용 임시 기능)</small></a>
         </div>
       </div>
 
@@ -137,25 +137,18 @@
     </div>
     <span class="g-grow"></span>
     <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·멤버 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
-    <div class="g-menu-wrap">
-      <button type="button" class="storage-status-box g-status" id="storageStatusBox" data-click="GShell.toggleMenu" data-click-args='["gStatusMenu"]' data-click-stop="1" title="저장 상태 · 새로고침 · 동기화">
-        <span class="storage-icon" id="storageIcon">💾</span>
-        <span class="storage-text" id="storageStatusText">자동저장 켬</span> ▾
-      </button>
-      <div class="g-menu" id="gStatusMenu" hidden>
-        <div class="g-menu-title">저장소</div>
-        <div class="g-menu-row"><span id="headerDbStatusBadge" class="status-badge-chip chip-hold">🟡 DB: SQLite(대기)</span></div>
-        <div class="g-menu-row"><span id="fileSyncBadge" class="status-badge-chip chip-ready" style="display:none;">동기화 대기</span></div>
-        <button type="button" id="btnHeaderRefreshAll" class="g-menu-item" data-click="SyncManager.refresh" data-click-args='[null]'>🔄 전체 새로고침</button>
-        <button type="button" id="btnHeaderRealtimeSync" class="g-menu-item" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 전체 동기화 (프로젝트 설정 다시 적용)</button>
-      </div>
-    </div>
+    <!-- 저장 상태 표시 (점) — 새로고침은 [전체 저장] 옆 단추 -->
+    <span class="storage-status-box g-status" id="storageStatusBox" title="저장 상태">
+      <span class="storage-icon" id="storageIcon">💾</span>
+      <span class="storage-text" id="storageStatusText">저장됨</span>
+    </span>
+    <span hidden><span id="headerDbStatusBadge" class="status-badge-chip chip-hold"></span><span id="fileSyncBadge" class="status-badge-chip chip-ready"></span></span>
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
+    <button type="button" id="btnHeaderRefreshAll" class="btn btn-sm g-refresh-btn" data-btn="refresh" data-click="SyncManager.refresh" data-click-args='[null]' title="저장된 자료를 다시 읽어 모든 화면을 새로 그립니다 (고른 조건은 그대로)">🔄 전체 새로고침</button>
     <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
-    <button type="button" id="btnHeaderManual" class="g-icon-btn g-labeled" data-click="ManualViewer.openManualWindow" title="도움말 · 운영 매뉴얼">❔ <span class="g-lbl">도움말</span></button>
     <!-- [v3.1.0] 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
+      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🖥️ <span class="g-lbl">화면</span></button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
@@ -191,7 +184,7 @@
       <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
-        <button type="button" id="btnProjectManager" class="g-menu-item" data-click="ProjectManager.open">🗂️ 프로젝트 관리</button>
+        <button type="button" id="btnHeaderManual" class="g-menu-item" data-click="ManualViewer.openManualWindow">❔ 도움말 (사용자 매뉴얼)</button>
         <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 법적 고지</button>
       </div>
     </div>
@@ -201,7 +194,7 @@
       </button>
       <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
         <div class="g-menu-title">멤버</div>
-        <div class="g-menu-row g-user-ver" id="gUserVer"></div>
+        <div class="g-menu-row g-user-who" id="gUserWho"></div>
         <label class="g-menu-field">언어
           <select id="gLangSelect" data-change="GShell.setLanguage" data-change-args='["$value"]'>
             <option value="ko">한국어</option>
@@ -211,6 +204,8 @@
         <div class="g-menu-sep"></div>
         <button type="button" class="g-menu-item" data-click="GShell.goPassword">🔑 비밀번호 변경</button>
         <button type="button" class="g-menu-item" data-click="AuthManager.manualLock">🔒 잠금 / 계정 전환</button>
+        <div class="g-menu-sep"></div>
+        <div class="g-menu-row g-user-ver" id="gUserVer"></div>
       </div>
     </div>
   </header>
@@ -251,9 +246,6 @@
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <span class="sub-title">🙋 My Work</span><span class="neo-ph-desc">내가 체크할 일과 내 담당 Task 를 한곳에 모았습니다.</span>
           <span class="home-style-count" id="homeTodoCount" hidden></span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button class="btn btn-outline btn-sm btn-progress-refresh" data-click="refreshHomeView" title="최신 저장 자료를 다시 불러와 계획 · 실적을 다시 계산">🔄 실적 새로고침</button>
         </div>
       </div>
       <div class="mw-hello" id="mwHello" hidden></div>
@@ -1166,11 +1158,11 @@
           <span class="sub-title">📝 보고</span><span class="neo-ph-desc">주간보고를 작성 · 출력하고, 종합보고서를 내려받습니다.</span>
           <div class="current-date-badge">보고 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
-        <div class="meeting-sub-tab-bar rp-tabs" id="rpTabs">
-          <button class="meeting-sub-tab active" data-rp-tab="weekly" data-click="ReportTabs.show" data-click-args='["weekly"]'>📝 주간보고 작성 · 출력</button>
-          <button class="meeting-sub-tab" data-rp-tab="deck" data-click="ReportTabs.show" data-click-args='["deck"]'>📽 종합보고서 출력</button>
-          <button class="meeting-sub-tab" data-rp-tab="settings" data-click="ReportTabs.show" data-click-args='["settings"]' title="PM 이상만 바꿀 수 있습니다">⚙️ 보고서 설정</button>
-        </div>
+      </div>
+      <div class="master-subtab-bar sub-tabs" id="rpTabs">
+        <button class="master-subtab-btn active" data-rp-tab="weekly" data-click="ReportTabs.show" data-click-args='["weekly"]'>📝 주간보고 작성 · 출력</button>
+        <button class="master-subtab-btn" data-rp-tab="deck" data-click="ReportTabs.show" data-click-args='["deck"]'>📽 종합보고서 출력</button>
+        <button class="master-subtab-btn" data-rp-tab="settings" data-click="ReportTabs.show" data-click-args='["settings"]' title="PM 이상만 바꿀 수 있습니다">⚙️ 보고서 설정</button>
       </div>
 
       <!-- ① 주간보고 작성 · 출력 -->
@@ -1390,21 +1382,15 @@
           <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <div class="meeting-sub-tab-bar" style="margin-bottom:0;">
-            <button class="meeting-sub-tab active" data-subtab="schedule" data-click="MeetingManager.switchSubTab" data-click-args='["schedule"]'>
-              🗓️ 회의일정 (캘린더&목록)
-            </button>
-            <button class="meeting-sub-tab" data-subtab="minutes" data-click="MeetingManager.switchSubTab" data-click-args='["minutes"]'>
-              📝 회의록 작성·상세
-            </button>
-            <button class="meeting-sub-tab" data-subtab="actionitems" data-click="MeetingManager.switchSubTab" data-click-args='["actionitems"]'>
-              ⚡ Action Item 현황
-            </button>
-          </div>
           <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal" title="새 회의 일정 등록">
             ➕ 신규 회의 일정 등록
           </button>
         </div>
+      </div>
+      <div class="master-subtab-bar sub-tabs" id="meetingSubTabs">
+        <button class="master-subtab-btn active" data-subtab="schedule" data-click="MeetingManager.switchSubTab" data-click-args='["schedule"]'>🗓️ 회의일정</button>
+        <button class="master-subtab-btn" data-subtab="minutes" data-click="MeetingManager.switchSubTab" data-click-args='["minutes"]'>📝 회의록 작성 · 상세</button>
+        <button class="master-subtab-btn" data-subtab="actionitems" data-click="MeetingManager.switchSubTab" data-click-args='["actionitems"]'>⚡ Action Item 현황</button>
       </div>
 
       <!-- 서브탭 1: 회의일정 (캘린더 & 일정 목록) -->
@@ -1427,7 +1413,8 @@
               </div>
               <div class="filter-item">
                 <label style="font-weight:bold; font-size:var(--fs-xs, 11px);">📌 회의 상태:</label>
-                <select id="meetingFilterStatus" data-change="MeetingManager.onFilterChanged" style="font-size:var(--fs-xs, 11px);">
+                <span class="neo-chips" id="meetingStatusChips" role="group" aria-label="회의 상태 필터"></span>
+                <select id="meetingFilterStatus" data-change="MeetingManager.onFilterChanged" hidden>
                   <option value="ALL">전체 상태</option>
                   <option value="예정">예정</option>
                   <option value="진행중">진행중</option>
@@ -1475,7 +1462,7 @@
         <!-- 회의 일정 전체 테이블 카드 -->
         <div class="card" id="meetingScheduleListCard">
           <div class="card-title">
-            <span>📋 프로젝트 공식 회의 일정 관리 대장</span>
+            <span>📋 회의 목록</span>
           </div>
           <div class="table-container" style="max-height:380px;">
             <table class="matrix-table" id="meetingScheduleTable">
@@ -1647,7 +1634,13 @@
           <div class="mt-scope">
             <span class="mt-step">1 범위</span>
             <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]'></select>
-            <select id="workDataSubsysSelect" class="merge-scope-select" style="min-width:240px;"></select>
+            <select id="workDataSubsysSelect" class="merge-scope-select mt-scope-sys"></select>
+            <span class="mt-presets" role="group" aria-label="자료 묶음 고르기">
+              <span class="mt-presets-label">자료 묶음</span>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["work"]' title="WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록">작업데이터</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["base"]' title="프로젝트 설정 · 서브시스템 · 멤버 · 공지 · 게시판">기준정보 / 공지</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["all"]' title="모든 자료 = 마스터 파일">마스터 파일 (전체)</button>
+            </span>
             <label class="mt-auto"><input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'> 💾 올리기 전 백업 파일도 받기</label>
           </div>
           <div class="table-container" style="max-height:none;">
@@ -1665,32 +1658,15 @@
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
               <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
-              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick">📤 파일 업로드 → 미리 보기</button>
-            </div>
-            <div class="mt-quick">
-              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["sys"]'>서브시스템 단위만</button>
-              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectUnit" data-click-args='["prj"]'>프로젝트 단위만</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 마스터 파일: 프로젝트 전체 한 파일 (모든 멤버 다운로드 · 로컬 저장소 방식은 가져오기) -->
-        <div class="card mt-card mt-pkg">
-          <div class="mt-pkg-row">
-            <div><b>📦 마스터 파일</b> — 프로젝트 설정 · 업무 · 멤버 · 협업 자료 전체를 한 파일로</div>
-            <div class="mt-btns">
-              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["EXCEL"]'>📥 엑셀 (전체)</button>
-              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="SmartMergeCenter.downloadMasterPackage" data-click-args='["JSON"]'>📥 JSON (전체)</button>
-              <span id="consolidateBox" style="display:none;">
-                <input type="file" id="consolidateInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'>
-                <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["consolidateInput"]' title="로컬 저장소 방식: PM 이 나눠 준 마스터 파일을 내 브라우저에 반영 (내 담당 서브시스템 자료는 그대로)">📥 마스터 파일 적용</button>
-              </span>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick" title="엑셀 · JSON 파일을 올리면 미리 보기에서 확인한 뒤 반영합니다">📤 파일 업로드</button>
             </div>
           </div>
         </div>
 
         <!-- 레거시 호환용 히든 요소 -->
         <div style="display:none;">
+          <!-- 머리글 [📦 마스터 파일 ▾ > 가져오기] 가 쓰는 파일 입력 -->
+          <span id="consolidateBox"><input type="file" id="consolidateInput" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'></span>
           <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
           <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
           <select id="masterPkgDomainSelect"></select>
@@ -1812,16 +1788,10 @@
 </div>
       </div>
       <!-- 서브 탭 네비게이션 바 -->
-      <div class="sub-tab-nav">
-        <button id="subtabBtn_NOTICES" class="subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지 등록 및 조회">
-          📌 공지
-        </button>
-        <button id="subtabBtn_FEED" class="subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 게시판 및 Task 매핑 안건">
-          💬 게시판
-        </button>
-        <button id="subtabBtn_CHAT" class="subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["CHAT"]' title="서버 연동형 팀 실시간 채팅 룸">
-          ⚡ 채팅 <span id="chatServerStatusDot" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-left: 4px;">● 오프라인</span>
-        </button>
+      <div class="master-subtab-bar sub-tabs" id="boardSubTabs">
+        <button id="subtabBtn_NOTICES" class="master-subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지 등록 및 조회">📌 공지</button>
+        <button id="subtabBtn_FEED" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 게시판 및 Task 매핑 안건">💬 게시판</button>
+        <button id="subtabBtn_CHAT" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["CHAT"]' title="서버 연동형 팀 실시간 채팅 룸">⚡ 채팅 <span id="chatServerStatusDot" class="chat-dot">● 오프라인</span></button>
       </div>
 
       <!-- 서브 탭 1: 프로젝트 공지 (NOTICES) -->
@@ -1865,15 +1835,6 @@
               <span style="font-size: var(--fs-xl, 18px);">💬</span>
               <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">업무 게시판 &amp; WBS Task 연계 토론</strong>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <!-- 3대 UI 뷰 모드 스위처 -->
-              <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.04); padding: 3px 6px; border-radius: 6px;">
-                <span style="font-size: var(--fs-xs, 11px); font-weight: bold; color: var(--text-sub);">UI 뷰:</span>
-                <button id="btnViewMode_FEED" class="btn btn-primary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["FEED"]'>💬 채널피드</button>
-                <button id="btnViewMode_KANBAN" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["KANBAN"]'>📋 칸반보드</button>
-                <button id="btnViewMode_STANDUP" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["STANDUP"]'>⏱️ 타임라인</button>
-              </div>
-            </div>
           </div>
 
           <!-- 빠른 글쓰기 영역 -->
@@ -1910,6 +1871,12 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: var(--fs-base, 13px); font-weight: bold; color: var(--tint-info-text);">📢 채널별 피드 필터링:</span>
                 <span id="feedActiveChannelIndicator" class="badge" style="background:var(--tint-info-text); color:#fff; font-size:calc(11.5px * var(--fs-scale, 1)); padding:4px 10px; font-weight:bold; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.15);">📢 선택된 채널: # 전체</span>
+              </div>
+              <div class="feed-view-switch" role="group" aria-label="보기 방식">
+                <span class="feed-view-label">보기:</span>
+                                <button id="btnViewMode_FEED" class="btn btn-primary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["FEED"]'>💬 채널피드</button>
+                <button id="btnViewMode_KANBAN" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["KANBAN"]'>📋 칸반보드</button>
+                <button id="btnViewMode_STANDUP" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["STANDUP"]'>⏱️ 타임라인</button>
               </div>
             </div>
             <div id="feedChannelFilterContainer" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
@@ -2097,8 +2064,8 @@
       <!-- [v1.0.6] 프로젝트 설정 기능별 서브탭 -->
       <div class="master-subtab-bar" data-group="master">
         <button class="master-subtab-btn active" data-subtab="basic" data-click="MasterSubTabs.show" data-click-args='["basic"]'>📋 프로젝트 기본정보</button>
-        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 Phase 설정</button>
-        <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>📅 휴일정보</button>
+        <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>🧩 프로젝트 부가정보</button>
+        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🔄 Phase, 산출물</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 · 채팅 채널</button>
@@ -2124,10 +2091,6 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 10px;">
             <div class="grid-2" style="gap: 8px;">
-              <div>
-                <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">시스템 타이틀 정의 (상단 좌측 표시):</label>
-                <input type="text" id="cfgSystemTitle" value="PM Hub · IOSTAR-PM Workgroup" style="width:100%;" data-change="updateProjectTitles">
-              </div>
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
                 <input type="text" id="cfgProjectName" value="27년 가동률 시스템 개선" style="width:100%; font-weight:bold;" data-change="updateProjectTitles">
@@ -2303,7 +2266,7 @@
         <div class="card" style="border-left: 4px solid var(--primary);">
           <div class="card-title">
             <div>
-              <strong>SDLC SDLC 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
+              <strong>SDLC 유형 — 이 프로젝트에서 쓸 유형 활성화 (최대 4개)</strong>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 시스템관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
@@ -2374,6 +2337,16 @@
               </thead>
               <tbody id="standardDeliverablesBody"></tbody>
             </table>
+          </div>
+          <!-- 차수별 제출 계획일 일괄 변경 (PM · 관리자) -->
+          <div class="deliv-bulk" id="delivBulkBox">
+            <b class="deliv-bulk-title">📅 차수별 제출일 일괄 변경</b>
+            <label>차수 <select id="delivBulkRound"></select></label>
+            <label>서브시스템 <select id="delivBulkSys"></select></label>
+            <label>새 제출 계획일 <input type="date" id="delivBulkDate"></label>
+            <label class="deliv-bulk-chk"><input type="checkbox" id="delivBulkSkipDone" checked> 이미 제출한 산출물은 그대로</label>
+            <button class="btn btn-sm" data-btn="warn" data-click="DelivBulkDate.apply">일괄 변경</button>
+            <span class="lk-hint" id="delivBulkInfo"></span>
           </div>
         </div>
         </div>
@@ -2563,7 +2536,6 @@
         <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
         <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
       </div>
-      <div class="cfg-scope-note">화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트마다 다르게 정하므로 <button type="button" class="btn btn-xs" data-btn="nav" data-click="GShell.go" data-click-args='["tab-master"]'>프로젝트 설정 →</button> 에 있습니다.</div>
 
       <!-- [v3.9.0] SDLC 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 시스템관리자 -->
       <div class="master-subpane" data-group="config" data-subpane="process">
@@ -2605,7 +2577,16 @@
       </div>
 
       <div class="master-subpane active" data-group="config" data-subpane="project">
-        <div class="card" style="border-left:4px solid var(--primary);">
+        <div class="card sys-title-card">
+          <div class="card-title"><span>🏷️ 시스템 타이틀</span></div>
+          <div class="sys-title-row">
+            <input type="text" id="cfgSystemTitle" maxlength="40" placeholder="PM Hub" data-change="SystemTitle.save">
+            <button class="btn btn-sm" data-btn="save" data-click="SystemTitle.save">💾 적용</button>
+            <button class="btn btn-sm" data-btn="neutral" data-click="SystemTitle.reset">기본값으로</button>
+            <span class="lk-hint">화면 왼쪽 위와 브라우저 탭에 나오는 이름입니다. 모든 프로젝트에 똑같이 적용됩니다.</span>
+          </div>
+        </div>
+        <div class="card pm-admin-card">
           <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
           <div id="cfgProjectPanel" data-project-panel="full"></div>
         </div>

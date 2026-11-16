@@ -93,6 +93,13 @@ var MergeTable = {
   selected() { return [...document.querySelectorAll("#mtBody .mt-chk")].filter(c => c.checked).map(c => c.value); },
   toggleAll(checked) { document.querySelectorAll("#mtBody .mt-chk").forEach(c => { c.checked = !!checked; }); },
   selectUnit(unit) { document.querySelectorAll("#mtBody .mt-chk").forEach(c => { c.checked = this.item(c.value).unit === unit; }); },
+  // 자료 묶음: 작업데이터 / 기준정보 · 공지 / 마스터 파일(전체)
+  GROUPS: { work: ["wbs", "req", "deliverables", "voc", "weekly", "meetings"], base: ["config", "subsystems", "users", "notices", "comms"] },
+  selectGroup(g) {
+    const keys = this.GROUPS[g];
+    document.querySelectorAll("#mtBody .mt-chk").forEach(c => { if (!c.disabled) c.checked = !keys || keys.indexOf(c.value) !== -1; });
+    const all = document.getElementById("mtAll"); if (all) all.checked = !keys;
+  },
 
   // ---- 내려받기 ----
   sheetFor(k, scope) {

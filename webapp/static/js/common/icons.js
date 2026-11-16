@@ -17,7 +17,8 @@ var Icons = {
  "📦": "<path d=\"M12 3.5L20 7.5V16.5L12 20.5L4 16.5V7.5L12 3.5Z\"/><path d=\"M4 7.5L12 11.5L20 7.5M12 11.5V20.5\"/>",
  "🔔": "<path d=\"M6 17.5V10.5C6 7.2 8.7 4.5 12 4.5C15.3 4.5 18 7.2 18 10.5V17.5\"/><path d=\"M4 17.5H20\"/><path d=\"M10 19.8C10.5 20.6 11.2 21 12 21C12.8 21 13.5 20.6 14 19.8\"/>",
  "🎨": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><circle cx=\"9\" cy=\"9.5\" r=\"1.2\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"14.5\" cy=\"9.5\" r=\"1.2\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"8.5\" cy=\"14\" r=\"1.2\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M14 14.5C15.5 14.5 16.5 15.5 16.5 17\"/>",
- "⚙": "<path d=\"M4 7H7M11 7H20M4 12H13M17 12H20M4 17H8M12 17H20\"/><circle cx=\"9\" cy=\"7\" r=\"2\"/><circle cx=\"15\" cy=\"12\" r=\"2\"/><circle cx=\"10\" cy=\"17\" r=\"2\"/>",
+ "🧩": "<path d=\"M9 4.5H13V6.5C13 7.6 13.9 8.5 15 8.5C16.1 8.5 17 7.6 17 6.5V4.5H19.5V10H17.8C16.6 10 15.7 10.9 15.7 12C15.7 13.1 16.6 14 17.8 14H19.5V19.5H4.5V14H6.2C7.4 14 8.3 13.1 8.3 12C8.3 10.9 7.4 10 6.2 10H4.5V4.5H9Z\"/>",
+ "⚙": "<path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
  "🗂": "<path d=\"M4 6.5C4 5.4 4.9 4.5 6 4.5H10L12 6.8H18C19.1 6.8 20 7.7 20 8.8V17.5C20 18.6 19.1 19.5 18 19.5H6C4.9 19.5 4 18.6 4 17.5V6.5Z\"/>",
  "⚖": "<path d=\"M12 4V20M7 20H17M5 8H19\"/><path d=\"M6 8L4 13.5H8L6 8Z\"/><path d=\"M18 8L16 13.5H20L18 8Z\"/>",
  "👤": "<circle cx=\"12\" cy=\"8.5\" r=\"3.5\"/><path d=\"M5 19.5C5 16.5 8 14.5 12 14.5C16 14.5 19 16.5 19 19.5\"/>",
@@ -150,7 +151,21 @@ var Icons = {
     return el;
   },
   // 텍스트 하나: 들어 있는 이모지를 모두 같은 선 아이콘으로 (뒤 공백 하나는 아이콘 간격으로 대신)
+  // 예전 스타일 테마(THEMES 의 emoji: true — Classic)는 색 이모지를 그대로 보여 줌
+  emojiMode() {
+    const cur = document.body.getAttribute("data-theme");
+    return typeof THEMES !== "undefined" && THEMES.some(t => t.id === cur && t.emoji);
+  },
+  // 테마가 바뀔 때: 선 아이콘 ↔ 이모지
+  syncMode() {
+    const on = this.emojiMode();
+    if (on === this._emoji) return;
+    this._emoji = on;
+    if (on) document.querySelectorAll("svg[data-ico]").forEach(el => { if (!el.closest("[data-icons-keep]")) el.replaceWith(document.createTextNode(el.getAttribute("data-ico") + " ")); });
+    else this.apply(document.body);
+  },
   _text(node) {
+    if (this._emoji) return;
     const t = node.nodeValue;
     if (!t || t.length > 600) return;
     const re = this.regex();
@@ -194,7 +209,9 @@ var Icons = {
   },
   init() {
     if (this._obs) return;
+    this._emoji = this.emojiMode();
     this.apply(document.body);
+    new MutationObserver(() => this.syncMode()).observe(document.body, { attributes: true, attributeFilter: ["data-theme"] });
     // 화면을 그리기 전에(같은 마이크로태스크 안에서) 바로 바꿈 — 이모지가 잠깐 보였다가 아이콘으로 바뀌며 흔들리지 않도록
     this._obs = new MutationObserver(muts => {
       const q = new Set();

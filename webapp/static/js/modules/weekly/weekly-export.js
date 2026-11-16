@@ -447,7 +447,7 @@ var ReportTabs = {
     if (name === "settings" && !this.canSettings()) { showToast("⚠️ 보고서 설정은 PM 이상만 바꿀 수 있습니다.", "warning"); name = "weekly"; }
     if (this.cur === "weekly" && name !== "weekly" && !WeeklyReportManager.confirmLeave(() => this.show(name))) return;
     this.cur = name;
-    document.querySelectorAll("[data-rp-tab]").forEach(b => b.classList.toggle("active", b.getAttribute("data-rp-tab") === name));
+    document.querySelectorAll("#rpTabs [data-rp-tab]").forEach(b => b.classList.toggle("active", b.getAttribute("data-rp-tab") === name));
     document.querySelectorAll("#tab-weekly-report [data-rp-pane]").forEach(p => p.classList.toggle("active", p.getAttribute("data-rp-pane") === name));
     if (name === "deck") this.renderDeck();
     if (name === "settings") {

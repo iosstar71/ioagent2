@@ -143,6 +143,25 @@ let projectConfig = {
   holidays: []
 };
 
+// 시스템 타이틀: 화면 왼쪽 위 · 브라우저 탭 이름 — 프로젝트와 무관하게 하나 (Admin > 프로젝트 에서 정함)
+var SystemTitle = {
+  // Workgroup: 서버(DB)에 한 값 — 모든 멤버에게 같은 이름 (app-config.js 로 내려옴)
+  get() { return String((typeof APP_CONFIG !== "undefined" && APP_CONFIG.systemTitle) || "").trim(); },
+  text() { return this.get() || APP_VERSION.name; },
+  fill() { const el = document.getElementById("cfgSystemTitle"); if (el && document.activeElement !== el) el.value = this.get(); },
+  async save() {
+    const el = document.getElementById("cfgSystemTitle");
+    const v = el ? el.value.trim().slice(0, 40) : "";
+    const res = await ServerBackend.request("/api/admin/system-title", { title: v });
+    if (!res.ok) return showToast("❌ 시스템 타이틀 저장 실패: " + (res.message || ""));
+    APP_CONFIG.systemTitle = res.title || "";
+    renderProjectTitles();
+    showToast(v ? `🏷️ 시스템 타이틀을 [${v}] 로 바꿨습니다. 다른 멤버는 화면을 새로 열면 보입니다.` : "🏷️ 시스템 타이틀을 기본값으로 되돌렸습니다.");
+  },
+  reset() { const el = document.getElementById("cfgSystemTitle"); if (el) el.value = ""; return this.save(); }
+};
+window.SystemTitle = SystemTitle;
+
 function renderProjectTitles() {
   // 저장된 시스템 명칭의 버전 표기는 현재 프로그램 버전으로 표시
   // [v1.0.10] 시스템 명칭 변경(IOSTAR-PM): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
@@ -154,18 +173,17 @@ function renderProjectTitles() {
   const hProj = document.getElementById("headerProjectNameBadge");
   const bTitle = document.getElementById("pageBrowserTitle");
   // Standard·Neo: 머리글 제목은 제품 이름만 (버전은 옆 배지에 표시)
-  if (hSys) { hSys.textContent = APP_VERSION.name; hSys.title = APP_VERSION.product; }
+  if (hSys) hSys.textContent = SystemTitle.text();
   const hVer = document.getElementById("headerVersionBadge");
   if (hVer) hVer.textContent = (APP_VERSION.editionName ? APP_VERSION.editionName + " " : "") + "v" + APP_VERSION.version;
   // 버전은 머리말에서 빼고 사용자 메뉴에 표시
   const uVer = document.getElementById("gUserVer");
   if (uVer) uVer.textContent = `${APP_VERSION.brand || "IOSTAR-PM"} ${APP_VERSION.editionName || APP_VERSION.variant || ""} v${APP_VERSION.version}`;
   if (hProj) hProj.textContent = projName;
-  if (bTitle) bTitle.textContent = `${sysTitle} (${projName})`;
+  if (bTitle) bTitle.textContent = `${SystemTitle.get() || sysTitle} (${projName})`;
 
-  const inSys = document.getElementById("cfgSystemTitle");
+  SystemTitle.fill();
   const inProj = document.getElementById("cfgProjectName");
-  if (inSys) inSys.value = sysTitle;
   if (inProj) inProj.value = projName;
 
   // SDLC는 1-2-B 커스텀 SDLC 카드로 관리됨
@@ -200,9 +218,7 @@ function updateMaxDeliverableRounds(newMax) {
 }
 
 function updateProjectTitles() {
-  const inSys = document.getElementById("cfgSystemTitle");
   const inProj = document.getElementById("cfgProjectName");
-  if (inSys && inSys.value.trim()) projectConfig.systemTitle = inSys.value.trim();
   if (inProj && inProj.value.trim()) projectConfig.projectName = inProj.value.trim();
   renderProjectTitles();
   persistChanges();

@@ -219,9 +219,12 @@ var AuthManager = {
     const u = this.getCurrentUser();
     const norm = this.normalizeRole(u.role);
     badge.className = "db-status-pill " + (norm === "MEMBER" ? "local" : "connected");
-    badge.innerHTML = u.empNo
-      ? `👤 ${escapeHtml(u.name)}(${escapeHtml(u.empNo)} · ${this.roleLabel(norm)}${norm === "MEMBER" || norm === "LEAD" ? " · " + escapeHtml(u.subsystem || "ALL") : ""})`
-      : "👤 미로그인";
+    // 머리글 · 멤버 메뉴: 이름 — 권한 (ID 는 표시하지 않음)
+    const who = u.empNo ? `${u.name || u.empNo} — ${this.roleLabel(norm)}${norm === "MEMBER" || norm === "LEAD" ? " · " + (u.subsystem || "ALL") : ""}` : "미로그인";
+    badge.innerHTML = `👤 ${escapeHtml(u.empNo ? (u.name || u.empNo) : who)}`;
+    badge.title = who;
+    const whoEl = document.getElementById("gUserWho");
+    if (whoEl) whoEl.textContent = who;
   },
 
   // ---------------------------------------------------------------------------
