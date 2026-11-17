@@ -113,7 +113,7 @@ function renderDashboard() {
   const scBadge = document.getElementById("scurveFilterBadge");
   if (scBadge) {
     scBadge.textContent = (selDomain === "ALL" && selSubsys === "ALL")
-      ? "전체 서브시스템 (통합)"
+      ? "전체 서브시스템 (종합)"
       : `${selDomain !== "ALL" ? `[${selDomain}] ` : ""}${selSubsys !== "ALL" ? selSubsys : "전체"}`;
   }
   DashboardChart.renderSCurve("scurveCanvas", wbsData, repDate, projectConfig.weekStartDay, selSubsys, selDomain);

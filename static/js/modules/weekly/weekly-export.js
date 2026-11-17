@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------
 //  - 파일 이름 규칙: {파일약칭}_주간보고_{yyyy}W{주차}_{범위}_{양식}_{판}.{확장자}
 //      예) P001_주간보고_2027W22_ALL_DOC-T_v2.docx
-//      범위: ALL(통합) / S-서브시스템 / D-분야,  양식: XLSX / DOC-T(표 포함) / DOC-N(서술형)
+//      범위: ALL(종합) / S-서브시스템 / D-분야,  양식: XLSX / DOC-T(표 포함) / DOC-N(서술형)
 //      판: 작성 완료 횟수(v1, v2 …), 작성 완료 전 = DRAFT, 작성 완료본 없이 자동 생성 = AUTO
 //  - 작성 시점 자료: [작성 완료] 할 때 지표·요구사항·VOC·회의·Action Item 을 보고서에 함께 저장(snapshot)
 //      → 지난 주간보고는 나중에 내려받아도 작성 당시 숫자로 나옴
@@ -139,7 +139,7 @@ var WeeklyExport = {
     const W = WeeklyReportManager;
     const sc = W.reportScope(rep);
     const allSys = W.scopeSystems(sc.scope, sc.value);
-    // [v3.3.0] 통합 보고서는 작성 완료된 서브시스템 내용만 (서브시스템이 아닌 공통 항목은 포함)
+    // [v3.3.0] 종합 보고서는 작성 완료된 서브시스템 내용만 (서브시스템이 아닌 공통 항목은 포함)
     const done = rep.integrated && rep.integratedFrom ? rep.integratedFrom.done || [] : null;
     const systems = done ? allSys.filter(x => done.indexOf(x) !== -1) : allSys;
     const subsystemNames = getAllSubsystemNames();
@@ -161,13 +161,13 @@ var WeeklyExport = {
         ["프로젝트", projName], ["보고 주차", rep.weekLabel || ""],
         ["금주 기간", `${rep.startDate || ""} ~ ${rep.endDate || ""}`], ["차주 기간", `${rep.nextStartDate || ""} ~ ${rep.nextEndDate || ""}`],
         ["보고 범위", scopeLabel], ["공정 기준일", d.reportDate || ""],
-        ["전체 계획", pct(m.totalPlan)], ["전체 실적", pct(m.totalActual)],
+        ["종합 계획", pct(m.totalPlan)], ["종합 실적", pct(m.totalActual)], ["계산 방식", "서브시스템별 진척률 × 서브시스템 가중치"],
         ["달성률", `${m.achieveRate || rate(m.totalPlan, m.totalActual)}%`], ["지연 Task", `${m.cntDel || 0}건`]
       ],
-      tables: [T("서브시스템별 공정 진척", ["도메인", "서브시스템", "SDLC 유형", "담당 PM", "Task 수", "계획", "실적", "달성률", "지연"],
-        [12, 14, 16, 14, 9, 9, 9, 9, 8],
-        subRows.map(r => [r[0], r[1], r[2], r[3], String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
-        r => `[${r[1]}] 계획 ${r[5]} · 실적 ${r[6]} · 달성률 ${r[7]} · 지연 ${r[8]} (${r[0]}, PM ${r[3]})`)]
+      tables: [T("서브시스템별 공정 진척", ["도메인", "서브시스템", "SDLC 유형", "담당 PM", "가중치", "Task 수", "계획", "실적", "달성률", "지연"],
+        [11, 13, 15, 12, 8, 8, 8, 8, 9, 8],
+        subRows.map(r => [r[0], r[1], r[2], r[3], `${r[4]}%`, String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
+        r => `[${r[1]}] 가중치 ${r[4]} · 계획 ${r[6]} · 실적 ${r[7]} · 달성률 ${r[8]} · 지연 ${r[9]} (${r[0]}, PM ${r[3]})`)]
     };
     // 2·3. 금주 실적 / 차주 계획
     const taskRow = (t, cur) => cur
@@ -233,7 +233,7 @@ var WeeklyExport = {
         ["문서 번호", this.docNo(rep)], ["작성자", rep.author || "-"],
         ["작성 완료", rep.updatedAt || "작성 완료 전"], ["자료 기준", basis]
       ],
-      texts: rep.coverageNote ? [["통합 보고서 구성", rep.coverageNote]] : []
+      texts: rep.coverageNote ? [["종합 보고서 구성", rep.coverageNote]] : []
     };
     return {
       projName, weekLabel: rep.weekLabel || "", scopeLabel, docNo: this.docNo(rep), basis, live: d.live,
@@ -393,7 +393,7 @@ var WeeklyExport = {
 window.WeeklyExport = WeeklyExport;
 
 // =============================================================================
-// [v3.1.0] 홈 [📊 브리핑] 경영 보고 카드 — 기준일 주차의 통합 주간보고 (주간보고 화면 위쪽 내려받기와 같은 결과)
+// [v3.1.0] 홈 [📊 브리핑] 경영 보고 카드 — 기준일 주차의 종합 주간보고 (주간보고 화면 위쪽 내려받기와 같은 결과)
 // =============================================================================
 var ExecReport = {
   week() {
@@ -410,7 +410,7 @@ var ExecReport = {
     const total = (f.done || []).length + (f.missing || []).length;
     el.innerHTML = `
       <div class="exec-report-line"><b>${escapeHtml(rep.weekLabel)}</b></div>
-      <div class="exec-report-line">통합 보고서: ${f.allDone ? '<span class="status-tag tag-completed">작성 완료</span>' : '<span class="status-tag tag-ready">미작성</span>'}
+      <div class="exec-report-line">종합 보고서: ${f.allDone ? '<span class="status-tag tag-completed">작성 완료</span>' : '<span class="status-tag tag-ready">미작성</span>'}
         · 서브시스템 ${(f.done || []).length} / ${total} 작성 완료</div>
       <div class="exec-report-line">${rep.snapshot ? `📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})` : (f.auto ? "⏱ 작성 완료본이 없어 현재 자료로 자동 생성" : "⏱ 작성 시점 자료가 없는 이전 버전 보고서 — 현재 자료 기준")}</div>
       <div class="exec-report-line exec-report-file">파일: <code>${escapeHtml(WeeklyExport.fileName(rep, "DOC-T"))}</code></div>`;

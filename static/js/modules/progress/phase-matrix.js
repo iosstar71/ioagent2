@@ -1,7 +1,7 @@
 // [Project Mgmt] 단계별 진척 현황 (SDLC · REQ 매트릭스)
 //  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
-// [요건 8] 단계별 진척 현황 (SDLC 매트릭스 + REQ 매트릭스 + 요구사항·산출물·VOC 통합 진척표)
+// [요건 8] 단계별 진척 현황 (SDLC 매트릭스 + REQ 매트릭스 + 요구사항·산출물·VOC 종합 진척표)
 // -------------------------------------------------------------
 function renderPhaseMatrix() {
   const phaseCardContainer = document.getElementById("phaseMatrixContainer");
@@ -23,7 +23,7 @@ function renderPhaseMatrix() {
 
   const activeRounds = getActiveDeliverableRounds(); // Defined by projectConfig.maxDeliverableRounds (1~4)
 
-  // [요건 1-2] Section 1 (Top): 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 통합 진척 현황표
+  // [요건 1-2] Section 1 (Top): 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 종합 진척 현황표
   const intTable = document.getElementById("integratedProgressTable");
   if (intTable) {
     const thead = intTable.querySelector("thead");
@@ -34,6 +34,7 @@ function renderPhaseMatrix() {
           <th rowspan="2" style="width: 105px;">도메인</th>
           <th rowspan="2" style="width: 130px;">서브시스템</th>
           <th rowspan="2" style="width: 110px;">관리유형</th>
+          <th rowspan="2" style="width: 64px;" title="종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치">가중치</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
           <th colspan="4" class="col-req">🎯 요구사항(REQ) 진척</th>
           <th colspan="5" class="col-voc">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
@@ -106,6 +107,7 @@ function renderPhaseMatrix() {
       <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
       <td><strong>${escapeHtml(sys)}</strong></td>
       <td>${typeBadge}</td>
+      <td class="ai-c">${WBSEngine.sysWeight(sys)}%</td>
       <td>${wP}%</td>
       <td><strong>${wA}%</strong></td>
       <td style="font-weight:bold; color:${wRate >= 90 ? "var(--chart-good-text)" : (wRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${wRate}%</td>
@@ -125,8 +127,11 @@ function renderPhaseMatrix() {
     intTbody.appendChild(tr);
   });
 
-  const avgWP = sumWCount > 0 ? Math.round(sumWP / sumWCount) : 0;
-  const avgWA = sumWCount > 0 ? Math.round(sumWA / sumWCount) : 0;
+  // 합계 = 서브시스템별 진척률 × 서브시스템 가중치 (Summary 의 종합 진척률과 같은 계산)
+  const selRoots = wbsData.filter(d => d.level === 1 && allSystems.includes(d.system));
+  const wSel = selRoots.length ? WBSEngine.weightedProgress(selRoots) : null;
+  const avgWP = wSel ? wSel.plan : (sumWCount > 0 ? Math.round(sumWP / sumWCount) : 0);
+  const avgWA = wSel ? wSel.actual : (sumWCount > 0 ? Math.round(sumWA / sumWCount) : 0);
   const avgWRate = avgWP > 0 ? Math.round((avgWA / avgWP) * 100) : 100;
   const totRRate = sumReqTot > 0 ? Math.round((sumReqCmp / sumReqTot) * 100) : 0;
   const totDRate = sumDAllTot > 0 ? Math.round((sumDAllCmp / sumDAllTot) * 100) : 0;
@@ -136,7 +141,7 @@ function renderPhaseMatrix() {
   const sumRow = document.createElement("tr");
   sumRow.className = "matrix-total-row";
   sumRow.innerHTML = `
-    <td colspan="3"><strong>[선택 범위 합계 (${allSystems.length}개 서브시스템)]</strong></td>
+    <td colspan="4"><strong>[선택 범위 합계 (${allSystems.length}개 서브시스템)]</strong></td>
     <td>${avgWP}%</td>
     <td><strong>${avgWA}%</strong></td>
     <td><b>${avgWRate}%</b></td>

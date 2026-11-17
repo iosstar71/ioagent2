@@ -10,7 +10,7 @@ var WeeklyReportManager = {
   _draftBase: "",
   selectedHistoryIdx: 0,
   selectedWeek: null,
-  scope: null,            // "ALL" (통합) | "DOMAIN" (도메인) | "SYS" (서브시스템)
+  scope: null,            // "ALL" (종합) | "DOMAIN" (도메인) | "SYS" (서브시스템)
   scopeValue: "",
 
   // -------------------------------------------------------------------------
@@ -30,12 +30,12 @@ var WeeklyReportManager = {
   scopeLabel(scope, value) {
     if (scope === "DOMAIN") return `도메인: ${value}`;
     if (scope === "SYS") return `서브시스템: ${value}`;
-    return "통합 (전체)";
+    return "종합 (전체)";
   },
   scopeFileLabel(scope, value) {
     if (scope === "DOMAIN") return `분야_${value}`;
     if (scope === "SYS") return `${value}_서브시스템`;
-    return "전체통합";
+    return "전체종합";
   },
   scopeSystems(scope, value) {
     const all = getAllSubsystemNames();
@@ -265,13 +265,13 @@ var WeeklyReportManager = {
     sel.value = String(curW);
   },
 
-  // 작성 단위 선택: 통합 / 서브시스템별 (v1.0.9: 분야별 보고서 제외)
+  // 작성 단위 선택: 종합 / 서브시스템별 (v1.0.9: 분야별 보고서 제외)
   populateSubsystemDropdown() {
     const sel = document.getElementById("wrSubsystemSelect");
     if (!sel) return;
     const opt = (v, label) => `<option value="${escapeHtml(v)}">${escapeHtml(label)}</option>`;
     sel.innerHTML =
-      opt("ALL|", "📊 통합 (전체)") +
+      opt("ALL|", "📊 종합 (전체)") +
       `<optgroup label="서브시스템별">${getAllSubsystemNames().map(s => opt(`SYS|${s}`, `🔧 ${s}`)).join("")}</optgroup>`;
     sel.value = `${this.scope || "ALL"}|${this.scopeValue || ""}`;
   },
@@ -301,7 +301,7 @@ var WeeklyReportManager = {
     this._switchTo(r.weekNo, sc.scope, sc.value);
   },
 
-  // [v1.0.7] 보고 주차별 보고서 목록 (선택 주차의 통합·서브시스템 작성 현황, v1.0.9 분야별 제외) / 저장된 전체 주차
+  // [v1.0.7] 보고 주차별 보고서 목록 (선택 주차의 종합·서브시스템 작성 현황, v1.0.9 분야별 제외) / 저장된 전체 주차
   listWeek: null,
 
   _unitsOfWeek() {
@@ -360,9 +360,9 @@ var WeeklyReportManager = {
   },
 
   // ---------------------------------------------------------------------------
-  // [v1.0.9] 주차 통합 주간보고: 선택 주차에 [작성 완료]된 서브시스템 보고서를 모두 취합하여 1개 통합 보고서로 생성
+  // [v1.0.9] 주차 종합 주간보고: 선택 주차에 [작성 완료]된 서브시스템 보고서를 모두 취합하여 1개 종합 보고서로 생성
   //  - 요약·현안: 통합(PM) 보고서가 작성 완료되어 있으면 그 내용을 앞에 두고, 서브시스템 요약을 [서브시스템] 머리말로 이어 붙임 (중복 문장 제외)
-  //  - 금주/차주 항목: 작성 완료된 서브시스템 보고서의 항목 + 통합 보고서의 직접 입력 항목·미작성 서브시스템 항목
+  //  - 금주/차주 항목: 작성 완료된 서브시스템 보고서의 항목 + 종합 보고서의 직접 입력 항목·미작성 서브시스템 항목
   //  - 작성 완료 보고서가 하나도 없으면 WBS 기준 자동 생성본으로 대체 (작성 현황에 표시)
   // ---------------------------------------------------------------------------
   buildWeekIntegrated(weekNum) {
@@ -382,7 +382,7 @@ var WeeklyReportManager = {
     rep.status = "DONE";
     rep.integrated = true;
 
-    // [v3.3.0] 작성 완료하지 않은 서브시스템의 내용(과업 · 요약)은 통합 보고서에 넣지 않음
+    // [v3.3.0] 작성 완료하지 않은 서브시스템의 내용(과업 · 요약)은 종합 보고서에 넣지 않음
     if (!sysReps.length && !allRep) {
       rep.currentWeekTasks = [];
       rep.nextWeekTasks = [];
@@ -396,7 +396,7 @@ var WeeklyReportManager = {
 
     const join = field => {
       const parts = [];
-      // 통합 보고서 문장 중 미작성 서브시스템 줄([W2] …)은 뺌
+      // 종합 보고서 문장 중 미작성 서브시스템 줄([W2] …)은 뺌
       const head = allRep && allRep[field] ? String(allRep[field]).split(/\r?\n/).filter(l => {
         const m = l.match(/^\s*\[([^\]]+)\]/);
         return !m || doneSys.includes(m[1]) || !order.includes(m[1]);
@@ -412,7 +412,7 @@ var WeeklyReportManager = {
     const collect = key => {
       const list = [];
       sysReps.forEach(r => (r[key] || []).forEach(t => list.push(Object.assign({}, t))));
-      // 통합 보고서(PM 작성)는 직접 입력 항목 중 작성 완료된 서브시스템 또는 서브시스템 밖(공통) 항목만
+      // 종합 보고서(PM 작성)는 직접 입력 항목 중 작성 완료된 서브시스템 또는 서브시스템 밖(공통) 항목만
       if (allRep) (allRep[key] || []).forEach(t => { if (t.manual && (doneSys.includes(t.system) || !order.includes(t.system))) list.push(Object.assign({}, t)); });
       return list.map((t, i) => ({ t, i })).sort((x, y) => (sortKey(x.t) - sortKey(y.t)) || (x.i - y.i)).map(x => x.t);
     };
@@ -425,10 +425,10 @@ var WeeklyReportManager = {
     rep.author = (allRep && allRep.author) || (AuthManager.getCurrentUser().name || "");
     const stamps = sysReps.concat(allRep ? [allRep] : []).map(r => r.updatedAt || "").filter(Boolean).sort();
     rep.updatedAt = stamps[stamps.length - 1] || "";
-    rep.coverageNote = `통합 보고서: ${allRep ? "작성 완료" : "미작성"} / 작성 완료 서브시스템 ${doneSys.length}개${doneSys.length ? ` (${doneSys.join(", ")})` : ""}`
+    rep.coverageNote = `종합 보고서: ${allRep ? "작성 완료" : "미작성"} / 작성 완료 서브시스템 ${doneSys.length}개${doneSys.length ? ` (${doneSys.join(", ")})` : ""}`
       + (missing.length ? ` / 미작성 ${missing.length}개 (${missing.join(", ")})` : " / 미작성 없음");
     rep.integratedFrom = { done: doneSys, missing, auto: false, allDone: !!allRep };
-    // [v3.1.0] 작성 시점 자료: 통합 보고서의 것, 없으면 가장 최근에 작성 완료된 서브시스템 보고서의 것
+    // [v3.1.0] 작성 시점 자료: 종합 보고서의 것, 없으면 가장 최근에 작성 완료된 서브시스템 보고서의 것
     const snaps = (allRep && allRep.snapshot ? [allRep.snapshot] : []).concat(sysReps.map(r => r.snapshot).filter(Boolean)).sort((a, b) => String(b.takenAt).localeCompare(String(a.takenAt)));
     if (allRep && allRep.snapshot) rep.snapshot = allRep.snapshot;
     else if (snaps.length) rep.snapshot = snaps[0];
@@ -437,7 +437,7 @@ var WeeklyReportManager = {
     return rep;
   },
 
-  // 상단 [엑셀 주간보고] [워드 주간보고 (표 포함)] [워드 주간보고 (표 제외)] : 선택 주차 통합 주간보고 생성
+  // 상단 [엑셀 주간보고] [워드 주간보고 (표 포함)] [워드 주간보고 (표 제외)] : 선택 주차 종합 주간보고 생성
   exportWeek(format, weekNum) {
     const wNum = weekNum || this.listWeek || this.selectedWeek || (this.findWeekForDate(projectConfig.reportDate) || {}).weekNum;
     const rep = this.buildWeekIntegrated(wNum);
@@ -822,17 +822,13 @@ var WeeklyReportManager = {
 
   saveCurrentReport() { return this.completeReport(true); },
 
-  // [화면 새로고침] 뒤: 작성 완료된 보고서를 보고 있으면 다시 읽을지 묻는다 (작성 완료본 = 그때 자료 스냅샷)
-  afterUserRefresh() {
-    const r = this.currentWeekReport;
-    if (r && (r.status || "DRAFT") === "DONE" && r.snapshot) this.syncWbsTasks();
-  },
-  // [WBS Task 다시 불러오기]: 작성 완료된 보고서면 완료를 취소하고 지금 자료(Task · 회의 · Action Item · 지표)로 다시 읽음
+  // [최신 데이터 가져오기]: 지금 자료(Task · 회의 · Action Item · 지표)로 다시 읽음. 작성 완료된 보고서면 작성 완료를 취소
+  //  (화면 [새로고침]은 저장된 상태를 다시 읽을 뿐 — 작성 완료본은 그때 자료(스냅샷) 그대로 보임)
   syncWbsTasks(confirmed) {
     if (!this.currentWeekReport) return;
     const wasDone = (this.currentWeekReport.status || "DRAFT") === "DONE" && (weeklyReportsData || []).some(r => r.id === this.currentWeekReport.id);
     if (wasDone && confirmed !== true) {
-      openConfirmDialog("이 주간보고는 작성 완료 상태입니다.\n다시 읽으면 작성 완료가 취소되고, Task · 회의 · Action Item · 지표를 지금 자료로 다시 읽습니다.\n(직접 쓴 요약 · 현안 · 상세 내용과 직접 입력 항목은 그대로 둡니다)\n\n[작성 완료]를 다시 누르면 그 시점 자료로 새로 저장됩니다. 계속하시겠습니까?", () => this.syncWbsTasks(true));
+      openConfirmDialog("이 주간보고는 작성 완료 상태입니다.\n최신 데이터를 가져오면 작성 완료가 취소되고, Task · 회의 · Action Item · 지표를 지금 자료로 다시 가져옵니다.\n(직접 쓴 요약 · 현안 · 상세 내용과 직접 입력 항목은 그대로 둡니다)\n\n내용을 확인 · 수정한 뒤 [작성 완료]를 다시 눌러 주세요. 계속하시겠습니까?", () => this.syncWbsTasks(true));
       return;
     }
     this.readInputsIntoCurrentReport();
@@ -901,7 +897,7 @@ var WeeklyReportManager = {
 
     this.render();
     if (wasDone && typeof this.renderSavedList === "function") this.renderSavedList();
-    showToast(wasDone ? "🔄 작성 완료를 취소하고 지금 자료로 다시 읽었습니다. 확인 후 [작성 완료]를 눌러 주세요." : "🔄 [WBS Task 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
+    showToast(wasDone ? "🔄 작성 완료가 취소되었습니다. 최신 데이터로 다시 작성한 뒤 [작성 완료]를 눌러 주세요." : "🔄 [최신 데이터 가져오기 완료] 최신 WBS · 회의 · Action Item 을 반영했습니다. (제외 항목 · 직접 입력 항목 유지 · 작성 완료 시 저장)");
   },
 
   openHistoryModal() {

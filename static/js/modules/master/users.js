@@ -147,7 +147,7 @@ var MasterSubTabs = {
   restore() { SubTabs.restore("master", "basic"); }
 };
 
-// [v1.0.7] 주요 마일스톤 (통합 / 서브시스템별) — projectConfig.milestones
+// [v1.0.7] 주요 마일스톤 (종합 / 서브시스템별) — projectConfig.milestones
 var MilestoneManager = {
   list() {
     if (!Array.isArray(projectConfig.milestones)) projectConfig.milestones = [];
@@ -167,7 +167,7 @@ var MilestoneManager = {
       .map((m, idx) => ({ m, idx }))
       .sort((a, b) => String(a.m.date).localeCompare(String(b.m.date)))
       .map(({ m, idx }) => {
-        const opts = [`<option value="ALL" ${!m.scope || m.scope === "ALL" ? "selected" : ""}>🏁 통합 (프로젝트 전체)</option>`]
+        const opts = [`<option value="ALL" ${!m.scope || m.scope === "ALL" ? "selected" : ""}>🏁 종합 (프로젝트 전체)</option>`]
           .concat(subs.map(s => `<option value="${escapeHtml(s)}" ${m.scope === s ? "selected" : ""}>🔧 ${escapeHtml(s)}</option>`)).join("");
         const passed = m.date && m.date <= rep;
         return `<tr>
@@ -184,7 +184,7 @@ var MilestoneManager = {
     const subs = getAllSubsystemNames();
     const own = Permission.ownSubsystem();
     const scope = kind === "ALL" ? "ALL" : (subs.includes(own) ? own : (subs[0] || "ALL"));
-    this.list().push({ id: `MS-${Date.now().toString(36)}`, scope, name: kind === "ALL" ? "신규 통합 마일스톤" : "신규 서브시스템 마일스톤", date: projectConfig.reportDate || projectConfig.projectStartDate, desc: "" });
+    this.list().push({ id: `MS-${Date.now().toString(36)}`, scope, name: kind === "ALL" ? "신규 종합 마일스톤" : "신규 서브시스템 마일스톤", date: projectConfig.reportDate || projectConfig.projectStartDate, desc: "" });
     this.changed();
   },
   update(idx, field, value) {

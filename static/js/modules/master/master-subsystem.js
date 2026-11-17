@@ -167,8 +167,8 @@ function updateAllSubsystemFilterDropdowns() {
   });
 
   const filterConfigs = [
-    { id: "dashSubsystemFilter", allLabel: "전체 서브시스템 (통합)" },
-    { id: "scurveSystemFilter", allLabel: "전체 통합 프로젝트" },
+    { id: "dashSubsystemFilter", allLabel: "전체 서브시스템 (종합)" },
+    { id: "scurveSystemFilter", allLabel: "프로젝트 전체 (종합)" },
     { id: "matrixSubsystemFilter", allLabel: "전체 서브시스템 보기" },
     { id: "ganttSubsystemFilter", allLabel: "전체 서브시스템" },
     { id: "wbsSubsystemFilter", allLabel: "전체 서브시스템 보기" },

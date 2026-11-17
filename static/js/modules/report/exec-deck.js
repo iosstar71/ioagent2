@@ -202,7 +202,7 @@ var ExecDeck = {
         const y = top + i * rowH, h = rowH - 0.1, pl = num(r[6]), ac = num(r[7]);
         const rr = pl > 0 ? Math.round(ac / pl * 100) : 100;
         const col = rr >= 90 ? C : rr >= 70 ? "D97706" : "DC2626";
-        els.push(T(0.45, y, 1.35, h, [p(r[1], 12, { bold: true, align: "r" })], { anchor: "ctr" }));
+        els.push(T(0.45, y, 1.35, h, [p(r[1], 12, { bold: true, align: "r" }), p(`가중치 ${WBSEngine.sysWeight(r[1])}%`, 8, { color: "64748B", align: "r" })], { anchor: "ctr" }));
         els.push(R(gx, y, gw * pl * 0.7 / 100, h, "FEE2E2"));
         els.push(R(gx + gw * pl * 0.7 / 100, y, gw * pl * 0.2 / 100, h, "FEF3C7"));
         els.push(R(gx + gw * pl * 0.9 / 100, y, gw * (100 - pl * 0.9) / 100, h, "DCFCE7"));
@@ -232,18 +232,19 @@ var ExecDeck = {
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
         const vw = vc.filter(v => v.status === "대기" || v.status === "보류" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
         const rr = rq.length ? Math.round(rd / rq.length * 100) : 0, vr = vc.length ? Math.round(vd / vc.length * 100) : 0;
-        return [domainOf(sys), sys, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
+        return [domainOf(sys), sys, `${WBSEngine.sysWeight(sys)}%`, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
           `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       // 그룹 머리글
       const grp = (x, w, text, fill, fg) => { els.push(R(x, 1.15, w, 0.36, fill)); els.push(T(x, 1.15, w, 0.36, [p(text, 11, { bold: true, color: fg, align: "ctr" })], { anchor: "ctr" })); };
-      grp(0.45, 2.5, "구분", H, P.headerTextColor);
-      grp(2.95, 2.55, "WBS 공정 진척", "475569", "FFFFFF");
-      grp(5.5, 3.4, "요구사항 (REQ) 진척", C, "FFFFFF");
-      grp(8.9, 3.95, "추가 VOC · 이슈 진척", "B45309", "FFFFFF");
+      grp(0.45, 3.1, "구분", H, P.headerTextColor);
+      grp(3.55, 2.4, "WBS 공정 진척", "475569", "FFFFFF");
+      grp(5.95, 3.2, "요구사항 (REQ) 진척", C, "FFFFFF");
+      grp(9.15, 3.7, "추가 VOC · 이슈 진척", "B45309", "FFFFFF");
       const rh = Math.min(0.42, 5.0 / Math.max(1, tr.length + 1));
-      table(els, 0.45, 1.51, [["도메인", 1.2, "l"], ["서브시스템", 1.3, "l"], ["계획", 0.85], ["실적", 0.85], ["달성률", 0.85], ["전체", 0.85], ["진행", 0.85], ["완료", 0.85], ["완료율", 0.85],
-        ["유효 전체", 0.79], ["대기", 0.79], ["진행중", 0.79], ["완료·제외", 0.79], ["달성률", 0.79]], tr, rh, { headSize: 10, size: 10 });
+      table(els, 0.45, 1.51, [["도메인", 1.1, "l"], ["서브시스템", 1.3, "l"], ["가중치", 0.7], ["계획", 0.8], ["실적", 0.8], ["달성률", 0.8], ["전체", 0.8], ["진행", 0.8], ["완료", 0.8], ["완료율", 0.8],
+        ["유효 전체", 0.74], ["대기", 0.74], ["진행중", 0.74], ["완료·제외", 0.74], ["달성률", 0.74]], tr, rh, { headSize: 10, size: 10 });
+      els.push(T(0.45, 6.75, 12.4, 0.3, [p("※ 프로젝트 종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치", 9, { color: "64748B" })]));
       slides.push({ name: "서브시스템별 진척율", els });
     }
 

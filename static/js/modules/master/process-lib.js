@@ -147,7 +147,7 @@ var ProcessLib = {
       const bad = _editingSdlcPhasesTemp.find(p => p.pStart && p.pEnd && p.pStart > p.pEnd);
       if (bad) return showToast(`[${bad.name}] 단계의 계획 종료일이 시작일보다 빠릅니다.`);
       const wSum = Math.round(_editingSdlcPhasesTemp.reduce((a, p) => a + (parseFloat(p.weight) || 0), 0) * 10) / 10;
-      if (wSum !== 100) return showToast(`⚠️ 단계 가중치 합계가 100 이어야 합니다 (지금 ${wSum}).`, "warning");
+      if (wSum > 100) return showToast(`⚠️ 단계 가중치 합계가 100 을 넘을 수 없습니다 (지금 ${wSum}).`, "warning");
       if (!this.projectSdlc(mode.code)) this.applySdlcToProject(mode.code);
       const t = this.projectSdlc(mode.code);
       t.phases.forEach((p, i) => { const e = _editingSdlcPhasesTemp[i] || {}; p.weight = parseFloat(e.weight) || 0; if (e.pStart) p.pStart = e.pStart; else delete p.pStart; if (e.pEnd) p.pEnd = e.pEnd; else delete p.pEnd; });

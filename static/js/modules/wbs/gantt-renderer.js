@@ -2,7 +2,7 @@
 // [Project Mgmt v1.0.7] WBS 간트차트 렌더러
 //  - 표시 단위: 주차(WEEK) / 일자(DAY) / 월(MONTH) 공통 타임라인 엔진
 //  - 기준일(보고 기준일) 세로선 표시 (v1.0.7)
-//  - 프로젝트 마일스톤 표시 (v1.0.7): 통합 마일스톤은 최상단 행, 서브시스템 마일스톤은 해당 L1 행에 ◆ 표시
+//  - 프로젝트 마일스톤 표시 (v1.0.7): 종합 마일스톤은 최상단 행, 서브시스템 마일스톤은 해당 L1 행에 ◆ 표시
 // =============================================================================
 const GanttRenderer = {
   DAY_MS: 24 * 60 * 60 * 1000,
@@ -134,7 +134,7 @@ const GanttRenderer = {
     const done = ms.date <= (projectConfig.reportDate || "");
     el.className = "gantt-pm-milestone" + (isIntegrated ? " integrated" : "");
     el.style.left = `${x - 7}px`;
-    el.title = `[${isIntegrated ? "통합" : ms.scope} 마일스톤] ${ms.name} (${ms.date})${ms.desc ? "\n" + ms.desc : ""}`;
+    el.title = `[${isIntegrated ? "종합" : ms.scope} 마일스톤] ${ms.name} (${ms.date})${ms.desc ? "\n" + ms.desc : ""}`;
     el.innerHTML = `<span class="gantt-pm-diamond${done ? " passed" : ""}">◆</span><span class="gantt-pm-label">${escapeHtml(ms.name)}</span>`;
     return el;
   },
@@ -196,7 +196,7 @@ const GanttRenderer = {
     if (integrated.length && sysFilter === "ALL") {
       tree.appendChild(this._treeRow(
         `<span class="lvl-badge" style="background:#7c3aed; color:#fff;">MS</span>
-         <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 통합 마일스톤 (${integrated.length})</span>`, 1, ""));
+         <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
       tree.lastChild.classList.add("gantt-ms-row"); // [v3.3.0] 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
       const row = this._chartRow(tl);
       row.classList.add("gantt-ms-row");

@@ -186,7 +186,7 @@
 
   <!-- [요건 1] 메인 메뉴: 명칭 간략화 및 8개 탭 순서 정리 -->
   <div class="tab-bar">
-    <button class="tab-btn active" data-click="switchTab" data-click-args='["tab-home"]' title="맞춤형 프로젝트 통합 홈 (이그제큐티브 브리핑 / 스마트 포털)">🏠 홈</button>
+    <button class="tab-btn active" data-click="switchTab" data-click-args='["tab-home"]' title="맞춤형 프로젝트 종합 홈 (이그제큐티브 브리핑 / 스마트 포털)">🏠 홈</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-dashboard"]' title="프로젝트 핵심 KPI 및 종합 진척 현황 대시보드">📊 대시보드</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-matrix"]' title="SDLC 및 개선과제 단계별 공정 매트릭스">📈 Phase 진척</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-gantt"]' title="WBS 일정 공정표 및 주차별 타임라인">🗓️ Gantt</button>
@@ -342,7 +342,7 @@
             </div>
             <div class="hero-kpi">
               <div class="hero-rate-box">
-                <div class="hero-kpi-label">계획 대비 달성률</div>
+                <div class="hero-kpi-label" title="종합 계획 · 실적 = 서브시스템별 진척률 × 서브시스템 가중치 (프로젝트 설정 > 기본정보)">계획 대비 달성률 <span class="w-note">(서브시스템 가중치 반영)</span></div>
                 <div id="execHeroAchieveRate" class="hero-rate">-</div>
                 <div id="execHeroGap" class="hero-gap" data-level="ok">공정 GAP: -</div>
               </div>
@@ -433,7 +433,7 @@
               </div>
             </div>
             <div class="exec-report-note">
-              💡 기준일 주차에 작성 완료된 통합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [보고 &gt; 보고서 설정]에서 정합니다.
+              💡 기준일 주차에 작성 완료된 종합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [보고 &gt; 보고서 설정]에서 정합니다.
             </div>
           </div>
         </div>
@@ -469,12 +469,12 @@
       <!-- 상단 4대 KPI 카드 -->
       <div class="grid-4" style="margin-bottom: 12px;">
         <div class="kpi-card" style="border-left-color: var(--primary);">
-          <div class="kpi-title">통합 계획 진척률 (기준일 연산)</div>
+          <div class="kpi-title">종합 계획 진척률 (기준일 연산)</div>
           <div class="kpi-value" id="kpi-plan">0.0%</div>
           <div class="kpi-sub">서브시스템 가중치 합산</div>
         </div>
         <div class="kpi-card" style="border-left-color: var(--success);">
-          <div class="kpi-title">통합 실적 진척률 (가중치 롤업)</div>
+          <div class="kpi-title">종합 실적 진척률 (가중치 롤업)</div>
           <div class="kpi-value" id="kpi-actual" style="color: var(--success);">0.0%</div>
           <div class="kpi-sub">L5 ➔ L1 자동합산</div>
         </div>
@@ -554,7 +554,7 @@
             <div class="filter-item">
               <label style="font-weight: bold; font-size: calc(11.5px * var(--fs-scale, 1)); color: #334155;">🏢 서브시스템별 조회:</label>
               <select id="dashSubsystemFilter" data-change="renderDashboard" style="font-weight: bold; font-size: calc(11.5px * var(--fs-scale, 1)); padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px; min-width: 160px;">
-                <option value="ALL">전체 서브시스템 (통합)</option>
+                <option value="ALL">전체 서브시스템 (종합)</option>
               </select>
             </div>
             <button class="btn btn-primary btn-sm btn-progress-refresh" data-click="refreshDashboardView" title="최신 실적 재로드 및 대시보드 통계 즉시 재집계">
@@ -678,7 +678,7 @@
         </div>
       </div>
 
-      <!-- [A-2] Section 1 (Top): 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 통합 진척 현황표 -->
+      <!-- [A-2] Section 1 (Top): 서브시스템별 요구사항(REQ) · 산출물 · 추가 VOC 종합 진척 현황표 -->
       <div class="card" id="integratedProgressCard">
         <div class="card-title">
           <span>📋 [1] 서브시스템별 진척율 (WBS · 요구사항 · VOC · 산출물)</span>
@@ -1138,12 +1138,12 @@
 
       <!-- ① 주간보고 작성 · 출력 -->
       <div class="rp-pane active" data-rp-pane="weekly">
-      <!-- [v1.0.9] 선택 주차 통합 주간보고: 작성 완료된 통합·서브시스템 보고서를 모두 취합하여 생성 -->
+      <!-- [v1.0.9] 선택 주차 종합 주간보고: 작성 완료된 종합·서브시스템 보고서를 모두 취합하여 생성 -->
       <div class="wr-export-bar rp-export-bar">
-        <span class="neo-dd-label rp-export-label">선택 주차 통합 주간보고</span>
-          <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
-          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 통합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
+        <span class="neo-dd-label rp-export-label">선택 주차 종합 주간보고</span>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
       </div>
 
       <!-- [Neo 2.2] 주간보고 2단 화면: 왼쪽 보고 단위 목록 / 오른쪽 보고서 -->
@@ -1187,7 +1187,7 @@
               <button class="btn btn-sm" data-btn="cancel" data-click="WeeklyReportManager.discardChanges" title="저장하지 않은 변경 내용을 취소합니다.">↩️ 변경 취소</button>
             </div>
             <div class="wr-toolbar-group">
-              <button class="btn btn-sm" data-btn="refresh" data-click="WeeklyReportManager.syncWbsTasks" title="WBS 공정표의 최신 Task 일정·진척을 다시 불러옵니다. (제외한 항목과 직접 입력 항목은 유지)">🔄 WBS Task 다시 불러오기</button>
+              <button class="btn btn-sm" data-btn="refresh" data-click="WeeklyReportManager.syncWbsTasks" title="WBS · 회의 · Action Item · 지표를 지금 자료로 다시 가져옵니다. 작성 완료된 보고서는 작성 완료가 취소됩니다 (직접 쓴 내용은 유지)">🔄 최신 데이터 가져오기</button>
               <button class="btn btn-sm" data-btn="neutral" data-click="WeeklyReportManager.openHistoryModal" title="이전 주차 보고서의 요약·현안 내용을 복사합니다.">📋 이전 보고서 내용 복사</button>
             </div>
           </div>
@@ -1335,7 +1335,7 @@
           <div id="rpDeckInfo" class="exec-report-info"></div>
           <div class="rp-deck-sub">들어가는 장표</div>
           <ol id="rpDeckSlides" class="rp-deck-slides"></ol>
-          <div class="exec-report-note">💡 고른 주차에 작성 완료된 통합 · 서브시스템 주간보고와 그 시점의 진척 자료로 만듭니다. 색상 · 글꼴은 [보고서 설정]을 따릅니다.</div>
+          <div class="exec-report-note">💡 고른 주차에 작성 완료된 종합 · 서브시스템 주간보고와 그 시점의 진척 자료로 만듭니다. 색상 · 글꼴은 [보고서 설정]을 따릅니다.</div>
         </div>
       </div>
 
@@ -2003,14 +2003,14 @@
           </div>
         </div>
 
-        <!-- [v1.0.7] 주요 마일스톤 (통합 / 서브시스템별) — Gantt에 ◆ 로 표시 -->
+        <!-- [v1.0.7] 주요 마일스톤 (종합 / 서브시스템별) — Gantt에 ◆ 로 표시 -->
         <div class="card" style="border-left: 4px solid #7c3aed;">
           <div class="card-title">
             <div>
               <strong>주요 마일스톤</strong>
             </div>
             <div style="display:flex; gap:6px;">
-              <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["ALL"]'>➕ 통합 마일스톤 추가</button>
+              <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["ALL"]'>➕ 종합 마일스톤 추가</button>
               <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["SYS"]'>➕ 서브시스템 마일스톤 추가</button>
               <button class="btn btn-sm" data-btn="nav" data-click="switchTab" data-click-args='["tab-gantt"]'>🗓️ Gantt에서 보기</button>
             </div>

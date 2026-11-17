@@ -972,8 +972,6 @@ var SyncManager = {
     DataRegistry.apply(res.data, loadedKeys);
     this.afterDataApplied(loadedKeys, false, res.revs);
     this._restoreUiState(uiState);
-    // 주간보고 화면에서 직접 누른 새로고침: 작성 완료본을 보고 있으면 다시 읽을지 묻는다
-    if (!opts.silent && typeof WeeklyReportManager !== "undefined" && document.querySelector("#tab-weekly-report.active")) setTimeout(() => WeeklyReportManager.afterUserRefresh(), 0);
     this.setStatus(`최신 (${new Date().toLocaleTimeString()})`, "ok");
     if (!opts.silent) {
       const where = keys ? loadedKeys.map(k => DataRegistry.DEFS[k].label).join(", ") : "전체 데이터";

@@ -269,7 +269,7 @@ const ReportExporter = {
       const delCnt = leafTasks.filter(t => WBSEngine.getTaskStatus(t, repDate).code === "delayed").length;
       const sdlcSpec = WBSEngine.getSubsystemSdlcSpec(sys);
       const typeLabel = meta.type === "REQ" ? "개선타입(REQ)" : (sdlcSpec ? sdlcSpec.name : "표준SDLC");
-      return [domain, sys, typeLabel, meta.pm || "-", meta.weight || 10, leafTasks.length, `${pVal}%`, `${aVal}%`, `${rate}%`, delCnt];
+      return [domain, sys, typeLabel, meta.pm || "-", WBSEngine.sysWeight(sys), leafTasks.length, `${pVal}%`, `${aVal}%`, `${rate}%`, delCnt];
     });
 
     // SDLC 타입별로 서브시스템 그룹핑
@@ -371,7 +371,7 @@ const ReportExporter = {
     };
   },
 
-  // 대시보드 [📥 엑셀 보고서] = 주간보고 탭 상단 [엑셀 주간보고]와 동일한 출력물 (보고 기준일 주차 통합 주간보고, v1.0.9)
+  // 대시보드 [📥 엑셀 보고서] = 주간보고 탭 상단 [엑셀 주간보고]와 동일한 출력물 (보고 기준일 주차 종합 주간보고, v1.0.9)
   exportExcelReport() {
     try {
       const w = WeeklyReportManager.findWeekForDate(projectConfig.reportDate);

@@ -113,7 +113,12 @@ var SdlcBoard = {
     if (!this.canEdit()) return;
     const t = this._proj(code); const ph = t && t.phases && t.phases[i];
     if (!ph) return;
-    if (field === "weight") ph.weight = Math.max(0, Math.min(100, parseFloat(value) || 0));
+    if (field === "weight") {
+      const w = Math.max(0, Math.min(100, parseFloat(value) || 0));
+      const others = t.phases.reduce((a, x, j) => a + (j === i ? 0 : (parseFloat(x.weight) || 0)), 0);
+      if (others + w > 100) { showToast(`⚠️ 단계 가중치 합계가 100 을 넘을 수 없습니다 (다른 단계 합 ${others} → 이 단계는 ${100 - others} 까지).`, "warning"); return this.render(); }
+      ph.weight = w;
+    }
     else if (value) ph[field] = value; else delete ph[field];
     if (ph.pStart && ph.pEnd && ph.pStart > ph.pEnd) showToast(`⚠️ [${ph.name}] 계획 종료일이 시작일보다 빠릅니다.`, "warning");
     this._changed();

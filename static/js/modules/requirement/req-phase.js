@@ -121,6 +121,11 @@ var ReqPhaseManager = {
   updatePhase(idx, field, val) {
     if (!projectConfig.reqSdlcPhases) projectConfig.reqSdlcPhases = this.getPhases();
     if (projectConfig.reqSdlcPhases[idx]) {
+      if (field === "weight") {   // 단계 가중치 합계는 100 을 넘을 수 없음
+        val = Math.max(0, Math.min(100, parseFloat(val) || 0));
+        const others = projectConfig.reqSdlcPhases.reduce((a, x, j) => a + (j === idx ? 0 : (parseFloat(x.weight) || 0)), 0);
+        if (others + val > 100) { showToast(`⚠️ 단계 가중치 합계가 100 을 넘을 수 없습니다 (이 단계는 ${100 - others} 까지).`, "warning"); return this.renderTable(); }
+      }
       projectConfig.reqSdlcPhases[idx][field] = val;
       this.renderTable();
       if (typeof MasterSyncEngine !== "undefined") {

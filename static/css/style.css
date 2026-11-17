@@ -3043,3 +3043,4 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .sb-bar { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--primary); }
 .sb-spare { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .sb-table { table-layout: fixed; width: 100%; } .sb-table input[type="date"] { width: 100%; box-sizing: border-box; }
+.w-note { font-size: var(--fs-2xs, 10px); font-weight: 500; opacity: 0.8; }
