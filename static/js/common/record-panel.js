@@ -49,24 +49,6 @@ var RecordPanel = {
         { k: "pDate", l: "계획일", type: "date" }, { k: "aDate", l: "제출일", type: "date" },
         { k: "remarks", l: "비고", type: "textarea", wide: true }]
     },
-    // 서브시스템 (프로젝트 설정 > 서브시스템): 기본 항목 + 공정 유형 · 그 유형의 단계 가중치 · 계획 일정
-    subsys: {
-      data: "subsystemsMeta", tab: "tab-master", tbody: "subsystemsMetaBody", label: "서브시스템", noId: true, wide: true,
-      title: r => r.name,
-      save: (row, field, value) => {
-        const i = subsystemsMeta.indexOf(row);
-        if (i < 0) return;
-        if (field === "name") updateSubsystemName(i, value);
-        else if (field === "weight") UiH.set("subsystemsMeta", i, "weight", parseFloat(value), "syncSubsystemWeights", "rebuildAll");
-        else UiH.set("subsystemsMeta", i, field, value, "rebuildAll", "persistChanges");
-        renderSubsystemsMetaTable();
-      },
-      fields: [
-        { k: "domain", l: "도메인", opts: () => getProjectDomains() }, { k: "code", l: "코드 (ID 접두)" },
-        { k: "name", l: "서브시스템명" }, { k: "weight", l: "가중치(%)" },
-        { k: "pm", l: "담당 PM" }, { k: "desc", l: "개요", type: "textarea", wide: true }],
-      extra: r => typeof SdlcBoard !== "undefined" ? SdlcBoard.panelHtml(r) : ""
-    },
     // Action Item: 회의 안에 들어 있는 자료 — 추가는 회의록 작성에서만, 여기서는 수정
     action: {
       tab: "tab-meeting", tbody: "aiTrackerTableBody", label: "Action Item",
@@ -136,7 +118,7 @@ var RecordPanel = {
   close() {
     const p = document.getElementById("recPanel");
     if (p) p.hidden = true;
-    document.body.classList.remove("rec-panel-open", "rec-panel-wide");
+    document.body.classList.remove("rec-panel-open");
     const k = this._kind;
     this._kind = null; this._ref = null;
     if (k) this.mark(k);
@@ -163,7 +145,7 @@ var RecordPanel = {
     const v = row[f.k] === undefined || row[f.k] === null ? "" : String(row[f.k]);
     const ch = `data-change="RecordPanel.set" data-change-args="${UiEvents.args(f.k, "$value")}"`;
     if (f.type === "textarea") return `<textarea rows="3" ${ch}>${escapeHtml(v)}</textarea>`;
-    let opts = typeof f.opts === "function" ? f.opts() : f.opts;
+    let opts = f.opts;
     if (f.type === "system") opts = (subsystemsMeta || []).map(m => m.name);
     if (f.type === "distinct") opts = [...new Set(this.arr(this._kind).map(r => r[f.k]).filter(Boolean))];
     if (opts) {
@@ -191,9 +173,7 @@ var RecordPanel = {
         <div class="rec-hint">Esc 닫기 · Ctrl+Enter 입력 중인 칸 반영</div>
       </div>`;
     p.hidden = false;
-    p.classList.toggle("rec-wide", !!s.wide);
     document.body.classList.add("rec-panel-open");
-    document.body.classList.toggle("rec-panel-wide", !!s.wide);
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(p);
     if (focusKey) { const el = p.querySelector(`[data-change-args='${focusKey}']`); if (el) el.focus(); }
     this.mark(this._kind);
@@ -222,6 +202,11 @@ var RecordPanel = {
 };
 window.RecordPanel = RecordPanel;
 
+// 서브시스템 목록: 줄을 누르면 아래 [공정 유형]에 그 서브시스템 (입력칸을 눌러도 고름)
+document.addEventListener("click", e => {
+  const tr = e.target && e.target.closest ? e.target.closest("#subsystemsMetaBody > tr[data-ss-idx]") : null;
+  if (tr && typeof SdlcBoard !== "undefined" && !e.target.closest("button")) SdlcBoard.select(tr.getAttribute("data-ss-idx"));
+});
 // 행의 빈 곳(입력칸 · 버튼 밖)을 누르면 상세 패널
 document.addEventListener("click", e => {
   const td = e.target && e.target.closest ? e.target.closest("td") : null;

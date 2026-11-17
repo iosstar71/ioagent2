@@ -260,7 +260,7 @@ function renderSubsystemsMetaTable() {
 
   subsystemsMeta.forEach((sub, idx) => {
     const tr = document.createElement("tr");
-    tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel: subsys)
+    tr.setAttribute("data-ss-idx", idx);   // 누르면 아래 [공정 유형]에 이 서브시스템
     const rootTask = wbsData.find(d => d.system === sub.name && d.level === 1);
     const linkedTasks = wbsData.filter(d => d.system === sub.name && d.isLeaf);
     const taskCount = linkedTasks.length;
@@ -303,7 +303,7 @@ function renderSubsystemsMetaTable() {
     `;
     tbody.appendChild(tr);
   });
-  if (typeof RecordPanel !== "undefined") RecordPanel.decorate("subsys");
+  if (typeof SdlcBoard !== "undefined") SdlcBoard._markRow();
 }
 
 function addNewSubsystemMeta() {

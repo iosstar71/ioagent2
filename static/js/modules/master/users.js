@@ -113,7 +113,6 @@ var SubTabs = {
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
     if (group === "master") {
-      if (name !== "phase" && typeof RecordPanel !== "undefined" && RecordPanel._kind === "subsys") RecordPanel.close();
       if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); }
       if (name === "deliv" && typeof DelivBulkDate !== "undefined") DelivBulkDate.render();
       if (name === "phase") { renderDomainChips(); renderSubsystemsMetaTable(); }

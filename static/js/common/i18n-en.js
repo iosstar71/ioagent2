@@ -2883,6 +2883,8 @@ var I18N_EN = (function () {
     "줄을 누르면 오른쪽 패널에서 SDLC 유형과 단계 가중치 · 계획 일정을 고칩니다 · 가중치 합계 100": "Click a row to edit its SDLC type, phase weights and planned dates in the right panel · weights sum to 100",
     "유형별 전체 보기 — 서브시스템 줄을 누르면 오른쪽 패널에서 그 유형만 고칩니다": "All types — click a subsystem row to edit just its type in the right panel",
     "공정 유형": "Process type",
+    "위 목록에서 고른 서브시스템의 SDLC 유형과 단계 가중치 · 계획 일정": "SDLC type, phase weights and planned dates of the subsystem chosen above",
+    "줄을 누르면 아래 [공정 유형]에 그 서브시스템이 나옵니다 · 가중치 합계 100": "Click a row to show it in [Process type] below · weights sum to 100",
     "개선과제 유형": "Improvement type",
     "코드 (ID 접두)": "Code (ID prefix)",
     "담당 PM": "PM",
