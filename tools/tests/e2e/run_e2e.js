@@ -540,7 +540,7 @@ async function main() {
       MergeTable.selectGroup("work"); const w = MergeTable.selected().join(); MergeTable.selectGroup("base"); const b2 = MergeTable.selected().join();
       o.groups = w === "wbs,req,deliverables,voc,weekly,meetings" && /config/.test(b2) && !/wbs/.test(b2) && !document.querySelector(".mt-pkg");
       const keepD = deliverablesData; deliverablesData = [{ id: 1, round: "1차", system: "A", name: "d1", pDate: "2027-01-01", status: "작성전" }, { id: 2, round: "1차", system: "A", name: "d2", pDate: "2027-01-01", aDate: "2027-01-02", status: "보완완료" }];
-      GShell.go("tab-master"); MasterSubTabs.show("phase"); await wait(300);
+      GShell.go("tab-master"); MasterSubTabs.show("deliv"); await wait(300);
       document.getElementById("delivBulkRound").value = "1차"; document.getElementById("delivBulkDate").value = "2027-03-31"; DelivBulkDate.apply(); await wait(200);
       document.getElementById("confirmDialogOkBtn").click(); await wait(300);
       o.bulk = deliverablesData[0].pDate === "2027-03-31" && deliverablesData[1].pDate === "2027-01-01"; deliverablesData = keepD;
@@ -555,7 +555,7 @@ async function main() {
       changeTheme(cur); await wait(300);
       return o; });
     check("Requests: sub menus in one row; no autosave (edit → dirty → refresh restores); header refresh button, member name; project management and system title in Admin; data set presets; bulk submit dates; 6 themes (Classic shows emoji, Navy palette)",
-      rq.subTabs && rq.noAuto && rq.dirty && rq.reverted && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.groups && rq.bulk && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*Phase · 산출물/.test(rq.tabs) && rq.classic && rq.navy && rq.help && rq.delRow, JSON.stringify(rq));
+      rq.subTabs && rq.noAuto && rq.dirty && rq.reverted && rq.header && rq.who && rq.admin && rq.title === "E2E 타이틀" && rq.groups && rq.bulk && /프로젝트 기본정보\|.*프로젝트 부가정보\|.*서브시스템/.test(rq.tabs) && rq.classic && rq.navy && rq.help && rq.delRow, JSON.stringify(rq));
     const en = await newPage();
     await en.goto(web.url); await en.waitForTimeout(1500);
     await en.selectOption("#inputLoginLang", "en"); await en.waitForTimeout(300);

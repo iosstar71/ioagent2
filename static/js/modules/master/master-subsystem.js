@@ -269,8 +269,9 @@ function renderSubsystemsMetaTable() {
       .map(d => `<option value="${escapeHtml(d)}" ${sub.domain === d ? "selected" : ""}>${escapeHtml(d)}</option>`)
       .join("");
 
-    const sdlcOptionsHtml = sdlcList
-      .map(s => `<option value="${s.code}" ${sub.sdlcCode === s.code ? "selected" : ""}>${escapeHtml(s.name)}</option>`)
+    const act = typeof SdlcBoard !== "undefined" ? SdlcBoard.active() : sdlcList.map(s => s.code);
+    const sdlcOptionsHtml = (typeof SdlcBoard !== "undefined" ? SdlcBoard.types() : sdlcList)
+      .map(s => `<option value="${escapeAttr(s.code)}" ${sub.sdlcCode === s.code ? "selected" : ""}>${escapeHtml(s.name)}${act.indexOf(s.code) === -1 ? " (추가)" : ""}</option>`)
       .join("");
 
     tr.innerHTML = `
@@ -282,15 +283,15 @@ function renderSubsystemsMetaTable() {
       <td><input type="text" value="${escapeHtml(sub.code || sub.name)}" style="width:85px;font-weight:bold;color:var(--primary);" title="ID 채번 접두 코드" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "code", "$trim", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(sub.name)}" style="width:120px;font-weight:bold;" data-change="updateSubsystemName" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td>
-        <select style="width:115px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "type", "$value", "rebuildAll")}">
-          <option value="SDLC" ${sub.type === "SDLC" ? "selected" : ""}>SDLC 공정형</option>
-          <option value="REQ" ${sub.type === "REQ" ? "selected" : ""}>개선타입(REQ)</option>
+        <select class="ss-sel-type" data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(idx, "$value")}">
+          <option value="SDLC" ${sub.type !== "REQ" ? "selected" : ""}>SDLC형</option>
+          <option value="REQ" ${sub.type === "REQ" ? "selected" : ""}>개선과제(REQ)형</option>
         </select>
       </td>
       <td>
-        <select style="width:160px; font-size:var(--fs-xs, 11px);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "sdlcCode", "$value", "rebuildAll")}" ${sub.type === "REQ" ? "disabled title='개선타입은 SDLC 단계 매칭 대상이 아닙니다'" : ""}>
+        ${sub.type === "REQ" ? `<span class="lk-hint">개선과제: ${escapeHtml(typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager.typeName() : "-")}</span>` : `<select class="ss-sel-sdlc" data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(idx, "$value")}">
           ${sdlcOptionsHtml}
-        </select>
+        </select>`}
       </td>
       <td><input type="number" value="${sub.weight}" style="width:65px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "weight", "$num", "syncSubsystemWeights", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "pm", "$value", "persistChanges")}"></td>

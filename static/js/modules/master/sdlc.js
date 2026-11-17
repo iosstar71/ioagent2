@@ -95,7 +95,7 @@ var SdlcBoard = {
     projectConfig.activeSdlcCodes.push(code);
     return true;
   },
-  _changed() { rebuildAll(true); persistChanges(); this.render(); },
+  _changed() { rebuildAll(true); persistChanges(); this.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
   setType(idx, type) {
     const m = subsystemsMeta[idx]; if (!m || !this.canEdit()) return;
     m.type = type === "REQ" ? "REQ" : "SDLC";
@@ -139,14 +139,6 @@ var SdlcBoard = {
     const users = c => subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode === c).map(m => m.name);
     const RP = typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager : null;
     const reqName = RP ? RP.typeName() : "-";
-    // ① 서브시스템별 유형
-    const rows = subsystemsMeta.map((m, i) => `<tr>
-        <td>${escapeHtml(m.domain || "-")}</td><td><b>${escapeHtml(m.name)}</b></td>
-        <td><select${dis} data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(i, "$value")}">
-          <option value="SDLC"${m.type !== "REQ" ? " selected" : ""}>SDLC형</option><option value="REQ"${m.type === "REQ" ? " selected" : ""}>개선과제(REQ)형</option></select></td>
-        <td>${m.type === "REQ" ? `<span class="lk-hint">개선과제: ${escapeHtml(reqName)} (아래 표)</span>` : `<select${dis} data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(i, "$value")}">
-          ${types.map(t => `<option value="${escapeAttr(t.code)}"${m.sdlcCode === t.code ? " selected" : ""}>${escapeHtml(t.name)}${active.indexOf(t.code) === -1 ? " (추가)" : ""}</option>`).join("")}</select>`}</td>
-      </tr>`).join("");
     // 단계 표 (SDLC · 개선과제 같은 모양): 단계 · 가중치 · 계획 시작 · 계획 종료 · 프로젝트 기간 안 위치
     const phaseTable = (phases, fn, code) => {
       const a = (i, f, v) => code == null ? UiEvents.args(i, f, v) : UiEvents.args(code, i, f, v);
@@ -189,9 +181,7 @@ var SdlcBoard = {
     const spare = types.filter(t => active.indexOf(t.code) === -1);
     box.className = "sdlc-board";
     box.innerHTML = `
-      <div class="sb-sec"><div class="sb-sec-title">① 서브시스템별 관리 유형 <span class="lk-hint">SDLC 유형을 고르면 이 프로젝트에 자동으로 추가됩니다 (최대 ${this.MAX}개)</span></div>
-        <div class="table-container sb-assign"><table class="m-table"><thead><tr><th>도메인</th><th>서브시스템</th><th>관리 유형</th><th>SDLC 유형</th></tr></thead><tbody>${rows || `<tr><td colspan="4" class="rec-empty">서브시스템을 먼저 [프로젝트 기본정보]에서 등록하세요.</td></tr>`}</tbody></table></div></div>
-      <div class="sb-sec"><div class="sb-sec-title">② 쓰는 유형의 단계 가중치 · 계획 일정 <span class="lk-hint">Admin 의 가중치는 처음 값 — 이 프로젝트에 맞게 고칩니다 (합계 100 이하). 단계 이름 · 산출물 · 키워드는 Admin 에서</span></div>
+      <div class="sb-sec"><div class="sb-sec-title">SDLC 유형별 단계 가중치 · 계획 일정 <span class="lk-hint">Admin 의 가중치는 처음 값 — 이 프로젝트에 맞게 고칩니다 (합계 100 이하). 단계 이름 · 산출물 · 키워드는 Admin 에서</span></div>
         ${cards || `<div class="rec-empty">쓰는 SDLC 유형이 없습니다.</div>`}
         ${reqCard}
         ${ed && spare.length ? `<div class="sb-spare"><span class="lk-hint">서브시스템 없이 미리 추가:</span> ${spare.map(t => `<button class="btn btn-xs" data-btn="add" data-click="SdlcBoard.add" data-click-args="${UiEvents.args(t.code)}">+ ${escapeHtml(t.name)}</button>`).join(" ")}</div>` : ""}</div>`;

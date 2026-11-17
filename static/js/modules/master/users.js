@@ -113,10 +113,11 @@ var SubTabs = {
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
     if (group === "master") {
-      if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); }
-      if (name === "phase" && typeof DelivBulkDate !== "undefined") DelivBulkDate.render();
+      if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); }
+      if (name === "deliv" && typeof DelivBulkDate !== "undefined") DelivBulkDate.render();
+      if (name === "phase") { renderDomainChips(); renderSubsystemsMetaTable(); }
       if (name === "users") renderProjectUsersTable();
-      if (name === "basic") { MilestoneManager.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
+      if (name === "basic") { MilestoneManager.render(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
       if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
