@@ -3069,3 +3069,8 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .ss-proc-field { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm, 12px); font-weight: 700; color: var(--text-sub); }
 .ss-proc-field select { min-width: 200px; font-weight: 500; }
 .sb-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; background: var(--chip-bg); font-size: var(--fs-xs, 11px); }
+/* 서브시스템 목록: 고른 줄 (아래 [공정 유형]에 나오는 서브시스템) */
+#subsystemsMetaBody > tr.neo-sel > td { background-color: color-mix(in srgb, var(--primary) 16%, var(--bg-card)); }
+#subsystemsMetaBody > tr.neo-sel > td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
+#subsystemsMetaBody > tr.neo-sel input, #subsystemsMetaBody > tr.neo-sel select { border-color: var(--primary); }
+[data-theme="urban-slate"] #subsystemsMetaBody > tr.neo-sel > td { background-color: color-mix(in srgb, var(--primary) 26%, var(--bg-card)); }
