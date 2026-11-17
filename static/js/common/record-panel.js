@@ -202,11 +202,6 @@ var RecordPanel = {
 };
 window.RecordPanel = RecordPanel;
 
-// 서브시스템 목록: 줄을 누르면 아래 [공정 유형]에 그 서브시스템 (입력칸을 눌러도 고름)
-document.addEventListener("click", e => {
-  const tr = e.target && e.target.closest ? e.target.closest("#subsystemsMetaBody > tr[data-ss-idx]") : null;
-  if (tr && typeof SdlcBoard !== "undefined" && !e.target.closest("button")) SdlcBoard.select(tr.getAttribute("data-ss-idx"));
-});
 // 행의 빈 곳(입력칸 · 버튼 밖)을 누르면 상세 패널
 document.addEventListener("click", e => {
   const td = e.target && e.target.closest ? e.target.closest("td") : null;

@@ -40,13 +40,14 @@ var ProcessLib = {
   canManageProject() { const u = AuthManager.getCurrentUser(); return !!u && (u.role === "SYS_ADMIN" || u.role === "PM"); },
 
   // ---- 프로젝트 복사본 ----
-  mergeDates(defPhases, oldPhases) {
+  mergeDates(defPhases, oldPhases, keepWeight) {
     const old = {};
     (oldPhases || []).forEach(p => { if (p && p.name) old[p.name] = p; });
     return this._c(defPhases || []).map(p => {
       const o = old[p.name];
       if (o && o.pStart) p.pStart = o.pStart;
       if (o && o.pEnd) p.pEnd = o.pEnd;
+      if (keepWeight && o && o.weight !== undefined) p.weight = o.weight;
       return p;
     });
   },
@@ -75,7 +76,12 @@ var ProcessLib = {
   applyReqToProject(code) {
     const lib = this.findReq(code);
     if (!lib) return false;
-    projectConfig.reqSdlcPhases = this.mergeDates(lib.phases, projectConfig.reqSdlcPhases || []);
+    // 개선과제 유형마다 이 프로젝트의 가중치 · 계획 일정을 따로 둠 (적용 유형을 바꿔도 잃지 않음)
+    if (!projectConfig.reqTypeCopies || typeof projectConfig.reqTypeCopies !== "object") projectConfig.reqTypeCopies = {};
+    const cur = projectConfig.activeReqPreset;
+    if (cur && Array.isArray(projectConfig.reqSdlcPhases) && projectConfig.reqSdlcPhases.length) projectConfig.reqTypeCopies[cur] = this._c(projectConfig.reqSdlcPhases);
+    const saved = projectConfig.reqTypeCopies[code];
+    projectConfig.reqSdlcPhases = this.mergeDates(lib.phases, saved || projectConfig.reqSdlcPhases || [], !!saved);
     projectConfig.activeReqPreset = code;
     return true;
   },

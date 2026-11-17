@@ -260,7 +260,6 @@ function renderSubsystemsMetaTable() {
 
   subsystemsMeta.forEach((sub, idx) => {
     const tr = document.createElement("tr");
-    tr.setAttribute("data-ss-idx", idx);   // 누르면 아래 [공정 유형]에 이 서브시스템
     const rootTask = wbsData.find(d => d.system === sub.name && d.level === 1);
     const linkedTasks = wbsData.filter(d => d.system === sub.name && d.isLeaf);
     const taskCount = linkedTasks.length;
@@ -293,6 +292,7 @@ function renderSubsystemsMetaTable() {
         ${sub.type === "REQ" ? `<span class="lk-hint">개선과제: ${escapeHtml(typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager.typeName() : "-")}</span>` : `<select class="ss-sel-sdlc" data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(idx, "$value")}">
           ${sdlcOptionsHtml}
         </select>`}
+        ${typeof SdlcBoard === "undefined" ? "" : sub.type === "REQ" ? SdlcBoard.warnHtml("REQ", SdlcBoard._reqActive()) : SdlcBoard.warnHtml("SDLC", sub.sdlcCode)}
       </td>
       <td><input type="number" value="${sub.weight}" style="width:65px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "weight", "$num", "syncSubsystemWeights", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "pm", "$value", "persistChanges")}"></td>
@@ -303,7 +303,6 @@ function renderSubsystemsMetaTable() {
     `;
     tbody.appendChild(tr);
   });
-  if (typeof SdlcBoard !== "undefined") SdlcBoard._markRow();
 }
 
 function addNewSubsystemMeta() {

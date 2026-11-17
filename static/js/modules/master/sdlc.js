@@ -146,63 +146,101 @@ var SdlcBoard = {
         ${compact ? "" : `<td>${bar(ph)}</td>`}</tr>`).join("")}
       </tbody></table>`;
   },
-  // 서브시스템 목록 아래: 고른 서브시스템의 공정 유형 + 그 유형의 단계 가중치 · 계획 일정 (유형 단위로 공유)
-  sel: 0,
-  select(idx) {
-    const i = parseInt(idx, 10);
-    if (!(i >= 0) || i === this.sel) return;
-    this.sel = i; this.render();
+  // ---- [공정 유형]: 서브시스템과 따로, 시스템 설정의 모든 유형(SDLC · 개선과제)의 가중치 · 계획 일정 ----
+  //  (서브시스템이 고를 수 있는 SDLC 유형은 이 프로젝트의 사용 유형, 최대 MAX 개)
+  view: null,   // "SDLC:<code>" | "REQ:<code>"
+  _reqLib() { return typeof ProcessLib !== "undefined" ? ProcessLib.reqTypes() : Object.values(ReqPhaseManager.PRESETS); },
+  _reqActive() { return projectConfig.activeReqPreset || "REQ_MFG_2027"; },
+  phasesOf(kind, code) {
+    if (kind === "REQ") {
+      if (code === this._reqActive()) return ReqPhaseManager.getPhases();
+      const c = (projectConfig.reqTypeCopies || {})[code];
+      const t = this._reqLib().find(x => x.code === code);
+      return c || (t ? t.phases : []);
+    }
+    const t = (projectConfig.customSdlcTypes || []).find(x => x.code === code) || this.types().find(x => x.code === code);
+    return t ? t.phases || [] : [];
   },
-  _markRow() {
-    document.querySelectorAll("#subsystemsMetaBody > tr").forEach(tr => tr.classList.toggle("neo-sel", parseInt(tr.getAttribute("data-ss-idx"), 10) === this.sel));
+  unplanned(phases) { return !phases || !phases.length || phases.some(ph => !ph.pStart || !ph.pEnd); },
+  // 서브시스템 목록의 [⚠ 일정 미지정] 표시 (누르면 아래 [공정 유형]이 그 유형으로)
+  warnHtml(kind, code) {
+    if (!code || !this.unplanned(this.phasesOf(kind, code))) return "";
+    return `<button type="button" class="ss-warn" data-click="SdlcBoard.show" data-click-args="${UiEvents.args(kind + ":" + code)}" title="계획 일정이 비어 있는 단계가 있습니다 — 눌러서 [공정 유형]에서 채우세요">⚠ 일정 미지정</button>`;
+  },
+  show(v) {
+    this.view = v; this.render();
+    const card = document.getElementById("ssProcCard");
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  },
+  // 쓰지 않는 개선과제 유형의 가중치 · 일정 (적용 중인 유형은 ReqPhaseManager.updatePhase)
+  setReqPhase(code, i, field, value) {
+    if (!this.canEdit()) return;
+    if (code === this._reqActive()) return ReqPhaseManager.updatePhase(i, field, value);
+    if (!projectConfig.reqTypeCopies || typeof projectConfig.reqTypeCopies !== "object") projectConfig.reqTypeCopies = {};
+    let ph = projectConfig.reqTypeCopies[code];
+    if (!ph) { const t = this._reqLib().find(x => x.code === code); if (!t) return; ph = projectConfig.reqTypeCopies[code] = JSON.parse(JSON.stringify(t.phases)); }
+    const row = ph[i]; if (!row) return;
+    if (field === "weight") {
+      const w = Math.max(0, Math.min(100, parseFloat(value) || 0));
+      const others = ph.reduce((a, x, j) => a + (j === i ? 0 : (parseFloat(x.weight) || 0)), 0);
+      if (others + w > 100) { showToast(`⚠️ 단계 가중치 합계가 100 을 넘을 수 없습니다 (이 단계는 ${100 - others} 까지).`, "warning"); return this.render(); }
+      row.weight = w;
+    } else if (value) row[field] = value; else delete row[field];
+    if (row.pStart && row.pEnd && row.pStart > row.pEnd) showToast(`⚠️ [${row.name}] 계획 종료일이 시작일보다 빠릅니다.`, "warning");
+    this._changed();
+  },
+  _defaultView() {
+    const m = subsystemsMeta[0];
+    if (m && m.type === "REQ") return "REQ:" + this._reqActive();
+    if (m && m.sdlcCode) return "SDLC:" + m.sdlcCode;
+    return "SDLC:" + (this.active()[0] || "");
   },
   render() {
     const box = document.getElementById("customSdlcCardsContainer");
     if (!box) return;
-    if (this.sel >= subsystemsMeta.length) this.sel = Math.max(0, subsystemsMeta.length - 1);
-    const row = subsystemsMeta[this.sel], ed = this.canEdit(), dis = ed ? "" : " disabled", act = this.active(), types = this.types();
-    const RP = typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager : null;
+    const types = this.types(), act = this.active(), ed = this.canEdit(), dis = ed ? "" : " disabled";
+    const reqs = this._reqLib(), reqAct = this._reqActive();
+    if (!this.view || !/^(SDLC|REQ):./.test(this.view)) this.view = this._defaultView();
+    let [kind, code] = [this.view.slice(0, this.view.indexOf(":")), this.view.slice(this.view.indexOf(":") + 1)];
+    if (kind === "SDLC" && !types.some(t => t.code === code)) { kind = "SDLC"; code = (act[0] || (types[0] || {}).code || ""); this.view = "SDLC:" + code; }
+    if (kind === "REQ" && !reqs.some(t => t.code === code)) { code = reqAct; this.view = "REQ:" + code; }
     const usersOf = c => subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode === c).map(m => m.name);
-    // 이 프로젝트에서 쓰는 SDLC 유형 (쓰는 서브시스템이 없으면 [사용 안 함]으로 뺄 수 있음)
+    const reqUsers = subsystemsMeta.filter(m => m.type === "REQ").map(m => m.name);
+    const label = (k, t) => {
+      const ph = this.phasesOf(k, t.code), st = [];
+      if (k === "SDLC") { const u = usersOf(t.code); if (u.length) st.push(`사용 중 (${u.join(", ")})`); else if (act.indexOf(t.code) !== -1) st.push("프로젝트 유형"); }
+      else if (t.code === reqAct) st.push(reqUsers.length ? `적용 중 (${reqUsers.join(", ")})` : "적용 중");
+      if (this.unplanned(ph)) st.push("일정 미지정");
+      return escapeHtml(t.name) + (st.length ? " — " + escapeHtml(st.join(" · ")) : "");
+    };
+    const sel = `<select class="ss-proc-pick" data-change="SdlcBoard.show" data-change-args="${UiEvents.args("$value")}">
+      <optgroup label="SDLC 유형">${types.map(t => `<option value="SDLC:${escapeAttr(t.code)}"${kind === "SDLC" && t.code === code ? " selected" : ""}>${label("SDLC", t)}</option>`).join("")}</optgroup>
+      <optgroup label="개선과제 유형">${reqs.map(t => `<option value="REQ:${escapeAttr(t.code)}"${kind === "REQ" && t.code === code ? " selected" : ""}>${label("REQ", t)}</option>`).join("")}</optgroup></select>`;
+    const phases = this.phasesOf(kind, code), sum = this.sumOf(phases);
+    let note, extra = "";
+    if (kind === "SDLC") {
+      const u = usersOf(code);
+      note = u.length ? `쓰는 서브시스템: <b>${escapeHtml(u.join(", "))}</b>` : (act.indexOf(code) !== -1 ? "이 프로젝트의 SDLC 유형 — 아직 쓰는 서브시스템이 없습니다" : "아직 이 프로젝트에서 쓰지 않는 유형 — 서브시스템에서 고르면 사용 유형에 추가됩니다");
+      if (ed && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(code)) extra = `<button class="btn btn-sm" data-btn="warn" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(code)}" title="Admin 에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>`;
+    } else if (code === reqAct) {
+      note = `이 프로젝트에 적용 중인 개선과제 유형${reqUsers.length ? ` — 쓰는 서브시스템: <b>${escapeHtml(reqUsers.join(", "))}</b>` : ""}`;
+      if (ed && typeof ProcessLib !== "undefined" && ProcessLib.reqDiffers()) extra = `<button class="btn btn-sm" data-btn="warn" data-click="ReqPhaseManager.refreshFromLib" title="Admin 에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>`;
+    } else {
+      note = "적용하지 않은 개선과제 유형 (개선과제형 서브시스템은 프로젝트에 적용한 유형 하나를 씁니다)";
+      if (ed) extra = `<button class="btn btn-sm" data-btn="apply" data-click="ReqPhaseManager.applyPreset" data-click-args="${UiEvents.args(code)}">이 유형을 개선과제에 적용</button>`;
+    }
     const chips = act.map(c => {
       const t = types.find(x => x.code === c) || { name: c }, n = usersOf(c).length;
       return `<span class="sb-chip">${escapeHtml(t.name)} <b>${n}</b>${ed && !n ? ` <button class="btn btn-xs" data-btn="neutral" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(c)}">사용 안 함</button>` : ""}</span>`;
     }).join("");
-    let body;
-    if (!row) body = `<div class="rec-empty">서브시스템을 먼저 위 목록에 추가하세요.</div>`;
-    else {
-      const i = this.sel, isReq = row.type === "REQ";
-      const typeSel = `<select${dis} data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(i, "$value")}">
-        <option value="SDLC"${!isReq ? " selected" : ""}>SDLC형</option><option value="REQ"${isReq ? " selected" : ""}>개선과제(REQ)형</option></select>`;
-      let kindSel, phases, fn, code, mates, differs, refresh;
-      if (isReq) {
-        kindSel = RP ? `<select${dis} data-change="ReqPhaseManager.applyPreset" data-change-args="${UiEvents.args("$value")}">${RP.typeOptions()}</select>` : "-";
-        phases = RP ? RP.getPhases() : []; fn = "ReqPhaseManager.updatePhase"; code = null;
-        mates = subsystemsMeta.filter(m => m !== row && m.type === "REQ").map(m => m.name);
-        differs = ed && typeof ProcessLib !== "undefined" && ProcessLib.reqDiffers(); refresh = `data-click="ReqPhaseManager.refreshFromLib"`;
-      } else {
-        kindSel = `<select${dis} data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(i, "$value")}">${types.map(t => `<option value="${escapeAttr(t.code)}"${row.sdlcCode === t.code ? " selected" : ""}>${escapeHtml(t.name)}${act.indexOf(t.code) === -1 ? " (추가)" : ""}</option>`).join("")}</select>`;
-        const t = (projectConfig.customSdlcTypes || []).find(x => x.code === row.sdlcCode) || types.find(x => x.code === row.sdlcCode);
-        phases = t ? t.phases : []; fn = "SdlcBoard.setPhase"; code = row.sdlcCode;
-        mates = subsystemsMeta.filter(m => m !== row && m.type !== "REQ" && m.sdlcCode === row.sdlcCode).map(m => m.name);
-        differs = ed && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(code); refresh = `data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(code)}"`;
-      }
-      const sum = this.sumOf(phases);
-      body = `<div class="ss-proc-head">
-          <b class="ss-proc-name">${escapeHtml(row.name)}</b>
-          <label class="ss-proc-field">관리 유형 ${typeSel}</label>
-          <label class="ss-proc-field">${isReq ? "개선과제 유형" : "SDLC 유형"} ${kindSel}</label>
-          <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">가중치 합계 ${sum}%</span>
-          ${differs ? `<button class="btn btn-sm" data-btn="warn" ${refresh} title="Admin 에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
-        </div>
-        <div class="lk-hint">단계 가중치 · 계획 일정은 유형 단위로 저장됩니다${mates.length ? ` — 같은 유형을 쓰는 <b>${escapeHtml(mates.join(", "))}</b> 에도 함께 적용` : ""}. 단계 이름 · 산출물 · 키워드는 Admin 에서</div>
-        ${phases.length ? this.phaseTable(phases, fn, code) : `<div class="rec-empty">단계가 없습니다.</div>`}`;
-    }
     box.className = "ss-proc";
-    box.innerHTML = body + `<div class="sb-spare"><span class="lk-hint">이 프로젝트의 SDLC 유형 (최대 ${this.MAX}개, 숫자 = 쓰는 서브시스템):</span> ${chips || "-"}</div>`;
+    box.innerHTML = `<div class="ss-proc-head">${sel}
+        <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">가중치 합계 ${sum}%</span>${extra}</div>
+      <div class="lk-hint">${note}. 단계 이름 · 산출물 · 키워드는 Admin 에서</div>
+      ${phases.length ? this.phaseTable(phases, kind === "REQ" ? "SdlcBoard.setReqPhase" : "SdlcBoard.setPhase", code) : `<div class="rec-empty">단계가 없습니다.</div>`}
+      <div class="sb-spare"><span class="lk-hint">이 프로젝트의 SDLC 유형 (서브시스템이 고를 수 있는 유형, 최대 ${this.MAX}개 · 숫자 = 쓰는 서브시스템):</span> ${chips || "-"}</div>`;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(box);
-    this._markRow();
   }
 };
 window.SdlcBoard = SdlcBoard;

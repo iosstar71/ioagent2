@@ -84,7 +84,7 @@ var ReqPhaseManager = {
   },
 
   // 화면은 [프로젝트 설정 > Phase · 산출물] 한 판(SdlcBoard)에서 SDLC 유형과 함께 그림
-  renderTable() { if (typeof SdlcBoard !== "undefined") SdlcBoard.render(); },
+  renderTable() { if (typeof SdlcBoard !== "undefined") SdlcBoard.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
   typeName() {
     const cur = projectConfig.activeReqPreset || "REQ_MFG_2027";
     const t = (typeof ProcessLib !== "undefined" && ProcessLib.findReq(cur)) || this.PRESETS[cur];
