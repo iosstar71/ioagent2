@@ -207,7 +207,7 @@ var ProcessLib = {
   },
   renderAdmin() {
     const card = (t, kind, idx) => {
-      const ph = (t.phases || []).map((p, i) => `${i + 1}.${escapeHtml(p.name)}(${p.weight}%)`).join(" ➔ ");
+      const ph = (t.phases || []).map((p, i) => `${i + 1}.<span>${escapeHtml(p.name)}</span>(${p.weight}%)`).join(" ➔ ");   // 단계 이름을 따로 감싸 영어 화면에서도 번역
       const sum = (t.phases || []).reduce((a, p) => a + (parseFloat(p.weight) || 0), 0);
       return `<div class="step-card pl-card">
         <div class="pl-card-head">
@@ -218,7 +218,7 @@ var ProcessLib = {
           </div>
         </div>
         <p>${escapeHtml(t.desc || "")}</p>
-        <div class="pl-phases"><b>단계 ${(t.phases || []).length}개</b> (가중치 합계 <span style="color:${Math.round(sum) === 100 ? "var(--chart-good-text)" : "var(--chart-bad-text)"}">${sum}%</span>) — ${ph}</div>
+        <div class="pl-phases"><b>단계 ${(t.phases || []).length}개</b> (<span>가중치 합계</span> <span class="${Math.round(sum) === 100 ? "pl-sum-ok" : "pl-sum-bad"}">${sum}%</span>) — ${ph}</div>
       </div>`;
     };
     const lib = this.lib();

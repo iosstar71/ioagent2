@@ -208,10 +208,11 @@ var SdlcBoard = {
     const reqUsers = subsystemsMeta.filter(m => m.type === "REQ").map(m => m.name);
     const label = (k, t) => {
       const ph = this.phasesOf(k, t.code), st = [];
-      if (k === "SDLC") { const u = usersOf(t.code); if (u.length) st.push(`사용 중 (${u.join(", ")})`); else if (act.indexOf(t.code) !== -1) st.push("프로젝트 유형"); }
-      else if (t.code === reqAct) st.push(reqUsers.length ? `적용 중 (${reqUsers.join(", ")})` : "적용 중");
+      if (k === "SDLC") { const u = usersOf(t.code); if (u.length) st.push("사용 중", `(${u.join(", ")})`); else if (act.indexOf(t.code) !== -1) st.push("프로젝트 유형"); }
+      else if (t.code === reqAct) { st.push("적용 중"); if (reqUsers.length) st.push(`(${reqUsers.join(", ")})`); }
       if (this.unplanned(ph)) st.push("일정 미지정");
-      return escapeHtml(t.name) + (st.length ? " — " + escapeHtml(st.join(" · ")) : "");
+      const tr = x => typeof I18N !== "undefined" ? I18N.t(x) : x;   // 선택 상자 글은 한 덩어리라 조각마다 번역
+      return escapeHtml(tr(t.name)) + (st.length ? " — " + escapeHtml(st.map(tr).join(" · ")) : "");
     };
     const sel = `<select class="ss-proc-pick" data-change="SdlcBoard.show" data-change-args="${UiEvents.args("$value")}">
       <optgroup label="SDLC 유형">${types.map(t => `<option value="SDLC:${escapeAttr(t.code)}"${kind === "SDLC" && t.code === code ? " selected" : ""}>${label("SDLC", t)}</option>`).join("")}</optgroup>
@@ -236,7 +237,7 @@ var SdlcBoard = {
     box.className = "ss-proc";
     box.innerHTML = `<div class="ss-proc-head">${sel}
         <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">가중치 합계 ${sum}%</span>${extra}</div>
-      <div class="lk-hint">${note}. 단계 이름 · 산출물 · 키워드는 Admin 에서</div>
+      <div class="lk-hint"><span>${note}</span> · <span>단계 이름 · 산출물 · 키워드는 Admin 에서</span></div>
       ${phases.length ? this.phaseTable(phases, kind === "REQ" ? "SdlcBoard.setReqPhase" : "SdlcBoard.setPhase", code) : `<div class="rec-empty">단계가 없습니다.</div>`}
       <div class="sb-spare"><span class="lk-hint">이 프로젝트의 SDLC 유형 (서브시스템이 고를 수 있는 유형, 최대 ${this.MAX}개 · 숫자 = 쓰는 서브시스템):</span> ${chips || "-"}</div>`;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);

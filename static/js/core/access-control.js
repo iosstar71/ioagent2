@@ -233,8 +233,9 @@ var AuthManager = {
     const who = u.empNo ? `${u.name || u.empNo} — ${this.roleLabel(norm)}${norm === "MEMBER" || norm === "LEAD" ? " · " + (u.subsystem || "ALL") : ""}` : "멤버 미선택";
     badge.innerHTML = `👤 ${escapeHtml(u.empNo ? (u.name || u.empNo) : who)}`;
     badge.title = who;
+    // 이름(자료)과 권한(화면 글)을 나눠 써서 영어 화면에서 권한이 번역되게
     const whoEl = document.getElementById("gUserWho");
-    if (whoEl) whoEl.textContent = who;
+    if (whoEl) whoEl.innerHTML = u.empNo ? `<span>${escapeHtml(u.name || u.empNo)}</span> — <span>${escapeHtml(this.roleLabel(norm))}</span>${norm === "MEMBER" || norm === "LEAD" ? " · " + escapeHtml(u.subsystem || "ALL") : ""}` : `<span>${escapeHtml(who)}</span>`;
   },
 
   // ---------------------------------------------------------------------------

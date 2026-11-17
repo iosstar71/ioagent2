@@ -3073,3 +3073,5 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 /* 맨 위 공지: 아이콘 + 숫자, 아이콘 크기는 [화면] · [관리]와 같게 */
 .g-header .g-notice { height: 32px; padding: 0 9px; gap: 4px; font-weight: 700; box-sizing: border-box; }
 .g-header .g-notice svg.iostar-ico { width: 18px; height: 18px; }
+.pl-sum-ok { color: var(--chart-good-text); }
+.pl-sum-bad { color: var(--chart-bad-text); }
