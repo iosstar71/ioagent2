@@ -50,7 +50,8 @@ var ProcessLib = {
       return p;
     });
   },
-  _shape(phases) { return JSON.stringify((phases || []).map(p => [p.name, parseFloat(p.weight) || 0, p.output || "", (p.keywords || []).join(",")])); },
+  // 단계 구성 비교 (가중치는 프로젝트마다 바꿀 수 있으므로 비교에서 뺌 — Admin 의 가중치는 처음 값)
+  _shape(phases) { return JSON.stringify((phases || []).map(p => [p.name, p.output || "", (p.keywords || []).join(",")])); },
   projectSdlc(code) { return (projectConfig.customSdlcTypes || []).find(t => t.code === code) || null; },
   sdlcDiffers(code) {
     const lib = this.findSdlc(code), cur = this.projectSdlc(code);
@@ -92,7 +93,7 @@ var ProcessLib = {
     if (!t) return;
     _editingSdlcMode = { target: "dates", code };
     _editingSdlcPhasesTemp = this._c(t.phases || []);
-    this._openModal(`📅 [${t.name}] 단계별 계획 일정 (이 프로젝트)`, t, true);
+    this._openModal(`📅 [${t.name}] 단계별 가중치 · 계획 일정 (이 프로젝트)`, t, true);
   },
 
   // ---- 시스템 설정: 라이브러리 편집 ----
@@ -145,13 +146,15 @@ var ProcessLib = {
       if (!this.canManageProject()) return showToast("🚫 PM · 관리자만 바꿀 수 있습니다.");
       const bad = _editingSdlcPhasesTemp.find(p => p.pStart && p.pEnd && p.pStart > p.pEnd);
       if (bad) return showToast(`[${bad.name}] 단계의 계획 종료일이 시작일보다 빠릅니다.`);
+      const wSum = Math.round(_editingSdlcPhasesTemp.reduce((a, p) => a + (parseFloat(p.weight) || 0), 0) * 10) / 10;
+      if (wSum !== 100) return showToast(`⚠️ 단계 가중치 합계가 100 이어야 합니다 (지금 ${wSum}).`, "warning");
       if (!this.projectSdlc(mode.code)) this.applySdlcToProject(mode.code);
       const t = this.projectSdlc(mode.code);
-      t.phases.forEach((p, i) => { const e = _editingSdlcPhasesTemp[i] || {}; if (e.pStart) p.pStart = e.pStart; else delete p.pStart; if (e.pEnd) p.pEnd = e.pEnd; else delete p.pEnd; });
+      t.phases.forEach((p, i) => { const e = _editingSdlcPhasesTemp[i] || {}; p.weight = parseFloat(e.weight) || 0; if (e.pStart) p.pStart = e.pStart; else delete p.pStart; if (e.pEnd) p.pEnd = e.pEnd; else delete p.pEnd; });
       closeCustomSdlcModal();
       renderCustomSdlcCards();
       rebuildAll(true);
-      return showToast(`📅 [${t.name}] 단계별 계획 일정을 저장했습니다.`);
+      return showToast(`📅 [${t.name}] 단계별 가중치 · 계획 일정을 바꿨습니다. [저장]을 누르면 기록됩니다.`);
     }
     if (!this.isAdmin()) return showToast("🚫 SDLC 유형은 관리자만 바꿀 수 있습니다.");
     if (!/^[A-Za-z0-9_-]{2,40}$/.test(code)) return showToast("⚠️ 유형 코드는 영문 · 숫자 · _ - 로 2~40자여야 합니다.");

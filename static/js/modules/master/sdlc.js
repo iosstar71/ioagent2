@@ -126,7 +126,7 @@ function renderCustomSdlcCards() {
         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
           ${sdlc._projectOnly ? '<span class="badge" style="background:var(--chart-warn-text); color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 SDLC 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
           ${isActive && canEdit && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(sdlc.code) ? `<button class="btn btn-warning btn-sm" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(String(sdlc.code))}" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
-          ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 일정</button>` : ""}
+          ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 가중치 · 일정</button>` : ""}
           ${canEdit ? `<button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
             ${isActive ? '선택 해제' : '선택 활성화 (프로젝트 사용)'}
           </button>` : ""}
@@ -229,7 +229,7 @@ function renderEditSdlcPhasesTable() {
     tr.innerHTML = `
       <td style="text-align:center;"><b>${pIdx + 1}</b></td>
       <td><input type="text"${ro} value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
-      <td><input type="number"${ro} value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
+      <td><input type="number" min="0" max="100" step="1" value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
       <td class="col-date"><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pStart", "$value")}"></td>
       <td class="col-date"><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pEnd", "$value")}"></td>
       <td><input type="text"${ro} value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>

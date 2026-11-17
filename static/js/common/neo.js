@@ -760,6 +760,13 @@ var StickyTop = {
       if (i === 0) root.setProperty("--hdr-h", Math.round(top) + "px");  // 메뉴 줄은 머리글 바로 아래에 고정
     });
     root.setProperty("--sticky-top", Math.round(top) + "px");
+    // 지금 화면의 이름 줄(+ 서브메뉴 줄) 높이: 서브메뉴 줄은 이름 줄 바로 아래에 고정
+    const pane = document.querySelector(".tab-pane.active");
+    const head = pane && pane.querySelector(":scope > .sub-header-bar");
+    const headH = head ? head.offsetHeight + (parseFloat(getComputedStyle(head).marginBottom) || 0) : 0;
+    const tabs = pane && pane.querySelector(":scope > .master-subtab-bar, :scope > .sub-tab-nav");
+    root.setProperty("--pane-head-h", Math.round(headH) + "px");
+    root.setProperty("--pane-sticky-h", Math.round(headH + (tabs ? tabs.offsetHeight : 0)) + "px");
   },
   init() {
     this.apply();
@@ -767,7 +774,11 @@ var StickyTop = {
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(() => this.apply());
       [document.querySelector("header"), document.querySelector(".g-nav")].forEach(el => { if (el) ro.observe(el); });
+      document.querySelectorAll(".tab-pane > .sub-header-bar").forEach(el => ro.observe(el));
     }
+    // 화면을 옮기면 그 화면의 이름 줄 높이로 다시 계산
+    const mo = new MutationObserver(() => this.apply());
+    document.querySelectorAll(".tab-pane").forEach(p => mo.observe(p, { attributes: true, attributeFilter: ["class"] }));
   }
 };
 window.StickyTop = StickyTop;

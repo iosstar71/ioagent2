@@ -93,11 +93,11 @@ var ReqPhaseManager = {
     const dis = canEdit ? "" : " disabled";
     phases.forEach((p, idx) => {
       const tr = document.createElement("tr");
-      // [v3.9.0] 단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 > 공정 유형]에서, 여기서는 계획 일정만
+      // 단계 이름 · 산출물 · 키워드는 [Admin > SDLC 유형]에서, 여기서는 이 프로젝트의 가중치와 계획 일정
       tr.innerHTML = `
         <td style="text-align:center;"><b>${idx + 1}</b></td>
         <td style="font-weight:bold;color:#0f766e;">${escapeHtml(p.name)}</td>
-        <td style="text-align:right;">${p.weight}</td>
+        <td><input type="number" min="0" max="100" step="1"${dis} class="phase-w" value="${escapeAttr(String(p.weight))}" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
         <td><input type="date"${dis} value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pStart", "$value")}"></td>
         <td><input type="date"${dis} value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pEnd", "$value")}"></td>
         <td>${escapeHtml(p.output || "")}</td>

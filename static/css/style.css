@@ -2139,14 +2139,17 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 }
 
 /* ---------- [v3.7.0] 서브 탭이 있는 화면: 스크롤해도 서브 탭 줄까지 고정 ---------- */
-body.ui-neo .master-subtab-bar,
-body.ui-neo .sub-tab-nav,
-body.ui-neo #tab-meeting > .sub-header-bar {
-  position: sticky; top: var(--sticky-top, 45px); z-index: 45;
-  background: var(--bg-main, #f1f5f9); box-shadow: 0 8px 8px -8px rgba(15, 23, 42, 0.28);
+/* 모든 화면: 화면 이름 줄(저장 · 새로고침 포함) → 서브메뉴 줄까지 함께 고정 (StickyTop 이 --pane-head-h 를 잼) */
+body.ui-neo .tab-pane > .sub-header-bar {
+  position: sticky; top: var(--sticky-top, 45px); z-index: 46;
+  box-shadow: 0 12px 0 0 var(--bg-main), 0 -16px 0 0 var(--bg-main);   /* 위아래 틈으로 아래 내용이 비치지 않게 */
 }
-body.ui-neo .master-subtab-bar, body.ui-neo .sub-tab-nav { padding-top: 8px; margin-top: -4px; }
-body.ui-neo #tab-meeting > .sub-header-bar { background: var(--bg-card, #fff); }
+body.ui-neo .master-subtab-bar,
+body.ui-neo .sub-tab-nav {
+  position: sticky; top: calc(var(--sticky-top, 45px) + var(--pane-head-h, 0px)); z-index: 45;
+  background: var(--bg-main, #f1f5f9); box-shadow: 0 8px 8px -8px rgba(15, 23, 42, 0.28);
+  padding-top: 8px; margin-top: -4px;
+}
 
 /* ---------- [v3.7.0] 전체 사용자 통합 관리 ---------- */
 .ua-chip { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 12px; font-size: var(--fs-xs, 11px); background: rgba(37,99,235,0.10); color: var(--text-main, #1e293b); border: 1px solid rgba(37,99,235,0.25); white-space: nowrap; }
@@ -2187,8 +2190,8 @@ body.ui-neo #tab-meeting > .sub-header-bar { background: var(--bg-card, #fff); }
 body.ui-neo header.g-header { position: sticky; top: 0; }
 body.ui-neo:not([data-layout="sidebar-left"]) .g-nav { top: var(--hdr-h, 52px); }
 body.ui-neo .master-subtab-bar, body.ui-neo .sub-tab-nav { padding-top: 5px; padding-bottom: 4px; margin-bottom: 8px; }
-body.ui-neo .neo-wr-split > #wrListCard { top: calc(var(--sticky-top, 97px) + 12px); max-height: calc(100vh - var(--sticky-top, 97px) - 96px); }
-html { scroll-padding-top: calc(var(--sticky-top, 97px) + 56px); }
+body.ui-neo .neo-wr-split > #wrListCard { top: calc(var(--sticky-top, 97px) + var(--pane-sticky-h, 0px) + 12px); max-height: calc(100vh - var(--sticky-top, 97px) - var(--pane-sticky-h, 0px) - 40px); }
+html { scroll-padding-top: calc(var(--sticky-top, 97px) + var(--pane-sticky-h, 0px) + 12px); }
 
 /* ---------- [v3.8.0] 프로젝트 단위 백업 · 초기화 / 프로젝트별 설정 안내 ---------- */
 .proj-box { padding: 12px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); }
@@ -3022,3 +3025,4 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .da-run { text-align: center; white-space: nowrap; }
 /* 맨 위 화면(팔레트) · 관리(톱니바퀴) 버튼: 아이콘만으로 알아볼 수 있게 조금 크게 */
 .g-header #gUiBtn svg.iostar-ico, .g-header #gAdminBtn svg.iostar-ico { width: 18px; height: 18px; }
+.phase-w { width: 70px; text-align: right; }

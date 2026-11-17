@@ -822,15 +822,30 @@ var WeeklyReportManager = {
 
   saveCurrentReport() { return this.completeReport(true); },
 
-  syncWbsTasks() {
+  // [화면 새로고침] 뒤: 작성 완료된 보고서를 보고 있으면 다시 읽을지 묻는다 (작성 완료본 = 그때 자료 스냅샷)
+  afterUserRefresh() {
+    const r = this.currentWeekReport;
+    if (r && (r.status || "DRAFT") === "DONE" && r.snapshot) this.syncWbsTasks();
+  },
+  // [WBS Task 다시 불러오기]: 작성 완료된 보고서면 완료를 취소하고 지금 자료(Task · 회의 · Action Item · 지표)로 다시 읽음
+  syncWbsTasks(confirmed) {
     if (!this.currentWeekReport) return;
+    const wasDone = (this.currentWeekReport.status || "DRAFT") === "DONE" && (weeklyReportsData || []).some(r => r.id === this.currentWeekReport.id);
+    if (wasDone && confirmed !== true) {
+      openConfirmDialog("이 주간보고는 작성 완료 상태입니다.\n다시 읽으면 작성 완료가 취소되고, Task · 회의 · Action Item · 지표를 지금 자료로 다시 읽습니다.\n(직접 쓴 요약 · 현안 · 상세 내용과 직접 입력 항목은 그대로 둡니다)\n\n[작성 완료]를 다시 누르면 그 시점 자료로 새로 저장됩니다. 계속하시겠습니까?", () => this.syncWbsTasks(true));
+      return;
+    }
     this.readInputsIntoCurrentReport();
 
     const weekNum = this.currentWeekReport.weekNo;
     const weeks = this.getAllWeeks();
     const wObj = weeks.find(w => w.weekNum === weekNum) || weeks[0];
     const freshReport = this.buildReport(wObj, this.scope, this.scopeValue);
-    freshReport.status = this.currentWeekReport.status;
+    freshReport.status = wasDone ? "DRAFT" : this.currentWeekReport.status;
+    if (wasDone) {   // 저장된 완료본도 '작성 중'으로 — 스냅샷은 지움 ([작성 완료] 때 다시 찍음)
+      const saved = (weeklyReportsData || []).find(r => r.id === this.currentWeekReport.id);
+      if (saved) { saved.status = "DRAFT"; delete saved.snapshot; if (typeof persistChanges === "function") persistChanges(); }
+    }
 
     const existingCurDetails = new Map();
     (this.currentWeekReport.currentWeekTasks || []).forEach(t => {
@@ -885,7 +900,8 @@ var WeeklyReportManager = {
     this.currentWeekReport = freshReport; // 저장은 [작성 완료] 시 반영
 
     this.render();
-    showToast("🔄 [WBS Task 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
+    if (wasDone && typeof this.renderSavedList === "function") this.renderSavedList();
+    showToast(wasDone ? "🔄 작성 완료를 취소하고 지금 자료로 다시 읽었습니다. 확인 후 [작성 완료]를 눌러 주세요." : "🔄 [WBS Task 다시 불러오기 완료] 최신 WBS 일정·진척을 반영했습니다. (제외 항목·직접 입력 항목 유지 · 작성 완료 시 저장)");
   },
 
   openHistoryModal() {
