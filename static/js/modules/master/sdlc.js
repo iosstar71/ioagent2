@@ -131,6 +131,50 @@ var SdlcBoard = {
     const l = Math.max(0, Math.min(100, (t(ph.pStart) - a) / (z - a) * 100)), r = Math.max(0, Math.min(100, (t(ph.pEnd) - a) / (z - a) * 100));
     return `<span class="sb-bar" style="left:${l.toFixed(1)}%; width:${Math.max(1, r - l).toFixed(1)}%"></span>`;
   },
+  sumOf(phases) { return Math.round((phases || []).reduce((a, ph) => a + (parseFloat(ph.weight) || 0), 0) * 10) / 10; },
+  // 단계 표 (SDLC · 개선과제 같은 모양): 단계 · 가중치 · 계획 시작 · 계획 종료 · 프로젝트 기간 안 위치
+  //  compact = 오른쪽 패널용 (위치 막대를 단계 이름 아래에)
+  phaseTable(phases, fn, code, compact) {
+    const dis = this.canEdit() ? "" : " disabled";
+    const a = (i, f, v) => code == null ? UiEvents.args(i, f, v) : UiEvents.args(code, i, f, v);
+    const bar = ph => `<span class="sb-track">${this._bar(ph)}</span>`;
+    return `<table class="m-table sb-table${compact ? " sb-compact" : ""}"><thead><tr><th class="sb-c-no">No</th><th>단계</th><th class="sb-c-w">가중치(%)</th><th class="sb-c-d">계획 시작</th><th class="sb-c-d">계획 종료</th>${compact ? "" : "<th>프로젝트 기간 안 위치</th>"}</tr></thead><tbody>
+      ${(phases || []).map((ph, i) => `<tr><td class="ai-c">${i + 1}</td><td><b>${escapeHtml(ph.name)}</b>${compact ? bar(ph) : ""}</td>
+        <td><input type="number" class="phase-w" min="0" max="100" step="1"${dis} value="${escapeAttr(String(ph.weight))}" data-change="${fn}" data-change-args="${a(i, "weight", "$value")}"></td>
+        <td><input type="date"${dis} value="${escapeAttr(ph.pStart || "")}" data-change="${fn}" data-change-args="${a(i, "pStart", "$value")}"></td>
+        <td><input type="date"${dis} value="${escapeAttr(ph.pEnd || "")}" data-change="${fn}" data-change-args="${a(i, "pEnd", "$value")}"></td>
+        ${compact ? "" : `<td>${bar(ph)}</td>`}</tr>`).join("")}
+      </tbody></table>`;
+  },
+  // 서브시스템 오른쪽 패널: 관리 유형 · SDLC 유형 + 그 유형의 단계 가중치 · 계획 일정 (유형 단위로 공유)
+  panelHtml(row) {
+    const i = subsystemsMeta.indexOf(row);
+    if (i < 0) return "";
+    const dis = this.canEdit() ? "" : " disabled", act = this.active();
+    const isReq = row.type === "REQ", RP = typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager : null;
+    const typeSel = `<select${dis} data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(i, "$value")}">
+      <option value="SDLC"${!isReq ? " selected" : ""}>SDLC형</option><option value="REQ"${isReq ? " selected" : ""}>개선과제(REQ)형</option></select>`;
+    let kindSel, phases, fn, code, mates;
+    if (isReq) {
+      kindSel = RP ? `<select${dis} data-change="ReqPhaseManager.applyPreset" data-change-args="${UiEvents.args("$value")}">${RP.typeOptions()}</select>` : "-";
+      phases = RP ? RP.getPhases() : []; fn = "ReqPhaseManager.updatePhase"; code = null;
+      mates = subsystemsMeta.filter(m => m !== row && m.type === "REQ").map(m => m.name);
+    } else {
+      kindSel = `<select${dis} data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(i, "$value")}">${this.types().map(t => `<option value="${escapeAttr(t.code)}"${row.sdlcCode === t.code ? " selected" : ""}>${escapeHtml(t.name)}${act.indexOf(t.code) === -1 ? " (추가)" : ""}</option>`).join("")}</select>`;
+      const t = (projectConfig.customSdlcTypes || []).find(x => x.code === row.sdlcCode) || this.types().find(x => x.code === row.sdlcCode);
+      phases = t ? t.phases : []; fn = "SdlcBoard.setPhase"; code = row.sdlcCode;
+      mates = subsystemsMeta.filter(m => m !== row && m.type !== "REQ" && m.sdlcCode === row.sdlcCode).map(m => m.name);
+    }
+    const sum = this.sumOf(phases);
+    return `<div class="rec-section ss-panel">
+      <div class="rec-section-title">🔄 공정 유형</div>
+      <div class="neo-grid2"><label class="neo-field"><span>관리 유형</span>${typeSel}</label><label class="neo-field"><span>${isReq ? "개선과제 유형" : "SDLC 유형"}</span>${kindSel}</label></div>
+      <div class="rec-section-title ss-panel-sub">단계 가중치 · 계획 일정 <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">합계 ${sum}%</span></div>
+      <div class="lk-hint">유형 단위로 저장됩니다${mates.length ? ` — 같은 유형을 쓰는 <b>${escapeHtml(mates.join(", "))}</b> 에도 함께 적용` : ""}</div>
+      ${phases.length ? this.phaseTable(phases, fn, code, true) : `<div class="rec-empty">단계가 없습니다.</div>`}
+    </div>`;
+  },
+  _panelRefresh() { if (typeof RecordPanel !== "undefined" && RecordPanel._kind === "subsys" && RecordPanel.isOpen()) RecordPanel.render(); },
   render() {
     const box = document.getElementById("customSdlcCardsContainer");
     if (!box) return;
@@ -139,18 +183,8 @@ var SdlcBoard = {
     const users = c => subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode === c).map(m => m.name);
     const RP = typeof ReqPhaseManager !== "undefined" ? ReqPhaseManager : null;
     const reqName = RP ? RP.typeName() : "-";
-    // 단계 표 (SDLC · 개선과제 같은 모양): 단계 · 가중치 · 계획 시작 · 계획 종료 · 프로젝트 기간 안 위치
-    const phaseTable = (phases, fn, code) => {
-      const a = (i, f, v) => code == null ? UiEvents.args(i, f, v) : UiEvents.args(code, i, f, v);
-      return `<table class="m-table sb-table"><thead><tr><th class="sb-c-no">No</th><th>단계</th><th class="sb-c-w">가중치(%)</th><th class="sb-c-d">계획 시작</th><th class="sb-c-d">계획 종료</th><th>프로젝트 기간 안 위치</th></tr></thead><tbody>
-        ${(phases || []).map((ph, i) => `<tr><td class="ai-c">${i + 1}</td><td><b>${escapeHtml(ph.name)}</b></td>
-          <td><input type="number" class="phase-w" min="0" max="100" step="1"${dis} value="${escapeAttr(String(ph.weight))}" data-change="${fn}" data-change-args="${a(i, "weight", "$value")}"></td>
-          <td><input type="date"${dis} value="${escapeAttr(ph.pStart || "")}" data-change="${fn}" data-change-args="${a(i, "pStart", "$value")}"></td>
-          <td><input type="date"${dis} value="${escapeAttr(ph.pEnd || "")}" data-change="${fn}" data-change-args="${a(i, "pEnd", "$value")}"></td>
-          <td><span class="sb-track">${this._bar(ph)}</span></td></tr>`).join("")}
-        </tbody></table>`;
-    };
-    const sumOf = phases => Math.round((phases || []).reduce((a, ph) => a + (parseFloat(ph.weight) || 0), 0) * 10) / 10;
+    const phaseTable = (phases, fn, code) => this.phaseTable(phases, fn, code);
+    const sumOf = phases => this.sumOf(phases);
     // ② 쓰는 유형의 단계
     const cards = active.map(c => {
       const t = (projectConfig.customSdlcTypes || []).find(x => x.code === c) || types.find(x => x.code === c);
@@ -187,6 +221,7 @@ var SdlcBoard = {
         ${ed && spare.length ? `<div class="sb-spare"><span class="lk-hint">서브시스템 없이 미리 추가:</span> ${spare.map(t => `<button class="btn btn-xs" data-btn="add" data-click="SdlcBoard.add" data-click-args="${UiEvents.args(t.code)}">+ ${escapeHtml(t.name)}</button>`).join(" ")}</div>` : ""}</div>`;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(box);
+    this._panelRefresh();
   }
 };
 window.SdlcBoard = SdlcBoard;

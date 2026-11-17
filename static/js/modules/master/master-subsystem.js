@@ -260,6 +260,7 @@ function renderSubsystemsMetaTable() {
 
   subsystemsMeta.forEach((sub, idx) => {
     const tr = document.createElement("tr");
+    tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel: subsys)
     const rootTask = wbsData.find(d => d.system === sub.name && d.level === 1);
     const linkedTasks = wbsData.filter(d => d.system === sub.name && d.isLeaf);
     const taskCount = linkedTasks.length;
@@ -302,6 +303,7 @@ function renderSubsystemsMetaTable() {
     `;
     tbody.appendChild(tr);
   });
+  if (typeof RecordPanel !== "undefined") RecordPanel.decorate("subsys");
 }
 
 function addNewSubsystemMeta() {

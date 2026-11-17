@@ -3061,3 +3061,15 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .ss-table-wrap { max-height: 420px; }
 .ss-sel-type { width: 130px; }
 .ss-sel-sdlc { width: 210px; font-size: var(--fs-xs, 11px); }
+/* 서브시스템 오른쪽 패널 (단계 표가 들어가서 넓게) */
+.neo-detail.rec-wide { width: 560px; }
+body.rec-panel-wide #tab-master.active { margin-right: 576px; }
+body.rec-panel-wide .tab-pane.active > .sub-header-bar { margin-right: -576px; }
+@media (max-width: 1180px) { .neo-detail.rec-wide { width: min(560px, 96vw); } body.rec-panel-wide #tab-master.active { margin-right: 0; } body.rec-panel-wide .tab-pane.active > .sub-header-bar { margin-right: 0; } }
+.ss-panel .neo-grid2 { margin-bottom: 10px; }
+.ss-panel-sub { display: flex; align-items: center; gap: 8px; }
+.sb-compact .sb-track { margin-top: 5px; min-width: 0; }
+.sb-compact input[type="date"] { width: 100%; min-width: 0; }
+.sb-compact .phase-w { width: 56px; }
+.sb-all > summary { cursor: pointer; font-weight: 700; color: var(--text-sub); font-size: var(--fs-sm, 12px); padding: 4px 0; }
+.sb-all[open] > summary { margin-bottom: 10px; }
