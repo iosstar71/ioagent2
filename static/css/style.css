@@ -3044,3 +3044,5 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .sb-spare { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .sb-table { table-layout: fixed; width: 100%; } .sb-table input[type="date"] { width: 100%; box-sizing: border-box; }
 .w-note { font-size: var(--fs-2xs, 10px); font-weight: 500; opacity: 0.8; }
+.sb-fold > summary { cursor: pointer; color: var(--text-sub); font-size: var(--fs-sm, 12px); padding: 2px 0; }
+.sb-fold[open] > summary { margin-bottom: 6px; }

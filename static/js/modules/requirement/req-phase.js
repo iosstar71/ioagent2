@@ -83,37 +83,18 @@ var ReqPhaseManager = {
     showToast(`개선과제 단계가 [${preset.name}] 프리셋으로 전환 적용되었습니다.`);
   },
 
-  renderTable() {
-    const tbody = document.getElementById("reqPhasesTableBody");
-    if (!tbody) return;
-    const phases = this.getPhases();
-    tbody.innerHTML = "";
-
-    const canEdit = typeof ProcessLib === "undefined" || ProcessLib.canManageProject();
-    const dis = canEdit ? "" : " disabled";
-    phases.forEach((p, idx) => {
-      const tr = document.createElement("tr");
-      // 단계 이름 · 산출물 · 키워드는 [Admin > SDLC 유형]에서, 여기서는 이 프로젝트의 가중치와 계획 일정
-      tr.innerHTML = `
-        <td style="text-align:center;"><b>${idx + 1}</b></td>
-        <td style="font-weight:bold;color:#0f766e;">${escapeHtml(p.name)}</td>
-        <td><input type="number" min="0" max="100" step="1"${dis} class="phase-w" value="${escapeAttr(String(p.weight))}" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "weight", "$num")}"></td>
-        <td><input type="date"${dis} value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pStart", "$value")}"></td>
-        <td><input type="date"${dis} value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="ReqPhaseManager.updatePhase" data-change-args="${UiEvents.args(idx, "pEnd", "$value")}"></td>
-        <td>${escapeHtml(p.output || "")}</td>
-        <td style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml((p.keywords || []).join(", "))}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    const sumWeight = phases.reduce((acc, p) => acc + (parseFloat(p.weight) || 0), 0);
-    const sumEl = document.getElementById("reqPhasesWeightSum");
-    if (sumEl) {
-      sumEl.textContent = `가중치 합계: ${sumWeight}%`;
-      sumEl.style.color = Math.round(sumWeight) === 100 ? "#10b981" : "#ef4444";
-    }
-
-    this.populatePresetSelector(projectConfig.activeReqPreset || "REQ_MFG_2027");
+  // 화면은 [프로젝트 설정 > Phase · 산출물] 한 판(SdlcBoard)에서 SDLC 유형과 함께 그림
+  renderTable() { if (typeof SdlcBoard !== "undefined") SdlcBoard.render(); },
+  typeName() {
+    const cur = projectConfig.activeReqPreset || "REQ_MFG_2027";
+    const t = (typeof ProcessLib !== "undefined" && ProcessLib.findReq(cur)) || this.PRESETS[cur];
+    return t ? t.name : cur;
+  },
+  typeOptions() {
+    const cur = projectConfig.activeReqPreset || "REQ_MFG_2027";
+    const list = typeof ProcessLib !== "undefined" ? ProcessLib.reqTypes() : Object.values(this.PRESETS);
+    return list.map(t => `<option value="${escapeAttr(t.code)}"${t.code === cur ? " selected" : ""}>${escapeHtml(t.name)}</option>`).join("") +
+      (list.some(t => t.code === cur) ? "" : `<option value="${escapeAttr(cur)}" selected>${escapeHtml(cur)} (이 프로젝트 전용)</option>`);
   },
 
   refreshFromLib() { this.applyPreset(projectConfig.activeReqPreset); },

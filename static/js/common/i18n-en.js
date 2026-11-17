@@ -2870,6 +2870,8 @@ var I18N_EN = (function () {
     "🔄 SDLC 유형 라이브러리 — SDLC 유형 · 개선과제(REQ) 유형": "🔄 Process type library — SDLC · improvement (REQ)",
     "🔄 WBS Task 다시 불러오기": "🔄 Reload WBS Tasks",
     "🔄 최신 데이터 가져오기": "🔄 Get latest data",
+    "SDLC · 개선과제 유형 — 단계 가중치 · 계획 일정": "SDLC · improvement types — phase weights · planned dates",
+    "개선과제(REQ)": "Improvement (REQ)",
     "🔄 [WBS 동기화 완료] 최신 WBS 공정표 Task와 성공적으로 연동되었습니다.": "🔄 [WBS synced] Linked with the latest WBS tasks.",
     "🔄 b. Phase 설정": "🔄 b. Phases",
     "🔐 멤버 선택": "🔐 Choose member",

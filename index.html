@@ -2120,49 +2120,13 @@
         <div class="card" style="border-left: 4px solid var(--primary);">
           <div class="card-title">
             <div>
-              <strong>SDLC 유형 · 단계 가중치 · 계획 일정</strong>
+              <strong>SDLC · 개선과제 유형 — 단계 가중치 · 계획 일정</strong>
             </div>
             <div style="display:flex; gap:6px;">
               <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
             </div>
           </div>
           <div id="customSdlcCardsContainer" class="sdlc-board"></div>
-        </div>
-
-        <!-- [1-4] 개선과제형(REQ) 공정 단계 프로젝트 설정 관리 -->
-        <div class="card" style="border-left: 4px solid #0f766e;">
-          <div class="card-title">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:var(--fs-lg, 16px);">🔄</span>
-              <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:#0f766e;">개선과제(REQ) SDLC 유형 — 이 프로젝트에서 쓸 유형 선택 · 단계별 계획 일정</strong>
-            </div>
-            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-              <span id="reqPhasesWeightSum" style="font-size:var(--fs-sm, 12px); font-weight:bold; margin-right:8px; color:#10b981;">가중치 합계: 100%</span>
-              <label style="font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; color:#0f766e; margin-left:4px;">사용할 개선과제 유형:</label>
-              <select id="reqPresetSelector" style="padding:4px 8px; font-size:calc(11.5px * var(--fs-scale, 1)); font-weight:bold; border:1px solid #0f766e; border-radius:4px; background:#f0fdfa;" data-change="ReqPhaseManager.applyPreset" data-change-args='["$value"]'></select>
-              <button class="btn btn-warning btn-sm" id="reqRefreshBtn" style="display:none;" data-click="ReqPhaseManager.refreshFromLib" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>
-              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin">⚙ SDLC 유형 관리 (시스템 설정)</button>
-            </div>
-          </div>
-          <p style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:10px;">
-            서브시스템 관리유형이 <strong>개선타입(REQ)</strong>인 과제에 쓸 유형을 고르고, 단계별 계획 일정을 정합니다. (단계 이름 · 가중치 · 산출물 · 키워드는 [시스템 설정 &gt; SDLC 유형]에서 관리) Phase 진척 및 공정 통제에 즉시 연동됩니다.
-          </p>
-          <div class="table-container" style="max-height: 240px;">
-            <table class="m-table">
-              <thead>
-                <tr style="background:#f1f5f9;">
-                  <th style="width: 50px; text-align: center;">No</th>
-                  <th style="width: 200px;">개선 단계명</th>
-                  <th style="width: 80px; text-align: right;">가중치(%)</th>
-                  <th style="width: 128px;" title="WBS 템플릿 추가 때 이 단계 Task의 계획 기간으로 들어갑니다 (비우면 프로젝트 기간을 가중치로 나눔)">계획 시작</th>
-                  <th style="width: 128px;">계획 종료</th>
-                  <th style="width: 180px;">표준 산출물명</th>
-                  <th>WBS Task 매핑 키워드</th>
-                </tr>
-              </thead>
-              <tbody id="reqPhasesTableBody"></tbody>
-            </table>
-          </div>
         </div>
 
         <!-- [1-5] 단계별 표준산출물 관리 -->
