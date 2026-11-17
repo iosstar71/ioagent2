@@ -902,7 +902,21 @@ var WorkerPick = {
     const pid = (ProjectContext.localList().find(p => this._norm(p.name) === this._norm(it.name)) || {}).id;
     const st = pid ? (LocalBackend._read(pid) || {}) : null;
     const has = !!st && ((st.subsystemsMeta || []).length > 0 || (st.wbsData || []).length > 0);
-    if (!has) { this._replaceAll(it, pid, "🌐 서버의 최신 마스터 파일"); return true; }
+    // 이 브라우저의 어느 프로젝트든 같은 마스터 파일(같은 판)을 이미 가지고 있으면 아무것도 하지 않음 (이 파일을 만든 PM 의 PC 등)
+    if (fs && ProjectContext.localList().some(x => this._stampOf(LocalBackend._read(x.id) || {}) === fs)) return false;
+    if (!has) {
+      // 이 주소(브라우저)에 자료가 없을 때: 바로 넣지 않고 묻는다 — 내 PC 파일로 쓰던 것과 별개의 시스템으로 빈 상태에서 시작할 수도 있게
+      try { if (AppStore.getItem(this.SKIP_KEY) === (fs || "nostamp")) return false; } catch (e) {}
+      document.body.classList.add("theme-ready");   // 아직 화면을 숨겨 둔 상태라 질문 창이 보이도록
+      const pick = await SyncUI.ask("🌐 서버에 마스터 파일이 있습니다",
+        `이 주소의 배포 폴더에 [${it.name}] 마스터 파일(멤버 ${it.users.length}명)이 올라와 있습니다.\n이 자료로 시작할까요?\n\n` +
+        "· 시작하면 이 주소에서 쓰는 자료가 됩니다. 내 PC 의 index.html 로 열어 쓰던 자료와는 따로 저장됩니다.\n" +
+        "· [빈 상태로 시작]을 고르면 이 파일은 다시 묻지 않습니다 (새 마스터 파일이 올라오면 다시 묻습니다). 나중에 [📦 마스터 파일 ▾ > 가져오기]로 넣을 수 있습니다.",
+        [{ id: "use", label: "📥 이 마스터 파일로 시작", cls: "btn-primary" }, { id: "empty", label: "빈 상태로 시작", cls: "btn-secondary" }]);
+      if (pick !== "use") { try { AppStore.setItem(this.SKIP_KEY, fs || "nostamp"); } catch (e) {} return false; }
+      this._replaceAll(it, pid, "🌐 서버의 최신 마스터 파일");
+      return true;
+    }
     const ms = this._stampOf(st);
     if (!fs || (ms && fs <= ms)) return false;
     try { if (AppStore.getItem(this.SKIP_KEY) === fs) return false; } catch (e) {}

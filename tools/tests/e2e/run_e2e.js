@@ -247,13 +247,16 @@ async function main() {
     fs.writeFileSync(path.join(web.tmp, "pprjmgmt", "shared", "latest.json"), lj.text);
     check("PM makes the deploy 종합본 named latest.json (whole project, new version)", lj.name === "latest.json" && JSON.parse(lj.text).targetScope === "ALL" && s5 > s4, lj.name + " " + s5);
     const wb = await newPage();
-    await wb.goto(web.url); await wb.waitForTimeout(3500);
+    await wb.goto(web.url); await wb.waitForTimeout(2500);
+    // 자료가 없는 새 PC: 서버의 마스터 파일로 시작할지 묻는다 → [이 마스터 파일로 시작]
+    const askShown = await wb.$eval("#syncAskModal", e => getComputedStyle(e).display === "flex").catch(() => false);
+    if (askShown) { await wb.click("#syncAskBtns button:first-child"); await wb.waitForTimeout(3500); }
     await wb.waitForFunction(() => window.AppBoot && document.querySelectorAll("#workerPickList option").length > 1, null, { timeout: 8000 }).catch(() => {});
     const nb = await wb.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), proj: document.getElementById("inputLoginProject").selectedOptions[0].textContent }));
     await pickWorker(wb, "wg_b", PWD);
     const nb2 = await wb.evaluate(() => ({ wbs: wbsData.length, w2: wbsData.find(t => t.id === "2.1").name, own: Permission.ownSubsystem() }));
-    check("New PC opening the site starts from the server 종합본 automatically (no file to pass around)",
-      nb.workers.includes("wg_b") && nb.proj.includes(j1.projectName) && nb2.wbs === 4 && nb2.w2 === "W2 설계 (PM 4차)" && nb2.own === "W2", JSON.stringify({ nb, nb2 }));
+    check("New PC opening the site is asked, then starts from the server 종합본 (no file to pass around)",
+      askShown && nb.workers.includes("wg_b") && nb.proj.includes(j1.projectName) && nb2.wbs === 4 && nb2.w2 === "W2 설계 (PM 4차)" && nb2.own === "W2", JSON.stringify({ nb, nb2 }));
     await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 4차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
     await wa.waitForTimeout(500);
     await toLogin(); await wa.waitForTimeout(1500);
@@ -267,6 +270,8 @@ async function main() {
     await pm.reload(); await pm.waitForTimeout(1800); await waitApp(pm);
     const pmSame = await pm.evaluate(() => ({ w2: wbsData.find(t => t.id === "2.1").name, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG"), dlg: getComputedStyle(document.getElementById("confirmDialogModal")).display }));
     check("Same version is not applied again (worker PC and the PM's own PC are left alone)", !again.shown && pmSame.w2 === "W2 설계 (PM 4차)" && !pmSame.pending && pmSame.dlg === "none", JSON.stringify({ again, pmSame }));
+    // 다음 시험이 빈 PC 로 화면을 열 때 질문 창이 뜨지 않도록 배포 폴더의 마스터 파일을 치움
+    fs.rmSync(path.join(web.tmp, "pprjmgmt", "shared", "latest.json"), { force: true });
     // WBS 가중치: 서브시스템 100 기준 · 상위 변경 시 하위 자동 조정 · 경고색 유지 · 오류 보정 · 서브시스템 가중치로 종합
     console.log("\n[WBS weights and levels]");
     const wc = await newPage();

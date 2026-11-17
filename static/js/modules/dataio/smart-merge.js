@@ -448,6 +448,8 @@ const SmartMergeCenter = {
     projectConfig.packageStamp = new Date().toISOString().slice(0, 19).replace("T", " ");
     projectConfig.packageBy = (AuthManager.getCurrentUser() || {}).name || "";
     if (typeof persistChanges === "function") persistChanges(true);
+    // 마스터 파일의 판(시각)은 이 PC 에도 바로 기록 — 자동저장이 없으므로 (기록하지 않으면 다음에 열 때 자기 파일을 '새 판'으로 봄)
+    if (typeof SyncManager !== "undefined") SyncManager.saveSettingsQuiet();
     return projectConfig.packageStamp;
   },
   downloadMasterPackage(format) {
