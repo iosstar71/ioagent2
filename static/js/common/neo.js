@@ -765,8 +765,12 @@ var StickyTop = {
     const head = pane && pane.querySelector(":scope > .sub-header-bar");
     const headH = head ? head.offsetHeight + (parseFloat(getComputedStyle(head).marginBottom) || 0) : 0;
     const tabs = pane && pane.querySelector(":scope > .master-subtab-bar, :scope > .sub-tab-nav");
+    // 메뉴 줄과 화면 이름 줄 사이의 틈: 그 틈만큼 아래에 고정해야 스크롤할 때 이름 줄이 위로 밀려 올라가지 않음
+    //  (화면 틀은 고정되지 않으므로 그 위치 = 이름 줄의 원래 자리)
+    const gap = pane && head ? Math.max(0, Math.min(40, Math.round(pane.getBoundingClientRect().top + window.scrollY - top))) : 0;
+    root.setProperty("--pane-gap", gap + "px");
     root.setProperty("--pane-head-h", Math.round(headH) + "px");
-    root.setProperty("--pane-sticky-h", Math.round(headH + (tabs ? tabs.offsetHeight : 0)) + "px");
+    root.setProperty("--pane-sticky-h", Math.round(gap + headH + (tabs ? tabs.offsetHeight : 0)) + "px");
   },
   init() {
     this.apply();

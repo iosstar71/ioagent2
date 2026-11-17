@@ -117,10 +117,9 @@
     </div>
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
     <button type="button" id="btnHeaderRefreshAll" class="btn btn-sm g-refresh-btn" data-btn="refresh" data-click="SyncManager.refresh" data-click-args='[null]' title="저장된 자료를 다시 읽어 모든 화면을 새로 그립니다 (고른 조건은 그대로)">🔄 전체 새로고침</button>
-    <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <!-- [v3.1.0] 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨 <span class="g-lbl">화면</span></button>
+      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" aria-label="화면 설정" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨</button>
       <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
         <div class="g-menu-title">테마</div>
         <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
@@ -152,7 +151,7 @@
       </div>
     </div>
     <div class="g-menu-wrap">
-      <button type="button" class="g-icon-btn g-labeled" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" title="관리 (프로젝트 설정 · 시스템 설정 · 프로젝트)">⚙ <span class="g-lbl">관리</span></button>
+      <button type="button" class="g-icon-btn g-labeled" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" aria-label="관리" title="관리 (프로젝트 설정 · 시스템 설정 · 프로젝트)">⚙</button>
       <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
@@ -160,6 +159,8 @@
         <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 오픈소스 고지</button>
       </div>
     </div>
+    <!-- 공지: 아이콘 + 건수 (멤버 메뉴 바로 앞) -->
+    <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <div class="g-menu-wrap">
       <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="멤버 (언어 · 암호 · 잠금)">
         <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress">👤 admin</span> ▾

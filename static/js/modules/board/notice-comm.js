@@ -262,7 +262,8 @@ var NoticeCommManager = {
     const badge = document.getElementById("headerNoticeCountBadge");
     if (badge && Array.isArray(noticesData)) {
       const urgentCount = noticesData.filter(n => n.priority === "긴급").length;
-      badge.textContent = urgentCount > 0 ? `🚨 긴급공지 ${urgentCount}` : `📢 공지 ${noticesData.length}`;
+      badge.textContent = urgentCount > 0 ? `🚨 ${urgentCount}` : `📢 ${noticesData.length}`;   // 아이콘 + 숫자만 (이름은 마우스를 올리면)
+      badge.title = urgentCount > 0 ? `긴급 공지 ${urgentCount}건` : `공지 ${noticesData.length}건`;
       badge.style.display = noticesData.length > 0 ? "inline-flex" : "none";
     }
   },

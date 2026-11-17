@@ -2141,12 +2141,12 @@ select, input[type="text"], input[type="date"], input[type="number"], input[type
 /* ---------- [v3.7.0] 서브 탭이 있는 화면: 스크롤해도 서브 탭 줄까지 고정 ---------- */
 /* 모든 화면: 화면 이름 줄(저장 · 새로고침 포함) → 서브메뉴 줄까지 함께 고정 (StickyTop 이 --pane-head-h 를 잼) */
 body.ui-neo .tab-pane > .sub-header-bar {
-  position: sticky; top: var(--sticky-top, 45px); z-index: 46;
+  position: sticky; top: calc(var(--sticky-top, 45px) + var(--pane-gap, 0px)); z-index: 46;   /* 처음 자리에서 그대로 고정 (메뉴 아래 틈만큼) */
   box-shadow: 0 12px 0 0 var(--bg-main), 0 -16px 0 0 var(--bg-main);   /* 위아래 틈으로 아래 내용이 비치지 않게 */
 }
 body.ui-neo .master-subtab-bar,
 body.ui-neo .sub-tab-nav {
-  position: sticky; top: calc(var(--sticky-top, 45px) + var(--pane-head-h, 0px)); z-index: 45;
+  position: sticky; top: calc(var(--sticky-top, 45px) + var(--pane-gap, 0px) + var(--pane-head-h, 0px)); z-index: 45;
   background: var(--bg-main, #f1f5f9); box-shadow: 0 8px 8px -8px rgba(15, 23, 42, 0.28);
   padding-top: 8px; margin-top: -4px;
 }
@@ -3068,3 +3068,8 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .ss-proc-pick { min-width: 360px; max-width: 100%; font-weight: 700; }
 .ss-warn { margin-left: 6px; padding: 1px 8px; border: 1px solid var(--warning); border-radius: 10px; background: transparent; color: var(--warning); font-size: var(--fs-xs, 11px); font-weight: 700; cursor: pointer; white-space: nowrap; }
 .ss-warn:hover { background: color-mix(in srgb, var(--warning) 14%, transparent); }
+/* 맨 위 [화면] · [관리]: 아이콘만 (이름은 마우스를 올리면 보임) */
+.g-header #gUiBtn, .g-header #gAdminBtn { padding: 0 8px; min-width: 34px; justify-content: center; }
+/* 맨 위 공지: 아이콘 + 숫자, 아이콘 크기는 [화면] · [관리]와 같게 */
+.g-header .g-notice { height: 32px; padding: 0 9px; gap: 4px; font-weight: 700; box-sizing: border-box; }
+.g-header .g-notice svg.iostar-ico { width: 18px; height: 18px; }
