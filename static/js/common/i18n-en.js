@@ -13,6 +13,13 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "긴급": "Urgent",
+    "수용": "Accepted",
+    "연계": "Integration",
+    "인터페이스": "Interface",
+    "논의중": "Discussing",
+    "조치중": "In progress",
+    "해결완료": "Resolved",
     "💬 논의/질의 중": "💬 Discussing",
     "⚙️ 조치/협의 진행": "⚙️ In progress",
     "✅ 해결/합의 완료": "✅ Resolved",
@@ -3247,6 +3254,7 @@ var I18N_EN = (function () {
     "휴일": "Holidays", "가중치": "Weight", "일정": "Schedule", "기간": "Period", "진척": "Progress" };
   const W = w => STATUS_WORDS[w] || exact[w] || w;
   const patterns = [
+    [/^(💾 )?전체 저장 \((\d+)\)$/, (m, i, n) => `${i || ""}Save all (${n})`],
     [/^📢 선택된 채널: #(.+) \(총 (\d+)건\)$/, (m, a, n) => `📢 Channel: #${W(a)} (${n} total)`],
     [/^선택된 채널: #(.+) \(총 (\d+)건\)$/, (m, a, n) => `Channel: #${W(a)} (${n} total)`],
     [/^#(전체) \((\d+)\)$/, (m, a, n) => `#${W(a)} (${n})`],
