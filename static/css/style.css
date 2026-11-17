@@ -3026,3 +3026,20 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 /* 맨 위 화면(팔레트) · 관리(톱니바퀴) 버튼: 아이콘만으로 알아볼 수 있게 조금 크게 */
 .g-header #gUiBtn svg.iostar-ico, .g-header #gAdminBtn svg.iostar-ico { width: 18px; height: 18px; }
 .phase-w { width: 70px; text-align: right; }
+
+/* 프로젝트 설정 > Phase · 산출물: SDLC 유형 한 화면 (SdlcBoard) */
+.sdlc-board { display: grid; gap: 14px; }
+.sb-sec { display: grid; gap: 8px; }
+.sb-sec-title { font-size: var(--fs-sm, 12px); font-weight: 800; color: var(--text-main); display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.sb-assign { max-height: 260px; }
+.sb-type { border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; background: var(--bg-card); }
+.sb-type-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.sb-type-head .btn:first-of-type { margin-left: auto; }
+.sb-sum { font-size: var(--fs-xs, 11px); font-weight: 700; padding: 2px 8px; border-radius: 99px; }
+.sb-sum.is-ok { background: var(--st-ok-bg); color: var(--st-ok-fg); }
+.sb-sum.is-bad { background: var(--st-bad-bg); color: var(--st-bad-fg); }
+.sb-c-no { width: 44px; } .sb-c-w { width: 90px; } .sb-c-d { width: 140px; }
+.sb-track { position: relative; display: block; height: 10px; border-radius: 5px; background: var(--track, var(--bg-main)); min-width: 160px; }
+.sb-bar { position: absolute; top: 0; bottom: 0; border-radius: 5px; background: var(--primary); }
+.sb-spare { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sb-table { table-layout: fixed; width: 100%; } .sb-table input[type="date"] { width: 100%; box-sizing: border-box; }

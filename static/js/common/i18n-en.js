@@ -13,6 +13,14 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "SDLC 유형 · 단계 가중치 · 계획 일정": "SDLC types · phase weights · planned dates",
+    "SDLC형": "SDLC",
+    "개선과제(REQ)형": "Improvement (REQ)",
+    "서브시스템 없이 미리 추가:": "Add without a subsystem:",
+    "프로젝트 기간 안 위치": "Position in the project period",
+    "단계": "Phase",
+    "아래 [개선과제(REQ) 유형]을 따름": "Follows the improvement (REQ) type below",
+    "쓰는 SDLC 유형이 없습니다.": "No SDLC type in use.",
     "📋 [1] 서브시스템별 진척율 (WBS · 요구사항 · VOC · 산출물)": "📋 [1] Progress by subsystem (WBS · requirements · VOC · deliverables)",
     "서브시스템별 진척율 (WBS · 요구사항 · VOC)": "Progress by subsystem (WBS · requirements · VOC)",
     "🗑️ 프로젝트 삭제": "🗑️ Delete project",

@@ -67,80 +67,113 @@ function toggleSdlcActiveState(sdlcCode) {
   }
 }
 
-function renderCustomSdlcCards() {
-  const container = document.getElementById("customSdlcCardsContainer");
-  if (!container) return;
-  container.innerHTML = "";
-
-  // [v3.9.0] 고를 수 있는 유형 = 시스템 설정의 공정 유형 라이브러리 (+ 이 프로젝트에만 남아 있는 이전 유형)
-  const projList = Array.isArray(projectConfig.customSdlcTypes) ? projectConfig.customSdlcTypes : [];
-  const libList = typeof ProcessLib !== "undefined" ? ProcessLib.sdlcTypes() : projList;
-  const masterList = libList.map(t => projList.find(x => x.code === t.code) || t)
-    .concat(projList.filter(t => !libList.some(x => x.code === t.code)).map(t => Object.assign({}, t, { _projectOnly: true })));
-  const canEdit = typeof ProcessLib === "undefined" || ProcessLib.canManageProject();
-
-  const activeCodes = getProjectActiveSdlcCodes();
-
-  // Header Summary info
-  const summaryDiv = document.createElement("div");
-  summaryDiv.className = "phase-summary-box";
-  summaryDiv.style.marginBottom = "12px";
-  summaryDiv.style.padding = "8px 12px";
-  summaryDiv.style.background = "var(--tint-ok)";
-  summaryDiv.style.border = "1px solid #bbf7d0";
-  summaryDiv.style.borderRadius = "6px";
-  summaryDiv.style.display = "flex";
-  summaryDiv.style.justifyContent = "space-between";
-  summaryDiv.style.alignItems = "center";
-  summaryDiv.innerHTML = `
-    <span style="font-size:var(--fs-sm, 12px); color:var(--chart-good-text); font-weight:bold;">
-      📋 시스템 SDLC 유형: <b>${masterList.length}개</b> | 이 프로젝트 활성화: <b>${activeCodes.length}/4개</b>
-    </span>
-    <span style="font-size:var(--fs-xs, 11px); color:var(--chart-good-text);">
-      (유형 추가 · 단계 수정은 [시스템 설정 &gt; 🔄 SDLC 유형] · 이 화면에서는 활성화와 단계별 계획 일정만)
-    </span>
-  `;
-  container.appendChild(summaryDiv);
-
-  masterList.forEach((sdlc, idx) => {
-    const isActive = activeCodes.includes(sdlc.code);
-    const card = document.createElement("div");
-    card.className = "step-card";
-    card.style.background = isActive ? "rgba(16,185,129,0.03)" : "rgba(100,116,139,0.03)";
-    card.style.border = isActive ? "1px solid #6ee7b7" : "1px solid var(--border-color)";
-    card.style.position = "relative";
-
-    const assignedCount = subsystemsMeta.filter(s => s.type !== "REQ" && s.sdlcCode === sdlc.code).length;
-    const phaseNames = (sdlc.phases || []).map((p, pIdx) => `${pIdx + 1}.${p.name}(${p.weight}%${p.pStart && p.pEnd ? ` · ${p.pStart.slice(5)}~${p.pEnd.slice(5)}` : ""})`).join(" ➔ ");
-
-    card.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span class="badge" style="background:${isActive ? "var(--chart-good-text)" : "var(--text-muted)"}; color:#fff; font-size:var(--fs-2xs, 10px);">
-            ${isActive ? "✅ 프로젝트 활성" : "사용 안 함"}
-          </span>
-          ${sdlc.isRecommended ? '<span class="badge" style="background:var(--primary); color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">⭐ 추천타입</span>' : ''}
-          <strong style="font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sdlc.name)}</strong>
-          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(코드: <code>${escapeHtml(sdlc.code)}</code>)</span>
-        </div>
-        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
-          ${sdlc._projectOnly ? '<span class="badge" style="background:var(--chart-warn-text); color:#fff; font-size:var(--fs-2xs, 10px);" title="시스템 설정의 SDLC 유형에는 없고 이 프로젝트에만 남아 있는 유형입니다">이 프로젝트 전용</span>' : ""}
-          ${isActive && canEdit && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(sdlc.code) ? `<button class="btn btn-warning btn-sm" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(String(sdlc.code))}" title="시스템 설정에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
-          ${isActive && canEdit ? `<button class="btn btn-secondary btn-sm" data-click="ProcessLib.openDates" data-click-args="${UiEvents.args(String(sdlc.code))}">📅 단계 가중치 · 일정</button>` : ""}
-          ${canEdit ? `<button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(String(sdlc.code))}">
-            ${isActive ? '선택 해제' : '선택 활성화 (프로젝트 사용)'}
-          </button>` : ""}
-        </div>
-      </div>
-      <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-bottom:6px;">${escapeHtml(sdlc.desc || "")}</p>
-      <div style="padding:6px 8px; background:rgba(0,0,0,0.02); border-radius:6px; font-size:var(--fs-xs, 11px); color:${isActive ? "#047857" : "var(--text-sub)"}; line-height:1.5;">
-        <b>공정 파이프라인:</b> ${escapeHtml(phaseNames || "정의된 단계 없음")}<br>
-        <span style="color:var(--text-muted);">• 소속 서브시스템 수: <b>${assignedCount}개</b> | 단계 수: <b>${(sdlc.phases || []).length}단계</b></span>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+// =============================================================================
+// 프로젝트 설정 > Phase · 산출물: SDLC 유형을 한 화면에서 (창 없이)
+//  ① 서브시스템마다 관리 유형(SDLC / 개선과제)과 SDLC 유형을 고름 → 고른 유형은 자동으로 이 프로젝트에 추가(최대 4개)
+//  ② 쓰는 유형마다 단계 가중치 · 계획 일정을 표에서 바로 고침 (Admin 의 가중치는 처음 값) + 일정 막대
+// =============================================================================
+var SdlcBoard = {
+  MAX: 4,
+  canEdit() { return typeof ProcessLib === "undefined" || ProcessLib.canManageProject(); },
+  // 고를 수 있는 유형 = Admin 의 SDLC 유형 + 이 프로젝트에만 남은 유형 (프로젝트 사본이 있으면 그것)
+  types() {
+    const proj = Array.isArray(projectConfig.customSdlcTypes) ? projectConfig.customSdlcTypes : [];
+    const lib = typeof ProcessLib !== "undefined" ? ProcessLib.sdlcTypes() : proj;
+    return lib.map(t => proj.find(x => x.code === t.code) || t)
+      .concat(proj.filter(t => !lib.some(x => x.code === t.code)).map(t => Object.assign({}, t, { _projectOnly: true })));
+  },
+  active() { return getProjectActiveSdlcCodes().slice(); },
+  _proj(code) {   // 이 프로젝트의 사본 (없으면 Admin 정의를 복사해 만듦)
+    if (typeof ProcessLib !== "undefined" && !ProcessLib.projectSdlc(code)) ProcessLib.applySdlcToProject(code);
+    return (projectConfig.customSdlcTypes || []).find(t => t.code === code) || null;
+  },
+  _activate(code) {
+    if (!projectConfig.activeSdlcCodes) projectConfig.activeSdlcCodes = this.active();
+    if (projectConfig.activeSdlcCodes.indexOf(code) !== -1) return true;
+    if (projectConfig.activeSdlcCodes.length >= this.MAX) { showToast(`⚠️ 한 프로젝트에서 SDLC 유형은 ${this.MAX}개까지 씁니다. 쓰지 않는 유형을 [사용 안 함]으로 뺀 뒤 고르세요.`, "warning"); return false; }
+    this._proj(code);
+    projectConfig.activeSdlcCodes.push(code);
+    return true;
+  },
+  _changed() { rebuildAll(true); persistChanges(); this.render(); },
+  setType(idx, type) {
+    const m = subsystemsMeta[idx]; if (!m || !this.canEdit()) return;
+    m.type = type === "REQ" ? "REQ" : "SDLC";
+    if (m.type === "SDLC" && !m.sdlcCode) m.sdlcCode = this.active()[0];
+    this._changed();
+  },
+  assign(idx, code) {
+    const m = subsystemsMeta[idx]; if (!m || !this.canEdit()) return;
+    if (!this._activate(code)) return this.render();
+    m.sdlcCode = code;
+    this._changed();
+  },
+  add(code) { if (this.canEdit() && this._activate(code)) this._changed(); },
+  setPhase(code, i, field, value) {
+    if (!this.canEdit()) return;
+    const t = this._proj(code); const ph = t && t.phases && t.phases[i];
+    if (!ph) return;
+    if (field === "weight") ph.weight = Math.max(0, Math.min(100, parseFloat(value) || 0));
+    else if (value) ph[field] = value; else delete ph[field];
+    if (ph.pStart && ph.pEnd && ph.pStart > ph.pEnd) showToast(`⚠️ [${ph.name}] 계획 종료일이 시작일보다 빠릅니다.`, "warning");
+    this._changed();
+  },
+  _bar(ph) {   // 프로젝트 기간 안에서 단계 일정의 위치
+    const ps = projectConfig.projectStartDate, pe = projectConfig.projectEndDate;
+    if (!ph.pStart || !ph.pEnd || !ps || !pe) return "";
+    const t = d => new Date(d + "T00:00:00").getTime(), a = t(ps), z = t(pe);
+    if (!(z > a)) return "";
+    const l = Math.max(0, Math.min(100, (t(ph.pStart) - a) / (z - a) * 100)), r = Math.max(0, Math.min(100, (t(ph.pEnd) - a) / (z - a) * 100));
+    return `<span class="sb-bar" style="left:${l.toFixed(1)}%; width:${Math.max(1, r - l).toFixed(1)}%"></span>`;
+  },
+  render() {
+    const box = document.getElementById("customSdlcCardsContainer");
+    if (!box) return;
+    const types = this.types(), active = this.active(), ed = this.canEdit(), dis = ed ? "" : " disabled";
+    const name = c => (types.find(t => t.code === c) || { name: c }).name;
+    const users = c => subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode === c).map(m => m.name);
+    // ① 서브시스템별 유형
+    const rows = subsystemsMeta.map((m, i) => `<tr>
+        <td>${escapeHtml(m.domain || "-")}</td><td><b>${escapeHtml(m.name)}</b></td>
+        <td><select${dis} data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(i, "$value")}">
+          <option value="SDLC"${m.type !== "REQ" ? " selected" : ""}>SDLC형</option><option value="REQ"${m.type === "REQ" ? " selected" : ""}>개선과제(REQ)형</option></select></td>
+        <td>${m.type === "REQ" ? `<span class="lk-hint">아래 [개선과제(REQ) 유형]을 따름</span>` : `<select${dis} data-change="SdlcBoard.assign" data-change-args="${UiEvents.args(i, "$value")}">
+          ${types.map(t => `<option value="${escapeAttr(t.code)}"${m.sdlcCode === t.code ? " selected" : ""}>${escapeHtml(t.name)}${active.indexOf(t.code) === -1 ? " (추가)" : ""}</option>`).join("")}</select>`}</td>
+      </tr>`).join("");
+    // ② 쓰는 유형의 단계
+    const cards = active.map(c => {
+      const t = (projectConfig.customSdlcTypes || []).find(x => x.code === c) || types.find(x => x.code === c);
+      if (!t) return "";
+      const used = users(c), sum = Math.round((t.phases || []).reduce((a, ph) => a + (parseFloat(ph.weight) || 0), 0) * 10) / 10;
+      const differs = ed && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(c);
+      return `<div class="sb-type">
+        <div class="sb-type-head"><b>${escapeHtml(t.name)}</b>
+          <span class="lk-hint">쓰는 서브시스템: ${used.length ? escapeHtml(used.join(", ")) : "없음"}</span>
+          <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">가중치 합계 ${sum}%</span>
+          ${differs ? `<button class="btn btn-sm" data-btn="warn" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(c)}" title="Admin 에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>` : ""}
+          ${ed ? `<button class="btn btn-sm" data-btn="neutral" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(c)}">사용 안 함</button>` : ""}</div>
+        <table class="m-table sb-table"><thead><tr><th class="sb-c-no">No</th><th>단계</th><th class="sb-c-w">가중치(%)</th><th class="sb-c-d">계획 시작</th><th class="sb-c-d">계획 종료</th><th>프로젝트 기간 안 위치</th></tr></thead><tbody>
+        ${(t.phases || []).map((ph, i) => `<tr><td class="ai-c">${i + 1}</td><td><b>${escapeHtml(ph.name)}</b></td>
+          <td><input type="number" class="phase-w" min="0" max="100" step="1"${dis} value="${escapeAttr(String(ph.weight))}" data-change="SdlcBoard.setPhase" data-change-args="${UiEvents.args(c, i, "weight", "$value")}"></td>
+          <td><input type="date"${dis} value="${escapeAttr(ph.pStart || "")}" data-change="SdlcBoard.setPhase" data-change-args="${UiEvents.args(c, i, "pStart", "$value")}"></td>
+          <td><input type="date"${dis} value="${escapeAttr(ph.pEnd || "")}" data-change="SdlcBoard.setPhase" data-change-args="${UiEvents.args(c, i, "pEnd", "$value")}"></td>
+          <td><span class="sb-track">${this._bar(ph)}</span></td></tr>`).join("")}
+        </tbody></table></div>`;
+    }).join("");
+    const spare = types.filter(t => active.indexOf(t.code) === -1);
+    box.className = "sdlc-board";
+    box.innerHTML = `
+      <div class="sb-sec"><div class="sb-sec-title">① 서브시스템별 관리 유형 <span class="lk-hint">SDLC 유형을 고르면 이 프로젝트에 자동으로 추가됩니다 (최대 ${this.MAX}개)</span></div>
+        <div class="table-container sb-assign"><table class="m-table"><thead><tr><th>도메인</th><th>서브시스템</th><th>관리 유형</th><th>SDLC 유형</th></tr></thead><tbody>${rows || `<tr><td colspan="4" class="rec-empty">서브시스템을 먼저 [프로젝트 기본정보]에서 등록하세요.</td></tr>`}</tbody></table></div></div>
+      <div class="sb-sec"><div class="sb-sec-title">② 쓰는 유형의 단계 가중치 · 계획 일정 <span class="lk-hint">Admin 의 가중치는 처음 값 — 이 프로젝트에 맞게 고칩니다 (합계 100)</span></div>
+        ${cards || `<div class="rec-empty">쓰는 SDLC 유형이 없습니다.</div>`}
+        ${ed && spare.length ? `<div class="sb-spare"><span class="lk-hint">서브시스템 없이 미리 추가:</span> ${spare.map(t => `<button class="btn btn-xs" data-btn="add" data-click="SdlcBoard.add" data-click-args="${UiEvents.args(t.code)}">+ ${escapeHtml(t.name)}</button>`).join(" ")}</div>` : ""}</div>`;
+    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
+    if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(box);
+  }
+};
+window.SdlcBoard = SdlcBoard;
+function renderCustomSdlcCards() { SdlcBoard.render(); }
 
 function resetSdlcPresetsToDefault() {
   openConfirmDialog("🔄 SDLC 설정을 시스템 추천 8종 마스터 풀(PMO 3단계, 스마트제조 4단계, 폭포수, 애자일 등)로 초기화하시겠습니까?", () => {

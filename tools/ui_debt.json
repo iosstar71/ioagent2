@@ -26,7 +26,7 @@
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 119,
+   "inline": 118,
    "inline_hex": 20
   },
   "tab-matrix": {
@@ -74,7 +74,7 @@
   "js/modules/dataio": 1,
   "js/modules/deliverable": 0,
   "js/modules/home": 0,
-  "js/modules/master": 10,
+  "js/modules/master": 4,
   "js/modules/meeting": 41,
   "js/modules/progress": 15,
   "js/modules/report": 5,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 619,
-  "html_inline": 908,
+  "html_inline": 907,
   "html_inline_hex": 180,
-  "js_hex": 113
+  "js_hex": 107
  }
 }
