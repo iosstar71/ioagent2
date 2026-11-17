@@ -177,7 +177,7 @@ var ProjectManager = {
       box.innerHTML = `
         <div class="pm-summary">
           <div class="pm-summary-item"><span>현재 프로젝트</span><b>${escapeHtml(cur ? (cur.name || cur.id) : "-")}</b><code>${escapeHtml(cur ? cur.id : "")}</code></div>
-          <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small>사용 중 ${active} · 사용 중지 ${list.length - active}</small></div>
+          <div class="pm-summary-item"><span>프로젝트 수</span><b>${list.length}개</b><small><span>사용 중 ${active}</span> · <span>사용 중지 ${list.length - active}</span></small></div>
           <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
           <div class="pm-summary-actions">
             ${canManage && compact ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 →</button>' : ""}

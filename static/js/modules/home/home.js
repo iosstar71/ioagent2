@@ -364,7 +364,7 @@ var HomeScreenManager = {
             <span>${sysDelays > 0 ? `<b style="color:var(--chart-bad);">지연 ${sysDelays}</b>` : '<span style="color:var(--chart-good-text);">지연 0</span>'}</span>
           </div>
           <div style="font-size:var(--fs-2xs, 10px); color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
-            <span>PM: ${escapeHtml(pmName)} · 가중치 ${WBSEngine.sysWeight(sys)}%</span>
+            <span>PM: ${escapeHtml(pmName)} · <span>가중치 ${WBSEngine.sysWeight(sys)}%</span></span>
             <span class="badge" style="font-size:calc(9px * var(--fs-scale, 1)); padding:1px 4px;">${sysType}</span>
           </div>
         `;

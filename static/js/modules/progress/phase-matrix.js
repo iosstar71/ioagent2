@@ -270,7 +270,7 @@ function renderPhaseMatrix() {
 
       groupRowsHtml += `
         <tr class="matrix-total-row">
-          <td colspan="2"><strong>[${escapeHtml(spec.name)} 그룹 소계]</strong></td>
+          <td colspan="2"><strong>[<span>${escapeHtml(spec.name)}</span> <span>그룹 소계</span>]</strong></td>
           ${sumPhTds}
           <td class="col-total sdlc-sum">${allP}%</td>
           <td class="col-total sdlc-sum"><strong>${allA}%</strong></td>
@@ -282,7 +282,7 @@ function renderPhaseMatrix() {
         <div style="margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "var(--border-color)" : "#ddd6fe"};">
             <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--primary);">
-              📂 SDLC 유형: ${escapeHtml(spec.name)} (${escapeHtml(spec.desc || "")}) — 소속 서브시스템 ${groupSystems.length}개
+              📂 <span>SDLC 유형:</span> <span>${escapeHtml(spec.name)}</span> (<span>${escapeHtml(spec.desc || "")}</span>) — <span>소속 서브시스템 ${groupSystems.length}개</span>
             </span>
           </div>
           <div class="table-container">
@@ -384,7 +384,7 @@ function renderSubsystemCards(systems) {
         <span>
           <span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
           <b>${escapeHtml(sys)}</b>
-          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"} · 가중치 ${meta.weight}% · PM: ${escapeHtml(meta.pm || "-")})</span>
+          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>가중치 ${WBSEngine.sysWeight(sys)}%</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
         ${pVal <= 0 && aVal <= 0 ? `<span class="status-tag tag-ready">달성률 -</span>` : `<span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>`}
       </div>

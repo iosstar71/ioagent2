@@ -872,7 +872,7 @@ var MeetingManager = {
           ${((mtg.attendees || []).map((att, aIdx) => `
             <div class="attendee-chip" style="background:var(--tint-info); border:1px solid var(--border-color); border-radius:20px; padding:4px 10px; font-size:var(--fs-xs, 11px); display:inline-flex; align-items:center; gap:6px;">
               <span style="font-weight:bold; color:var(--tint-info-text);">${escapeHtml(att.name)}</span>
-              <span style="color:var(--text-muted); font-size:var(--fs-2xs, 10px);">(${escapeHtml(att.dept || "부서")}/${escapeHtml(att.role || "참석")})</span>
+              <span style="color:var(--text-muted); font-size:var(--fs-2xs, 10px);">(<span>${escapeHtml(att.dept || "부서")}</span>/<span>${escapeHtml(att.role || "참석")}</span>)</span>
               <select data-change="MeetingManager.updateAttendance" data-change-args="${UiEvents.args(aIdx, "$value")}" style="font-size:var(--fs-2xs, 10px); padding:1px 3px; border:none; background:transparent; font-weight:bold; color:${att.attendance === "불참" ? "var(--chart-bad-text)" : "var(--chart-good-text)"};">
                 <option value="참석" ${att.attendance !== "불참" && att.attendance !== "위임" ? "selected" : ""}>참석</option>
                 <option value="불참" ${att.attendance === "불참" ? "selected" : ""}>불참</option>
