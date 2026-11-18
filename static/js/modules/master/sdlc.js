@@ -87,13 +87,34 @@ var SdlcBoard = {
     if (typeof ProcessLib !== "undefined" && !ProcessLib.projectSdlc(code)) ProcessLib.applySdlcToProject(code);
     return (projectConfig.customSdlcTypes || []).find(t => t.code === code) || null;
   },
+  _usedCodes() { return [...new Set(subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode).map(m => m.sdlcCode))]; },
+  // 사용 유형 칸이 차 있으면, 어느 서브시스템도 쓰지 않는 유형을 먼저 비움
+  //  (예전 프로젝트는 쓰지 않는 기본 4종이 사용 유형으로 잡혀 있어 새 유형을 고를 수 없었음)
   _activate(code) {
-    if (!projectConfig.activeSdlcCodes) projectConfig.activeSdlcCodes = this.active();
-    if (projectConfig.activeSdlcCodes.indexOf(code) !== -1) return true;
-    if (projectConfig.activeSdlcCodes.length >= this.MAX) { showToast(`⚠️ 한 프로젝트에서 SDLC 유형은 ${this.MAX}개까지 씁니다. 쓰지 않는 유형을 [사용 안 함]으로 뺀 뒤 고르세요.`, "warning"); return false; }
+    if (!Array.isArray(projectConfig.activeSdlcCodes) || !projectConfig.activeSdlcCodes.length) projectConfig.activeSdlcCodes = this.active();
+    const list = projectConfig.activeSdlcCodes;
+    if (list.indexOf(code) !== -1) { this._proj(code); return true; }
+    if (list.length >= this.MAX) {
+      const used = this._usedCodes();
+      for (let i = list.length - 1; i >= 0 && list.length >= this.MAX; i--) if (used.indexOf(list[i]) === -1) list.splice(i, 1);
+    }
+    if (list.length >= this.MAX) { showToast(`⚠️ 한 프로젝트에서 SDLC 유형은 ${this.MAX}개까지 씁니다. 이미 서브시스템들이 ${this.MAX}개 유형을 쓰고 있어, 그중 하나로 고르거나 다른 서브시스템의 유형을 먼저 바꾸세요.`, "warning"); return false; }
     this._proj(code);
-    projectConfig.activeSdlcCodes.push(code);
+    list.push(code);
     return true;
+  },
+  // 서브시스템이 쓰는 유형은 항상 사용 유형에 들어 있게 (예전 자료 · 파일로 받은 자료 맞추기). 바뀌면 조용히 기록
+  syncActive() {
+    if (typeof subsystemsMeta === "undefined" || typeof projectConfig === "undefined") return;
+    const before = JSON.stringify(projectConfig.activeSdlcCodes || null);
+    const used = this._usedCodes(), cur = Array.isArray(projectConfig.activeSdlcCodes) && projectConfig.activeSdlcCodes.length ? projectConfig.activeSdlcCodes.slice() : this.active();
+    const missing = used.filter(c => cur.indexOf(c) === -1);
+    if (!missing.length && Array.isArray(projectConfig.activeSdlcCodes) && projectConfig.activeSdlcCodes.length) return;
+    let next = used.concat(cur.filter(c => used.indexOf(c) === -1));
+    if (next.length > this.MAX) next = next.slice(0, Math.max(this.MAX, used.length));
+    next.forEach(c => { if (typeof ProcessLib === "undefined" || ProcessLib.findSdlc(c)) this._proj(c); });
+    projectConfig.activeSdlcCodes = next;
+    if (JSON.stringify(next) !== before && typeof SyncManager !== "undefined" && SyncManager.saveSettingsQuiet) SyncManager.saveSettingsQuiet();
   },
   _changed() { rebuildAll(true); persistChanges(); this.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
   setType(idx, type) {
@@ -198,6 +219,7 @@ var SdlcBoard = {
   render() {
     const box = document.getElementById("customSdlcCardsContainer");
     if (!box) return;
+    this.syncActive();
     const types = this.types(), act = this.active(), ed = this.canEdit(), dis = ed ? "" : " disabled";
     const reqs = this._reqLib(), reqAct = this._reqActive();
     if (!this.view || !/^(SDLC|REQ):./.test(this.view)) this.view = this._defaultView();
