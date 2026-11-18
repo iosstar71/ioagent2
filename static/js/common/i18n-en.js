@@ -13,6 +13,8 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "아직 쓰는 서브시스템이 없는 유형 — 일정을 미리 정해 둘 수 있습니다": "No subsystem uses this type yet — you can set its dates in advance",
+    "서브시스템들이 쓰는 SDLC 유형 (서로 다른 유형 최대 4개 · 숫자 = 쓰는 서브시스템):": "SDLC types used by subsystems (up to 4 different types · number = subsystems using it):",
     "긴급": "Urgent",
     "수용": "Accepted",
     "연계": "Integration",

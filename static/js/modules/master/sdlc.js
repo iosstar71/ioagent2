@@ -82,54 +82,48 @@ var SdlcBoard = {
     return lib.map(t => proj.find(x => x.code === t.code) || t)
       .concat(proj.filter(t => !lib.some(x => x.code === t.code)).map(t => Object.assign({}, t, { _projectOnly: true })));
   },
-  active() { return getProjectActiveSdlcCodes().slice(); },
+  // 이 프로젝트의 SDLC 유형 = 서브시스템들이 고른 유형 (미리 고르지 않음). 서로 다른 유형은 최대 MAX 개
+  active() { const u = this._usedCodes(); return u.length ? u : getProjectActiveSdlcCodes().slice(0, 1); },
   _proj(code) {   // 이 프로젝트의 사본 (없으면 Admin 정의를 복사해 만듦)
     if (typeof ProcessLib !== "undefined" && !ProcessLib.projectSdlc(code)) ProcessLib.applySdlcToProject(code);
     return (projectConfig.customSdlcTypes || []).find(t => t.code === code) || null;
   },
-  _usedCodes() { return [...new Set(subsystemsMeta.filter(m => m.type !== "REQ" && m.sdlcCode).map(m => m.sdlcCode))]; },
-  // 사용 유형 칸이 차 있으면, 어느 서브시스템도 쓰지 않는 유형을 먼저 비움
-  //  (예전 프로젝트는 쓰지 않는 기본 4종이 사용 유형으로 잡혀 있어 새 유형을 고를 수 없었음)
-  _activate(code) {
-    if (!Array.isArray(projectConfig.activeSdlcCodes) || !projectConfig.activeSdlcCodes.length) projectConfig.activeSdlcCodes = this.active();
-    const list = projectConfig.activeSdlcCodes;
-    if (list.indexOf(code) !== -1) { this._proj(code); return true; }
-    if (list.length >= this.MAX) {
-      const used = this._usedCodes();
-      for (let i = list.length - 1; i >= 0 && list.length >= this.MAX; i--) if (used.indexOf(list[i]) === -1) list.splice(i, 1);
-    }
-    if (list.length >= this.MAX) { showToast(`⚠️ 한 프로젝트에서 SDLC 유형은 ${this.MAX}개까지 씁니다. 이미 서브시스템들이 ${this.MAX}개 유형을 쓰고 있어, 그중 하나로 고르거나 다른 서브시스템의 유형을 먼저 바꾸세요.`, "warning"); return false; }
-    this._proj(code);
-    list.push(code);
-    return true;
+  _usedCodes(except) { return [...new Set(subsystemsMeta.filter(m => m !== except && m.type !== "REQ" && m.sdlcCode).map(m => m.sdlcCode))]; },
+  // 서브시스템 m 이 code 를 쓰게 되면 서로 다른 유형이 MAX 개를 넘는지
+  _fits(m, code) {
+    const others = this._usedCodes(m);
+    if (others.indexOf(code) !== -1 || others.length < this.MAX) return true;
+    showToast(`⚠️ 한 프로젝트의 서브시스템들이 쓰는 SDLC 유형은 서로 다른 것 ${this.MAX}개까지입니다. 이미 쓰는 유형 중에서 고르거나, 다른 서브시스템의 유형을 먼저 바꾸세요.`, "warning");
+    return false;
   },
-  // 서브시스템이 쓰는 유형은 항상 사용 유형에 들어 있게 (예전 자료 · 파일로 받은 자료 맞추기). 바뀌면 조용히 기록
+  // 저장해 두는 사용 유형 목록(WBS 템플릿 · 보고서가 읽음) = 서브시스템들이 쓰는 유형. 바뀌면 조용히 기록
   syncActive() {
     if (typeof subsystemsMeta === "undefined" || typeof projectConfig === "undefined") return;
-    const before = JSON.stringify(projectConfig.activeSdlcCodes || null);
-    const used = this._usedCodes(), cur = Array.isArray(projectConfig.activeSdlcCodes) && projectConfig.activeSdlcCodes.length ? projectConfig.activeSdlcCodes.slice() : this.active();
-    const missing = used.filter(c => cur.indexOf(c) === -1);
-    if (!missing.length && Array.isArray(projectConfig.activeSdlcCodes) && projectConfig.activeSdlcCodes.length) return;
-    let next = used.concat(cur.filter(c => used.indexOf(c) === -1));
-    if (next.length > this.MAX) next = next.slice(0, Math.max(this.MAX, used.length));
-    next.forEach(c => { if (typeof ProcessLib === "undefined" || ProcessLib.findSdlc(c)) this._proj(c); });
-    projectConfig.activeSdlcCodes = next;
-    if (JSON.stringify(next) !== before && typeof SyncManager !== "undefined" && SyncManager.saveSettingsQuiet) SyncManager.saveSettingsQuiet();
+    const used = this._usedCodes();
+    if (!used.length) return;
+    used.forEach(c => { if (typeof ProcessLib === "undefined" || ProcessLib.findSdlc(c)) this._proj(c); });
+    if (JSON.stringify(projectConfig.activeSdlcCodes || null) === JSON.stringify(used)) return;
+    projectConfig.activeSdlcCodes = used;
+    if (typeof SyncManager !== "undefined" && SyncManager.saveSettingsQuiet) SyncManager.saveSettingsQuiet();
   },
-  _changed() { rebuildAll(true); persistChanges(); this.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
+  _changed() { this.syncActive(); rebuildAll(true); persistChanges(); this.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
   setType(idx, type) {
     const m = subsystemsMeta[idx]; if (!m || !this.canEdit()) return;
+    if (type !== "REQ") {
+      const code = m.sdlcCode || this.active()[0];
+      if (!this._fits(m, code)) return renderSubsystemsMetaTable();
+      m.sdlcCode = code; this._proj(code);
+    }
     m.type = type === "REQ" ? "REQ" : "SDLC";
-    if (m.type === "SDLC" && !m.sdlcCode) m.sdlcCode = this.active()[0];
     this._changed();
   },
   assign(idx, code) {
     const m = subsystemsMeta[idx]; if (!m || !this.canEdit()) return;
-    if (!this._activate(code)) return this.render();
+    if (!this._fits(m, code)) { this.render(); return renderSubsystemsMetaTable(); }
+    this._proj(code);
     m.sdlcCode = code;
     this._changed();
   },
-  add(code) { if (this.canEdit() && this._activate(code)) this._changed(); },
   setPhase(code, i, field, value) {
     if (!this.canEdit()) return;
     const t = this._proj(code); const ph = t && t.phases && t.phases[i];
@@ -230,7 +224,7 @@ var SdlcBoard = {
     const reqUsers = subsystemsMeta.filter(m => m.type === "REQ").map(m => m.name);
     const label = (k, t) => {
       const ph = this.phasesOf(k, t.code), st = [];
-      if (k === "SDLC") { const u = usersOf(t.code); if (u.length) st.push("사용 중", `(${u.join(", ")})`); else if (act.indexOf(t.code) !== -1) st.push("프로젝트 유형"); }
+      if (k === "SDLC") { const u = usersOf(t.code); if (u.length) st.push("사용 중", `(${u.join(", ")})`); }
       else if (t.code === reqAct) { st.push("적용 중"); if (reqUsers.length) st.push(`(${reqUsers.join(", ")})`); }
       if (this.unplanned(ph)) st.push("일정 미지정");
       const tr = x => typeof I18N !== "undefined" ? I18N.t(x) : x;   // 선택 상자 글은 한 덩어리라 조각마다 번역
@@ -243,7 +237,7 @@ var SdlcBoard = {
     let note, extra = "";
     if (kind === "SDLC") {
       const u = usersOf(code);
-      note = u.length ? `쓰는 서브시스템: <b>${escapeHtml(u.join(", "))}</b>` : (act.indexOf(code) !== -1 ? "이 프로젝트의 SDLC 유형 — 아직 쓰는 서브시스템이 없습니다" : "아직 이 프로젝트에서 쓰지 않는 유형 — 서브시스템에서 고르면 사용 유형에 추가됩니다");
+      note = u.length ? `쓰는 서브시스템: <b>${escapeHtml(u.join(", "))}</b>` : "아직 쓰는 서브시스템이 없는 유형 — 일정을 미리 정해 둘 수 있습니다";
       if (ed && typeof ProcessLib !== "undefined" && ProcessLib.sdlcDiffers(code)) extra = `<button class="btn btn-sm" data-btn="warn" data-click="ProcessLib.refreshSdlc" data-click-args="${UiEvents.args(code)}" title="Admin 에서 단계 구성이 바뀌었습니다">🔄 최신 반영</button>`;
     } else if (code === reqAct) {
       note = `이 프로젝트에 적용 중인 개선과제 유형${reqUsers.length ? ` — 쓰는 서브시스템: <b>${escapeHtml(reqUsers.join(", "))}</b>` : ""}`;
@@ -252,16 +246,14 @@ var SdlcBoard = {
       note = "적용하지 않은 개선과제 유형 (개선과제형 서브시스템은 프로젝트에 적용한 유형 하나를 씁니다)";
       if (ed) extra = `<button class="btn btn-sm" data-btn="apply" data-click="ReqPhaseManager.applyPreset" data-click-args="${UiEvents.args(code)}">이 유형을 개선과제에 적용</button>`;
     }
-    const chips = act.map(c => {
-      const t = types.find(x => x.code === c) || { name: c }, n = usersOf(c).length;
-      return `<span class="sb-chip">${escapeHtml(t.name)} <b>${n}</b>${ed && !n ? ` <button class="btn btn-xs" data-btn="neutral" data-click="toggleSdlcActiveState" data-click-args="${UiEvents.args(c)}">사용 안 함</button>` : ""}</span>`;
-    }).join("");
+    const used = this._usedCodes();
+    const chips = used.map(c => `<span class="sb-chip">${escapeHtml((types.find(x => x.code === c) || { name: c }).name)} <b>${usersOf(c).length}</b></span>`).join("");
     box.className = "ss-proc";
     box.innerHTML = `<div class="ss-proc-head">${sel}
         <span class="sb-sum ${sum === 100 ? "is-ok" : "is-bad"}">가중치 합계 ${sum}%</span>${extra}</div>
       <div class="lk-hint"><span>${note}</span> · <span>단계 이름 · 산출물 · 키워드는 Admin 에서</span></div>
       ${phases.length ? this.phaseTable(phases, kind === "REQ" ? "SdlcBoard.setReqPhase" : "SdlcBoard.setPhase", code) : `<div class="rec-empty">단계가 없습니다.</div>`}
-      <div class="sb-spare"><span class="lk-hint">이 프로젝트의 SDLC 유형 (서브시스템이 고를 수 있는 유형, 최대 ${this.MAX}개 · 숫자 = 쓰는 서브시스템):</span> ${chips || "-"}</div>`;
+      <div class="sb-spare"><span class="lk-hint">서브시스템들이 쓰는 SDLC 유형 (서로 다른 유형 최대 ${this.MAX}개 · 숫자 = 쓰는 서브시스템):</span> ${chips || "-"}</div>`;
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(box);
   }

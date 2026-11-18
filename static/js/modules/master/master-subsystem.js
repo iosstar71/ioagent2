@@ -269,9 +269,8 @@ function renderSubsystemsMetaTable() {
       .map(d => `<option value="${escapeHtml(d)}" ${sub.domain === d ? "selected" : ""}>${escapeHtml(d)}</option>`)
       .join("");
 
-    const act = typeof SdlcBoard !== "undefined" ? SdlcBoard.active() : sdlcList.map(s => s.code);
     const sdlcOptionsHtml = (typeof SdlcBoard !== "undefined" ? SdlcBoard.types() : sdlcList)
-      .map(s => `<option value="${escapeAttr(s.code)}" ${sub.sdlcCode === s.code ? "selected" : ""}>${escapeHtml(s.name)}${act.indexOf(s.code) === -1 ? " (추가)" : ""}</option>`)
+      .map(s => `<option value="${escapeAttr(s.code)}" ${sub.sdlcCode === s.code ? "selected" : ""}>${escapeHtml(s.name)}</option>`)
       .join("");
 
     tr.innerHTML = `
