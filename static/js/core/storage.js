@@ -16,15 +16,6 @@ var StorageManager = {
     el.innerText = `현재 로컬 저장 데이터 크기: ${kb} KB (브라우저 허용 최대 ~5MB)`;
   },
 
-  openResetModal() {
-    const modal = document.getElementById("storageResetModal");
-    if (modal) modal.style.display = "flex";
-  },
-  closeResetModal() {
-    const modal = document.getElementById("storageResetModal");
-    if (modal) modal.style.display = "none";
-  },
-  resetToDefault() { this.openResetModal(); },
 
   _resetFilters() {
     ["matrixSubsystemFilter", "matrixDomainFilter", "wbsSubsystemFilter", "ganttSubsystemFilter", "delivSubsystemFilter",
@@ -43,115 +34,12 @@ var StorageManager = {
     SyncManager.replaceAllAndSave(message);
   },
 
-  clearNonJsonItems() {
-    const chk = (id, def) => { const el = document.getElementById(id); return el ? el.checked : def; };
-    const targets = [
-      ["chkClearWbs", true, () => { wbsData = []; }, "WBS"],
-      ["chkClearSubsystems", false, () => { subsystemsMeta = []; }, "서브시스템 프로젝트 설정"],
-      ["chkClearDeliverables", true, () => { deliverablesData = []; }, "산출물"],
-      ["chkClearReq", true, () => { reqMasterData = []; }, "REQ"],
-      ["chkClearVoc", true, () => { vocData = []; }, "VOC"]
-    ].filter(t => chk(t[0], t[1]));
-    if (!targets.length) {
-      showToast("지울 항목을 최소 1개 이상 선택해주세요.");
-      return;
-    }
-    targets.forEach(t => t[2]());
-    this.closeResetModal();
-    this._afterBulkReplace(`선택 항목(${targets.map(t => t[3]).join(", ")})이 모두 삭제되었습니다.`);
-  },
 
-  // 데이터는 보존하고 화면 설정·임시 키만 정리 (암호 정책은 유지)
-  clearStorageExceptJsonKey() {
-    const keep = new Set([LocalBackend.STORAGE_KEY, LocalBackend.REVS_KEY, DbConnector.CONFIG_STORAGE_KEY,
-      AuthManager.STORAGE_POLICY_KEY, AuthManager.STORAGE_AUTOLOCK_KEY]);
-    try {
-      const rm = [];
-      for (let i = 0; i < AppStore.length; i++) {
-        const k = AppStore.key(i);
-        // 프로젝트 데이터(모든 프로젝트)·프로젝트 목록은 보존
-        if (k && !keep.has(k) && k.indexOf(LocalBackend.STORAGE_KEY) !== 0 && k.indexOf(LocalBackend.REVS_KEY) !== 0 && k !== ProjectContext.REG_KEY && k !== ProjectContext.KEY) rm.push(k);
-      }
-      rm.forEach(k => AppStore.removeItem(k));
-    } catch (e) {}
-    this.closeResetModal();
-    this.updateUsageInfo();
-    showToast("프로젝트 데이터는 보존하고, 화면 설정·임시 저장 항목을 정리했습니다.");
-  },
 
-  resetAllStorage() {
-    this.closeResetModal();
-    openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 처음 상태(빈 프로젝트, admin 하나)로 돌아갑니다. 계속하시겠습니까?", () => {
-      try { AppStore.clear(); } catch (e) {}
-      AppStore.reload();
-    });
-  },
 
-  exportFullSystemBackup() {
-    const now = new Date();
-    const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
-    const fullPayload = Object.assign({
-      schemaVersion: `AX_PMYS_${APP_VERSION.version}_FULL_BACKUP`,
-      exportedAt: now.toISOString(),
-      exportedBy: AuthManager.getCurrentUser().empNo,
-      systemSettings: {
-        theme: document.body.getAttribute("data-theme") || defaultTheme(),
-        authPolicy: AuthManager.getAuthPolicy(),
-        autoLockMinutes: AuthManager.getAutoLockMinutes(),
-        dbConfig: DbConnector.config
-      }
-    }, DataRegistry.collect());
-    const blob = new Blob([JSON.stringify(fullPayload, null, 2)], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = ExcelSync.stdName("전체백업", [], "json", String(stamp).replace(/[^0-9]/g, "").slice(0, 14));
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`[전체 백업 완료] 시스템 설정, 프로젝트 설정, 업무 데이터(게시판·회의·주간보고 포함)를 저장했습니다.`);
-  },
 
-  async importFullSystemBackup(e) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-    try {
-      const data = JSON.parse(await file.text());
-      if (!data || typeof data !== "object") throw new Error("유효하지 않은 백업 JSON 파일입니다.");
-      openConfirmDialog(`선택한 [${file.name}] 백업 파일로 모든 시스템 설정, 프로젝트 설정 및 업무 데이터를 복원하시겠습니까?`, () => {
-        BackupHistoryManager.createBackupSnapshot("전체복원직전자동백업", "ALL", false);
-        DataRegistry.apply(data);
-        const ss = data.systemSettings;
-        if (ss) {
-          if (ss.theme) DataRegistry.set("theme", ss.theme);
-          if (ss.authPolicy) AuthManager.setAuthPolicy(ss.authPolicy);
-          if (ss.autoLockMinutes !== undefined) AuthManager.setAutoLockMinutes(ss.autoLockMinutes);
-        }
-        this._afterBulkReplace(`[전체 복원 완료] ${file.name} 백업본이 정상 복원되었습니다.`);
-      });
-    } catch (err) {
-      showToast("통합 백업 복원 오류: " + err.message);
-    }
-  },
 
-  _applySnapshot(snapshot, meetingFilter) {
-    const c = DataRegistry.clone(snapshot);
-    DataRegistry.apply(c, ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "projectUsers",
-      "wbsData", "deliverablesData", "reqMasterData", "vocData", "noticesData", "communicationsData"]);
-    weeklyReportsData = Array.isArray(c.weeklyReportsData) ? c.weeklyReportsData : [];
-    meetingsData = Array.isArray(c.meetingsData)
-      ? c.meetingsData
-      : [];
-  },
 
-  resetToFactoryBlank() {
-    openConfirmDialog(
-      "⚠️ [완전 초기화 확인]\n모든 업무 데이터(WBS·요구사항·VOC·산출물·게시판·회의·주간보고)와 프로젝트 설정을 초기화합니다. (멤버는 admin 하나, 암호 1234 로 초기화)",
-      () => this._factoryBlank()
-    );
-  },
   _factoryBlank() {
       {
         BackupHistoryManager.createBackupSnapshot("완전초기화직전백업", "ALL", false);

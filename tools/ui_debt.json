@@ -6,8 +6,8 @@
    "inline_hex": 5
   },
   "tab-config": {
-   "inline": 308,
-   "inline_hex": 100
+   "inline": 261,
+   "inline_hex": 83
   },
   "tab-dashboard": {
    "inline": 55,
@@ -85,8 +85,8 @@
  },
  "total": {
   "css_important": 619,
-  "html_inline": 877,
-  "html_inline_hex": 172,
+  "html_inline": 830,
+  "html_inline_hex": 155,
   "js_hex": 104
  }
 }

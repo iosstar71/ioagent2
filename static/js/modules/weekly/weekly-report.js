@@ -32,11 +32,6 @@ var WeeklyReportManager = {
     if (scope === "SYS") return `서브시스템: ${value}`;
     return "종합 (전체)";
   },
-  scopeFileLabel(scope, value) {
-    if (scope === "DOMAIN") return `분야_${value}`;
-    if (scope === "SYS") return `${value}_서브시스템`;
-    return "전체종합";
-  },
   scopeSystems(scope, value) {
     const all = getAllSubsystemNames();
     if (scope === "DOMAIN") return (subsystemsMeta || []).filter(s => (s.domain || "") === value).map(s => s.name);
@@ -276,14 +271,6 @@ var WeeklyReportManager = {
     sel.value = `${this.scope || "ALL"}|${this.scopeValue || ""}`;
   },
 
-  onWeekOrSubsystemChanged() {
-    const wSel = document.getElementById("wrWeekSelect");
-    const sSel = document.getElementById("wrSubsystemSelect");
-    const wNum = wSel && wSel.value ? parseInt(wSel.value, 10) : this.selectedWeek;
-    const [scope, value] = (sSel && sSel.value ? sSel.value : "ALL|").split("|");
-    if (this.currentWeekReport && !this.confirmLeave(() => this._switchTo(wNum, scope, value))) return;
-    this._switchTo(wNum, scope, value);
-  },
 
   _switchTo(wNum, scope, value) {
     this.openReport(wNum, scope, value);
@@ -293,13 +280,6 @@ var WeeklyReportManager = {
     this.render();
   },
 
-  openSavedReport(id) {
-    const r = (weeklyReportsData || []).find(x => x.id === id);
-    if (!r) return;
-    const sc = this.reportScope(r);
-    if (this.currentWeekReport && this.currentWeekReport.id !== id && !this.confirmLeave(() => this._switchTo(r.weekNo, sc.scope, sc.value))) return;
-    this._switchTo(r.weekNo, sc.scope, sc.value);
-  },
 
   // [v1.0.7] 보고 주차별 보고서 목록 (선택 주차의 종합·서브시스템 작성 현황, v1.0.9 분야별 제외) / 저장된 전체 주차
   listWeek: null,
@@ -820,7 +800,6 @@ var WeeklyReportManager = {
     return true;
   },
 
-  saveCurrentReport() { return this.completeReport(true); },
 
   // [최신 데이터 가져오기]: 지금 자료(Task · 회의 · Action Item · 지표)로 다시 읽음. 작성 완료된 보고서면 작성 완료를 취소
   //  (화면 [새로고침]은 저장된 상태를 다시 읽을 뿐 — 작성 완료본은 그때 자료(스냅샷) 그대로 보임)
@@ -1065,9 +1044,6 @@ var WeeklyReportManager = {
     return WeeklyExport.download(rep, useTables ? "WORD" : "WORD_TEXT");
   },
 
-  exportNarrativeDoc() {
-    this.exportDocx(true);
-  }
 };
 
 window.WeeklyReportManager = WeeklyReportManager;

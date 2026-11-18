@@ -33,13 +33,6 @@ var NoticeCommManager = {
     return false;
   },
 
-  hasChannelPermission() {
-    const curUser = (typeof AuthManager !== "undefined" && typeof AuthManager.getCurrentUser === "function")
-      ? AuthManager.getCurrentUser()
-      : (AuthManager?.currentUser || { role: "MEMBER" });
-    const norm = (curUser.role || "MEMBER").toUpperCase();
-    return norm === "SYS_ADMIN" || norm === "PM";
-  },
 
   openEditNoticeModal(id) {
     const target = noticesData.find(n => n.id === id);
@@ -124,53 +117,7 @@ var NoticeCommManager = {
     });
   },
 
-  deleteReply(postId, repId) {
-    const post = communicationsData.find(c => c.id === postId);
-    if (!post || !Array.isArray(post.replies)) return;
-    const rep = post.replies.find(r => r.id === repId);
-    if (!rep) return;
-    if (!this.hasCommPermission(rep)) {
-      showToast("⚠️ 본인 작성 답글이거나 관리자/PM 권한만 삭제할 수 있습니다.", "warning");
-      return;
-    }
-    openConfirmDialog("해당 답글을 삭제하시겠습니까?", () => {
-      post.replies = post.replies.filter(r => r.id !== repId);
-      persistChanges();
-      this.renderCommunications();
-      showToast("답글이 삭제되었습니다.");
-    });
-  },
 
-  editChannel(oldName) {
-    if (!this.hasChannelPermission()) {
-      showToast("⚠️ 채널 정보 수정은 관리자(admin) 또는 프로젝트 관리자(PM)만 가능합니다.", "warning");
-      return;
-    }
-    if (oldName === "전체") {
-      showToast("기본 '전체' 채널명은 변경할 수 없습니다.", "warning");
-      return;
-    }
-    openPromptDialog(`# ${oldName} 채널 이름 바꾸기`, oldName, newName => {
-      if (newName && newName.trim() && newName.trim() !== oldName) {
-        const cleanName = newName.trim().replace(/^#\s*/, "");
-        if (projectConfig.channels.includes(cleanName)) {
-          showToast("이미 존재하는 채널명입니다.", "warning");
-          return;
-        }
-        const idx = projectConfig.channels.indexOf(oldName);
-        if (idx !== -1) {
-          projectConfig.channels[idx] = cleanName;
-          // update communications channel if needed
-          communicationsData.forEach(c => { if (c.channel === oldName) c.channel = cleanName; });
-          if (this.activeChannel === oldName) this.activeChannel = cleanName;
-          this.renderChannelOptions();
-          this.renderCommunications();
-          persistChanges();
-          showToast(`✅ 채널명이 [# ${cleanName}]으로 변경되었습니다.`);
-        }
-      }
-    });
-  },
 
   currentSubTab: "NOTICES", // NOTICES | FEED
   viewMode: "FEED",         // FEED | KANBAN | STANDUP

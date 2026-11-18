@@ -253,6 +253,3 @@ var WbsTemplate = {
     } else run();
   }
 };
-// 이전 이름 호환
-function openTemplateModal() { WbsTemplate.open(); }
-function closeTemplateModal() { WbsTemplate.close(); }

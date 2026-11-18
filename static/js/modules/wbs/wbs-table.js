@@ -391,15 +391,6 @@ function changeTaskLevel(idx, delta) {
   showToast(`🔢 [${oldId} → ${row.id}] 레벨 L${nextLvl - delta} → L${nextLvl} 변경 (하위 ${subtree.length - 1}건 포함) · WBS ID 자동 다시 매기기 완료`);
 }
 
-// 레벨 선택 상자 변경
-function setTaskLevel(idx, lvl) {
-  const row = wbsData[idx];
-  if (!row) return;
-  const delta = parseInt(lvl, 10) - (row.level || 1);
-  if (delta) changeTaskLevel(idx, delta);
-  else renderWbsTable();
-}
-
 // 서브시스템 변경: 하위 과업을 함께 대상 서브시스템 마지막으로 이동 후 재채번
 function changeTaskSystem(idx, sys) {
   const row = wbsData[idx];
@@ -546,9 +537,6 @@ function applyPlanToActual(task) {
 }
 // 시작일이 종료일보다 늦은 (뒤집힌) 일정
 function isDateReversed(s, e) { return Boolean(s && e && s > e); }
-function countReversedDates(list) {
-  return (list || wbsData).filter(t => t.isLeaf && (isDateReversed(t.aStart, t.aEnd) || isDateReversed(t.pStart, t.pEnd))).length;
-}
 
 function fillRowActualFromPlan(idx) {
   const task = wbsData[idx];

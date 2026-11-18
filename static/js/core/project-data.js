@@ -38,21 +38,6 @@ var ProjectData = {
     this.BASE_KEYS.concat(this.TASK_KEYS).forEach(k => { data[k] = DataRegistry.clone(all[k] !== undefined ? all[k] : []); });
     return data;
   },
-  exportProject(format) {
-    if (!this.canManage()) return showToast("🚫 프로젝트 백업은 PM · 관리자만 할 수 있습니다.");
-    // [v3.9.1] 엑셀 백업 = 스마트병합 [④ 전체 일괄] 엑셀과 같은 양식 (기준정보 · 업무 · 작업자 · 협업 시트)
-    if (format === "EXCEL") {
-      const blob = ExcelSync._buildXlsxBlob(SmartMergeCenter.buildPackageSheets());
-      ExcelSync._triggerDownload(blob, ExcelSync.stdName("프로젝트백업", [], "xlsx", this._stamp()));
-      return showToast(`💾 [${this.currentName()}] 프로젝트를 엑셀로 백업했습니다. (${this.countText(this.collect())})`);
-    }
-    const data = this.collect();
-    const payload = { schemaVersion: this.SCHEMA, appVersion: APP_VERSION.version, projectId: ProjectContext.current, projectName: this.currentName(),
-      exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo, data };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
-    ExcelSync._triggerDownload(blob, ExcelSync.stdName("프로젝트백업", [], "json", this._stamp()));
-    showToast(`💾 [${this.currentName()}] 프로젝트를 백업했습니다. (${this.countText(data)})`);
-  },
 
   // 올린 JSON → 프로젝트 자료 (프로젝트 백업 · 시스템 전체 백업 · 스냅샷 백업 모두 받음)
   _pick(json) {
@@ -112,21 +97,6 @@ var ProjectData = {
     SubTabs.show("merge", "backup");
   },
 
-  // ---- Task 정보 초기화 (기본정보 · 기준정보 유지) ----
-  clearTasks(ids, label) {
-    ids = (ids || []).filter(Boolean);
-    if (!ids.length) return;
-    const many = ids.length > 1;
-    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
-    const names = ids.map(id => (this.projects().find(p => p.id === id) || { name: id }).name);
-    const cur = ids.indexOf(ProjectContext.current) !== -1;
-    const dirty = cur && SyncManager.dirtyCount ? SyncManager.dirtyCount() : 0;
-    openConfirmDialog(`🧹 [Task 정보 초기화] ${label || names.join(", ")}\n` +
-      `· 지우는 것: WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통\n` +
-      `· 그대로: 프로젝트 기본정보 · 프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물) · 멤버\n` +
-      "지우기 전 자료는 스냅샷(이 브라우저)으로 남깁니다." +
-      `${dirty ? `\n⚠️ 지금 화면의 저장하지 않은 변경 ${dirty}건은 버려집니다.` : ""}\n되돌리기 어렵습니다. 계속할까요?`, () => this._clear(ids, names));
-  },
   async _clear(ids, names) {
     if (this.isServer()) {
       // 서버에는 백업 파일을 남기지 않음 (용량) → 지우기 전 자료를 복원 지점(브라우저)으로
@@ -162,13 +132,6 @@ var ProjectData = {
     } else {
       showToast(`🧹 Task 정보를 초기화했습니다: ${names.join(", ")} (기본정보 · 프로젝트 설정은 그대로)`);
     }
-  },
-  clearCurrentTasks() { this.clearTasks([ProjectContext.current], `[${this.currentName()}] 프로젝트`); },
-  clearFromConfig() {
-    const sel = document.getElementById("cfgClearTarget");
-    const v = sel ? sel.value : ProjectContext.current;
-    if (v === "__ALL__") this.clearTasks(this.projects().map(p => p.id), `모든 프로젝트 (${this.projects().length}개)`);
-    else this.clearTasks([v], `[${(this.projects().find(p => p.id === v) || { name: v }).name}] 프로젝트`);
   },
   renderConfigTarget() {
     const sel = document.getElementById("cfgClearTarget");

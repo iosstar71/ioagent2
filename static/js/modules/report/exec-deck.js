@@ -633,8 +633,6 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     showToast(`📽 [종합보고서] ${name} 다운로드 완료 (${deck.slides.length}장)`);
     return name;
   },
-  // 주간보고 화면 [⬇ 내려받기]: 왼쪽 목록에서 고른 주차
-  downloadPptxSelected() { return this.downloadPptx(WeeklyReportManager.listWeek || this.week()); },
   // 보고서 설정 [미리보기]: 같은 장표를 새 창에 (인쇄 창은 띄우지 않음)
   openPreview(weekNum) {
     const deck = this.build(weekNum || this.week());
@@ -643,17 +641,6 @@ html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}",
     if (!w) return showToast("⚠️ 팝업이 차단되어 미리보기 창을 열 수 없습니다. 브라우저에서 이 프로그램의 팝업을 허용하세요.");
     w.document.open(); w.document.write(this.toHtml(deck)); w.document.close();
   },
-  openPdf(weekNum) {
-    const deck = this.build(weekNum || this.week());
-    if (!deck) return showToast("⚠️ 보고 주차를 찾을 수 없습니다.");
-    const w = window.open("", "_blank");
-    if (!w) return showToast("⚠️ 팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저에서 이 프로그램의 팝업을 허용하세요.");
-    w.document.open();
-    w.document.write(this.toHtml(deck));
-    w.document.close();
-    setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 600);
-    showToast(`🖨 [종합보고서] 인쇄 창에서 [PDF로 저장]을 고르세요 (${deck.slides.length}장)`);
-  }
 };
 window.ExecDeck = ExecDeck;
 

@@ -108,15 +108,6 @@ var UiForm = {
 };
 window.UiForm = UiForm;
 
-function openDataBackupModal() {
-  const modal = document.getElementById("dataBackupModal");
-  if (modal) modal.style.display = "flex";
-}
-function closeDataBackupModal() {
-  const modal = document.getElementById("dataBackupModal");
-  if (modal) modal.style.display = "none";
-}
-
 // [보안 강화] XSS 공격 방어 문자열 이스케이프 함수
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";

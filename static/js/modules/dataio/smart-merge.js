@@ -620,8 +620,6 @@ const SmartMergeCenter = {
   },
   COLLAB_JSON_COL: "원본데이터(JSON)",
 
-  // [v3.9.0] ② 공지사항 · 소통 피드는 프로젝트 전체 단위 (서브시스템을 고르지 않음)
-  _collabScope() { return "ALL"; },
   _collabRecords(k, scope) {
     const def = this.COLLAB_DEFS[k];
     const all = DataRegistry.get(def.dataKey) || [];

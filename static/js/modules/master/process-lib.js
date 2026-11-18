@@ -93,14 +93,6 @@ var ProcessLib = {
     showToast(`🔄 [${(this.findSdlc(code) || {}).name || code}] 시스템 설정의 최신 단계 구성을 이 프로젝트에 반영했습니다. (계획 일정은 단계 이름이 같으면 유지)`);
   },
 
-  // ---- 프로젝트: 단계 계획 일정만 고치는 창 (기존 SDLC 편집 창 재사용) ----
-  openDates(code) {
-    const t = this.projectSdlc(code) || this.findSdlc(code);
-    if (!t) return;
-    _editingSdlcMode = { target: "dates", code };
-    _editingSdlcPhasesTemp = this._c(t.phases || []);
-    this._openModal(`📅 [${t.name}] 단계별 가중치 · 계획 일정 (이 프로젝트)`, t, true);
-  },
 
   // ---- 시스템 설정: 라이브러리 편집 ----
   editable() {

@@ -314,8 +314,6 @@ var MeetingManager = {
     if (!Array.isArray(meetingsData)) meetingsData = [];
   },
 
-  // 예시 회의는 넣지 않음 (빈 상태로 시작)
-  getDefaultMeetings() { return []; },
 
   switchSubTab(tabName) {
     if (tabName !== "actionitems" && typeof RecordPanel !== "undefined" && RecordPanel._kind === "action") RecordPanel.close();
@@ -1094,9 +1092,6 @@ var MeetingManager = {
     }
   },
 
-  saveCurrentMinutes() {
-    return this.completeMinutes(true);
-  },
 
   // =========================================================================
   // 3. Action Item 현황 (통합 트래커 & 필터)

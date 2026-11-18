@@ -55,7 +55,6 @@ var UiMode = {
     document.body.classList.remove("ui-standard");
   },
   isNeo() { return true; },
-  canSwitch() { return false; },
   afterLogin() { return false; },
   set() {},
   syncSelects() {}

@@ -65,6 +65,5 @@ const DbConnector = {
     this.setConnected(!!res.ok);
     showToast(res.ok ? `🟢 서버 연결 확인 (${this.getApiBase()})` : `❌ 서버 연결 실패: ${res.message || ""}`);
   },
-  saveToDb(showAlert = true) { return SyncManager.save(null, { notify: showAlert }); },
   loadFromDb() { return SyncManager.refresh(null); }
 };

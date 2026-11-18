@@ -184,16 +184,6 @@ var ProjectTransfer = {
     d.resolve({ action: "overwrite" });
   },
 
-  // 같은 이름이 있으면 새 이름을 받음 (취소하면 null)
-  uniqueName(name, taken) {
-    let n = String(name || "").trim() || "새 프로젝트";
-    while (taken.some(t => this._norm(t) === this._norm(n))) {
-      const v = window.prompt(`이미 같은 이름의 프로젝트가 있습니다: [${n}]\n추가할 프로젝트의 새 이름을 입력하세요. (취소하면 이 프로젝트는 추가하지 않습니다)`, `${n} (2)`);
-      if (v === null) return null;
-      n = String(v).trim().slice(0, 100) || n;
-    }
-    return n;
-  },
 
   async pick() {
     if (!ProjectData.canManage()) return showToast("🚫 관리자 · PM 만 할 수 있습니다.");

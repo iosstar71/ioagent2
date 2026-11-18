@@ -376,39 +376,10 @@ var ProjectManager = {
   // 기본 프로젝트는 지울 수 없으므로 자료만 처음 상태로
   resetDefault() { if (typeof ProjectData !== "undefined") ProjectData.resetProject(); },
 
-  // ---- 참여자 ----
-  editMembers(pid) {
-    const p = ProjectContext.info(pid);
-    const panel = document.getElementById("pmMembersPanel");
-    if (!p || !panel) return;
-    this._editingMembers = pid;
-    const members = new Set((p.members || []).map(m => String(m).toLowerCase()));
-    panel.innerHTML = `
-      <div class="pm-panel-title">👥 [${escapeHtml(p.name)}] 참여자</div>
-      <label class="pm-check"><input type="checkbox" id="pmRestricted" ${p.restricted ? "checked" : ""}> 참여자만 접근 (체크 해제 시 전체 멤버 접근)</label>
-      <div class="pm-members">${projectUsers.map(u => `<label class="pm-check"><input type="checkbox" class="pm-member" value="${escapeAttr(u.empNo)}" ${members.has(String(u.empNo).toLowerCase()) ? "checked" : ""}> ${escapeHtml(u.name || u.empNo)} <span style="color:var(--text-muted);">(${escapeHtml(u.empNo)})</span></label>`).join("")}</div>
-      <div style="display:flex; gap:6px; justify-content:flex-end;">
-        <button class="btn btn-sm" data-btn="cancel" data-click="ProjectManager.closeMembers">취소</button>
-        <button class="btn btn-sm" data-btn="save" data-click="ProjectManager.saveMembers">참여자 저장</button>
-      </div>`;
-    panel.hidden = false;
-    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(panel);
-    if (typeof I18N !== "undefined") I18N.translateTree(panel);
-  },
   closeMembers() {
     const panel = document.getElementById("pmMembersPanel");
     if (panel) panel.hidden = true;
     this._editingMembers = null;
-  },
-  async saveMembers() {
-    const pid = this._editingMembers;
-    if (!pid) return;
-    const members = Array.from(document.querySelectorAll("#pmMembersPanel .pm-member:checked")).map(el => el.value);
-    const restricted = document.getElementById("pmRestricted").checked;
-    if (await this._update(pid, { members, restricted })) {
-      showToast(`👥 참여자 ${members.length}명을 저장했습니다.${restricted ? " (참여자만 접근)" : ""}`);
-      this.closeMembers();
-    }
   },
 
   // ---- 작업자 정보: 프로젝트별 역할 ----

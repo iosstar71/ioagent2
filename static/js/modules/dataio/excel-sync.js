@@ -224,14 +224,6 @@ const ExcelSync = {
       .replace(/'/g, "&apos;");
   },
 
-  escapeHtmlText(str) {
-    if (str === null || str === undefined) return "";
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  },
 
   normalizeDate(val) {
     if (val === null || val === undefined) return "";
@@ -743,42 +735,6 @@ const ExcelSync = {
     this._triggerDownload(blob, this.stdName("전체데이터", [], "xlsx"));
   },
 
-  exportTab(tabKey) {
-    const schema = this.TAB_SCHEMAS[tabKey];
-    if (!schema) return;
-    const data = this.getTabData(tabKey);
-    const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2026-11-04";
-
-    const rows = [
-      { cells: schema.map((c) => c.label), styleId: 1, height: 25 }
-    ];
-
-    data.forEach((r) => {
-      const rowCells = schema.map((c) => {
-        if (
-          (tabKey === "wbs" && (c.key === "level" || c.key === "weight" || c.key === "pProg" || c.key === "aProg")) ||
-          (tabKey === "subsystems" && c.key === "weight")
-        ) {
-          const num = parseFloat(r[c.key]);
-          return isNaN(num) ? 0 : num;
-        }
-        return this.formatExportCell(tabKey, c.key, r[c.key]);
-      });
-      rows.push({ cells: rowCells, styleId: 2, height: 20 });
-    });
-
-    const secMeta = this.SECTION_META.find((s) => s.key === tabKey);
-    const sheetName = secMeta ? secMeta.sheetName : tabKey.toUpperCase();
-
-    const blob = this._buildXlsxBlob([
-      {
-        name: sheetName,
-        colWidths: schema.map((c) => c.width || 16),
-        rows: rows
-      }
-    ]);
-    this._triggerDownload(blob, this.stdName({ wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", users: "멤버", subsystems: "서브시스템", config: "프로젝트 설정" }[tabKey] || tabKey, [], "xlsx"));
-  },
 
   // ---------------------------------------------------------------------------
   // 3. 멀티 포맷 파서 (.xlsx / HTML .xls / XML .xls / .csv / .tsv 모두 지원)
@@ -1711,87 +1667,6 @@ const ExcelSync = {
     }
   },
 
-  async importTab(e, tabKey) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : e instanceof File ? e : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-
-    try {
-      const sheets = await this._parseUploadedFile(file);
-      let imported = [];
-
-      for (const sheet of sheets) {
-        let activeSection = tabKey;
-        let colMap = this._buildDefaultColMap(tabKey);
-        const sheetRows = [];
-
-        for (let i = 0; i < sheet.rows.length; i++) {
-          const cells = sheet.rows[i];
-
-          const secTitle = this._detectSectionTitle(cells);
-          if (secTitle) {
-            activeSection = secTitle;
-            colMap = this._buildDefaultColMap(secTitle);
-            continue;
-          }
-
-          const anyHeader = this._matchHeaderToSchema(cells);
-          if (anyHeader) {
-            const targetHeader = this._matchHeaderToSchema(cells, tabKey);
-            if (targetHeader && targetHeader.tabKey === tabKey) {
-              activeSection = tabKey;
-              colMap = targetHeader.colMap;
-            } else {
-              activeSection = anyHeader.tabKey;
-              colMap = anyHeader.colMap;
-            }
-            continue;
-          }
-
-          if (activeSection !== tabKey) continue;
-
-          const rawObj = this._extractRowObject(tabKey, cells, colMap);
-          if (rawObj) {
-            const norm = this._normalizeRowData(tabKey, rawObj, sheetRows.length);
-            if (norm) sheetRows.push(norm);
-          }
-        }
-
-        if (sheetRows.length > 0) {
-          imported = sheetRows;
-          break;
-        }
-      }
-
-      if (imported.length === 0) {
-        showToast(`[${tabKey.toUpperCase()}] 파일에서 가져올 수 있는 유효한 데이터 행을 찾지 못했습니다.`);
-        return;
-      }
-
-      if (typeof BackupHistoryManager !== "undefined") {
-        BackupHistoryManager.createBackupSnapshot(`탭엑셀업로드(${tabKey})`, "ALL", true);
-      }
-      if (tabKey === "wbs") {
-        wbsData = imported;
-        this._ensureWbsAndSubsystemsIntegrity();
-      } else if (tabKey === "subsystems") {
-        subsystemsMeta = imported;
-        if (typeof syncSubsystemWeights === "function") syncSubsystemWeights();
-      } else if (tabKey === "deliverables") {
-        deliverablesData = imported;
-      } else if (tabKey === "req") {
-        reqMasterData = imported;
-      } else if (tabKey === "voc") {
-        vocData = imported;
-      }
-
-      if (typeof rebuildAll === "function") rebuildAll();
-      showToast(`[${tabKey.toUpperCase()}] 성공적으로 ${imported.length}건의 데이터를 가져왔습니다.`);
-    } catch (err) {
-      console.error(`[${tabKey}] 엑셀 업로드 오류:`, err);
-      showToast(`엑셀 업로드 중 오류가 발생했습니다: ${err.message}`);
-    }
-  }
 };
 
 

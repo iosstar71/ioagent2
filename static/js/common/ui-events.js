@@ -233,10 +233,6 @@ var UiH = {
     });
     renderDeliverablesTable();
   },
-  importMasterWorkbook(e) {
-    ExcelSync.importMasterWorkbook(e);
-    closeDataBackupModal();
-  },
   meetingDiscard() {
     MeetingManager.discardDraft();
     MeetingManager.render();

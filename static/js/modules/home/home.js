@@ -105,18 +105,9 @@ var HomeScreenManager = {
   userStyle() {
     try { const v = AppStore.getItem(this._styleKey()); return this.STYLES.indexOf(v) !== -1 ? v : null; } catch (e) { return null; }
   },
-  getEffectiveMode() {
-    return this.userStyle() || this.roleDefault();
-  },
 
-  getCurrentMode() {
-    return this.getEffectiveMode();
-  },
 
-  // 화면 고르기 (예전 홈 스타일 단추와 같은 이름 유지)
-  setStyle(mode) { if (typeof GShell !== "undefined") GShell.go(this.LANDING[mode] || "tab-home"); },
 
-  setSessionMode(mode) { this.setStyle(mode); },
 
   openSettings() {
     if (typeof AuthManager !== "undefined" && AuthManager.TAB_POLICY["tab-master"] && !AuthManager.canAccessTab(AuthManager.getCurrentRole(), "tab-master")) {
@@ -137,7 +128,6 @@ var HomeScreenManager = {
     this.render();
   },
 
-  previewMode(mode) { this.setStyle(mode); },
 
   onRoleHomeSettingChange(role, mode) {
     this.ensureConfig();

@@ -16,57 +16,6 @@ function getProjectActiveSdlcCodes() {
   return ["SDLC_WATERFALL", "SDLC_AGILE", "SDLC_COTS", "SDLC_INFRA"];
 }
 
-function toggleSdlcActiveState(sdlcCode) {
-  if (!projectConfig.activeSdlcCodes) {
-    projectConfig.activeSdlcCodes = getProjectActiveSdlcCodes();
-  }
-  const idx = projectConfig.activeSdlcCodes.indexOf(sdlcCode);
-  if (idx !== -1) {
-    // Already active, user wants to deactivate
-    if (projectConfig.activeSdlcCodes.length <= 1) {
-      showToast("⚠️ 프로젝트에는 최소 1개 이상의 SDLC 타입이 활성화되어 있어야 합니다.", "warning");
-      return;
-    }
-    // Check if any subsystem uses this
-    const inUse = subsystemsMeta.filter(s => s.type !== "REQ" && s.sdlcCode === sdlcCode).length;
-    if (inUse > 0) {
-      openConfirmDialog(
-        `⚠️ 해당 SDLC 타입을 사용하는 서브시스템이 ${inUse}개 있습니다. 비활성화하시겠습니까? (서브시스템의 SDLC 설정이 다른 활성 SDLC로 재배정됩니다)`,
-        () => {
-          projectConfig.activeSdlcCodes.splice(idx, 1);
-          const fallback = projectConfig.activeSdlcCodes[0];
-          subsystemsMeta.forEach(s => {
-            if (s.type !== "REQ" && s.sdlcCode === sdlcCode) s.sdlcCode = fallback;
-          });
-          renderCustomSdlcCards();
-          rebuildAll(true);
-          persistChanges();
-          showToast(`[${sdlcCode}] 타입이 프로젝트 활성 목록에서 제외되었습니다.`);
-        }
-      );
-      return;
-    }
-    projectConfig.activeSdlcCodes.splice(idx, 1);
-    renderCustomSdlcCards();
-    rebuildAll(true);
-    persistChanges();
-    showToast(`[${sdlcCode}] 타입이 프로젝트 활성 목록에서 제외되었습니다.`);
-  } else {
-    // User wants to activate
-    if (projectConfig.activeSdlcCodes.length >= 4) {
-      showToast("⚠️ 프로젝트에서는 SDLC 타입을 최대 4개까지만 선택하여 활성화할 수 있습니다. 기존 활성 타입을 비활성화한 후 선택해주세요.", "warning");
-      return;
-    }
-    // [v3.9.0] 시스템 설정의 공정 유형 정의를 이 프로젝트에 복사 (계획 일정은 이 프로젝트에서 따로)
-    if (typeof ProcessLib !== "undefined") ProcessLib.applySdlcToProject(sdlcCode);
-    projectConfig.activeSdlcCodes.push(sdlcCode);
-    renderCustomSdlcCards();
-    rebuildAll(true);
-    persistChanges();
-    showToast(`✅ [${sdlcCode}] 타입이 프로젝트 활성 SDLC로 등록되었습니다. (총 ${projectConfig.activeSdlcCodes.length}/4개 활성)`);
-  }
-}
-
 // =============================================================================
 // 프로젝트 설정 > Phase · 산출물: SDLC 유형을 한 화면에서 (창 없이)
 //  ① 서브시스템마다 관리 유형(SDLC / 개선과제)과 SDLC 유형을 고름 → 고른 유형은 자동으로 이 프로젝트에 추가(최대 4개)
@@ -261,75 +210,6 @@ var SdlcBoard = {
 window.SdlcBoard = SdlcBoard;
 function renderCustomSdlcCards() { SdlcBoard.render(); }
 
-function resetSdlcPresetsToDefault() {
-  openConfirmDialog("🔄 SDLC 설정을 시스템 추천 8종 마스터 풀(PMO 3단계, 스마트제조 4단계, 폭포수, 애자일 등)로 초기화하시겠습니까?", () => {
-    projectConfig.customSdlcTypes = [
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_PMO)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_SMART_MFG)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_WATERFALL)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_AGILE)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_COTS)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.SDLC_INFRA)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.COMPACT)),
-      JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS.DETAILED))
-    ];
-    projectConfig.activeSdlcCodes = ["SDLC_PMO", "SDLC_SMART_MFG", "SDLC_WATERFALL", "SDLC_AGILE"];
-    
-    // Auto map subsystems
-    subsystemsMeta.forEach(s => {
-      if (s.type !== "REQ") {
-        if (s.code === "PMO") s.sdlcCode = "SDLC_PMO";
-        else s.sdlcCode = "SDLC_SMART_MFG";
-      }
-    });
-    if (typeof MasterSyncEngine !== "undefined") {
-      MasterSyncEngine.syncAll(true, "resetSdlc");
-    } else {
-      renderCustomSdlcCards();
-      rebuildAll(true);
-    }
-    showToast("SDLC 설정이 추천 8대 표준 풀 및 4대 활성 SDLC로 복원되었습니다.");
-  });
-}
-
-function openNewSdlcModal() {
-  if (!projectConfig.customSdlcTypes) projectConfig.customSdlcTypes = [];
-  if (projectConfig.customSdlcTypes.length >= 8) {
-    showToast("⚠️ SDLC 마스터 등록 풀에는 최대 8개까지만 등록할 수 있습니다. 기존 타입을 수정하거나 삭제 후 추가해주세요.", "warning");
-    return;
-  }
-  _editingSdlcIndex = -1;
-  _editingSdlcPhasesTemp = [
-    { key: "p1", name: "요구분석", weight: 25, output: "요구명세서", keywords: ["분석", "요구"] },
-    { key: "p2", name: "설계", weight: 25, output: "설계서", keywords: ["설계", "화면", "db"] },
-    { key: "p3", name: "구현", weight: 35, output: "프로그램", keywords: ["구현", "개발", "코딩"] },
-    { key: "p4", name: "검증이행", weight: 15, output: "검증보고서", keywords: ["검증", "테스트", "이행"] }
-  ];
-  document.getElementById("customSdlcModalTitle").textContent = `🛠️ 신규 SDLC 타입 등록 (마스터 풀 ${projectConfig.customSdlcTypes.length + 1}/8개)`;
-  document.getElementById("editSdlcCode").value = `SDLC_CUSTOM_${Date.now().toString().slice(-4)}`;
-  document.getElementById("editSdlcCode").readOnly = false;
-  document.getElementById("editSdlcName").value = "신규 커스텀 SDLC";
-  document.getElementById("editSdlcDesc").value = "요구분석 ➔ 설계 ➔ 구현 ➔ 검증이행 4단계 공정";
-  renderEditSdlcPhasesTable();
-  document.getElementById("customSdlcModal").style.display = "flex";
-}
-
-
-function openEditSdlcModal(idx) {
-  const list = WBSEngine.getActiveSdlcList();
-  const target = list[idx];
-  if (!target) return;
-  _editingSdlcIndex = idx;
-  _editingSdlcPhasesTemp = JSON.parse(JSON.stringify(target.phases || []));
-
-  document.getElementById("customSdlcModalTitle").textContent = `🛠️ [${target.name}] 단계 커스터마이징`;
-  document.getElementById("editSdlcCode").value = target.code;
-  document.getElementById("editSdlcCode").readOnly = true;
-  document.getElementById("editSdlcName").value = target.name;
-  document.getElementById("editSdlcDesc").value = target.desc || "";
-  renderEditSdlcPhasesTable();
-  document.getElementById("customSdlcModal").style.display = "flex";
-}
 
 function closeCustomSdlcModal() {
   const modal = document.getElementById("customSdlcModal");
@@ -413,22 +293,4 @@ function saveCustomSdlcFromModal() {
   renderCustomSdlcCards();
   rebuildAll();
   showToast(`[${nameVal}] SDLC 설정이 저장되었습니다.`);
-}
-
-function deleteCustomSdlcType(idx) {
-  if (projectConfig.customSdlcTypes.length <= 1) {
-    showToast("프로젝트에는 최소 1개의 SDLC 타입이 있어야 합니다.");
-    return;
-  }
-  const target = projectConfig.customSdlcTypes[idx];
-  openConfirmDialog(`[${target.name}] SDLC 타입을 삭제하시겠습니까?\n(해당 타입을 사용 중인 서브시스템은 다른 SDLC 타입으로 자동 전환됩니다)`, () => {
-    projectConfig.customSdlcTypes.splice(idx, 1);
-    const fallbackCode = projectConfig.customSdlcTypes[0].code;
-    subsystemsMeta.forEach(s => {
-      if (s.sdlcCode === target.code) s.sdlcCode = fallbackCode;
-    });
-    renderCustomSdlcCards();
-    rebuildAll();
-    showToast(`[${target.name}] SDLC 타입이 삭제되었습니다.`);
-  });
 }

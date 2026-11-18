@@ -8,111 +8,11 @@ let projectConfig = {
   projectName: "기본 프로젝트",
   domains: ["기본분야"],
   channels: [], // [v3.0.0] 게시판 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
-  customSdlcTypes: [ // SDLC 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
-    {
-      code: "SDLC_PMO",
-      name: "PMO 사업관리/거버넌스형 (3단계)",
-      desc: "착수단계 ➔ 실행통제단계 ➔ 종료단계 (사업관리·품질보증·감리·이관 표준 거버넌스 공정)",
-      isRecommended: true,
-      phases: [
-        { key: "p1", name: "착수단계", weight: 20, output: "사업수행계획서/착수보고서", keywords: ["착수", "기반", "계획", "거버넌스", "조직", "기준선", "baseline", "wbs수립"] },
-        { key: "p2", name: "실행통제단계", weight: 60, output: "품질감리보고서/진척보고서", keywords: ["통제", "감리", "품질", "공정", "모니터링", "실행", "진척", "검수", "산출물"] },
-        { key: "p3", name: "종료단계", weight: 20, output: "사업완료보고서/인수인계서", keywords: ["종료", "보고", "인수인계", "평가", "완료", "보안점검", "이행", "이관"] }
-      ]
-    },
-    {
-      code: "SDLC_SMART_MFG",
-      name: "스마트제조/설비가동률 개선형 (4단계)",
-      desc: "요구사항정의 ➔ 과제개발 ➔ 추가요구개발 ➔ 이행안정화",
-      isRecommended: true,
-      phases: [
-        { key: "p1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/과제정의서", keywords: ["요구사항", "요건", "접수", "정의", "확정", "상세정의"] },
-        { key: "p2", name: "과제요구사항 개발단계 (3~10월)", weight: 40, output: "과제분석설계서/개발결과서", keywords: ["과제", "과제개발", "분석설계", "개발", "단위테스트", "구현"] },
-        { key: "p3", name: "추가 요구사항 개발단계 (5~10월)", weight: 25, output: "추가요건개발서/현장검수원", keywords: ["추가", "추가요구", "개선", "비가동", "터치", "센서", "연계", "알고리즘"] },
-        { key: "p4", name: "이행/안정화 단계 (11~12월)", weight: 15, output: "보안점검조치서/인수인계서", keywords: ["이행", "안정화", "보안", "보안점검", "인수인계", "종료", "운영이관"] }
-      ]
-    },
-    {
-      code: "SDLC_WATERFALL",
-      name: "폭포수 표준형 (Waterfall / 5단계)",
-      desc: "분석 ➔ 설계 ➔ 개발 ➔ 테스트 ➔ 이행 표준 순차형 공정",
-      isRecommended: true,
-      phases: [
-        { key: "p1", name: "분석", weight: 15, output: "요구사항명세서", keywords: ["분석", "요구사항", "요건", "현황", "착수", "기획"] },
-        { key: "p2", name: "설계", weight: 25, output: "화면/DB설계서", keywords: ["설계", "화면", "db", "인터페이스", "아키텍처", "스토리보드", "erd"] },
-        { key: "p3", name: "개발", weight: 35, output: "소스코드/단위테스트", keywords: ["개발", "구현", "단위", "코딩", "제작", "엔진", "모듈"] },
-        { key: "p4", name: "테스트", weight: 15, output: "통합테스트결과서", keywords: ["테스트", "통합테스트", "검증", "시험", "점검", "부하"] },
-        { key: "p5", name: "이행", weight: 10, output: "이행보고서", keywords: ["이행", "전환", "오픈", "배포", "안정화", "컷오버"] }
-      ]
-    },
-    {
-      code: "SDLC_AGILE",
-      name: "애자일/스프린트 반복형 (Agile & Sprint / 4단계)",
-      desc: "스프린트계획 ➔ 개발이터레이션 ➔ 스프린트리뷰 ➔ 릴리즈 반복형 공정",
-      isRecommended: true,
-      phases: [
-        { key: "p1", name: "스프린트계획", weight: 20, output: "스프린트백로그", keywords: ["스프린트", "백로그", "계획", "요구분석", "유저스토리"] },
-        { key: "p2", name: "개발이터레이션", weight: 40, output: "증분소프트웨어", keywords: ["개발", "이터레이션", "구현", "컴포넌트", "코딩", "작업"] },
-        { key: "p3", name: "스프린트리뷰", weight: 25, output: "리뷰/QA테스트결과", keywords: ["리뷰", "qa", "검증", "인수", "피드백", "테스트"] },
-        { key: "p4", name: "릴리즈", weight: 15, output: "릴리즈노트", keywords: ["릴리즈", "배포", "오픈", "회고", "런칭"] }
-      ]
-    },
-    {
-      code: "SDLC_COTS",
-      name: "패키지/솔루션 도입형 (COTS Package / 4단계)",
-      desc: "Fit-Gap분석 ➔ 파라미터설정 ➔ 인수테스트 ➔ 이행오픈 솔루션 최적화 공정",
-      phases: [
-        { key: "p1", name: "Fit-Gap분석", weight: 25, output: "갭분석서", keywords: ["갭", "fit", "gap", "분석", "패키지", "커스터마이징", "비교"] },
-        { key: "p2", name: "파라미터설정", weight: 40, output: "환경설정정의서", keywords: ["설정", "파라미터", "구축", "커스텀", "모듈", "매핑"] },
-        { key: "p3", name: "인수테스트", weight: 20, output: "인수시험결과서", keywords: ["인수", "테스트", "검증", "시험", "작업자", "시운전"] },
-        { key: "p4", name: "이행오픈", weight: 15, output: "가동승인원", keywords: ["이행", "오픈", "가동", "전환", "마이그레이션", "데이터"] }
-      ]
-    },
-    {
-      code: "SDLC_INFRA",
-      name: "클라우드/인프라 전환형 (Cloud & Infra / 4단계)",
-      desc: "아키텍처진단 ➔ 클라우드구축 ➔ 모의전환검증 ➔ 본전환 인프라 특화 공정",
-      phases: [
-        { key: "p1", name: "아키텍처진단", weight: 20, output: "진단보고서", keywords: ["진단", "아키텍처", "네트워크", "망분리", "설계", "분석"] },
-        { key: "p2", name: "클라우드구축", weight: 35, output: "인프라구성도", keywords: ["구축", "k8s", "컨테이너", "클러스터", "프로비저닝", "설정"] },
-        { key: "p3", name: "모의전환검증", weight: 25, output: "모의훈련결과서", keywords: ["모의", "훈련", "리허설", "취약점", "모의해킹", "테스트"] },
-        { key: "p4", name: "본전환", weight: 20, output: "오픈확인서", keywords: ["본전환", "컷오버", "오픈", "스위칭", "안정화", "가동"] }
-      ]
-    },
-    {
-      code: "COMPACT",
-      name: "SDLC 축약형 (4단계)",
-      desc: "분석설계 ➔ 구현 ➔ 통합테스트 ➔ 이행 및 안정화",
-      phases: [
-        { key: "p1", name: "분석설계", weight: 25, output: "분석설계서", keywords: ["분석", "설계", "요구사항", "요건", "현황"] },
-        { key: "p2", name: "구현", weight: 40, output: "소스코드/단위테스트", keywords: ["구현", "개발", "단위", "코딩", "제작"] },
-        { key: "p3", name: "통합테스트", weight: 20, output: "통합테스트결과서", keywords: ["통합테스트", "시험", "테스트", "검증", "점검", "시운전"] },
-        { key: "p4", name: "이행 및 안정화", weight: 15, output: "이행보고서", keywords: ["이행", "안정화", "운영", "전환", "오픈", "배포"] }
-      ]
-    },
-    {
-      code: "DETAILED",
-      name: "SDLC 상세형 (6단계)",
-      desc: "요구사항정의 ➔ 분석설계 ➔ 구현 ➔ 통합테스트 ➔ 이행 ➔ 안정화",
-      phases: [
-        { key: "p1", name: "요구사항정의", weight: 15, output: "요구사항정의서", keywords: ["요구사항", "요건정의", "요구정의", "현황분석", "착수"] },
-        { key: "p2", name: "분석설계", weight: 20, output: "분석설계서", keywords: ["분석설계", "분석", "설계", "화면설계", "db설계", "인터페이스"] },
-        { key: "p3", name: "구현", weight: 35, output: "소스코드/단위테스트", keywords: ["구현", "개발", "단위", "코딩", "모듈"] },
-        { key: "p4", name: "통합테스트", weight: 15, output: "통합테스트결과서", keywords: ["통합테스트", "시험", "테스트", "검증", "점검"] },
-        { key: "p5", name: "이행", weight: 10, output: "이행결과보고서", keywords: ["이행", "전환", "오픈", "배포", "컷오버"] },
-        { key: "p6", name: "안정화", weight: 5, output: "안정화완료보고서", keywords: ["안정화", "운영이관", "모니터링", "교육"] }
-      ]
-    }
-  ],
+  customSdlcTypes: Object.keys(WBSEngine.DEFAULT_SDLC_PRESETS).map(k => JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS[k]))),   // 기본 유형 정의는 WBSEngine 한 곳
   activeSdlcCodes: ["SDLC_PMO", "SDLC_SMART_MFG", "SDLC_WATERFALL", "SDLC_AGILE"],
   activeReqPreset: "",
   // [ver1.0.4] 개선과제형(REQ) 서브시스템 공정 단계 기준정보 (4단계)
-  reqSdlcPhases: [
-    { key: "r1", name: "요구사항정의단계 (1~3월)", weight: 20, output: "요구사항목록/정의서", keywords: ["요구사항", "요건", "접수", "분석", "정의", "확정"] },
-    { key: "r2", name: "과제요구사항 개발단계 (3~10월)", weight: 40, output: "과제개발결과서/분석설계서", keywords: ["과제", "개발", "분석설계", "구현", "단위테스트"] },
-    { key: "r3", name: "추가 요구사항 개발단계 (5~10월)", weight: 25, output: "추가요건소스/검수원", keywords: ["추가", "개선", "비가동", "터치", "알고리즘", "연계"] },
-    { key: "r4", name: "이행/안정화 단계 (11~12월)", weight: 15, output: "보안조치서/인수인계서", keywords: ["이행", "보안", "점검", "인수인계", "종료", "안정화"] }
-  ],
+  reqSdlcPhases: JSON.parse(JSON.stringify(WBSEngine.DEFAULT_REQ_PRESETS.REQ_MFG_2027.phases)),
   maxDeliverableRounds: 2,
   // 처음 값: 올해 1월 1일 ~ 12월 31일, 기준일 = 오늘 (기준정보에서 바꿈)
   projectStartDate: `${new Date().getFullYear()}-01-01`,
@@ -191,13 +91,6 @@ function renderProjectTitles() {
   const maxR = Math.min(4, Math.max(1, parseInt(projectConfig.maxDeliverableRounds || 2, 10)));
   const maxRSel = document.getElementById("cfgMaxDeliverableRounds");
   if (maxRSel) maxRSel.value = String(maxR);
-}
-
-function updateProjectSdlcType(newType) {
-  projectConfig.sdlcType = newType === "DETAILED" ? "DETAILED" : "COMPACT";
-  const spec = WBSEngine.getActiveSdlcSpec();
-  rebuildAll();
-  showToast(`[프로젝트 표준 SDLC 변경] '${spec.label}' 형태로 적용되었습니다. (개선타입 REQ는 서브시스템별로 추가 가능)`);
 }
 
 function updateMaxDeliverableRounds(newMax) {
