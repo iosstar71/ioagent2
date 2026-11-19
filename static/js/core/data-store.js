@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.6] 데이터 저장/동기화 계층 (Data Store & Sync)
+// 데이터 저장/동기화 계층 (Data Store & Sync)
 // -----------------------------------------------------------------------------
 //  - DataRegistry : 프로젝트 데이터셋(13종)의 단일 접근점 (수집/적용/백업/JSON 파일 저장 공통)
 //  - Partition    : 데이터셋을 "파티션" 단위로 분할 (서브시스템 단위 / 행 ID 단위 / 전체)
@@ -31,10 +31,10 @@ var DataRegistry = {
     communicationsData:       { part: "id",     scope: "shared",    label: "게시판" },
     meetingsData:             { part: "id",     scope: "shared",    label: "회의" },
     weeklyReportsData:        { part: "id",     scope: "weekly",    label: "주간보고" },
-    // [v2.4.0] 작업자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
+    // 작업자별 할 일 (본인만 보고 고침 — DB 서버는 본인 항목만 내려줌)
     todosData:                { part: "id",     scope: "personal",  label: "내 할 일" },
     theme:                    { part: null,     scope: "pref",      label: "화면 테마" },
-    // [v3.9.0] 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 관리자가 관리, 모든 프로젝트 공통
+    // 공정 유형 라이브러리 (SDLC · 개선과제) — 시스템 설정에서 관리자가 관리, 모든 프로젝트 공통
     processTypes:             { part: null,     scope: "system",    label: "SDLC 유형" }
   },
 
@@ -56,7 +56,7 @@ var DataRegistry = {
       case "weeklyReportsData": return typeof weeklyReportsData !== "undefined" ? weeklyReportsData : [];
       case "todosData": return typeof todosData !== "undefined" && Array.isArray(todosData) ? todosData : [];
       case "processTypes": return typeof ProcessLib !== "undefined" ? ProcessLib.raw : null;
-      case "theme":  // [v3.8.0] 시스템 기본 테마 (프로젝트 테마는 projectConfig.uiTheme)
+      case "theme":  // 시스템 기본 테마 (프로젝트 테마는 projectConfig.uiTheme)
         if (typeof ThemeScope !== "undefined") {
           if (ThemeScope.global === undefined) ThemeScope.global = typeof defaultTheme === "function" ? defaultTheme() : "urban-slate";
           return ThemeScope.global;
@@ -79,7 +79,7 @@ var DataRegistry = {
       case "subsystemsMeta": if (Array.isArray(val)) subsystemsMeta = val; break;
       case "standardDeliverablesMeta": if (Array.isArray(val)) standardDeliverablesMeta = val; break;
       case "projectUsers":
-        // [v3.0.0] 이 프로젝트의 작업자(관리자 + 참여자)만 화면에 둠 — 전체 목록은 ProjectContext.allUsers
+        // 이 프로젝트의 작업자(관리자 + 참여자)만 화면에 둠 — 전체 목록은 ProjectContext.allUsers
         if (Array.isArray(val) && val.length > 0) {
           ProjectContext.ensureLegacyMembership(val);
           ProjectContext.allUsers = val;
@@ -128,15 +128,8 @@ var DataRegistry = {
 
   clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); },
 
-  // 용어 정리 이전 자료: 상태 "착수전" → "대기", 산출물 "N회차" → "N차" (불러올 때 바꿈, 저장할 때 새 값으로 저장)
-  normalizeTerms(data) {
-    const st = r => { if (r && r.status === "착수전") r.status = "대기"; };
-    ["reqMasterData", "vocData", "wbsData"].forEach(k => { if (Array.isArray(data[k])) data[k].forEach(st); });
-    if (Array.isArray(data.deliverablesData)) data.deliverablesData.forEach(d => {
-      st(d);
-      if (d && typeof d.round === "string") d.round = d.round.replace(/^(\d)회차$/, "$1차");
-    });
-  }
+  // 예전 값 이름 바꾸기는 Migrate(core/migrate.js) 한 곳에서
+  normalizeTerms(data) { return Migrate.data(data); }
 };
 
 // -----------------------------------------------------------------------------
@@ -241,7 +234,7 @@ var Permission = {
     return (typeof AuthManager !== "undefined" && AuthManager.normalizeRole) ? AuthManager.normalizeRole(u.role) : "SYS_ADMIN";
   },
   isManager() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM"; },
-  // 전체 서브시스템 데이터 수정 가능 여부 — 관리자 · PM, 총괄리더는 담당이 ALL 일 때만 ([v4.0.0] 리더 · 작업자는 담당 서브시스템)
+  // 전체 서브시스템 데이터 수정 가능 여부 — 관리자 · PM, 총괄리더는 담당이 ALL 일 때만 (리더 · 작업자는 담당 서브시스템)
   canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || (r === "LEAD" && this.ownSubsystem() === "ALL"); },
   ownSubsystem() { return String(this.user().subsystem || "ALL"); },
 
@@ -283,9 +276,9 @@ var Permission = {
 // 4. 저장소 백엔드
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-// [v1.0.10] 현재 프로젝트 (여러 프로젝트 관리)
+// 현재 프로젝트 (여러 프로젝트 관리)
 //  - 작업자 계정(projectUsers)·화면 테마(theme)는 한 곳에 저장, 그 밖의 데이터는 프로젝트별 저장
-//  - [v3.0.0] 작업자 정보(역할·담당·부서)는 프로젝트별 참여 정보로 관리, 화면에는 그 프로젝트 작업자만
+//  - 작업자 정보(역할·담당·부서)는 프로젝트별 참여 정보로 관리, 화면에는 그 프로젝트 작업자만
 //  - 기본 프로젝트(DEFAULT)는 v1.0.9 이하 저장 위치를 그대로 사용 (기존 데이터 이관 불필요)
 // -----------------------------------------------------------------------------
 var ProjectContext = {
@@ -323,7 +316,7 @@ var ProjectContext = {
     try { AppStore.setItem(this.REG_KEY, JSON.stringify(list)); } catch (e) {}
   },
 
-  // ---- [v3.0.0] 작업자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
+  // ---- 작업자 정보는 프로젝트별 (서버 wbs_db_server.py 와 같은 규칙) ----
   //  계정(작업자 ID·이름·암호)은 하나, 프로젝트마다 참여 정보 projectRoles[프로젝트ID] = { role, subsystem, dept }
   //  관리자는 모든 프로젝트에 보이고, 그 밖의 작업자는 참여한 프로젝트에만 보임
   allUsers: [],
@@ -430,7 +423,7 @@ var LocalBackend = {
     const data = {};
     const revs = {};
     const cache = {};
-    // [v3.0.0] 로컬 저장소 작업자 1회 이관 (프로젝트별 참여 정보)
+    // 로컬 저장소 작업자 1회 이관 (프로젝트별 참여 정보)
     try {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
@@ -501,7 +494,7 @@ var LocalBackend = {
   // 전체 덮어쓰기 (초기화/샘플 복원/백업 복원 전용) — 공통 데이터는 기본 프로젝트 위치에 저장
   replaceAll(data) {
     const now = new Date().toLocaleString();
-    // [v3.0.0] 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 작업자 규칙을 따름 (1회 이관 불필요)
+    // 초기화·샘플·백업으로 새로 쓰는 데이터는 이미 프로젝트별 작업자 규칙을 따름 (1회 이관 불필요)
     try { AppStore.setItem(ProjectContext.MIGRATE_KEY, "1"); } catch (e) {}
     const groups = {};
     DataRegistry.KEYS.forEach(k => {
@@ -769,7 +762,7 @@ var SyncManager = {
   async save(keys, opts = {}) {
     if (typeof ProjectManager !== "undefined" && ProjectManager._switching) return { ok: false, switching: true };
     if (this._busy) { this._pendingSave = { keys, opts }; return { ok: false, busy: true }; }
-    // [v1.0.10] 보관된 프로젝트는 관리자 외에는 읽기 전용
+    // 보관된 프로젝트는 관리자 외에는 읽기 전용
     const proj = ProjectContext.info();
     if (proj && proj.status === "ARCHIVED" && Permission.user().baseRole !== "SYS_ADMIN") {
       if (opts.notify || !this._archivedNotified) showToast("📦 사용 중지(보관)된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");

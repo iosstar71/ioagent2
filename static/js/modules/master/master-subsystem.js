@@ -1,11 +1,10 @@
 // [Project Mgmt] 기준정보: 분야 · 서브시스템 · 표준 산출물
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
 // [요건 2 & 5 & 6 & 7] 서브시스템 기준정보 및 선택 리스트(<select>) 공통 공급자
 // -------------------------------------------------------------
 let subsystemsMeta = [];
 
-// [ver1.0.4 신규] 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기 암호: 1234)
+// 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기 암호: 1234)
 let projectUsers = [
   { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
 ];
@@ -25,7 +24,7 @@ const DEFAULT_STANDARD_DELIVERABLES = [
 let standardDeliverablesMeta = JSON.parse(JSON.stringify(DEFAULT_STANDARD_DELIVERABLES));
 
 // -------------------------------------------------------------
-// [ver1.0.4 신규] 상위 분야(Domain, 최대 5개) 관리 및 전 화면 연동 필터
+// 상위 분야(Domain, 최대 5개) 관리 및 전 화면 연동 필터
 // -------------------------------------------------------------
 function getProjectDomains() {
   if (!projectConfig.domains || !Array.isArray(projectConfig.domains)) {
@@ -151,7 +150,7 @@ function getSubsystemOptionsHtml(selectedVal) {
 
 function updateAllSubsystemFilterDropdowns() {
   const list = getAllSubsystemNames();
-  // [ver1.0.4] 전 화면 분야(Domain) 드롭다운 채우기
+  // 전 화면 분야(Domain) 드롭다운 채우기
   const domains = getProjectDomains();
   const domainFilterIds = [
     "dashDomainFilter", "scurveDomainFilter", "matrixDomainFilter", "ganttDomainFilter",
@@ -182,7 +181,7 @@ function updateAllSubsystemFilterDropdowns() {
   filterConfigs.forEach(cfg => {
     const sel = document.getElementById(cfg.id);
     if (!sel) return;
-    // [v2.4.0] 처음에는 내 담당 서브시스템으로 (담당이 전체이면 전체)
+    // 처음에는 내 담당 서브시스템으로 (담당이 전체이면 전체)
     let curVal = sel.value || "ALL";
     if (!sel.dataset.init) {
       sel.dataset.init = "1";
@@ -199,7 +198,7 @@ function updateAllSubsystemFilterDropdowns() {
     });
   });
 
-  // [ver1.0.4.4] 단일 서브시스템 선택 전용 드롭다운 (JSON 스마트병합 대상, 서브시스템별 엑셀 다운/업로드)
+  // 단일 서브시스템 선택 전용 드롭다운 (JSON 스마트병합 대상, 서브시스템별 엑셀 다운/업로드)
   const singleSysIds = ["mergeTargetSubsystemSelect", "excelSubsysExportSelect", "excelSubsysImportSelect"];
   singleSysIds.forEach(id => {
     const sel = document.getElementById(id);
@@ -245,7 +244,7 @@ function updateDeliverableRoundDropdowns() {
   }
 }
 
-// [v1.0.6] 데이터 변경 알림: 로컬 저장소 모드는 실시간 자동저장, DB 서버 모드는 미저장 표시만 갱신
+// 데이터 변경 알림: 로컬 저장소 모드는 실시간 자동저장, DB 서버 모드는 미저장 표시만 갱신
 function persistChanges(immediate = false) {
   if (typeof SyncManager !== "undefined") SyncManager.onDataChanged(immediate);
 }
@@ -388,7 +387,7 @@ function renderStandardDeliverablesMetaTable() {
 
   const phaseOptions = ["요구사항정의단계", "분석설계단계", "구현단계", "통합테스트단계", "시험검증단계", "이행단계", "안정화단계", "이행안정화단계", "구축단계"];
 
-  // [v3.7.0] 표준 공정단계 순으로 표시 (같은 단계 안에서는 등록 순서)
+  // 표준 공정단계 순으로 표시 (같은 단계 안에서는 등록 순서)
   const phaseRank = p => { const i = phaseOptions.indexOf(p); return i === -1 ? phaseOptions.length : i; };
   const order = standardDeliverablesMeta.map((item, idx) => idx).sort((a, b) => phaseRank(standardDeliverablesMeta[a].phase) - phaseRank(standardDeliverablesMeta[b].phase) || a - b);
   order.forEach((idx, no) => {

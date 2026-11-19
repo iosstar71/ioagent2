@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v3.1.0] 주간보고 내려받기 (WeeklyExport)
+// 주간보고 내려받기 (WeeklyExport)
 // -----------------------------------------------------------------------------
 //  - 파일 이름 규칙: {파일약칭}_주간보고_{yyyy}W{주차}_{범위}_{양식}_{판}.{확장자}
 //      예) P001_주간보고_2027W22_ALL_DOC-T_v2.docx
@@ -116,10 +116,10 @@ var WeeklyExport = {
       meetingsCur: this._meetings(rep.startDate, rep.endDate),
       meetingsNext: this._meetings(rep.nextStartDate, rep.nextEndDate),
       actions: this._actionsOfWeek(rep.startDate, rep.endDate),
-      // [v3.4.0] 경영 보고 장표용: S-커브 계획선(주차별) · 단계별 종합 공정 매트릭스(SDLC 만)
+      // 경영 보고 장표용: S-커브 계획선(주차별) · 단계별 종합 공정 매트릭스(SDLC 만)
       planCurve: this._planCurve(),
       sdlc: this._sdlc(),
-      // [v3.3.0] 경영 보고 장표용: 지연 과업 · 마일스톤
+      // 경영 보고 장표용: 지연 과업 · 마일스톤
       delayed: (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, projectConfig.reportDate).code === "delayed")
         .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "" })),
       milestones: (projectConfig.milestones || []).filter(x => x && x.date && x.name && x.date >= WBSEngine.addDays(rep.startDate, -7))
@@ -139,7 +139,7 @@ var WeeklyExport = {
     const W = WeeklyReportManager;
     const sc = W.reportScope(rep);
     const allSys = W.scopeSystems(sc.scope, sc.value);
-    // [v3.3.0] 종합 보고서는 작성 완료된 서브시스템 내용만 (서브시스템이 아닌 공통 항목은 포함)
+    // 종합 보고서는 작성 완료된 서브시스템 내용만 (서브시스템이 아닌 공통 항목은 포함)
     const done = rep.integrated && rep.integratedFrom ? rep.integratedFrom.done || [] : null;
     const systems = done ? allSys.filter(x => done.indexOf(x) !== -1) : allSys;
     const subsystemNames = getAllSubsystemNames();
@@ -393,7 +393,7 @@ var WeeklyExport = {
 window.WeeklyExport = WeeklyExport;
 
 // =============================================================================
-// [v3.1.0] 홈 [📊 브리핑] 경영 보고 카드 — 기준일 주차의 종합 주간보고 (주간보고 화면 위쪽 내려받기와 같은 결과)
+// 홈 [📊 브리핑] 경영 보고 카드 — 기준일 주차의 종합 주간보고 (주간보고 화면 위쪽 내려받기와 같은 결과)
 // =============================================================================
 var ExecReport = {
   week() {

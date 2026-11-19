@@ -1,9 +1,8 @@
 // [Project Mgmt] 기준정보: 작업자 · 하위 탭 · 마일스톤 · 진척 기준
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
 // [기준정보 > 작업자 정보] 투입인력 계정 · 권한(4단계) · 담당 서브시스템 · 언어
 // =============================================================================
-// [v3.0.0] 작업자 정보는 프로젝트별 — 이 프로젝트의 작업자(관리자 + 참여자)만 표시
+// 작업자 정보는 프로젝트별 — 이 프로젝트의 작업자(관리자 + 참여자)만 표시
 //  역할·담당 서브시스템·부서는 이 프로젝트에만 적용, 멤버 ID·이름·암호는 계정 공통
 function renderProjectUsersTable() {
   const tbody = document.getElementById("projectUsersBody");
@@ -108,7 +107,7 @@ var SubTabs = {
       name = group === "config" ? "project" : "basic";
     }
     if (group === "config" && ["screen", "channel"].indexOf(name) !== -1) name = "project";
-    if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // [v3.8.0] 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
+    if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
     document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
     document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
     try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
@@ -148,7 +147,7 @@ var MasterSubTabs = {
   restore() { SubTabs.restore("master", "basic"); }
 };
 
-// [v1.0.7] 주요 마일스톤 (종합 / 서브시스템별) — projectConfig.milestones
+// 주요 마일스톤 (종합 / 서브시스템별) — projectConfig.milestones
 var MilestoneManager = {
   list() {
     if (!Array.isArray(projectConfig.milestones)) projectConfig.milestones = [];
@@ -295,7 +294,7 @@ async function updateProjectUserPassword(idx) {
   showToast(`[${u.name}(${u.empNo})] 인력의 암호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
 }
 
-// [v1.0.7] 작업자별 암호 초기화 (초기 암호: 1234)
+// 작업자별 암호 초기화 (초기 암호: 1234)
 function resetProjectUserPassword(idx) {
   const u = projectUsers[idx];
   if (!u) return;
@@ -309,7 +308,7 @@ function resetProjectUserPassword(idx) {
   });
 }
 
-// [v3.0.0] 작업자 삭제 = 이 프로젝트에서 빼기 (다른 프로젝트 참여가 없으면 계정도 삭제)
+// 작업자 삭제 = 이 프로젝트에서 빼기 (다른 프로젝트 참여가 없으면 계정도 삭제)
 function deleteProjectUser(idx) {
   const u = projectUsers[idx];
   if (!u || (u.empNo || "").toLowerCase() === "admin") {

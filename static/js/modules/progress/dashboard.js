@@ -1,16 +1,15 @@
 // [Project Mgmt] 종합 대시보드
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
 // [요건 8] 종합대시보드 렌더링 (서브시스템 카드 + 산출물 통계표 + VOC 통계표)
 // -------------------------------------------------------------
 function renderDashboard() {
   const repDate = projectConfig.reportDate;
-  // [v3.4.0] 불릿 차트 (대시보드 서브시스템 필터 반영)
+  // 불릿 차트 (대시보드 서브시스템 필터 반영)
   if (typeof BulletChart !== "undefined") {
     try { const sf = document.getElementById("dashSubsystemFilter"); BulletChart.render("dashBulletChart", BulletChart.liveRows(sf ? sf.value : "ALL")); } catch (e) { console.warn(e); }
   }
 
-  // [ver1.0.4 신규] 대시보드 4대 영역 통합 필터링 (분야 / 서브시스템)
+  // 대시보드 4대 영역 통합 필터링 (분야 / 서브시스템)
   const dFilterEl = document.getElementById("dashDomainFilter");
   const sFilterEl = document.getElementById("dashSubsystemFilter") || document.getElementById("scurveSystemFilter");
   const selDomain = dFilterEl ? dFilterEl.value : "ALL";

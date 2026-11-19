@@ -1,5 +1,4 @@
 // [Project Mgmt] 자료 내려받기 · 올리기 (SmartMergeCenter)
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
 // 스마트병합(tab-merge) 통합 입출력 컨트롤러 (SmartMergeCenter)
 // - 모든 작업자: 다운로드 및 담당 서브시스템 업로드
@@ -11,7 +10,7 @@ const SmartMergeCenter = {
     return norm === "SYS_ADMIN" || norm === "PM";
   },
 
-  // [v1.0.7] 업무·협업 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더
+  // 업무·협업 데이터 전체(ALL) 업로드: 관리자·PM·총괄리더
   ITEM_LABEL: { wbs: "WBS", req: "요구사항", voc: "VOC", deliverables: "산출물", config: "프로젝트 설정", subsystems: "서브시스템" },
   canBulkWork() {
     return Permission.canEditAllSubsystems();
@@ -111,7 +110,7 @@ const SmartMergeCenter = {
       rows.push({ category: "DOMAIN", key: `DOMAIN_${idx + 1}`, value: d, extra1: String(idx + 1), extra2: "상위 도메인", extra3: "" });
     });
 
-    // [v3.9.0] 이 프로젝트에서 활성화한 SDLC 유형만 + 개선과제(REQ) 단계
+    // 이 프로젝트에서 활성화한 SDLC 유형만 + 개선과제(REQ) 단계
     const activeCodes = typeof WBSEngine !== "undefined" ? WBSEngine.getActiveSdlcList().map(s => s.code) : [];
     (projectConfig.customSdlcTypes || []).filter(s => !activeCodes.length || activeCodes.includes(s.code)).forEach(sdlc => {
       (sdlc.phases || []).forEach(ph => {
@@ -279,7 +278,7 @@ const SmartMergeCenter = {
   },
 
   // 1) 항목별 다운로드 (모든 작업자 허용)
-  // [v3.3.0] scopeOverride: 화면 머리줄 [⬇ 내려받기]에서 그 화면의 서브시스템 조회 범위로 내려받을 때
+  // scopeOverride: 화면 머리줄 [⬇ 내려받기]에서 그 화면의 서브시스템 조회 범위로 내려받을 때
   downloadItem(itemType, format, scopeOverride) {
     const repDate = projectConfig.reportDate || "2027-06-01";
     const scopeSel = document.getElementById("workDataSubsysSelect");
@@ -595,7 +594,7 @@ const SmartMergeCenter = {
     LayoutManager.init();
   },
 
-  // ---- [v1.0.7] 협업 데이터 (주간보고 · 회의록 · 공지사항 · 소통 피드) 입출력 — 채팅 제외 ----
+  // ---- 협업 데이터 (주간보고 · 회의록 · 공지사항 · 소통 피드) 입출력 — 채팅 제외 ----
   COLLAB_DEFS: {
     weekly: {
       dataKey: "weeklyReportsData", sheet: "7_주간보고", label: "주간보고",
@@ -664,7 +663,7 @@ const SmartMergeCenter = {
     return applied;
   },
 
-  // [v4.1.0] 협업 시트 → 레코드 (반영하지 않음 — 올리기 미리 보기용)
+  // 협업 시트 → 레코드 (반영하지 않음 — 올리기 미리 보기용)
   _collabRecordsFromSheets(k, sheets) {
     const def = this.COLLAB_DEFS[k];
     const hasHdr = sh => (sh.rows || []).some(cells => (cells || []).map(c => String(c || "").trim()).includes(def.cols[0][1]));
@@ -702,7 +701,7 @@ const SmartMergeCenter = {
 
   // ---- 다중선택(Multi-select) 기준정보 & Task데이터 입출력 ----
   MASTER_KEYS: ["config", "subsystems", "users"],
-  // [v3.9.0] 서브시스템별 내려받기 · 올리기에 주간보고 · 회의록 포함 (공지 · 소통 · 기준정보는 프로젝트 전체 단위, 올리기는 PM 이상)
+  // 서브시스템별 내려받기 · 올리기에 주간보고 · 회의록 포함 (공지 · 소통 · 기준정보는 프로젝트 전체 단위, 올리기는 PM 이상)
   WORK_KEYS: ["wbs", "req", "deliverables", "voc", "weekly", "meetings"],
   WORK_COLLAB: ["weekly", "meetings"],
 
@@ -738,7 +737,7 @@ const SmartMergeCenter = {
     ["notices", "comms"].forEach(k => setTxt(`cntBadge_${k}`, this._collabRecords(k, "ALL").length));
   },
 
-  // [v4.0.0] 로컬 저장소 방식: PM 이 배포한 종합본을 내 브라우저에 반영 — 내 담당 서브시스템 자료는 내 것을 유지
+  // 로컬 저장소 방식: PM 이 배포한 종합본을 내 브라우저에 반영 — 내 담당 서브시스템 자료는 내 것을 유지
   async importConsolidated(e) {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";
@@ -778,7 +777,7 @@ const SmartMergeCenter = {
     }
   },
 
-  // [v3.9.1] 프로젝트 전체 엑셀(기준정보 · 업무 · 작업자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용
+  // 프로젝트 전체 엑셀(기준정보 · 업무 · 작업자 · 협업 시트) — 스마트병합 ④ 내려받기와 기준정보 > 백업 공용
   buildPackageSheets() {
     const cfgSchema = ExcelSync.TAB_SCHEMAS.config;
     const cfgRows = [
@@ -809,7 +808,7 @@ const SmartMergeCenter = {
       sheets.push({ name: sec.sheetName, colWidths: schema.map(c => c.width || 16), rows: sRows });
     });
 
-    // [v3.9.0] 이 프로젝트 참여자 (관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
+    // 이 프로젝트 참여자 (관리자 제외) — 올리면 그 프로젝트의 역할 · 담당으로 들어감
     const uSchema = ExcelSync.TAB_SCHEMAS.users;
     sheets.push({ name: this.SHEET_NAMES.users, colWidths: uSchema.map(c => c.width || 18),
       rows: [{ cells: uSchema.map(c => c.label), styleId: 1, height: 25 }].concat(this._projectUserRows(false).map(r => ({ cells: uSchema.map(c => ExcelSync.formatExportCell("users", c.key, r[c.key])), styleId: 2, height: 20 }))) });
@@ -817,7 +816,7 @@ const SmartMergeCenter = {
     return sheets;
   },
 
-  // [v3.9.0] 작업자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (작업자 정보는 프로젝트별)
+  // 작업자 목록 = 이 프로젝트에서의 역할 · 담당 서브시스템 · 부서 (작업자 정보는 프로젝트별)
   _projectUserRows(withAdmins) {
     return (projectUsers || []).filter(u => withAdmins || !ProjectContext.isAdminUser(u)).map(u => {
       const e = ProjectContext.effective ? ProjectContext.effective(u) : u;
@@ -825,7 +824,7 @@ const SmartMergeCenter = {
     });
   },
 
-  // [v3.0.0] 작업자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 작업자는 그대로 둠)
+  // 작업자 가져오기: 이 프로젝트의 참여 정보(역할·담당·부서)로 추가·갱신 (목록에 없는 기존 작업자는 그대로 둠)
   _mergeUsersList(incomingUsers) {
     if (!Array.isArray(incomingUsers) || incomingUsers.length === 0) return;
     const pid = ProjectContext.current;

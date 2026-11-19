@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.10] 화면 이벤트 연결 (CSP script-src 'self' 대응)
+// 화면 이벤트 연결 (CSP script-src 'self' 대응)
 // -----------------------------------------------------------------------------
 //  HTML 안의 onclick="..." 같은 인라인 스크립트는 콘텐츠 보안 정책(CSP)에서 차단되므로
 //  모든 화면 동작을 아래 선언형 속성으로 연결합니다.
@@ -183,7 +183,7 @@ var UiH = {
   set(name, idx, field, value, ...after) {
     const arr = this._array(name);
     if (!arr || !arr[idx]) return false;
-    // [v3.0.0] 진척률(계획·실적)은 0~100, 가중치는 0 이상만 — 범위를 벗어나면 저장하지 않고 원래 값으로 되돌림
+    // 진척률(계획·실적)은 0~100, 가중치는 0 이상만 — 범위를 벗어나면 저장하지 않고 원래 값으로 되돌림
     const bad = (this.PCT_FIELDS.indexOf(field) !== -1 && !this.validPct(value)) || (field === "weight" && !(Number(value) >= 0));
     if (bad) {
       if (typeof showToast === "function") showToast(field === "weight" ? "⚠️ 가중치는 0 이상으로 입력하세요." : "⚠️ 진척률은 0 ~ 100 사이로 입력하세요. (마이너스·100 초과 불가)");

@@ -1,5 +1,5 @@
 const WBSEngine = {
-  // [2026 v1.5.0] SDLC 기본 프리셋 템플릿 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
+  // SDLC 기본 프리셋 템플릿 마스터 풀 (최대 8개 등록 지원 / 프로젝트 활성 4개 선택)
   DEFAULT_SDLC_PRESETS: {
     SDLC_PMO: {
       code: "SDLC_PMO",
@@ -100,7 +100,7 @@ const WBSEngine = {
     }
   },
 
-  // [2026 v1.6.3] 개선과제형(REQ) 공정 단계 기준정보 프리셋 마스터
+  // 개선과제형(REQ) 공정 단계 기준정보 프리셋 마스터
   DEFAULT_REQ_PRESETS: {
     REQ_MFG_2027: {
       code: "REQ_MFG_2027",
@@ -148,7 +148,7 @@ const WBSEngine = {
     }
   },
 
-  // [2026 v1.5.0] 프로젝트에 등록된 활성 SDLC 타입 목록 (최대 4개 선택 운영)
+  // 프로젝트에 등록된 활성 SDLC 타입 목록 (최대 4개 선택 운영)
   getActiveSdlcList() {
     if (typeof projectConfig !== "undefined" && Array.isArray(projectConfig.customSdlcTypes) && projectConfig.customSdlcTypes.length > 0) {
       const activeCodes = Array.isArray(projectConfig.activeSdlcCodes) && projectConfig.activeSdlcCodes.length > 0
@@ -167,7 +167,7 @@ const WBSEngine = {
     ];
   },
 
-  // [2026 v1.5.0] 전체 마스터 풀(최대 8개)에서 특정 SDLC 코드 조회 (활성 여부 무관)
+  // 전체 마스터 풀(최대 8개)에서 특정 SDLC 코드 조회 (활성 여부 무관)
   getSdlcSpecByCode(sdlcCode) {
     if (!sdlcCode) return this.getActiveSdlcList()[0] || this.DEFAULT_SDLC_PRESETS.SDLC_WATERFALL;
     if (typeof projectConfig !== "undefined" && Array.isArray(projectConfig.customSdlcTypes)) {
@@ -215,7 +215,7 @@ const WBSEngine = {
     return keywords.some(k => k && searchText.includes(String(k).toLowerCase().trim()));
   },
 
-  // [2026 v1.2.5] 서브시스템의 분야(Domain) 조회 헬퍼
+  // 서브시스템의 분야(Domain) 조회 헬퍼
   getSubsystemDomain(sysName) {
     const s = (sysName || "").trim();
     if (typeof subsystemsMeta !== "undefined" && Array.isArray(subsystemsMeta)) {
@@ -301,7 +301,7 @@ const WBSEngine = {
     return parts.length > 0 ? parts.join("-") + "-" : "";
   },
 
-  lastIdMap: null, // [v1.0.7] 직전 재채번에서 바뀐 ID (이전 → 신규)
+  lastIdMap: null, // 직전 재채번에서 바뀐 ID (이전 → 신규)
 
   sortAndAutoNumber(data) {
     const prevIds = new Map(data.map(it => [it, it.id]));
@@ -371,7 +371,7 @@ const WBSEngine = {
       } else if (lvl === 1) {
         lvl = 2;
       }
-      // [v1.0.7] 레벨 건너뜀 보정 (예: L2 바로 아래 L4 → L3) — ID 에 존재하지 않는 중간 번호가 생기지 않도록
+      // 레벨 건너뜀 보정 (예: L2 바로 아래 L4 → L3) — ID 에 존재하지 않는 중간 번호가 생기지 않도록
       if (lvl > prevLvl + 1) lvl = prevLvl + 1;
       prevLvl = lvl;
       item.level = lvl;
@@ -569,7 +569,7 @@ const WBSEngine = {
     return { start: iso(start), end: iso(end) };
   },
 
-  // [2026 v1.7.6 신규] 프로젝트 주차(Weeks) 목록 생성 헬퍼
+  // 프로젝트 주차(Weeks) 목록 생성 헬퍼
   getProjectWeeks(projectStartDate, projectEndDate, weekStartDayArg) {
     const sDate = new Date(projectStartDate || "2027-01-01");
     const eDate = new Date(projectEndDate || "2027-12-31");

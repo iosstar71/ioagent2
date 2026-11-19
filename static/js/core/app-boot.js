@@ -1,5 +1,4 @@
 // [Project Mgmt] 업무 데이터 변수 · 초기 데이터 · 실행 방식 확인 · 시작(AppBoot)
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 var meetingsData = [];
 let wbsData = [];
 
@@ -9,15 +8,15 @@ let reqMasterData = [];
 
 let vocData = [];
 
-// [ver1.0.4 신규] 프로젝트 인력을 위한 공지사항(Notices) 및 팀원 소통(Communications) 데이터
+// 프로젝트 인력을 위한 공지사항(Notices) 및 팀원 소통(Communications) 데이터
 let noticesData = [];
 
 let communicationsData = [];
-// [v2.4.0] 작업자별 할 일 (TodoCenter) — 행: { id, owner, kind: "todo"|"hide", title, due, priority, link, done, ... }
+// 작업자별 할 일 (TodoCenter) — 행: { id, owner, kind: "todo"|"hide", title, due, priority, link, done, ... }
 var todosData = [];
 
 // -------------------------------------------------------------
-// [v1.0.5 신규] 최초 실행 초기 데이터(JSON) 로더
+// 최초 실행 초기 데이터(JSON) 로더
 //  - 원본: data/initial_data.json  (편집 후 tools/build_initial_data.py 로 js/initial-data.js 재생성)
 //  - file:// 환경은 브라우저 보안상 JSON 파일을 fetch 할 수 없으므로 js/initial-data.js 에
 //    동일 내용을 window.AX_INITIAL_DATA 로 내장하여 로드
@@ -97,7 +96,7 @@ var ConnState = {
 window.ConnState = ConnState;
 
 // =============================================================================
-// [v1.0.6] 애플리케이션 시작 순서 (단일 진입점)
+// 애플리케이션 시작 순서 (단일 진입점)
 //  1) 저장소 모드·언어 초기화 → 2) 공통 툴바 → 3) 데이터 로드(로컬) → 4) 화면 초기화 → 5) 작업자 선택
 //  ※ DB 서버 모드는 서버 작업자 선택(토큰 인증) 후 데이터를 불러옵니다.
 // =============================================================================
@@ -136,11 +135,11 @@ var AppBoot = {
     WeeklyReportManager.scope = null;
     WeeklyReportManager.currentWeekReport = null;
     if (document.getElementById("tab-weekly-report").classList.contains("active")) WeeklyReportManager.init();
-    if (typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded()) {
+    if (Migrate.project()) {
       rebuildAll(true);
       // 프로그램이 자료 형식을 바꾼 것(사용자가 고친 것이 아님)은 묻지 않고 바로 기록
       if (typeof SyncManager !== "undefined" && SyncManager.isLocal()) setTimeout(() => SyncManager.save(null, { notify: false }), 300);
-    }   // 예전 가중치 자료 한 번 전환
+    }   // 예전 자료 형식 변환 (core/migrate.js)
     AuthManager.applyTabPermissions();
     if (typeof HomeScreenManager !== "undefined") {
       HomeScreenManager.applyRoleMode();

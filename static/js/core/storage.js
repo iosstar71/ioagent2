@@ -1,7 +1,6 @@
 // [Project Mgmt] 저장소 관리 · 기준정보 동기화
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
-// [v1.0.6] 저장소 관리자: 백업/복원, 샘플 복원, 초기화 (저장은 SyncManager 로 일원화)
+// 저장소 관리자: 백업/복원, 샘플 복원, 초기화 (저장은 SyncManager 로 일원화)
 // =========================================================================
 var StorageManager = {
   // 기존 화면 버튼 호환: 즉시 저장
@@ -87,7 +86,7 @@ var StorageManager = {
 
 // updateAllSubsystemFilterDropdowns 호출 시 스마트병합 드롭다운도 함께 동기화
 // =========================================================================
-// [ver1.0.4] 서브시스템 정규화 및 중복 방지 함수
+// 서브시스템 정규화 및 중복 방지 함수
 // =========================================================================
 function normalizeAndDeduplicateSubsystems() {
   if (!Array.isArray(subsystemsMeta)) subsystemsMeta = [];
@@ -146,7 +145,7 @@ function normalizeAndDeduplicateSubsystems() {
 
 
 // =============================================================================
-// [ver1.0.4] MasterSyncEngine: 기준정보 및 시스템 설정 실시간 전체 탭 동기화 엔진
+// MasterSyncEngine: 기준정보 및 시스템 설정 실시간 전체 탭 동기화 엔진
 // =============================================================================
 
 function populateConfigInputsFromState() {
@@ -336,7 +335,7 @@ var MasterSyncEngine = {
 };
 window.MasterSyncEngine = MasterSyncEngine;
 
-// [v1.0.6] 로컬 저장소 모드: 같은 PC의 다른 브라우저 탭에서 저장하면 미저장 변경이 없을 때 자동 반영
+// 로컬 저장소 모드: 같은 PC의 다른 브라우저 탭에서 저장하면 미저장 변경이 없을 때 자동 반영
 window.addEventListener("storage", function (e) {
   if (!SyncManager.isLocal() || (e.key !== LocalBackend._skey(ProjectContext.current) && e.key !== LocalBackend.STORAGE_KEY)) return;
   if (SyncManager.isDirty()) return;

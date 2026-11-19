@@ -1,12 +1,11 @@
 // [Project Mgmt] 홈 화면
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =========================================================================
-// [Project Mgmt ver1.0.4] 맞춤형 홈 화면 관리자 (HomeScreenManager)
+// 맞춤형 홈 화면 관리자 (HomeScreenManager)
 // 🏛️ 2. 이그제큐티브 브리핑 룸 / 🚀 3. 하이브리드 스마트 포털 및 권한별 설정
 // =========================================================================
 var HomeScreenManager = {
   _sessionMode: null, // (이전 버전 호환)
-  // [v2.4.0] 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 작업자가 홈 위쪽 단추로 고른 스타일(작업자별 기억)
+  // 홈 스타일 3가지 — 역할별 기본값(시스템 설정) + 작업자가 홈 위쪽 단추로 고른 스타일(작업자별 기억)
   // 역할별 첫 화면: Summary(tab-home) · Dashboard · My Work (예전 값 PORTAL 은 My Work)
   STYLES: ["EXECUTIVE", "DASHBOARD", "TODO", "PORTAL"],
   STYLE_LABELS: { EXECUTIVE: "🧭 Summary", DASHBOARD: "📊 Dashboard", TODO: "🙋 My Work", PORTAL: "🙋 My Work" },
@@ -159,7 +158,7 @@ var HomeScreenManager = {
     showToast(`📊 공통 보고서 스타일이 '${value}'(으)로 일원화 설정되었습니다. 주간보고 워드, 회의록 워드, 공정표 XLSX 다운로드 시 즉시 반영됩니다.`);
   },
 
-  // [v3.1.0] 주간보고 파일 이름 약칭
+  // 주간보고 파일 이름 약칭
   onFileCodeChange(v) {
     projectConfig.fileCode = WeeklyExport.safe(v).slice(0, 20);
     const fc = document.getElementById("cfgFileCode");
@@ -243,7 +242,7 @@ var HomeScreenManager = {
     }
 
     // 2. 5-KPI Strip
-    // [v2.4.0] 지연 판정은 WBS·대시보드와 같은 기준 (최하위 Task, 계획 대비 실적 1%p 이상 부족)
+    // 지연 판정은 WBS·대시보드와 같은 기준 (최하위 Task, 계획 대비 실적 1%p 이상 부족)
     const delayedTasks = (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, repDate).code === "delayed");
     const delayedCount = delayedTasks.length;
 

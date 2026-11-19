@@ -1,5 +1,4 @@
 // [Project Mgmt] 기준정보: 대한민국 공휴일
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function getKoreanNationalHolidays(startYear, endYear) {
   const holidays = [];
   for (let y = startYear; y <= endYear; y++) {

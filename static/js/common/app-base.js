@@ -1,9 +1,8 @@
 // [Project Mgmt] 공통 기반: 버전 · 알림(토스트) · 확인 창 · HTML 이스케이프
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
 // Project Mgmt - 코어 앱 엔진
 // =============================================================================
-// [v1.2.0] 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
+// 제품 이름·버전은 app.ini → js/app-config.js (APP_CONFIG) 에서 읽음
 const APP_VERSION = (function () {
   const c = typeof APP_CONFIG !== "undefined" ? APP_CONFIG : { brand: "IOSTAR-PM", displayName: "PM Hub", version: "1.0.0", edition: "STANDALONE", editionName: "Standalone" };
   // 사내 표시 이름: PM Hub · 브랜드 · 판: IOSTAR-PM Standalone

@@ -1,5 +1,4 @@
 // [Project Mgmt] 기준정보: 프로젝트 기본 설정 · ID 규칙
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
 // 프로젝트 기본 설정 및 대한민국 공휴일 생성기
 // -------------------------------------------------------------
@@ -7,11 +6,11 @@ let projectConfig = {
   systemTitle: APP_VERSION.title,
   projectName: "기본 프로젝트",
   domains: ["기본분야"],
-  channels: [], // [v3.0.0] 게시판 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
+  channels: [], // 게시판 채널은 프로젝트별 (없으면 전체 + 이 프로젝트의 서브시스템)
   customSdlcTypes: Object.keys(WBSEngine.DEFAULT_SDLC_PRESETS).map(k => JSON.parse(JSON.stringify(WBSEngine.DEFAULT_SDLC_PRESETS[k]))),   // 기본 유형 정의는 WBSEngine 한 곳
   activeSdlcCodes: ["SDLC_PMO", "SDLC_SMART_MFG", "SDLC_WATERFALL", "SDLC_AGILE"],
   activeReqPreset: "",
-  // [ver1.0.4] 개선과제형(REQ) 서브시스템 공정 단계 기준정보 (4단계)
+  // 개선과제형(REQ) 서브시스템 공정 단계 기준정보 (4단계)
   reqSdlcPhases: JSON.parse(JSON.stringify(WBSEngine.DEFAULT_REQ_PRESETS.REQ_MFG_2027.phases)),
   maxDeliverableRounds: 2,
   // 처음 값: 올해 1월 1일 ~ 12월 31일, 기준일 = 오늘 (기준정보에서 바꿈)
@@ -64,7 +63,7 @@ window.SystemTitle = SystemTitle;
 
 function renderProjectTitles() {
   // 저장된 시스템 명칭의 버전 표기는 현재 프로그램 버전으로 표시
-  // [v1.0.10] 시스템 명칭 변경(Project Mgmt): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
+  // 시스템 명칭 변경(Project Mgmt): 이전 명칭으로 저장된 시스템 타이틀은 새 명칭으로 교체
   if (/AX[ _]Project[ _]Management|AX_PMYS/i.test(projectConfig.systemTitle || "")) projectConfig.systemTitle = APP_VERSION.title;
   const sysTitle = APP_VERSION.title;  // 시스템 이름은 고정: Project Mgmt (협업)
   const projName = projectConfig.projectName || "프로젝트";
@@ -118,7 +117,7 @@ function updateProjectTitles() {
   showToast(`시스템 타이틀 및 프로젝트명([${projectConfig.projectName}])이 반영되었습니다.`);
 }
 
-// [ver1.0.4 신규] WBS / REQ / VOC ID 채번 Prefix 및 서브시스템 코드 연동 설정
+// WBS / REQ / VOC ID 채번 Prefix 및 서브시스템 코드 연동 설정
 function renderIdPrefixSettings() {
   if (!projectConfig.idPrefixConfig) {
     projectConfig.idPrefixConfig = {
@@ -226,7 +225,7 @@ function applyIdPrefixSettings(reNumberAll = false) {
       v.id = parts.filter(Boolean).join("-");
     });
 
-    // [ver1.0.4 요건 3] Action Item ID도 설정된 Prefix 및 서브시스템 코드 규칙으로 일괄 재채번
+    // Action Item ID도 설정된 Prefix 및 서브시스템 코드 규칙으로 일괄 재채번
     if (typeof meetingsData !== "undefined" && Array.isArray(meetingsData)) {
       const sysActCounters = {};
       meetingsData.forEach(m => {

@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v3.8.0] 프로젝트 단위 백업 · 복원 · 초기화 (ProjectData) + 프로젝트별 화면 설정 공유 (SharedPanes)
+// 프로젝트 단위 백업 · 복원 · 초기화 (ProjectData) + 프로젝트별 화면 설정 공유 (SharedPanes)
 // -----------------------------------------------------------------------------
 //  - 프로젝트 백업: 지금 프로젝트의 기본정보 · 기준정보 · Task 정보만 JSON 으로 (작업자 · 시스템 설정은 넣지 않음)
 //  - 프로젝트 복원: 그 JSON 으로 지금 프로젝트만 바꿈 (다른 프로젝트 · 작업자 계정은 그대로, 프로젝트 이름은 유지)
@@ -70,7 +70,7 @@ var ProjectData = {
     });
   },
 
-  // [v3.9.1] 엑셀 백업(전체 일괄 양식)으로 복원: 이 프로젝트의 업무 · 협업 자료를 비우고 파일 내용으로 바꿈
+  // 엑셀 백업(전체 일괄 양식)으로 복원: 이 프로젝트의 업무 · 협업 자료를 비우고 파일 내용으로 바꿈
   async _importExcel(file) {
     let sheets;
     try { sheets = await ExcelSync._parseUploadedFile(file); } catch (err) { return showToast("⚠️ 엑셀 파일을 읽지 못했습니다: " + err.message); }
@@ -137,7 +137,7 @@ var ProjectData = {
     const sel = document.getElementById("cfgClearTarget");
     if (!sel) return;
     const keep = sel.value;
-    // [v4.1.0] 초기화는 관리자만 — 모든 프로젝트
+    // 초기화는 관리자만 — 모든 프로젝트
     const list = this.projects();
     sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}${p.id === ProjectContext.current ? " (지금 프로젝트)" : ""}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("") +
       `<option value="__ALL__">모든 프로젝트 일괄 (Task 정보 초기화만)</option>`;
@@ -145,7 +145,7 @@ var ProjectData = {
   },
 
   // ---- 프로젝트 전체 초기화 (기준정보 포함, 이름 · 기간은 유지) ----
-  // [v4.1.0] 초기화는 관리자만 (시스템 설정 > 🗄️ 데이터 관리)
+  // 초기화는 관리자만 (시스템 설정 > 🗄️ 데이터 관리)
   resetProject() {
     if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
     openConfirmDialog(`⚠️ [프로젝트 전체 초기화] [${this.currentName()}]\n프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤)와 모든 Task 정보를 빈 상태로 되돌립니다.\n` +
@@ -180,7 +180,7 @@ var ProjectData = {
 window.ProjectData = ProjectData;
 
 // =============================================================================
-// [v3.8.0] 프로젝트별 설정 화면 공유: [시스템 설정]의 화면·테마 / 보고서 양식 / 소통 채널을 [기준정보]에서도 엶
+// 프로젝트별 설정 화면 공유: [시스템 설정]의 화면·테마 / 보고서 양식 / 소통 채널을 [기준정보]에서도 엶
 //  - 같은 화면 한 벌을 연 쪽으로 옮겨 보여 줌 (두 곳에서 고쳐도 같은 프로젝트 설정)
 //  - 설정 값은 모두 프로젝트별로 저장 (projectConfig): 테마 · 메뉴 위치 · 밀도 · 역할별 홈 · 보고서 테마 · 파일 이름 · 소통 채널
 // =============================================================================
@@ -217,7 +217,7 @@ var SharedPanes = {
 window.SharedPanes = SharedPanes;
 
 // =============================================================================
-// [v3.8.0] 화면 테마는 프로젝트별 (projectConfig.uiTheme) — 정하지 않은 프로젝트는 시스템 기본 테마
+// 화면 테마는 프로젝트별 (projectConfig.uiTheme) — 정하지 않은 프로젝트는 시스템 기본 테마
 // =============================================================================
 var ThemeScope = {
   global: undefined,

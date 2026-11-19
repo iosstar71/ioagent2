@@ -1,6 +1,6 @@
 const ExcelSync = {
   // =========================================================================
-  // [ver1.0 요건] Excel & Word DOCX 통합 시각 테마 및 폰트 팔레트
+  // Excel & Word DOCX 통합 시각 테마 및 폰트 팔레트
   // =========================================================================
   // 엑셀 · 워드 양식 색상 3가지 (한 곳에서 정의 — 설정 화면 선택 상자도 여기서 그려짐)
   //  예전 값: Official Navy · Office Blue → Navy / Office Gray · Matte Slate → Gray / Office Green → Mint
@@ -13,7 +13,7 @@ const ExcelSync = {
   fillExportThemeSelect(sel) {
     if (sel) sel.innerHTML = this.EXPORT_THEME_DEFS.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
   },
-  // [v3.3.0] 내려받는 파일 이름 표준: {파일약칭}_{대상}[_범위…]_{기준일 yyyyMMdd}.{확장자}
+  // 내려받는 파일 이름 표준: {파일약칭}_{대상}[_범위…]_{기준일 yyyyMMdd}.{확장자}
   //  (주간보고는 WeeklyExport 의 주차 규칙) — 공백·괄호·특수문자 없이
   stdName(kind, parts, ext, stamp) {
     const safe = v => String(v === undefined || v === null ? "" : v).replace(/[\\/:*?"<>|\[\]()~{}#%&+=,;'`!@$^]+/g, "_").replace(/\s+/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
@@ -307,7 +307,7 @@ const ExcelSync = {
   },
 
   // ---------------------------------------------------------------------------
-  // [v1.0.5 버그수정] Word(DOCX) OpenXML 스키마 정규화
+  // Word(DOCX) OpenXML 스키마 정규화
   //  - MS Word는 스키마 순서/요소에 엄격하여 "읽을 수 없는 내용" 오류로 파일을 열지 못함
   //  - 잘못된 <w:line> 요소 → <w:spacing w:line> 속성으로 병합
   //  - pPr / rPr / tcPr / tblPr / tblBorders / pBdr / trPr 자식 요소를 스키마 순서로 재정렬
@@ -643,7 +643,7 @@ const ExcelSync = {
   },
 
   _triggerDownload(blob, filename) {
-    // [v1.0.5] 윈도우 파일명 금지문자 치환 및 다운로드 안정화
+    // 윈도우 파일명 금지문자 치환 및 다운로드 안정화
     const safeName = String(filename || "download").replace(/[\\/:*?"<>|\r\n\t]+/g, "_").replace(/\s+/g, " ").trim() || "download";
     // [Local] 자료 파일을 PC 에 받은 때를 기억 (백업 알림용)
     if (/백업|종합본|마스터|자료|내변경|작업|프로젝트|latest/.test(safeName) && typeof AppStore !== "undefined") { try { AppStore.setItem("PPRJMGMT_LAST_FILE_SAVE", String(Date.now())); } catch (e) {} }
@@ -1208,7 +1208,7 @@ const ExcelSync = {
         pEnd: this.normalizeDate(raw.pEnd),
         aStart: this.normalizeDate(raw.aStart),
         aEnd: this.normalizeDate(raw.aEnd),
-        // [v3.0.0] 진척률은 0~100 으로 보정 (엑셀에 범위를 벗어난 값이 있어도 그대로 들어가지 않음)
+        // 진척률은 0~100 으로 보정 (엑셀에 범위를 벗어난 값이 있어도 그대로 들어가지 않음)
         pProg: isNaN(pProgNum) ? 0 : Math.min(100, Math.max(0, pProgNum)),
         aProg: isNaN(aProgNum) ? 0 : Math.min(100, Math.max(0, aProgNum)),
         owner: String(raw.owner || "").split(/[,;/|]/)[0].trim().slice(0, 40),
@@ -1348,7 +1348,7 @@ const ExcelSync = {
   // ---------------------------------------------------------------------------
   // 5. 엑셀 올리기 핸들러 (통합 마스터 워크북 & 개별 탭 업로드)
   // ---------------------------------------------------------------------------
-  // [2026 v1.2.4] 서브시스템별 전용 엑셀(.xlsx) 다운로드
+  // 서브시스템별 전용 엑셀(.xlsx) 다운로드
   exportSubsystemWorkbook(targetSysArg) {
     const selEl = document.getElementById("excelSubsysExportSelect");
     const targetSys = targetSysArg || (selEl ? selEl.value : "");
@@ -1395,7 +1395,7 @@ const ExcelSync = {
     }
   },
 
-  // [2026 v1.2.4] 서브시스템별 엑셀(.xlsx) 업로드 병합 (업로드 시 업데이트 날짜·시간 백업 JSON 자동 생성)
+  // 서브시스템별 엑셀(.xlsx) 업로드 병합 (업로드 시 업데이트 날짜·시간 백업 JSON 자동 생성)
   async importSubsystemWorkbook(e, targetSysArg) {
     const file = e && e.target && e.target.files ? e.target.files[0] : (e instanceof File ? e : null);
     if (e && e.target) e.target.value = "";
@@ -1556,7 +1556,7 @@ const ExcelSync = {
         voc: []
       };
 
-      // [v3.9.0] 전체 일괄 파일의 프로젝트 기준정보 · 작업자 시트 (서브시스템 시트로 잘못 읽지 않게 따로 처리)
+      // 전체 일괄 파일의 프로젝트 기준정보 · 작업자 시트 (서브시스템 시트로 잘못 읽지 않게 따로 처리)
       const configRows = [], userRows = [];
       const sheetRowsOf = (sheet, tabKey) => {
         const out = [];
@@ -1671,15 +1671,15 @@ const ExcelSync = {
 
 
 // ===================================================================
-// [2026 v1.7.6 신규] 순수 자바스크립트 OpenXML DOCX 빌더 (DocxBuilder)
+// 순수 자바스크립트 OpenXML DOCX 빌더 (DocxBuilder)
 // 표 형식 주간보고(useTables=true) 및 완전 서술형 주간보고(useTables=false) 완벽 지원
 // 5대 목차: 1) 프로젝트 기본정보 2) 통합/서브시스템 진척률 3) 요구사항 진척율 4) VOC 진행 현황 5) 서브시스템별 금주/차주 상세
 // ===================================================================
 const DocxBuilder = {
-  // [v3.1.0] 주간보고 워드는 js/weekly-export.js (WeeklyExport) 에서 만듦
+  // 주간보고 워드는 js/weekly-export.js (WeeklyExport) 에서 만듦
 
   // =========================================================================
-  // [2026 v0.9 신규] 회의록 독립 OpenXML DOCX 생성기
+  // 회의록 독립 OpenXML DOCX 생성기
   // =========================================================================
   buildMeetingMinutesDocx(m, projName = "프로젝트") {
     const esc = s => ExcelSync.escapeXml(s);
@@ -1694,7 +1694,7 @@ const DocxBuilder = {
     const colorPrimary = pal.primary;
     const colorSecondary = pal.secondary;
     const colorAccent = pal.accent;
-    // [v1.0.5 버그수정] 회의록 DOCX 생성 시 미정의 변수(tableBorder/headerBg 등) 참조로 인한 ReferenceError 해결
+    // 회의록 DOCX 생성 시 미정의 변수(tableBorder/headerBg 등) 참조로 인한 ReferenceError 해결
     const headerBg = pal.headerBg || pal.primary || "1E3A8A";
     const headerTextColor = pal.headerTextColor || "FFFFFF";
     const subHeaderBg = pal.subHeaderBg || "EFF6FF";

@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v3.9.2] 시스템 설정 > 🗂️ 프로젝트 — 프로젝트 파일 내려받기 · 올리기 (ProjectTransfer, 관리자)
+// 시스템 설정 > 🗂️ 프로젝트 — 프로젝트 파일 내려받기 · 올리기 (ProjectTransfer, 관리자)
 // -----------------------------------------------------------------------------
 //  - 내려받기: 모든 프로젝트 또는 특정 프로젝트를 엑셀 / JSON 으로
 //      엑셀 = 스마트병합 [④ 전체 일괄] · [기준정보 > 백업] 과 같은 양식 (프로젝트마다 파일 1개)
@@ -28,7 +28,7 @@ var ProjectTransfer = {
   async render() {
     if (!ProjectData.canManage()) return;
     await ProjectManager.refreshList();
-    // [v4.0.0] 관리자: 모든 프로젝트 / PM: 지금 프로젝트만
+    // 관리자: 모든 프로젝트 / PM: 지금 프로젝트만
     const admin = ProjectData.isAdmin();
     const list = admin ? ProjectData.projects() : ProjectData.projects().filter(p => p.id === ProjectContext.current);
     const down = document.getElementById("ptDownTarget"), up = document.getElementById("ptUpTarget");
@@ -153,7 +153,7 @@ var ProjectTransfer = {
     return [{ name: (result.data.projectConfig || {}).projectName || file.name.replace(/\.[^.]+$/, ""), data: result.data, users: result.users }];
   },
 
-  // [v4.0.0] 같은 이름의 프로젝트가 있을 때: 새 이름으로 추가 / 그 프로젝트에 덮어쓰기 / 건너뛰기
+  // 같은 이름의 프로젝트가 있을 때: 새 이름으로 추가 / 그 프로젝트에 덮어쓰기 / 건너뛰기
   askDuplicate(name, same, taken) {
     return new Promise(resolve => {
       const m = document.getElementById("dupProjectModal");
@@ -279,7 +279,7 @@ var ProjectTransfer = {
         const r = await ServerBackend.request("/api/projects/clear-tasks", { ids: [pid] }, "POST", 60000);
         if (!r.ok) throw new Error(r.message || "기존 자료를 비우지 못했습니다.");
       }
-      // [v4.1.0] 바꾸기(replace): 파일에 없는 기존 행(서브시스템 · 표준 산출물 등)은 지움
+      // 바꾸기(replace): 파일에 없는 기존 행(서브시스템 · 표준 산출물 등)은 지움
       const prev = replace ? (await this.load(pid)).data : {};
       const changes = {};
       this.keys().forEach(k => {

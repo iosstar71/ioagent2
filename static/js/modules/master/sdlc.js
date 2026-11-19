@@ -1,10 +1,9 @@
 // [Project Mgmt] 기준정보: SDLC 단계 구성
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // -------------------------------------------------------------
-// [ver1.0.4 신규] SDLC 임의 커스터마이징 및 다중 선택(최대 2개) 관리자
+// SDLC 임의 커스터마이징 및 다중 선택(최대 2개) 관리자
 // -------------------------------------------------------------
 // -------------------------------------------------------------
-// [ver1.0.4] SDLC 마스터 풀(최대 8개) 및 프로젝트 활성 SDLC(최대 4개) 관리자
+// SDLC 마스터 풀(최대 8개) 및 프로젝트 활성 SDLC(최대 4개) 관리자
 // -------------------------------------------------------------
 let _editingSdlcIndex = -1;
 let _editingSdlcPhasesTemp = [];
@@ -46,14 +45,14 @@ var SdlcBoard = {
     return false;
   },
   // 저장해 두는 사용 유형 목록(WBS 템플릿 · 보고서가 읽음) = 서브시스템들이 쓰는 유형. 바뀌면 조용히 기록
-  syncActive() {
+  syncActive(noSave) {
     if (typeof subsystemsMeta === "undefined" || typeof projectConfig === "undefined") return;
     const used = this._usedCodes();
     if (!used.length) return;
     used.forEach(c => { if (typeof ProcessLib === "undefined" || ProcessLib.findSdlc(c)) this._proj(c); });
     if (JSON.stringify(projectConfig.activeSdlcCodes || null) === JSON.stringify(used)) return;
     projectConfig.activeSdlcCodes = used;
-    if (typeof SyncManager !== "undefined" && SyncManager.saveSettingsQuiet) SyncManager.saveSettingsQuiet();
+    if (!noSave && typeof SyncManager !== "undefined" && SyncManager.saveSettingsQuiet) SyncManager.saveSettingsQuiet();
   },
   _changed() { this.syncActive(); rebuildAll(true); persistChanges(); this.render(); if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable(); },
   setType(idx, type) {
@@ -222,7 +221,7 @@ function renderEditSdlcPhasesTable() {
   if (!tbody) return;
   tbody.innerHTML = "";
 
-  const ro = _editingSdlcMode && _editingSdlcMode.target === "dates" ? " disabled" : "";  // [v3.9.0] 프로젝트에서는 계획 일정만
+  const ro = _editingSdlcMode && _editingSdlcMode.target === "dates" ? " disabled" : "";  // 프로젝트에서는 계획 일정만
   _editingSdlcPhasesTemp.forEach((p, pIdx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -255,7 +254,7 @@ function saveCustomSdlcFromModal() {
   const codeVal = document.getElementById("editSdlcCode").value.trim();
   const nameVal = document.getElementById("editSdlcName").value.trim();
   const descVal = document.getElementById("editSdlcDesc").value.trim();
-  // [v3.9.0] 시스템 설정의 공정 유형 편집 / 프로젝트 단계 일정 편집
+  // 시스템 설정의 공정 유형 편집 / 프로젝트 단계 일정 편집
   if (_editingSdlcMode && typeof ProcessLib !== "undefined") return ProcessLib.saveModal(_editingSdlcMode, codeVal, nameVal, descVal);
 
   if (!codeVal || !nameVal) {

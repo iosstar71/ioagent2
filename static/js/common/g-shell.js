@@ -105,7 +105,7 @@ var GShell = {
     const favs = this.favorites().filter(t => this.allowed(t));
     const btn = (tabId, cls) => `<button type="button" class="${cls}${tabId === cur ? " active" : ""}" data-tab="${tabId}" data-click="GShell.go" data-click-args="${UiEvents.args(tabId)}"${tabId === cur ? ' aria-current="page"' : ""}><span class="g-ico">${this.ICONS[tabId] || ""}</span>${escapeHtml(this.label(tabId))}</button>`;
     // 위쪽 메뉴: 묶음 + 선택 묶음의 하위 메뉴 / 왼쪽 메뉴: 모든 묶음과 하위 메뉴를 세로로
-    // [Standard v1.0.1] 1단 메뉴(묶음)는 상자형 버튼, 2단 메뉴(하위 화면)는 › 뒤 옅은 띠 위의 밑줄 탭으로 구분
+    // 1단 메뉴(묶음)는 상자형 버튼, 2단 메뉴(하위 화면)는 › 뒤 옅은 띠 위의 밑줄 탭으로 구분
     const subTabs = curGroup ? curGroup.tabs.filter(t => this.allowed(t)) : [];
     const top = `
       <div class="g-groups" role="tablist" aria-label="업무 묶음">${groups.map(g => {

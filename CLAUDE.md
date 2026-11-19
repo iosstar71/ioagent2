@@ -28,12 +28,23 @@
   | 영어 화면 | `common/i18n.js` + 사전 `i18n-en.js` (`exact` 에 한국어 원문 → 영어 추가) |
   | 저장 · 상태 표시 | `core/data-store.js` (`SyncUI`) |
   | 화면 설정(app.ini) | `conf/app.ini` → `python tools/app_config.py` 가 `static/js/config/app-config.js` 생성 |
+  | 예전 자료 변환 · 자료 정의 | `core/migrate.js` (`Migrate`), `docs/DATA_MODEL.md` |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
 - **시험은 필요한 만큼만**: 작은 수정 → `node --check <파일>` + `python tools/check_ui_debt.py`; 화면 동작 변경 → E2E 1회.
   E2E 는 끝에 한 번 돌린다(Standalone ~3분, Workgroup ~20분 — Workgroup 은 백그라운드로).
 - **화면 확인 캡처**는 deviceScaleFactor 1, 필요한 영역만 clip. 사용자에게 보낼 것만 2배/합성.
 - 미리보기용 정적 서버: 배포 폴더 이름이 `/pprjmgmt` 이어야 한다(심볼릭 링크 폴더를 쓸 때 기존 폴더가 있으면 그 안에 링크가 생기니 새 폴더로).
 - 사용자가 설명만 원하면 코드를 고치지 않는다. 큰 디자인 변경은 **실제 화면에 임시 CSS 를 입힌 전/후 캡처**로 먼저 확인받는다.
+
+## 1-1. 유지보수 규칙 (기능을 바꿀 때마다)
+- **옛 개념 삭제 확인**: 기능을 바꾸면 더 쓰지 않게 된 필드 · 함수 · 화면 문구 · 창(modal)을 같은 커밋에서 지운다.
+  예전 자료를 새 모양으로 바꾸는 코드는 `static/js/core/migrate.js` 에 단계로 넣고 `Migrate.VERSION` 을 올린다 (화면 코드에 "예전 값이면 …" 을 흩지 않는다).
+- **자료 정의**: 자료 묶음 · 필드를 바꾸면 `docs/DATA_MODEL.md` 를 함께 고친다.
+- **같은 정의는 한 곳**: 기본 SDLC · 개선과제 유형은 `WBSEngine.DEFAULT_SDLC_PRESETS` · `DEFAULT_REQ_PRESETS` 만. 상태 · 우선순위 목록도 복사하지 않고 읽어 쓴다.
+- **계산은 엔진에**: 진척률 · 가중치 · 지연 판정 같은 계산은 `wbs-engine.js` · `wbs-weight.js` 에 두고, 화면 코드에서 합계 · 평균을 새로 계산하지 않는다.
+- **버전 주석 금지**: `[v3.9.0]` 같은 이력은 코드에 쓰지 않는다(커밋 · `RELEASE_NOTES.md` 에). 주석은 "왜 이렇게 하는지"만.
+- **문구**: 숫자 · 이름을 이어 붙인 화면 문장은 조각마다 `<span>` 으로 나누거나 `i18n-en.js` 의 `patterns` 에 규칙을 넣는다 (영어 화면에서 빠지지 않게).
+- **안 쓰는 코드 찾기**: 큰 정리 뒤에는 아무 데서도 부르지 않는 함수 · 메서드가 없는지 확인한다.
 
 ## 2. 화면 스타일 규칙 (UI 부채 줄이기)
 - 브라우저 `prompt()` · `confirm()` · `alert()` 를 쓰지 않는다 (`openPromptDialog` · `openConfirmDialog` · `showToast`).

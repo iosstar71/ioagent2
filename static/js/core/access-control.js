@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.6] 인증·권한(RBAC) 관리자 (AuthManager 단일 정의)
+// 인증·권한(RBAC) 관리자 (AuthManager 단일 정의)
 // -----------------------------------------------------------------------------
 //  - v1.0.5 까지 app.js / access-control.js 여러 곳에서 canAccessTab·switchTab·activateTab 이
 //    서로 다른 규칙으로 재정의되어 권한 검사가 무력화되던 문제를 이 파일 하나로 일원화
@@ -196,7 +196,7 @@ var AuthManager = {
   },
 
   _buildSessionUser(u) {
-    // [v1.0.10] 프로젝트별 역할: 서버 모드는 서버가 계산한 값, 로컬 모드는 작업자 행의 projectRoles 로 계산
+    // 프로젝트별 역할: 서버 모드는 서버가 계산한 값, 로컬 모드는 작업자 행의 projectRoles 로 계산
     const eff = (u.projectId && u.baseRole) ? u : ProjectContext.effective(u);
     return {
       empNo: eff.empNo,
@@ -381,7 +381,7 @@ var AuthManager = {
       `<span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) info.style.display = "none";
-    // [v3.0.1] 권한 인증은 지금 프로젝트에서 — 프로젝트 줄은 보이되 바꿀 수 없음
+    // 권한 인증은 지금 프로젝트에서 — 프로젝트 줄은 보이되 바꿀 수 없음
     const projRow = document.getElementById("loginProjectRow");
     if (projRow) projRow.style.display = "";
     this.fillLoginProjects(true);
@@ -429,7 +429,7 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // 작업자 선택 처리
   // ---------------------------------------------------------------------------
-  // [v3.0.0] 작업자 선택 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 선택한 프로젝트를 미리 선택
+  // 작업자 선택 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 선택한 프로젝트를 미리 선택
   LOGIN_PROJECT_KEY: "PPRJMGMT_LOGIN_PROJECT",
   async fillLoginProjects(lockCurrent) {
     const sel = document.getElementById("inputLoginProject");
@@ -488,7 +488,7 @@ var AuthManager = {
       return;
     }
 
-    // [v3.0.0] 작업할 프로젝트: 관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
+    // 작업할 프로젝트: 관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
     const project = this.lockMode === "CONFIG" ? ProjectContext.current : this.loginProject();
     let result;
     if (SyncManager.isLocal()) {
@@ -550,7 +550,7 @@ var AuthManager = {
     const next = this._buildSessionUser(user);
     if (opts.lang) next.lang = opts.lang;
 
-    // [v3.0.0] 고른 프로젝트가 지금 화면의 프로젝트와 다르면: 그 프로젝트로 바꿔 다시 불러옴
+    // 고른 프로젝트가 지금 화면의 프로젝트와 다르면: 그 프로젝트로 바꿔 다시 불러옴
     if (opts.project && opts.project !== ProjectContext.current) {
       const ok = prev ? await this._flushBeforeSwitch() : true;
       if (!ok) return;
@@ -583,7 +583,7 @@ var AuthManager = {
     this._expiredNotified = false;
     this._saveSession();
     this._overlay(false);
-    if (typeof UiScale !== "undefined") UiScale.apply(); // [v3.1.0] 작업자별 글자 크기
+    if (typeof UiScale !== "undefined") UiScale.apply(); // 작업자별 글자 크기
     this.updateUserBadge();
     this.resetIdleTimer();
 
@@ -592,7 +592,7 @@ var AuthManager = {
       I18N.setLanguage(next.lang || "ko");
       if (opts.lang) this._rememberUserLang(next.empNo, opts.lang);
     }
-    // [v2.3.0] 작업자별 화면 방식(Standard / Neo): 지금 화면과 다르면 그 방식으로 다시 불러옴
+    // 작업자별 화면 방식(Standard / Neo): 지금 화면과 다르면 그 방식으로 다시 불러옴
     if (typeof UiMode !== "undefined" && UiMode.afterLogin(this.findUser(next.empNo) || next)) return;
 
     await AppBoot.afterLogin();
@@ -648,7 +648,7 @@ var AuthManager = {
     });
   },
 
-  // [v1.0.7] 작업자 선택 화면 암호 변경
+  // 작업자 선택 화면 암호 변경
   showPwdChange(show, forced = false) {
     if (!show) {
       if (this._forced && !SyncManager.isLocal()) ServerBackend.setToken("");

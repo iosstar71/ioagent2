@@ -1,7 +1,6 @@
 // [Project Mgmt] 개선과제형(REQ) 공정 단계
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 // =============================================================================
-// [ver1.0.4 신규] 개선과제형(REQ) 공정 단계 기준정보 관리자 (프리셋 & 실시간 동기화)
+// 개선과제형(REQ) 공정 단계 기준정보 관리자 (프리셋 & 실시간 동기화)
 // =============================================================================
 var ReqPhaseManager = {
   // 개선과제 기본 유형 정의는 WBSEngine.DEFAULT_REQ_PRESETS 한 곳
@@ -19,7 +18,7 @@ var ReqPhaseManager = {
   },
 
   applyPreset(presetCode) {
-    // [v3.9.0] 개선과제 유형은 시스템 설정의 공정 유형 라이브러리에서 고름 (계획 일정은 단계 이름이 같으면 유지)
+    // 개선과제 유형은 시스템 설정의 공정 유형 라이브러리에서 고름 (계획 일정은 단계 이름이 같으면 유지)
     if (typeof ProcessLib !== "undefined" && ProcessLib.findReq(presetCode)) {
       if (!ProcessLib.canManageProject()) return showToast("🚫 PM · 관리자만 바꿀 수 있습니다.");
       ProcessLib.applyReqToProject(presetCode);

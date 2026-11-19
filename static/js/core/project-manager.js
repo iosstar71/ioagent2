@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.10] 여러 프로젝트 관리 (ProjectManager)
+// 여러 프로젝트 관리 (ProjectManager)
 // -----------------------------------------------------------------------------
 //  - 머리글 [프로젝트 선택]으로 프로젝트 전환 (미저장 변경 확인 후 화면 다시 불러오기)
 //  - [🗂️ 프로젝트 관리]: 새 프로젝트 만들기(현재 프로젝트 기준정보 복사 선택), 이름 변경,
@@ -16,7 +16,7 @@ var ProjectManager = {
     const u = AuthManager.getCurrentUser();
     return AuthManager.normalizeRole(u.baseRole || u.role);
   },
-  // [v3.0.0] 프로젝트 만들기·전환·관리는 관리자만 (그 밖의 작업자는 선택한 프로젝트만 사용)
+  // 프로젝트 만들기·전환·관리는 관리자만 (그 밖의 작업자는 선택한 프로젝트만 사용)
   canCreate() { return this.isAdmin(); },
   isAdmin() { return this.baseRole() === "SYS_ADMIN"; },
   canManage(p) { return this.isAdmin(); },
@@ -42,7 +42,7 @@ var ProjectManager = {
   // 작업자 선택 직후: 현재 프로젝트 접근 확인 + 머리글 표시
   async afterLogin() {
     await this.refreshList();
-    // [v3.0.0] 관리자가 아닌데 이 프로젝트의 작업자가 아니면 다시 작업자 선택 (프로젝트 선택)
+    // 관리자가 아닌데 이 프로젝트의 작업자가 아니면 다시 작업자 선택 (프로젝트 선택)
     if (!this.isAdmin() && !ProjectContext.info()) {
       AuthManager.openLogin("🗂️ 프로젝트 멤버 선택", "이 프로젝트의 멤버가 아닙니다. 참여 중인 프로젝트를 선택해 다시 멤버를 선택하세요.");
       return false;
@@ -65,7 +65,7 @@ var ProjectManager = {
     if (!sel) return;
     const list = ProjectContext.projects.length ? ProjectContext.projects : [{ id: ProjectContext.current, name: projectConfig.projectName || ProjectContext.current, status: "ACTIVE" }];
     sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("");
-    // [v3.0.0] 프로젝트 전환은 관리자만 — 그 밖의 작업자는 프로젝트 이름만 표시
+    // 프로젝트 전환은 관리자만 — 그 밖의 작업자는 프로젝트 이름만 표시
     const badge = document.getElementById("headerProjectNameBadge");
     const admin = this.isAdmin();
     sel.style.display = admin ? "" : "none";
@@ -139,7 +139,7 @@ var ProjectManager = {
     if (name) { name.scrollIntoView({ block: "center" }); name.focus(); }
   },
 
-  // [Standard v1.0.1] 시스템 설정 > 🗂️ 프로젝트, 기준정보 > 기본정보의 프로젝트 요약 카드
+  // 시스템 설정 > 🗂️ 프로젝트, 기준정보 > 기본정보의 프로젝트 요약 카드
   async renderPanels() {
     const boxes = Array.prototype.slice.call(document.querySelectorAll("[data-project-panel]"));
     if (!boxes.length) return;
@@ -226,7 +226,7 @@ var ProjectManager = {
     };
     delete cfg.milestones;
     Object.assign(cfg, { projectName: name, projectStartDate: start, projectEndDate: end, reportDate: start });
-    // [v3.0.0] 소통 채널은 프로젝트별: 전체 + 이 프로젝트의 서브시스템
+    // 소통 채널은 프로젝트별: 전체 + 이 프로젝트의 서브시스템
     cfg.channels = ["전체"].concat(copy ? (subsystemsMeta || []).map(m => m.code || m.name).filter(Boolean) : []);
     const data = {
       projectConfig: cfg,
@@ -384,7 +384,7 @@ var ProjectManager = {
 
   // ---- 작업자 정보: 프로젝트별 역할 ----
   // 기본 프로젝트가 아니면 역할·담당 서브시스템 변경은 현재 프로젝트에만 적용 (projectRoles)
-  // [v3.0.0] 이 프로젝트의 역할·담당·부서
+  // 이 프로젝트의 역할·담당·부서
   userAssignment(u) {
     if (ProjectContext.isAdminUser(u)) return { role: "SYS_ADMIN", subsystem: "ALL", dept: u.dept || "", own: false, admin: true };
     const a = ProjectContext.member(u) || {};
@@ -416,7 +416,7 @@ var ProjectManager = {
 };
 
 // =============================================================================
-// [v3.0.0] 다른 프로젝트에서 작업자 복사 (관리자) — 역할·담당·부서를 그대로 이 프로젝트로
+// 다른 프로젝트에서 작업자 복사 (관리자) — 역할·담당·부서를 그대로 이 프로젝트로
 // =============================================================================
 var UserCopy = {
   _modal() {

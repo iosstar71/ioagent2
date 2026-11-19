@@ -1,5 +1,4 @@
 // [Project Mgmt] 프로젝트 기간 · 기준일 · 전체 다시 그리기(rebuildAll)
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function renderProjectPeriodLabels() {
   const startDay = WBSEngine.getDayOfWeekText(projectConfig.projectStartDate);
   const endDay = WBSEngine.getDayOfWeekText(projectConfig.projectEndDate);
@@ -23,7 +22,7 @@ function updateProjectPeriod(triggerAlert = true) {
   if (triggerAlert) showToast(`프로젝트 기간이 [${periodStr}] 로 설정되었습니다.`);
 }
 
-// [v1.0.7] WBS ID 재채번 시 다른 데이터의 WBS 참조를 새 ID 로 갱신
+// WBS ID 재채번 시 다른 데이터의 WBS 참조를 새 ID 로 갱신
 //  - 소통 피드 연계 Task(taskId), 작성 중인 주간보고 편집본(wbsId / 제외 목록)
 //  - 저장 완료된 과거 주간보고는 작성 시점 기록이므로 변경하지 않음
 function remapWbsReferences(idMap) {
@@ -77,7 +76,7 @@ function syncGlobalDate(newDate) {
 
 // 전체 재계산 + 전 화면 재렌더링 (변경 알림 포함)
 function rebuildAll(forceImmediateSave = false) {
-  const migrated = typeof WbsWeight !== "undefined" && WbsWeight.migrateIfNeeded();   // 예전 가중치 자료 한 번 변환
+  const migrated = Migrate.project();   // 예전 자료 형식 변환 (core/migrate.js)
   if (migrated) forceImmediateSave = true;
   MasterSyncEngine.syncAll(false, "rebuildAll", forceImmediateSave);
   if (typeof HomeScreenManager !== "undefined") HomeScreenManager.render();

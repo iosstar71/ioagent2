@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.7] WBS 간트차트 렌더러
+// WBS 간트차트 렌더러
 //  - 표시 단위: 주차(WEEK) / 일자(DAY) / 월(MONTH) 공통 타임라인 엔진
 //  - 기준일(보고 기준일) 세로선 표시 (v1.0.7)
 //  - 프로젝트 마일스톤 표시 (v1.0.7): 종합 마일스톤은 최상단 행, 서브시스템 마일스톤은 해당 L1 행에 ◆ 표시
@@ -93,7 +93,7 @@ const GanttRenderer = {
     return row;
   },
 
-  // [v3.4.0] 진척 막대 (B안): 바탕 = 계획 기간, 채움 = 실적 %, ▼ = 기준일 계획 위치, 빗금 = 계획보다 모자란 구간
+  // 진척 막대 (B안): 바탕 = 계획 기간, 채움 = 실적 %, ▼ = 기준일 계획 위치, 빗금 = 계획보다 모자란 구간
   //  상위 Task 는 양 끝 꺾쇠가 있는 얇은 요약 막대 (하위 합산 실적으로 채움), % 는 막대 오른쪽에 표시
   _progressBar(task, left, width, st) {
     const p = Math.max(0, Math.min(100, Number(task.pProg) || 0));
@@ -197,7 +197,7 @@ const GanttRenderer = {
       tree.appendChild(this._treeRow(
         `<span class="lvl-badge" style="background:#7c3aed; color:#fff;">MS</span>
          <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
-      tree.lastChild.classList.add("gantt-ms-row"); // [v3.3.0] 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
+      tree.lastChild.classList.add("gantt-ms-row"); // 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
       const row = this._chartRow(tl);
       row.classList.add("gantt-ms-row");
       integrated.forEach(m => row.appendChild(this._milestoneMarker(tl, m, true)));

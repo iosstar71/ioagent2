@@ -1,5 +1,4 @@
 // [Project Mgmt] 산출물 관리
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function renderDeliverablesTable() {
   const tbody = document.getElementById("deliverablesTableBody");
   if (!tbody) return;

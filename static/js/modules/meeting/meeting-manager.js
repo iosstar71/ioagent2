@@ -8,7 +8,7 @@
  * 2) 📝 회의록 작성: 회의 기본정보, 참석자 관리, 안건별 상세 논의/결정사항, 도출 Action Item 연계
  * 3) ⚡ Action Item 현황: 전사/서브시스템/일자/상태별 통합 트래커 및 원클릭 상태 전환
  * 4) 📄 보고서 연동: 회의록 독립 워드/XLSX 다운로드 및 주간보고 연계
- * [v1.0.6] 회의록은 편집본(draft)에 작성 → [✅ 작성 완료] 클릭 시 저장
+ * 회의록은 편집본(draft)에 작성 → [✅ 작성 완료] 클릭 시 저장
  *          저장하지 않고 다른 회의록/화면으로 이동하면 [저장 / 무시 / 취소] 선택
  */
 
@@ -143,8 +143,8 @@ var MeetingManager = {
     this.render();
   },
 
-  // [ver1.0.4 버그 픽스] 회의 관리 전용 서브시스템 드롭다운 동적 연동
-  // [ver1.0.4 신규] 회의 일정 및 회의록 월별(Month) 필터 드롭다운 옵션 구축
+  // 회의 관리 전용 서브시스템 드롭다운 동적 연동
+  // 회의 일정 및 회의록 월별(Month) 필터 드롭다운 옵션 구축
   populateMonthFilterDropdowns() {
     const monthSet = new Set();
     (meetingsData || []).forEach(m => {
@@ -269,7 +269,7 @@ var MeetingManager = {
     }
   },
 
-  // [ver1.0.4 요건 2] 회의록 목록 서브시스템 및 월별(Month) 다중 필터 조회
+  // 회의록 목록 서브시스템 및 월별(Month) 다중 필터 조회
   getFilteredMinutesMeetings() {
     const minSys = (document.getElementById("minutesFilterSubsystem") && document.getElementById("minutesFilterSubsystem").value) || "ALL";
     const minMonth = (document.getElementById("minutesFilterMonth") && document.getElementById("minutesFilterMonth").value) || "ALL";
@@ -309,7 +309,7 @@ var MeetingManager = {
   },
 
 
-  // [v3.9.0] 회의가 없는 프로젝트(새 프로젝트 · Task 정보 초기화 뒤)에 예전 예시 회의를 넣지 않음
+  // 회의가 없는 프로젝트(새 프로젝트 · Task 정보 초기화 뒤)에 예전 예시 회의를 넣지 않음
   ensureInitialData() {
     if (!Array.isArray(meetingsData)) meetingsData = [];
   },
@@ -381,7 +381,7 @@ var MeetingManager = {
     const firstDay = new Date(y, m - 1, 1).getDay(); // 0(Sun) ~ 6(Sat)
     const totalDays = new Date(y, m, 0).getDate();
 
-    // [ver1.0.4 시인성 고도화] 캘린더 요일 헤더 및 날짜/회의 시인성 100% 보장
+    // 캘린더 요일 헤더 및 날짜/회의 시인성 100% 보장
     const calCard = document.getElementById("meetingCalendarCard");
     if (calCard) {
       calCard.style.cssText = "background:var(--bg-card, #ffffff); border:1px solid var(--border-color, var(--border-color)); border-radius:8px; overflow:hidden; margin-bottom:14px; width:100%; box-sizing:border-box; color:var(--text-main); box-shadow:0 2px 6px rgba(0,0,0,0.05);";
@@ -429,7 +429,7 @@ var MeetingManager = {
       daysGrid.appendChild(blank);
     }
 
-    // [ver1.0.4 요건 1] 시스템 설정의 공휴일/작업자휴일 Map 완벽 구축
+    // 시스템 설정의 공휴일/작업자휴일 Map 완벽 구축
     const holidays = (typeof projectConfig !== "undefined" && Array.isArray(projectConfig.holidays)) ? projectConfig.holidays : [];
     const holidayMap = new Map();
     holidays.forEach(h => {
@@ -442,7 +442,7 @@ var MeetingManager = {
     });
 
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "";
-    // [ver1.0.4 요건 2] 캘린더 화면 서브시스템 필터 연동
+    // 캘린더 화면 서브시스템 필터 연동
     const sysFilter = (document.getElementById("meetingFilterSubsystem") && document.getElementById("meetingFilterSubsystem").value) || "ALL";
 
     for (let day = 1; day <= totalDays; day++) {
@@ -470,7 +470,7 @@ var MeetingManager = {
       cell.onmouseenter = () => { if (!isToday) cell.style.backgroundColor = "var(--lvl-3-bg, var(--bg-main))"; };
       cell.onmouseleave = () => { if (!isToday) cell.style.backgroundColor = isHoliday ? (isCustomHoliday ? "rgba(245, 158, 11, 0.12)" : "rgba(239, 68, 68, 0.12)") : "var(--bg-card, #ffffff)"; };
 
-      // [ver1.0.4 요건 2] 서브시스템 필터 적용된 일자별 회의 목록
+      // 서브시스템 필터 적용된 일자별 회의 목록
       const dayMtgs = (meetingsData || []).filter(item => {
         if (item.date !== dateStr) return false;
         if (sysFilter !== "ALL" && item.system !== sysFilter) return false;
@@ -1154,7 +1154,7 @@ var MeetingManager = {
     const selAss = (document.getElementById("aiFilterAssignee") && document.getElementById("aiFilterAssignee").value) || "ALL";
     const searchWord = ((document.getElementById("aiSearchInput") && document.getElementById("aiSearchInput").value) || "").trim().toLowerCase();
 
-    // [v3.0.2] 상태 칩: 서브시스템·담당자·검색 조건 범위의 상태별 건수
+    // 상태 칩: 서브시스템·담당자·검색 조건 범위의 상태별 건수
     if (typeof StatusChips !== "undefined") {
       StatusChips.render("ai", allActions.filter(a => a.status !== "삭제" && (selSys === "ALL" || (a.system || a.meetingSystem) === selSys) && (selAss === "ALL" || a.assignee === selAss) &&
         (!searchWord || `${a.id} ${a.title} ${a.content || ""} ${a.requester || ""} ${a.assignee || ""} ${a.meetingTitle || ""}`.toLowerCase().includes(searchWord))));
@@ -1288,7 +1288,7 @@ var MeetingManager = {
     if (modal) modal.style.display = "none";
   },
 
-  // [ver1.0.4 요건 3] 기준정보 Action Item ID 접두사(prefix) 연동 채번기
+  // 기준정보 Action Item ID 접두사(prefix) 연동 채번기
   generateActionItemId(meeting) {
     if (typeof getNextEntityId === "function") {
       try {
@@ -1467,7 +1467,7 @@ var MeetingManager = {
       });
     });
 
-    // [ver1.0.4 요건 4] 회의록 엑셀 제목 및 헤더 짤림 방지: A~H열 셀 병합 및 컬럼 너비 확대
+    // 회의록 엑셀 제목 및 헤더 짤림 방지: A~H열 셀 병합 및 컬럼 너비 확대
     const merges = ["A1:H1", "A5:H5", "A6:H6", "A8:H8"];
     // Agenda and Action Items banners
     let rIdx = 8 + (m.attendees || []).length + 1; // blank row
@@ -1508,7 +1508,7 @@ var MeetingManager = {
       });
     });
 
-    // [ver1.0.4 요건 4] Action Item 엑셀 제목 짤림 방지: A~J열 셀 병합
+    // Action Item 엑셀 제목 짤림 방지: A~J열 셀 병합
     const blob = ExcelSync._buildXlsxBlob([
       {
         name: "Action_Items_통합목록",
@@ -1522,7 +1522,7 @@ var MeetingManager = {
     showToast(`📊 [Action Items 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
   },
 
-  // [ver1.0.4 신규] 회의 일정 목록 전체/필터 엑셀 내려받기 (XLSX)
+  // 회의 일정 목록 전체/필터 엑셀 내려받기 (XLSX)
   exportScheduleListExcel() {
     const sysFilter = (document.getElementById("meetingFilterSubsystem") && document.getElementById("meetingFilterSubsystem").value) || "ALL";
     const statusFilter = (document.getElementById("meetingFilterStatus") && document.getElementById("meetingFilterStatus").value) || "ALL";

@@ -1,5 +1,5 @@
 // =============================================================================
-// [Project Mgmt v1.0.6] 다국어(한국어/English) 지원 엔진
+// 다국어(한국어/English) 지원 엔진
 // -----------------------------------------------------------------------------
 //  - 화면의 메뉴·제목·설명·버튼·안내 문구를 사전(I18N_EN) 기반으로 번역합니다.
 //  - 작업 데이터(WBS 과업명, 요구사항, 회의록 등 작업자가 입력한 값)는 번역하지 않습니다.
@@ -22,7 +22,7 @@ var I18N = {
   patterns() { return (typeof I18N_EN !== "undefined" && I18N_EN.patterns) || []; },
   phrases() { return (typeof I18N_EN !== "undefined" && I18N_EN.phrases) || []; },
 
-  // [v1.2.0] 처음 화면(작업자 선택)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작
+  // 처음 화면(작업자 선택)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작
   //          작업자 선택 후에는 작업자별 언어(projectUsers[].lang)를 적용
   init() {
     const def = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.defaultLang === "en") ? "en" : "ko";

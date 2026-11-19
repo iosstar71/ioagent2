@@ -1,9 +1,8 @@
 // [Project Mgmt] 주간보고
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 var weeklyReportsData = [];
 
 // =========================================================================
-// [ver1.0.4 신규] 주간보고 작성 및 서술형 워드 / 엑셀 통합 매니저
+// 주간보고 작성 및 서술형 워드 / 엑셀 통합 매니저
 // =========================================================================
 var WeeklyReportManager = {
   currentWeekReport: null, // 작성 중인 편집본 (작성 완료 시 weeklyReportsData 에 반영)
@@ -281,7 +280,7 @@ var WeeklyReportManager = {
   },
 
 
-  // [v1.0.7] 보고 주차별 보고서 목록 (선택 주차의 종합·서브시스템 작성 현황, v1.0.9 분야별 제외) / 저장된 전체 주차
+  // 보고 주차별 보고서 목록 (선택 주차의 종합·서브시스템 작성 현황, v1.0.9 분야별 제외) / 저장된 전체 주차
   listWeek: null,
 
   _unitsOfWeek() {
@@ -340,7 +339,7 @@ var WeeklyReportManager = {
   },
 
   // ---------------------------------------------------------------------------
-  // [v1.0.9] 주차 종합 주간보고: 선택 주차에 [작성 완료]된 서브시스템 보고서를 모두 취합하여 1개 종합 보고서로 생성
+  // 주차 종합 주간보고: 선택 주차에 [작성 완료]된 서브시스템 보고서를 모두 취합하여 1개 종합 보고서로 생성
   //  - 요약·현안: 통합(PM) 보고서가 작성 완료되어 있으면 그 내용을 앞에 두고, 서브시스템 요약을 [서브시스템] 머리말로 이어 붙임 (중복 문장 제외)
   //  - 금주/차주 항목: 작성 완료된 서브시스템 보고서의 항목 + 종합 보고서의 직접 입력 항목·미작성 서브시스템 항목
   //  - 작성 완료 보고서가 하나도 없으면 WBS 기준 자동 생성본으로 대체 (작성 현황에 표시)
@@ -362,7 +361,7 @@ var WeeklyReportManager = {
     rep.status = "DONE";
     rep.integrated = true;
 
-    // [v3.3.0] 작성 완료하지 않은 서브시스템의 내용(과업 · 요약)은 종합 보고서에 넣지 않음
+    // 작성 완료하지 않은 서브시스템의 내용(과업 · 요약)은 종합 보고서에 넣지 않음
     if (!sysReps.length && !allRep) {
       rep.currentWeekTasks = [];
       rep.nextWeekTasks = [];
@@ -408,7 +407,7 @@ var WeeklyReportManager = {
     rep.coverageNote = `종합 보고서: ${allRep ? "작성 완료" : "미작성"} / 작성 완료 서브시스템 ${doneSys.length}개${doneSys.length ? ` (${doneSys.join(", ")})` : ""}`
       + (missing.length ? ` / 미작성 ${missing.length}개 (${missing.join(", ")})` : " / 미작성 없음");
     rep.integratedFrom = { done: doneSys, missing, auto: false, allDone: !!allRep };
-    // [v3.1.0] 작성 시점 자료: 종합 보고서의 것, 없으면 가장 최근에 작성 완료된 서브시스템 보고서의 것
+    // 작성 시점 자료: 종합 보고서의 것, 없으면 가장 최근에 작성 완료된 서브시스템 보고서의 것
     const snaps = (allRep && allRep.snapshot ? [allRep.snapshot] : []).concat(sysReps.map(r => r.snapshot).filter(Boolean)).sort((a, b) => String(b.takenAt).localeCompare(String(a.takenAt)));
     if (allRep && allRep.snapshot) rep.snapshot = allRep.snapshot;
     else if (snaps.length) rep.snapshot = snaps[0];
@@ -471,13 +470,13 @@ var WeeklyReportManager = {
     showToast("↩️ 저장하지 않은 주간보고 변경 내용을 취소했습니다.");
   },
 
-  // ---- [v1.0.8] 엑셀 셀 한도(32,767자) 대비 보고서 크기 제한 ----
+  // ---- 엑셀 셀 한도(32,767자) 대비 보고서 크기 제한 ----
   //  협업 데이터 엑셀 내보내기는 보고서 1건을 원본(JSON) 1개 셀에 담으므로, 보고서 전체 크기를 32,000자 이내로 제한
   MAX_REPORT_CHARS: 32000,
   FIELD_LIMITS: { summary: 3000, issues: 2000, detail: 1000, name: 200 },
   reportSize(rep) {
     const r = Object.assign({}, rep || this.currentWeekReport || {});
-    delete r.snapshot; // [v3.1.0] 작성 시점 자료는 크기 계산에서 제외
+    delete r.snapshot; // 작성 시점 자료는 크기 계산에서 제외
     return JSON.stringify(r).length;
   },
   _checkSize(extra = 0, notify = true) {
@@ -629,7 +628,7 @@ var WeeklyReportManager = {
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
     const detail = `<textarea class="wr-detail" rows="2" maxlength="1000" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}">${escapeHtml(t.detail || "")}</textarea>`;
-    // [v3.1.0] 담당자: WBS 과업은 WBS 담당자(보고서에 함께 저장), 직접 입력 항목은 입력
+    // 담당자: WBS 과업은 WBS 담당자(보고서에 함께 저장), 직접 입력 항목은 입력
     const ownerCell = t.manual
       ? `<input type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" style="width:100%; font-size:var(--fs-xs, 11px);" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
       : `<span class="wr-owner">${escapeHtml(t.owner || "-")}</span>`;
@@ -699,9 +698,9 @@ var WeeklyReportManager = {
       } else {
         tasks.forEach(t => nxtTbody.appendChild(this._taskRow("nxt", t)));
       }
-    // [ver1.0.4] 금주 진행 회의 및 차주 예정 회의 실시간 렌더링
+    // 금주 진행 회의 및 차주 예정 회의 실시간 렌더링
     if (typeof MeetingManager !== "undefined") {
-      // [v3.1.0] 작성 완료본은 작성 시점의 회의 목록
+      // 작성 완료본은 작성 시점의 회의 목록
       const snapMtg = list => (list || []).map(m => Object.assign({}, m, { agendas: null, summary: m.decisions }));
       const curMtgs = rep.snapshot ? snapMtg(rep.snapshot.meetingsCur) : MeetingManager.getWeeklyMeetings(rep.startDate, rep.endDate);
       const curMtgsBody = document.getElementById("wrCurrentMeetingsBody");
@@ -785,7 +784,7 @@ var WeeklyReportManager = {
     // 작성자: 직접 고쳐 적지 않았다면 저장한 사람 이름으로 (다른 사람이 고쳐 저장하면 작성자도 바뀜)
     if (!rep.author || rep.author === this._openedAuthor) rep.author = u.name || rep.author || "";
     this._openedAuthor = rep.author;
-    // [v3.1.0] 판 번호 + 작성 시점 자료 (지난 주간보고는 이 자료로 보여 주고 내려받음)
+    // 판 번호 + 작성 시점 자료 (지난 주간보고는 이 자료로 보여 주고 내려받음)
     rep.revision = (parseInt(rep.revision, 10) || 0) + 1;
     rep.snapshot = WeeklyExport.takeSnapshot(rep);
     const copy = JSON.parse(JSON.stringify(rep));
@@ -868,7 +867,7 @@ var WeeklyReportManager = {
     freshReport.nextWeekSummary = this.currentWeekReport.nextWeekSummary;
     freshReport.issuesNotes = this.currentWeekReport.issuesNotes;
     freshReport.author = this.currentWeekReport.author;
-    // [v3.1.0] 판 번호는 유지, 작성 시점 자료는 다시 [작성 완료] 할 때 새로 저장 (그 전까지 내려받기는 현재 자료 기준)
+    // 판 번호는 유지, 작성 시점 자료는 다시 [작성 완료] 할 때 새로 저장 (그 전까지 내려받기는 현재 자료 기준)
     if (this.currentWeekReport.revision) freshReport.revision = this.currentWeekReport.revision;
     if (this.currentWeekReport.updatedAt) freshReport.updatedAt = this.currentWeekReport.updatedAt;
 
@@ -1026,9 +1025,9 @@ var WeeklyReportManager = {
     showToast(`📋 [내용 복사 완료] [${src.weekLabel}] 보고서 내용이 현재 주차로 복사되었습니다.`);
   },
 
-  // [ver1.0.4] 주간보고 엑셀 내려받기 (XLSX 형태)
+  // 주간보고 엑셀 내려받기 (XLSX 형태)
   // forceIntegrated=true: 현재 작성 단위와 관계없이 통합(전체) 보고서로 생성 (대시보드 엑셀 보고서)
-  // [v3.1.0] 엑셀·워드 내려받기는 WeeklyExport (같은 보고서 모델 · 파일 이름 규칙 · 작성 시점 자료)
+  // 엑셀·워드 내려받기는 WeeklyExport (같은 보고서 모델 · 파일 이름 규칙 · 작성 시점 자료)
   exportExcel(forceIntegrated = false, repOverride = null) {
     if (!repOverride && !this.currentWeekReport) this.init();
     if (!repOverride) this.readInputsIntoCurrentReport();

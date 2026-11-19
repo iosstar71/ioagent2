@@ -1,5 +1,5 @@
 // -------------------------------------------------------------
-// [2026 v1.2.4] 주간/월간보고 Excel(.xlsx) & PPT(.pptx) 생성기
+// 주간/월간보고 Excel(.xlsx) & PPT(.pptx) 생성기
 // + 업데이트 날짜·시간 기반 자동 백업 JSON 매니저(BackupHistoryManager)
 // + 단일 서브시스템 지정 로컬 JSON 스마트 병합 매니저(JsonCollabManager)
 // -------------------------------------------------------------
@@ -35,7 +35,7 @@ const BackupHistoryManager = {
     };
   },
 
-  // [v3.8.0] 스냅샷은 프로젝트별 (projectId) — opts.source 를 주면 그 저장 자료로 (다른 프로젝트 Task 초기화 전 등)
+  // 스냅샷은 프로젝트별 (projectId) — opts.source 를 주면 그 저장 자료로 (다른 프로젝트 Task 초기화 전 등)
   createBackupSnapshot(actionType = "데이터업로드", targetSubsystem = "ALL", triggerFileDownload = true, opts = {}) {
     const now = new Date();
     const { fileStamp, displayTime } = this._formatTimestamp(now);
@@ -99,8 +99,8 @@ const BackupHistoryManager = {
       } catch (_) {}
     }
 
-    // [v3.9.1] 업로드 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 작업자가 켠 경우에만
-    // [v4.0.0] DB 서버 방식: PM · 관리자의 복원 지점은 서버에도 보관 (다른 PC 에서도 복원)
+    // 업로드 전 자동 백업은 브라우저 스냅샷으로만 남기고, 파일 내려받기는 작업자가 켠 경우에만
+    // DB 서버 방식: PM · 관리자의 복원 지점은 서버에도 보관 (다른 PC 에서도 복원)
     if (this._serverMode()) {
       const counts = {}; ["weeklyReportsData", "meetingsData", "noticesData", "communicationsData"].forEach(k => { counts[k] = (payload[k] || []).length; });
       const meta = { id: snapEntry.id, filename, createdAt: displayTime, actionType, targetSubsystem, projectId: pid, projectName: pname,
@@ -189,7 +189,7 @@ const BackupHistoryManager = {
     }
   },
 
-  // [v4.0.0] 복원 지점 목록 — 관리자: 모든 프로젝트 / PM: 지금 프로젝트 (DB 서버 방식은 서버에 보관된 목록)
+  // 복원 지점 목록 — 관리자: 모든 프로젝트 / PM: 지금 프로젝트 (DB 서버 방식은 서버에 보관된 목록)
   async renderBackupHistoryTable() {
     const tbody = document.getElementById("backupHistoryTableBody");
     if (!tbody) return;
@@ -384,7 +384,7 @@ const ReportExporter = {
 };
 
 // -------------------------------------------------------------
-// [2026 v1.2.4] 단일 서브시스템 제한 로컬 JSON 협업 매니저
+// 단일 서브시스템 제한 로컬 JSON 협업 매니저
 // - 여러 서브시스템이 포함된 JSON이 올라와도 작업자가 지정한 [단 1개의 서브시스템 데이터]만 필터링하여 병합!
 // - 병합 실행 시 업데이트 날짜 및 시간(YYYYMMDD_HHMMSS)으로 백업 JSON 자동 생성!
 // -------------------------------------------------------------

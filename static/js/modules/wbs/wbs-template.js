@@ -1,5 +1,4 @@
 // [Project Mgmt] 간트 · 공휴일 표 · WBS 템플릿
-//  (v3.6.0: app.js 를 업무별 파일로 나눔 — 불러오는 순서는 index.html 참고)
 function renderGantt() {
   if (typeof GanttRenderer !== "undefined") {
     GanttRenderer.render(wbsData, projectConfig.holidays);
@@ -97,7 +96,7 @@ var WbsTemplate = {
     }
     opts.push(["REQ", "개선(REQ) 단계 · 프로젝트 설정의 개선과제 공정 단계"]);
     const def = !meta ? "" : meta.type === "REQ" ? "REQ" : `SDLC:${meta.sdlcCode || (opts[0] && opts[0][0].slice(5))}`;
-    // [v3.7.0] 다른 서브시스템의 WBS 복사 (WBS 가 있는 서브시스템만)
+    // 다른 서브시스템의 WBS 복사 (WBS 가 있는 서브시스템만)
     const copies = this.metas().map(m => this.sysKey(m)).filter(k => k !== sys && this.existing(k).length)
       .map(k => [`COPY:${k}`, `${k} 의 WBS 복사 (Task ${this.existing(k).length}개)`]);
     const optHtml = list => list.map(([v, l]) => `<option value="${escapeAttr(v)}" ${v === def ? "selected" : ""}>${escapeHtml(l)}${v === def ? " (서브시스템 설정)" : ""}</option>`).join("");
@@ -130,7 +129,7 @@ var WbsTemplate = {
     let cur = new Date(s), acc = 0;
     return phases.map((p, i) => {
       acc += parseFloat(p.weight) || 1;
-      // [v3.7.0] 기준정보(SDLC · 개선 공정)에 단계 계획 시작 · 종료일이 있으면 그 일정 그대로
+      // 기준정보(SDLC · 개선 공정)에 단계 계획 시작 · 종료일이 있으면 그 일정 그대로
       if (/^\d{4}-\d{2}-\d{2}$/.test(p.pStart || "") && /^\d{4}-\d{2}-\d{2}$/.test(p.pEnd || "") && p.pStart <= p.pEnd) {
         cur = new Date(new Date(p.pEnd + "T00:00:00").getTime() + 86400000);
         return [p.pStart, p.pEnd];
@@ -147,7 +146,7 @@ var WbsTemplate = {
     });
   },
 
-  // [v3.7.0] 서브시스템의 기본 담당자: 그 서브시스템 총괄리더(여럿이면 먼저 조회된 사람)
+  // 서브시스템의 기본 담당자: 그 서브시스템 총괄리더(여럿이면 먼저 조회된 사람)
   //   → 없으면 그 서브시스템 담당 작업자 → 전체 담당 총괄리더 순
   leadOf(sys) {
     // 이 프로젝트에서의 역할 · 담당 서브시스템 (작업자 정보는 프로젝트별 — projectRoles)
