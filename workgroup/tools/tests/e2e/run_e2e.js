@@ -468,7 +468,7 @@ async function localMain() {
   const rq = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     o.subTabs = ["meetingSubTabs", "rpTabs", "boardSubTabs"].every(id => { const e = document.getElementById(id); return e && e.classList.contains("master-subtab-bar") && !e.closest(".sub-header-bar"); });
-    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector('#gAdminMenu a#btnHeaderManual[href="manual.html"]') && /오픈소스 고지|법적 고지/.test(document.querySelector("#gAdminMenu a#btnHeaderManual").nextElementSibling.textContent);
+    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector('#gAdminMenu button#btnHeaderManual[data-click="ManualViewer.open"]') && /오픈소스 고지|법적 고지/.test(document.querySelector("#gAdminMenu #btnHeaderManual").nextElementSibling.textContent);
     GShell.go("tab-config"); SubTabs.show("config", "data"); await wait(400);
     o.delRow = /프로젝트 삭제/.test(document.getElementById("daActions").textContent) && typeof DataAdmin.removeProject === "function";
     o.who = document.getElementById("gUserWho").textContent.includes("—");
