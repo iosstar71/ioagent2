@@ -204,7 +204,7 @@ var ProjectManager = {
         <td><code>${escapeHtml(p.id)}</code></td>
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
         <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="작업자 선택 화면의 프로젝트 목록에 나오지 않고, 관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
-        <td>멤버 ${this.memberCount(p)}명</td>
+        <td>${I18N.tf("멤버 {n}명", { n: this.memberCount(p) })}</td>
         <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(p.createdAt || "-")}</td>
         <td style="display:flex; gap:4px; flex-wrap:wrap;">
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}

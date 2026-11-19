@@ -243,7 +243,7 @@ const ReportExporter = {
     const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
     const totalPlan = wp.plan;
     const totalActual = wp.actual;
-    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
+    const achieveRate = Metrics.achv(totalPlan, totalActual, 1).toFixed(1);
 
     let cntTotal = wbsData.length, cntComp = 0, cntProg = 0, cntDel = 0, cntReady = 0;
     wbsData.forEach(t => {
@@ -265,7 +265,7 @@ const ReportExporter = {
       const leafTasks = wbsData.filter(d => d.system === sys && d.isLeaf);
       const pVal = root ? root.pProg : 0;
       const aVal = root ? root.aProg : 0;
-      const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : 100;
+      const rate = Metrics.achv(pVal, aVal);
       const delCnt = leafTasks.filter(t => WBSEngine.getTaskStatus(t, repDate).code === "delayed").length;
       const sdlcSpec = WBSEngine.getSubsystemSdlcSpec(sys);
       const typeLabel = meta.type === "REQ" ? "개선타입(REQ)" : (sdlcSpec ? sdlcSpec.name : "표준SDLC");
@@ -292,13 +292,13 @@ const ReportExporter = {
             pAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.pProg * (parseFloat(t.weight) || 1)), 0) / wSum);
             aAvg = Math.round(phTasks.reduce((acc, t) => acc + (t.aProg * (parseFloat(t.weight) || 1)), 0) / wSum);
           }
-          const r = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
+          const r = Metrics.achv(pAvg, aAvg);
           row.push(`${pAvg}% / ${aAvg}% (${r}%)`);
         });
         const root = wbsData.find(d => d.system === sys && d.level === 1);
         const rp = root ? root.pProg : 0;
         const ra = root ? root.aProg : 0;
-        const rr = rp > 0 ? Math.round((ra / rp) * 100) : 100;
+        const rr = Metrics.achv(rp, ra);
         row.push(`${rp}% / ${ra}% (${rr}%)`);
         return row;
       });
@@ -308,9 +308,7 @@ const ReportExporter = {
     const sdlcRows = (sdlcGroups[0] && sdlcGroups[0].rows) ? sdlcGroups[0].rows : [];
 
     const integratedRows = allSystems.map(sys => {
-      const sysReqs = reqMasterData.filter(r => r.system === sys && r.status !== "삭제");
-      const reqDone = sysReqs.filter(r => r.status === "완료").length;
-      const reqRate = sysReqs.length > 0 ? Math.round((reqDone / sysReqs.length) * 100) : 0;
+      const rs = Metrics.reqStats(reqMasterData.filter(r => r.system === sys)), sysReqs = rs.list, reqDone = rs.done, reqRate = rs.rate;
 
       let totDeliv = 0, totDelivDone = 0;
       const roundCells = activeRounds.map(rnd => {
@@ -320,11 +318,9 @@ const ReportExporter = {
         totDelivDone += done;
         return `${done} / ${list.length}건`;
       });
-      const delivRate = totDeliv > 0 ? Math.round((totDelivDone / totDeliv) * 100) : 0;
+      const delivRate = Metrics.pct(totDelivDone, totDeliv);
 
-      const sysVocs = vocData.filter(v => v.system === sys && v.status !== "삭제");
-      const vocDone = sysVocs.filter(v => v.status === "완료" || v.status === "제외").length;
-      const vocRate = sysVocs.length > 0 ? Math.round((vocDone / sysVocs.length) * 100) : 0;
+      const vs = Metrics.vocStats(vocData.filter(v => v.system === sys)), sysVocs = vs.list, vocDone = vs.done, vocRate = vs.rate;
 
       const domain = (typeof WBSEngine !== "undefined") ? WBSEngine.getSubsystemDomain(sys) : "공통";
       return [
@@ -343,7 +339,7 @@ const ReportExporter = {
       const rev = items.filter(d => d.status === "검토요청").length;
       const ing = items.filter(d => d.status === "작성중").length;
       const rdy = items.filter(d => d.status === "작성전").length;
-      const rate = items.length > 0 ? Math.round((done / items.length) * 100) : 0;
+      const rate = Metrics.pct(done, items.length);
       return [rnd, items.length, done, rev, ing, rdy, `${rate}%`];
     });
 

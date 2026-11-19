@@ -3267,8 +3267,6 @@ var I18N_EN = (function () {
     [/^(\d+)건 진행중$/, "$1 in progress"],
     [/^공정 GAP: ([+-]?\d+)%p \(계획 대비 지연\)$/, "Schedule gap: $1%p (behind plan)"],
     [/^공정 GAP: ([+-]?\d+)%p \(목표 초과\)$/, "Schedule gap: $1%p (ahead of plan)"],
-    [/^가중치 ([\d.]+)%$/, "weight $1%"],
-    [/^소속 서브시스템 (\d+)개$/, "$1 subsystems"],
     [/^\[(종합|.+?) 마일스톤\] (.+) \((\d{4}-\d{2}-\d{2})\)$/, (m, a, b, c) => `[${a === "종합" ? "Overall" : a} milestone] ${b} (${c})`],
     [/^(.*?)\s*계획: (\d+)% \| 실적: (\d+)% \| 상태: (대기|진행중|완료|지연|보류)(?: \(계획보다 (\d+)%p 부족\))?$/, (m, n, p, a, st, g) => `${n ? n + " " : ""}Plan: ${p}% | Actual: ${a}% | Status: ${W(st)}${g ? ` (${g}%p behind plan)` : ""}`],
     [/^(휴일|가중치|일정|기간|진척) (\d+)건$/, (m, a, n) => `${W(a)} ${n}`],
@@ -3297,9 +3295,6 @@ var I18N_EN = (function () {
     [/^-- 추가할 WBS Task 선택 \((\d+)건\) --$/, "-- Choose a WBS Task to add ($1) --"],
     [/^e\.g\. (.+)$/, "e.g. $1"],
     [/^♻️ Replace \[(.+)\] with the file$/, "♻️ Replace [$1] with the file"],
-    [/^대상 (\d+)건$/, "Targets: $1"],
-    [/^멤버 (\d+)명$/, "$1 members"],
-    [/^단계 (\d+)개$/, "$1 phases"],
     [/^등록 멤버 (\d+)명 · 관리자 (\d+)명 · 프로젝트 (\d+)개 — 표시 (\d+)명$/, "$1 members · $2 admins · $3 projects — showing $4"],
     [/^SDLC (\d+)개 · 개선과제 (\d+)개 \(기본 유형 — 고치면 저장됩니다\)$/, "SDLC $1 · improvement $2 (default types — saved when edited)"],
     [/^SDLC (\d+)개 · 개선과제 (\d+)개 \(저장된 라이브러리\)$/, "SDLC $1 · improvement $2 (saved library)"],
@@ -3543,5 +3538,13 @@ var I18N_EN = (function () {
     "계획": "Plan", "실적": "Actual", "달성률": "Achv.", "전체": "All"
   }).sort((a, b) => b[0].length - a[0].length);
 
-  return { exact, patterns, phrases };
+  // 문구 틀 — 화면 코드는 I18N.tf(틀, 값) 으로 한국어 문장을 만들고, 영어 화면은 이 틀로 번역됨 ({이름} 자리는 그대로 옮김)
+  const templates = {
+    "가중치 {n}%": "weight {n}%",
+    "소속 서브시스템 {n}개": "{n} subsystems",
+    "단계 {n}개": "{n} phases",
+    "멤버 {n}명": "{n} members",
+    "대상 {n}건": "Targets: {n}"
+  };
+  return { exact, patterns, phrases, templates };
 })();

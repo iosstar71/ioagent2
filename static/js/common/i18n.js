@@ -19,7 +19,25 @@ var I18N = {
   _busy: false,
 
   dict() { return (typeof I18N_EN !== "undefined" && I18N_EN.exact) || {}; },
-  patterns() { return (typeof I18N_EN !== "undefined" && I18N_EN.patterns) || []; },
+  // 문구 틀(templates: "가중치 {n}%" → "weight {n}%")을 규칙으로 바꿔 patterns 앞에 둠
+  patterns() {
+    if (this._pat) return this._pat;
+    const tpl = (typeof I18N_EN !== "undefined" && I18N_EN.templates) || {};
+    const esc = s => s.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    const fromTpl = Object.keys(tpl).map(ko => {
+      const names = [];
+      const re = new RegExp("^" + ko.split(/(\{\w+\})/).map(part => {
+        const m = part.match(/^\{(\w+)\}$/);
+        if (m) { names.push(m[1]); return "(.+?)"; }
+        return esc(part);
+      }).join("") + "$");
+      return [re, (...g) => tpl[ko].replace(/\{(\w+)\}/g, (x, k) => { const i = names.indexOf(k); return i === -1 ? x : g[i + 1]; })];
+    });
+    return (this._pat = fromTpl.concat((typeof I18N_EN !== "undefined" && I18N_EN.patterns) || []));
+  },
+  // 숫자 · 이름이 들어가는 화면 문장: 화면에는 한국어로 채워 넣고, 영어 화면은 위 틀로 번역됨
+  //   tf("가중치 {n}%", { n: 30 }) → "가중치 30%"  (i18n-en.js 의 templates 에 같은 틀의 영어를 넣는다)
+  tf(template, params) { return String(template).replace(/\{(\w+)\}/g, (m, k) => (params && params[k] !== undefined && params[k] !== null) ? String(params[k]) : m); },
   phrases() { return (typeof I18N_EN !== "undefined" && I18N_EN.phrases) || []; },
 
   // 처음 화면(작업자 선택)은 항상 app.ini 의 기본 언어(default_lang, 기본 한국어)로 시작

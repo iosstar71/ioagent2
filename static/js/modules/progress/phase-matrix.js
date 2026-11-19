@@ -63,13 +63,10 @@ function renderPhaseMatrix() {
     const sysRoot = wbsData.find(d => d.system === sys && d.level === 1);
     const wP = sysRoot ? sysRoot.pProg : 0;
     const wA = sysRoot ? sysRoot.aProg : 0;
-    const wRate = wP > 0 ? Math.round((wA / wP) * 100) : 100;
+    const wRate = Metrics.achv(wP, wA);
     sumWP += wP; sumWA += wA; sumWCount++;
 
-    const sReqs = reqMasterData.filter(r => r.system === sys && r.status !== "삭제");
-    const rPrg = sReqs.filter(r => r.status === "진행").length;
-    const rCmp = sReqs.filter(r => r.status === "완료").length;
-    const rRate = sReqs.length > 0 ? Math.round((rCmp / sReqs.length) * 100) : 0;
+    const rs = Metrics.reqStats(reqMasterData.filter(r => r.system === sys)), sReqs = rs.list, rPrg = rs.prog, rCmp = rs.done, rRate = rs.rate;
     sumReqTot += sReqs.length; sumReqPrg += rPrg; sumReqCmp += rCmp;
 
     let sysDTot = 0, sysDCmp = 0;
@@ -85,15 +82,11 @@ function renderPhaseMatrix() {
 
     const dAll = deliverablesData.filter(d => d.system === sys && activeRounds.includes(d.round));
     const dIng = dAll.filter(d => d.status === "작성중" || d.status === "검토요청").length;
-    const dRate = sysDTot > 0 ? Math.round((sysDCmp / sysDTot) * 100) : 0;
+    const dRate = Metrics.pct(sysDCmp, sysDTot);
     sumDIng += dIng; sumDAllTot += sysDTot; sumDAllCmp += sysDCmp;
 
     // VOC: 대기와 진행중 분리
-    const sVocs = vocData.filter(v => v.system === sys && v.status !== "삭제");
-    const vWait = sVocs.filter(v => v.status === "대기" || v.status === "대기" || v.status === "보류").length;
-    const vProg = sVocs.filter(v => v.status === "진행").length;
-    const vDone = sVocs.filter(v => v.status === "완료" || v.status === "제외").length;
-    const vRate = sVocs.length > 0 ? Math.round((vDone / sVocs.length) * 100) : 0;
+    const vs = Metrics.vocStats(vocData.filter(v => v.system === sys)), sVocs = vs.list, vWait = vs.wait, vProg = vs.prog, vDone = vs.done, vRate = vs.rate;
     sumVocTot += sVocs.length; sumVocWait += vWait; sumVocProg += vProg; sumVocDone += vDone;
 
     const curSpec = WBSEngine.getSubsystemSdlcSpec(sys);
@@ -131,10 +124,10 @@ function renderPhaseMatrix() {
   const wSel = selRoots.length ? WBSEngine.weightedProgress(selRoots) : null;
   const avgWP = wSel ? wSel.plan : (sumWCount > 0 ? Math.round(sumWP / sumWCount) : 0);
   const avgWA = wSel ? wSel.actual : (sumWCount > 0 ? Math.round(sumWA / sumWCount) : 0);
-  const avgWRate = avgWP > 0 ? Math.round((avgWA / avgWP) * 100) : 100;
-  const totRRate = sumReqTot > 0 ? Math.round((sumReqCmp / sumReqTot) * 100) : 0;
-  const totDRate = sumDAllTot > 0 ? Math.round((sumDAllCmp / sumDAllTot) * 100) : 0;
-  const totVRate = sumVocTot > 0 ? Math.round((sumVocDone / sumVocTot) * 100) : 0;
+  const avgWRate = Metrics.achv(avgWP, avgWA);
+  const totRRate = Metrics.pct(sumReqCmp, sumReqTot);
+  const totDRate = Metrics.pct(sumDAllCmp, sumDAllTot);
+  const totVRate = Metrics.pct(sumVocDone, sumVocTot);
   const sumRoundTds = activeRounds.map(r => `<td><b>${sumRoundStats[r].cmp} / ${sumRoundStats[r].tot}건</b></td>`).join("");
 
   const sumRow = document.createElement("tr");
@@ -219,7 +212,7 @@ function renderPhaseMatrix() {
             }
           }
           if (pAvg <= 0 && aAvg <= 0) { phTds += `<td class="rate-na">-</td><td class="rate-na">-</td><td class="rate-na">-</td>`; return; }   // 계획 전
-          const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : 100;
+          const rate = Metrics.achv(pAvg, aAvg);
           phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`;
           sysTotalP += pAvg * wSum;
           sysTotalA += aAvg * wSum;
@@ -229,7 +222,7 @@ function renderPhaseMatrix() {
         const sysRoot = wbsData.find(d => d.system === sys && d.level === 1);
         const rootP = sysRoot ? sysRoot.pProg : (sysTotalW > 0 ? Math.round(sysTotalP / sysTotalW) : 0);
         const rootA = sysRoot ? sysRoot.aProg : (sysTotalW > 0 ? Math.round(sysTotalA / sysTotalW) : 0);
-        const rootRate = rootP > 0 ? Math.round((rootA / rootP) * 100) : 100;
+        const rootRate = Metrics.achv(rootP, rootA);
         const rootNA = rootP <= 0 && rootA <= 0;   // 계획 전: "-" 로 표시하고 합계에서 뺌
 
         // 전체 = 서브시스템 진척률 × 서브시스템 가중치 (기준정보)
@@ -259,13 +252,13 @@ function renderPhaseMatrix() {
         const totW = totalStats[ph.key].w || 1;
         const totP = Math.round(totalStats[ph.key].p / totW);
         const totA = Math.round(totalStats[ph.key].a / totW);
-        const totRate = totP > 0 ? Math.round((totA / totP) * 100) : 100;
+        const totRate = Metrics.achv(totP, totA);
         sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td style="color:var(--chart-warn-text);font-weight:bold;">${totRate}%</td>`;
       });
       const allW = totalStats.all.w || 1;
       const allP = Math.round(totalStats.all.p / allW);
       const allA = Math.round(totalStats.all.a / allW);
-      const allRate = allP > 0 ? Math.round((allA / allP) * 100) : 100;
+      const allRate = Metrics.achv(allP, allA);
 
       groupRowsHtml += `
         <tr class="matrix-total-row">
@@ -281,7 +274,7 @@ function renderPhaseMatrix() {
         <div style="margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "var(--border-color)" : "#ddd6fe"};">
             <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--primary);">
-              📂 <span>SDLC 유형:</span> <span>${escapeHtml(spec.name)}</span> (<span>${escapeHtml(spec.desc || "")}</span>) — <span>소속 서브시스템 ${groupSystems.length}개</span>
+              📂 <span>SDLC 유형:</span> <span>${escapeHtml(spec.name)}</span> (<span>${escapeHtml(spec.desc || "")}</span>) — <span>${I18N.tf("소속 서브시스템 {n}개", { n: groupSystems.length })}</span>
             </span>
           </div>
           <div class="table-container">
@@ -373,7 +366,7 @@ function renderSubsystemCards(systems) {
     const leafTasks = wbsData.filter(d => d.system === sys && d.isLeaf);
     const pVal = sysRoot ? sysRoot.pProg : 0;
     const aVal = sysRoot ? sysRoot.aProg : 0;
-    const rate = pVal > 0 ? Math.round((aVal / pVal) * 100) : 100;
+    const rate = Metrics.achv(pVal, aVal);
 
     const card = document.createElement("div");
     card.className = "card";
@@ -383,7 +376,7 @@ function renderSubsystemCards(systems) {
         <span>
           <span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
           <b>${escapeHtml(sys)}</b>
-          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>가중치 ${WBSEngine.sysWeight(sys)}%</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
+          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
         ${pVal <= 0 && aVal <= 0 ? `<span class="status-tag tag-ready">달성률 -</span>` : `<span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>`}
       </div>

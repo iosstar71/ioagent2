@@ -181,7 +181,7 @@ var DelivBulkDate = {
     if (keepS && Array.prototype.some.call(sy.options, o => o.value === keepS)) sy.value = keepS;
     this.info();
   },
-  info() { const el = document.getElementById("delivBulkInfo"); if (el) el.textContent = `대상 ${this._targets().length}건`; },
+  info() { const el = document.getElementById("delivBulkInfo"); if (el) el.textContent = I18N.tf("대상 {n}건", { n: this._targets().length }); },
   apply() {
     if (!this.can()) return showToast("⛔ 제출일 일괄 변경은 PM · 관리자만 할 수 있습니다.", "warning");
     const dEl = document.getElementById("delivBulkDate"), date = dEl ? dEl.value : "";

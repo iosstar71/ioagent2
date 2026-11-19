@@ -1120,7 +1120,7 @@ var MeetingManager = {
     const totalCount = allActions.filter(a => a.status !== "삭제").length;
     const progCount = allActions.filter(a => a.status === "진행중").length;
     const doneCount = allActions.filter(a => a.status === "완료").length;
-    const rate = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+    const rate = Metrics.pct(doneCount, totalCount);
     const delayedCount = allActions.filter(a => a.status === "진행중" && a.targetDate && a.targetDate < repDate).length;
 
     // Update KPI UI

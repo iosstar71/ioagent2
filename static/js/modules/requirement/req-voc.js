@@ -209,7 +209,7 @@ function renderVocTable() {
   });
 
   const validTotal = statTotal - statDel;
-  const achieveRate = validTotal > 0 ? (((statComp + statExcl) / validTotal) * 100).toFixed(1) : "0.0";
+  const achieveRate = Metrics.pct(statComp + statExcl, validTotal, 1).toFixed(1);
 
   if (typeof StatusChips !== "undefined") StatusChips.render("voc", chipScope);
   document.getElementById("tab-voc-stat-total").innerText = statTotal;

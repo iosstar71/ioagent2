@@ -33,7 +33,7 @@ function renderDashboard() {
   const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
   const totalPlan = wp.plan;
   const totalActual = wp.actual;
-  const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
+  const achieveRate = Metrics.achv(totalPlan, totalActual, 1).toFixed(1);
 
   const delayedTasks = scopeTasks.filter(d => WBSEngine.getTaskStatus(d, repDate).code === "delayed");
 
@@ -70,7 +70,7 @@ function renderDashboard() {
     else if (r.status === "삭제") reqDel++;
   });
   const reqValid = reqTot - reqDel;
-  const reqRate = reqValid > 0 ? ((reqCmp / reqValid) * 100).toFixed(1) : "0.0";
+  const reqRate = Metrics.pct(reqCmp, reqValid, 1).toFixed(1);
   document.getElementById("req-stat-total").innerText = reqTot;
   document.getElementById("req-stat-ready").innerText = reqRdy;
   document.getElementById("req-stat-progress").innerText = reqPrg;
@@ -94,7 +94,7 @@ function renderDashboard() {
     else if (v.status === "삭제") vocDel++;
   });
   const vocValid = vocTot - vocDel;
-  const vocRate = vocValid > 0 ? (((vocCmp + vocExc) / vocValid) * 100).toFixed(1) : "0.0";
+  const vocRate = Metrics.pct(vocCmp + vocExc, vocValid, 1).toFixed(1);
 
   document.getElementById("voc-stat-total").innerText = vocTot;
   document.getElementById("voc-stat-ready").innerText = vocRdy;
@@ -139,7 +139,7 @@ function renderDashboard() {
   dashDelivTbody.innerHTML = "";
   const validDelivs = deliverablesData.filter(d => activeRounds.includes(d.round) && activeSystems.includes(d.system));
   const doneDelivs = validDelivs.filter(d => d.status === "보완완료").length;
-  const totDelivRate = validDelivs.length > 0 ? Math.round((doneDelivs / validDelivs.length) * 100) : 0;
+  const totDelivRate = Metrics.pct(doneDelivs, validDelivs.length);
   document.getElementById("dash-deliv-total").innerText = validDelivs.length;
   document.getElementById("dash-deliv-done").innerText = doneDelivs;
   if (document.getElementById("dash-deliv-rate")) document.getElementById("dash-deliv-rate").innerText = `${totDelivRate}%`;
@@ -165,7 +165,7 @@ function renderDashboard() {
       const done = dAll.filter(d => d.status === "보완완료").length;
       const ing = dAll.filter(d => d.status === "작성중" || d.status === "검토요청").length;
       const rdy = dAll.filter(d => d.status === "작성전").length;
-      const rate = dAll.length > 0 ? Math.round((done / dAll.length) * 100) : 0;
+      const rate = Metrics.pct(done, dAll.length);
 
       sDone += done; sIng += ing; sRdy += rdy;
 
@@ -181,7 +181,7 @@ function renderDashboard() {
       dashDelivTbody.appendChild(tr);
     });
 
-    const totRateVal = validDelivs.length > 0 ? Math.round((sDone / validDelivs.length) * 100) : 0;
+    const totRateVal = Metrics.pct(sDone, validDelivs.length);
     const totRCells = activeRounds.map(r => `<td><b>${roundSums[r].done} / ${roundSums[r].tot}건</b></td>`).join("");
     const totalRow = document.createElement("tr");
     totalRow.className = "matrix-total-row";
@@ -202,7 +202,7 @@ function renderDashboard() {
   const scopeVocs = vocData.filter(v => activeSystems.includes(v.system) && v.status !== "삭제");
   const openVocs = scopeVocs.filter(v => v.status !== "완료" && v.status !== "제외").length;
   const doneVocs = scopeVocs.filter(v => v.status === "완료" || v.status === "제외").length;
-  const scopeVocRate = scopeVocs.length > 0 ? Math.round((doneVocs / scopeVocs.length) * 100) : 0;
+  const scopeVocRate = Metrics.pct(doneVocs, scopeVocs.length);
   document.getElementById("dash-voc-open").innerText = openVocs;
   document.getElementById("dash-voc-done").innerText = doneVocs;
 
@@ -216,7 +216,7 @@ function renderDashboard() {
       const vExc = vAll.filter(v => v.status === "제외").length;
       const vPrg = vAll.filter(v => v.status === "진행").length;
       const vRdy = vAll.filter(v => v.status === "대기" || v.status === "보류").length;
-      const vRate = vAll.length > 0 ? Math.round(((vCmp + vExc) / vAll.length) * 100) : 0;
+      const vRate = Metrics.pct(vCmp + vExc, vAll.length);
 
       vTotSum += vAll.length; vCmpSum += vCmp; vExcSum += vExc; vPrgSum += vPrg; vRdySum += vRdy;
 

@@ -199,7 +199,7 @@ var HomeScreenManager = {
     const totalPlan = wp.plan;
     const totalActual = wp.actual;
     const gap = totalActual - totalPlan;
-    const achieveRate = totalPlan > 0 ? ((totalActual / totalPlan) * 100).toFixed(1) : "100.0";
+    const achieveRate = Metrics.achv(totalPlan, totalActual, 1).toFixed(1);
     const achieveNum = parseFloat(achieveRate);
 
     // Hero Banner DOM
@@ -262,24 +262,15 @@ var HomeScreenManager = {
       elKpiDelaySub.style.color = delayedCount === 0 ? "var(--chart-good-text)" : "var(--chart-bad-text)";
     }
 
-    const validReqs = (reqMasterData || []).filter(r => r.status !== "삭제");
-    const reqDone = validReqs.filter(r => r.status === "완료").length;
-    const reqRate = validReqs.length > 0 ? Math.round((reqDone / validReqs.length) * 100) : 0;
+    const rs = Metrics.reqStats(reqMasterData), validReqs = rs.list, reqDone = rs.done, reqRate = rs.rate;
     const elKpiReq = document.getElementById("execKpiReqRate");
     const elKpiReqSub = document.getElementById("execKpiReqSub");
     if (elKpiReq) elKpiReq.textContent = `${reqRate}%`;
     if (elKpiReqSub) elKpiReqSub.textContent = `완료 ${reqDone}건 / 전체 ${validReqs.length}건`;
 
     const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1차", "2차"];
-    const validDelivs = (deliverablesData || []).filter(d => activeRounds.includes(d.round));
-    const delivDone = validDelivs.filter(d => d.status === "보완완료").length;
-    const delivRate = validDelivs.length > 0 ? Math.round((delivDone / validDelivs.length) * 100) : 0;
-
-    const validVocs = (vocData || []).filter(v => v.status !== "삭제");
-    const vocWait = validVocs.filter(v => v.status === "대기" || v.status === "대기" || v.status === "보류").length;
-    const vocProg = validVocs.filter(v => v.status === "진행").length;
-    const vocDone = validVocs.filter(v => v.status === "완료" || v.status === "제외").length;
-    const vocRate = validVocs.length > 0 ? Math.round((vocDone / validVocs.length) * 100) : 0;
+    const ds = Metrics.delivStats(deliverablesData, activeRounds), validDelivs = ds.list, delivDone = ds.done, delivRate = ds.rate;
+    const vs = Metrics.vocStats(vocData), validVocs = vs.list, vocWait = vs.wait, vocProg = vs.prog, vocDone = vs.done, vocRate = vs.rate;
 
     const elKpiDelivVoc = document.getElementById("execKpiDelivVoc");
     const elKpiDelivVocSub = document.getElementById("execKpiDelivVocSub");
@@ -295,7 +286,7 @@ var HomeScreenManager = {
         const root = (wbsData || []).find(d => d.system === sys && d.level === 1);
         const pProg = root ? root.pProg : 0;
         const aProg = root ? root.aProg : 0;
-        const rate = pProg > 0 ? ((aProg / pProg) * 100).toFixed(1) : "100.0";
+        const rate = Metrics.achv(pProg, aProg, 1).toFixed(1);
         const rateNum = parseFloat(rate);
 
         const meta = (subsystemsMeta || []).find(s => s.name === sys) || {};
@@ -353,7 +344,7 @@ var HomeScreenManager = {
             <span>${sysDelays > 0 ? `<b style="color:var(--chart-bad);">지연 ${sysDelays}</b>` : '<span style="color:var(--chart-good-text);">지연 0</span>'}</span>
           </div>
           <div style="font-size:var(--fs-2xs, 10px); color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
-            <span>PM: ${escapeHtml(pmName)} · <span>가중치 ${WBSEngine.sysWeight(sys)}%</span></span>
+            <span>PM: ${escapeHtml(pmName)} · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span></span>
             <span class="badge" style="font-size:calc(9px * var(--fs-scale, 1)); padding:1px 4px;">${sysType}</span>
           </div>
         `;
@@ -376,7 +367,7 @@ var HomeScreenManager = {
         const dWeight = allSw > 0 ? Math.round(dSubs.reduce((acc, n) => acc + WBSEngine.sysWeight(n), 0) / allSw * 1000) / 10 : 0;
         const dPlan = dwp.plan;
         const dActual = dwp.actual;
-        const dRate = dPlan > 0 ? Math.round((dActual / dPlan) * 100) : 100;
+        const dRate = Metrics.achv(dPlan, dActual);
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -497,10 +488,8 @@ var HomeScreenManager = {
     const filterSys = sel ? sel.value : "ALL";
 
     // REQ
-    let reqs = (reqMasterData || []).filter(r => r.status !== "삭제");
-    if (filterSys !== "ALL") reqs = reqs.filter(r => r.system === filterSys);
-    const reqDone = reqs.filter(r => r.status === "완료").length;
-    const reqRate = reqs.length > 0 ? Math.round((reqDone / reqs.length) * 100) : 0;
+    const bySys = r => filterSys === "ALL" || r.system === filterSys;
+    const rs = Metrics.reqStats((reqMasterData || []).filter(bySys)), reqs = rs.list, reqDone = rs.done, reqRate = rs.rate;
     const elRVal = document.getElementById("portalReqStatValue");
     const elRSub = document.getElementById("portalReqStatSub");
     if (elRVal) elRVal.textContent = `${reqDone}/${reqs.length}건`;
@@ -508,20 +497,14 @@ var HomeScreenManager = {
 
     // Deliv
     const activeRounds = (typeof getActiveDeliverableRounds === "function") ? getActiveDeliverableRounds() : ["1차", "2차"];
-    let delivs = (deliverablesData || []).filter(d => activeRounds.includes(d.round));
-    if (filterSys !== "ALL") delivs = delivs.filter(d => d.system === filterSys);
-    const delivDone = delivs.filter(d => d.status === "보완완료").length;
-    const delivRate = delivs.length > 0 ? Math.round((delivDone / delivs.length) * 100) : 0;
+    const ds = Metrics.delivStats((deliverablesData || []).filter(bySys), activeRounds), delivs = ds.list, delivDone = ds.done, delivRate = ds.rate;
     const elDVal = document.getElementById("portalDelivStatValue");
     const elDSub = document.getElementById("portalDelivStatSub");
     if (elDVal) elDVal.textContent = `${delivDone}/${delivs.length}건`;
     if (elDSub) elDSub.textContent = `승인율 ${delivRate}%`;
 
     // VOC
-    let vocs = (vocData || []).filter(v => v.status !== "삭제");
-    if (filterSys !== "ALL") vocs = vocs.filter(v => v.system === filterSys);
-    const vocDone = vocs.filter(v => v.status === "완료" || v.status === "제외").length;
-    const vocRate = vocs.length > 0 ? Math.round((vocDone / vocs.length) * 100) : 0;
+    const vs = Metrics.vocStats((vocData || []).filter(bySys)), vocs = vs.list, vocDone = vs.done, vocRate = vs.rate;
     const elVVal = document.getElementById("portalVocStatValue");
     const elVSub = document.getElementById("portalVocStatSub");
     if (elVVal) elVVal.textContent = `${vocDone}/${vocs.length}건`;

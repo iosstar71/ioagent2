@@ -210,7 +210,7 @@ var ProcessLib = {
           </div>
         </div>
         <p>${escapeHtml(t.desc || "")}</p>
-        <div class="pl-phases"><b>단계 ${(t.phases || []).length}개</b> (<span>가중치 합계</span> <span class="${Math.round(sum) === 100 ? "pl-sum-ok" : "pl-sum-bad"}">${sum}%</span>) — ${ph}</div>
+        <div class="pl-phases"><b>${I18N.tf("단계 {n}개", { n: (t.phases || []).length })}</b> (<span>가중치 합계</span> <span class="${Math.round(sum) === 100 ? "pl-sum-ok" : "pl-sum-bad"}">${sum}%</span>) — ${ph}</div>
       </div>`;
     };
     const lib = this.lib();

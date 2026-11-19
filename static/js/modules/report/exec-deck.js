@@ -200,7 +200,7 @@ var ExecDeck = {
       [0, 25, 50, 75, 100].forEach(v => els.push(T(gx + gw * v / 100 - 0.3, 1.1, 0.6, 0.3, [p(`${v}%`, 9, { color: "64748B", align: "ctr" })])));
       ch.forEach((r, i) => {
         const y = top + i * rowH, h = rowH - 0.1, pl = num(r[6]), ac = num(r[7]);
-        const rr = pl > 0 ? Math.round(ac / pl * 100) : 100;
+        const rr = Metrics.achv(pl, ac);
         const col = rr >= 90 ? C : rr >= 70 ? "D97706" : "DC2626";
         els.push(T(0.45, y, 1.35, h, [p(r[1], 12, { bold: true, align: "r" }), p(`가중치 ${WBSEngine.sysWeight(r[1])}%`, 8, { color: "64748B", align: "r" })], { anchor: "ctr" }));
         els.push(R(gx, y, gw * pl * 0.7 / 100, h, "FEE2E2"));
@@ -227,11 +227,11 @@ var ExecDeck = {
       const na = { text: "-", color: "94A3B8" };
       const tr = c.order.map(sys => {
         const row = rows.find(r => r[1] === sys) || [];
-        const wp = num(row[6]), wa = num(row[7]), wNA = wp <= 0 && wa <= 0, wr = wp > 0 ? Math.round(wa / wp * 100) : 100;   // 계획 전이면 "-"
+        const wp = num(row[6]), wa = num(row[7]), wNA = wp <= 0 && wa <= 0, wr = Metrics.achv(wp, wa);   // 계획 전이면 "-"
         const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys && v.status !== "삭제");
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
         const vw = vc.filter(v => v.status === "대기" || v.status === "보류" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
-        const rr = rq.length ? Math.round(rd / rq.length * 100) : 0, vr = vc.length ? Math.round(vd / vc.length * 100) : 0;
+        const rr = Metrics.pct(rd, rq.length), vr = Metrics.pct(vd, vc.length);
         return [domainOf(sys), sys, `${WBSEngine.sysWeight(sys)}%`, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
           `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
