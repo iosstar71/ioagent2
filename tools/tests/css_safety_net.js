@@ -59,6 +59,20 @@ function candidates(css) {
   });
   return out;
 }
+// !important 가 없는 선언 통째로 (쓰이지 않는 선언 지우기용)
+function declCandidates(css, selRe) {
+  const out = [];
+  scanRules(css).forEach(r => {
+    if (!selRe.test(r.sel) || /:hover|:focus|:active|::/.test(r.sel)) return;
+    const body = css.slice(r.bodyStart, r.bodyEnd); const re = /[^;{}]+;?/g; let m;
+    while ((m = re.exec(body))) {
+      const d = m[0]; if (!d.includes(":") || /!important/.test(d) || d.trim().startsWith("/*")) continue;
+      const prop = d.slice(0, d.indexOf(":")).trim().toLowerCase(); if (!/^-?[a-z][a-z0-9-]*$/.test(prop)) continue;
+      out.push({ id: out.length, sel: r.sel, prop, decl: d.trim(), at: r.bodyStart + m.index, len: d.length });
+    }
+  });
+  return out;
+}
 function withRemoved(css, list) {
   const sorted = list.slice().sort((a, b) => b.at - a.at);
   let s = css;
@@ -148,7 +162,8 @@ async function openApp() {
       }
       return (x >>> 0).toString(36) + ":" + n;
     };
-    window.__matches = sels => sels.map(s => { try { return !!document.querySelector(s.replace(/::?(before|after|placeholder|selection)\b/g, "")); } catch (e) { return false; } });
+    // 화면에 보이는 요소에 걸리는지 (숨은 화면의 요소는 그 화면에서 판정)
+    window.__matches = sels => sels.map(s => { try { return [...document.querySelectorAll(s.replace(/::?(before|after|placeholder|selection)\b/g, ""))].some(e => e.offsetParent || getComputedStyle(e).position === "fixed" || e instanceof SVGElement && e.getBoundingClientRect().width > 0); } catch (e) { return false; } });
   });
   return { page, close: async () => { await browser.close(); srv.kill(); } };
 }
@@ -494,10 +509,10 @@ async function blame(list) {
 
 // 정확한 정리: 화면마다, 이미 지우기로 한 것(acc)과 함께 지워 원래와 비교 (모든 요소 · 6개 테마). 오래 걸려 진행을 저장
 //  --prune-important : 끝나면 style.css 를 고쳐 씀. 그 뒤 --save/--check 로 새 창에서 한 번 더 확인할 것
-async function prune3() {
+async function prune3(selRe) {
   const css = fs.readFileSync(CSS_FILE, "utf8");
-  const cand = candidates(css).map(c => Object.assign(c, { sels: c.sel.split(",").map(x => x.trim()) }));
-  const PROG = path.join(os.tmpdir(), "css_prune3_progress.json");
+  const cand = (selRe ? declCandidates(css, selRe) : candidates(css)).map(c => Object.assign(c, { sels: c.sel.split(",").map(x => x.trim()) }));
+  const PROG = path.join(os.tmpdir(), selRe ? "css_prune3_decl_progress.json" : "css_prune3_progress.json");
   const cssKey = require("crypto").createHash("sha1").update(css).digest("hex");
   let st = { cssKey, next: 0, acc: [], rejected: [], unstable: [] };
   try { const pg = JSON.parse(fs.readFileSync(PROG, "utf8")); if (pg.cssKey === cssKey) st = pg; } catch (e) {}
@@ -523,7 +538,7 @@ async function prune3() {
           let A = acc.slice(); const rej = rejected.slice();
           // 앞 화면에서 지우기로 한 것이 이 화면을 바꾸면 하나씩 찾아 되살림
           let guard = 0;
-          while (A.length && !ok(A) && guard++ < 60) {
+          while (A.length && !ok(A) && guard++ < 500) {
             let lo = 1, hi = A.length;   // ok(A[0..k)) 가 처음 깨지는 k
             while (lo < hi) { const m = (lo + hi) >> 1; if (ok(A.slice(0, m))) lo = m + 1; else hi = m; }
             rej.push(A[lo - 1]); A.splice(lo - 1, 1);
@@ -546,7 +561,7 @@ async function prune3() {
   await close();
   const out = withRemoved(css, st.acc.map(i => cand[i]));
   fs.writeFileSync(CSS_FILE, out);
-  console.log(`[OK] removed ${st.acc.length} !important (now ${(out.match(/!important/g) || []).length}). Screens that move by themselves: ${st.unstable.join(", ") || "none"}. Confirm with --save/--check.`);
+  console.log(`[OK] removed ${st.acc.length} ${selRe ? "unused declarations" : "!important"} (now ${(out.match(/!important/g) || []).length}). Screens that move by themselves: ${st.unstable.join(", ") || "none"}. Confirm with --save/--check.`);
   return 0;
 }
 
@@ -554,6 +569,7 @@ async function prune3() {
   const a = process.argv;
   let code = 0;
   if (a.includes("--prune-important")) code = await prune3();
+  else if (a.includes("--prune-unused")) code = await prune3(new RegExp(a[a.indexOf("--prune-unused") + 1]));   // 쓰이지 않는 선언 지우기 (선택자 정규식)
   else if (a.includes("--blame")) code = await blame(a[a.indexOf("--blame") + 1]);
   else if (a.includes("--explain")) code = await explain(a[a.indexOf("--explain") + 1]);
   else if (a.includes("--dump")) code = await dump(a[a.indexOf("--dump") + 1], a[a.indexOf("--dump") + 2]);
