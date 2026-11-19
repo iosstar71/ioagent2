@@ -64,6 +64,10 @@
 - **Workgroup 덮어쓰기 줄이기**: 그 화면의 덮어쓰기 메서드가 공통과 거의 같으면 공통 코드에 연결 줄(`typeof AttachManager …`)로 넣고 덮어쓰기를 지운다
 - **단위 시험 더하기**: 그 화면의 계산 · 판정 로직을 엔진(`Metrics` 등)으로 옮기며 `tools/tests/unit/run_unit.js` 에 항목을 더한다
 - **조용히 넘기는 오류**: 자료 저장 · 불러오기 쪽 `catch (e) {}` 는 콘솔에 남긴다 (화면 설정값 읽기 · 쓰기는 그대로)
+- **자료형 검사 넓히기**: 그 파일에 `jsconfig.json` 검사를 켠다 (순서: 저장 `data-*` → 주간보고 → WBS 표). 고친 뒤 `npx -p typescript@5.6.3 tsc -p jsconfig.json` 오류 0
+- **큰 파일 나누기**: 800줄이 넘는 파일(파일 Merge `smart-merge.js` · 공통 화면 `neo.js` · 게시판 `notice-comm.js` 등)은 그 화면을 고칠 때 기능별 파일로(같은 객체에 `Object.assign` 으로 붙임)
+- **전역 이름 줄이기**: 위 항목들을 하며 자연히 줄인다 (한꺼번에 바꾸지 않음)
+- **보류 — 사용자가 요청할 때만**: Workgroup 덮어쓰기(`overrides/`)를 어댑터(저장 · 로그인 · 백업 인터페이스)로 옮기는 일
 
 ## 2. 화면 스타일 규칙 (UI 부채 줄이기)
 - 브라우저 `prompt()` · `confirm()` · `alert()` 를 쓰지 않는다 (`openPromptDialog` · `openConfirmDialog` · `showToast`).

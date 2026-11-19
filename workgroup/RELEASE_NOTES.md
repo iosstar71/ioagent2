@@ -1,5 +1,13 @@
 # IOSTAR-PM Workgroup — 릴리즈 노트
 
+## v1.3.4
+
+- **화면 · 동작은 그대로인 내부 정리**
+  - 화면 파일(`index.html`)을 화면별 조각 17개(`partials/`)로 나눔 — `python tools/build_index.py` 로 합침, 어긋나면 검사 · 배포 도구가 멈춤
+  - 큰 프로그램 파일 분할: 저장(`data-store` → 자료 정의 · 저장소 · 동기화), 주간보고(규칙 · 화면), 로그인(암호 · 권한 · 화면)
+  - 계산 엔진에 자료형(JSDoc) 검사 도입 (`types/`, `jsconfig.json` — 개발 때만, 배포본에 안 들어감)
+- **Workgroup 보안**: `self_password_reset=1` 이면 서버 시작 때 경고, `make_release.py --prod` 는 그 값을 0 으로 담음
+
 ## v1.3.3
 
 - **샘플 프로젝트 추가 통일**: 두 판 모두 프로젝트 화면의 [🧪 샘플 프로젝트 추가]가 샘플을 **새 프로젝트**로 만듦 (Workgroup 은 서버에, 같은 멤버 ID 가 있으면 참여 정보만 붙임). Workgroup 의 [제조 샘플 복원](지금 프로젝트를 덮어씀)은 없앰
