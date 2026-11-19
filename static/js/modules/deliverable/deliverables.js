@@ -63,7 +63,7 @@ function renderDeliverablesTable() {
         </select>
       </td>
       <td><input type="text" value="${escapeHtml(row.manager || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "manager", "$value", "persistChanges")}"></td>
-      <td class="u-tc">${typeof AttachManager !== "undefined" ? AttachManager.cellHtml(idx, row) : ""}</td>
+      ${typeof AttachManager !== "undefined" ? `<td class="u-tc">${AttachManager.cellHtml(idx, row)}</td>` : ""}
       <td><input class="u-w100" type="text" value="${escapeHtml(row.remarks || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "remarks", "$value", "persistChanges")}"></td>
       <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("deliverablesData", idx, "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
