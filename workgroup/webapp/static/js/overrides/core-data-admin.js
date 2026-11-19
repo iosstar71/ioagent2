@@ -5,7 +5,6 @@ Object.assign(DataAdmin, {
   ACTIONS: {
     tasks: { label: "🧹 Task 정보 초기화", what: "WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통(채팅 포함)", keep: "프로젝트 기본정보 · 프로젝트 설정 · 멤버", all: true },
     project: { label: "⚠️ 프로젝트 전체 초기화", what: "프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤) + 모든 Task 정보", keep: "프로젝트 이름 · 기간 · 멤버" },
-    sample: { label: "🔄 제조 샘플 복원", what: "프로젝트 자료 전체를 2027 스마트공장 제조 샘플로 (샘플 담당자는 참여자로 추가)", keep: "프로젝트 이름 · 다른 멤버" },
     chat: { label: "💬 채팅 기록 초기화", what: "그 프로젝트의 실시간 채팅 기록", keep: "업무 자료 전체", server: true },
     factory: { label: "⚠️ 완전 초기화 (멤버 포함)", what: "지금 프로젝트의 프로젝트 설정 · 업무 자료 + 멤버 목록을 처음 상태로 (admin · admin2 · pm, 암호 1234)", keep: "다른 프로젝트 자료", current: true }
   },
@@ -76,14 +75,6 @@ Object.assign(DataAdmin, {
       } else if (action === "project") {
         if (t.current) ProjectData._resetCurrent();
         else await this._writeOther(t, cur => ({ data: Object.assign(this._emptyTasks(), { projectConfig: ProjectData.blankConfig(cur.projectConfig), subsystemsMeta: [], standardDeliverablesMeta: [] }), users: [] }), "프로젝트초기화");
-      } else if (action === "sample") {
-        if (t.current) StorageManager._applySample();
-        else await this._writeOther(t, () => {
-          const c = DataRegistry.clone(WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT);
-          const data = {};
-          ProjectData.BASE_KEYS.concat(ProjectData.TASK_KEYS).forEach(k => { data[k] = c[k] !== undefined ? c[k] : (k === "projectConfig" ? {} : []); });
-          return { data, users: (c.projectUsers || []).filter(u => !ProjectContext.isAdminUser(u)).map(u => ({ empNo: u.empNo, name: u.name, role: u.role, subsystem: u.subsystem, dept: u.dept, lang: u.lang })) };
-        }, "제조샘플복원");
       } else if (action === "chat") {
         const res = await ServerBackend.request("/api/chat/clear", { projectId: t.pid });
         if (!res.ok) return showToast("⚠️ 채팅 기록 초기화 실패: " + (res.message || ""));

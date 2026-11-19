@@ -64,7 +64,7 @@ def assemble_workgroup(dst: Path) -> Path:
         elif s.exists():
             shutil.copy2(s, web / name)
     # Standalone 에만 쓰는 파일은 빼고
-    for rel in ["static/js/core/sample-project.js", "static/js/modules/dataio/local-pkg.js"]:
+    for rel in ["static/js/modules/dataio/local-pkg.js"]:
         f = web / rel
         if f.exists():
             f.unlink()

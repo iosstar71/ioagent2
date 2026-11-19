@@ -21,7 +21,16 @@
    "name": "관리자",
    "role": "SYS_ADMIN",
    "subsystem": "ALL",
-   "dept": "",
+   "dept": "시스템 총괄관리자",
+   "pwdHash": "",
+   "lang": "ko"
+  },
+  {
+   "empNo": "admin2",
+   "name": "관리자2",
+   "role": "SYS_ADMIN",
+   "subsystem": "ALL",
+   "dept": "시스템 총괄관리자",
    "pwdHash": "",
    "lang": "ko"
   }

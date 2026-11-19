@@ -147,7 +147,7 @@ var ProjectData = {
   // ---- 프로젝트 전체 초기화 (기준정보 포함, 이름 · 기간은 유지) ----
   // 초기화는 관리자만 (시스템 설정 > 🗄️ 데이터 관리)
   resetProject() {
-    if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
+    if (!this.isAdmin()) return showToast("🚫 프로젝트 초기화는 관리자만 할 수 있습니다. (Admin > 데이터 관리)");
     openConfirmDialog(`⚠️ [프로젝트 전체 초기화] [${this.currentName()}]\n프로젝트 설정(도메인 · 서브시스템 · SDLC · 공휴일 · 표준 산출물 · 마일스톤)와 모든 Task 정보를 빈 상태로 되돌립니다.\n` +
       `· 그대로: 프로젝트 이름 · 기간 · 멤버 계정 · 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => this._resetCurrent());
   },

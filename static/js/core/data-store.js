@@ -428,6 +428,17 @@ var LocalBackend = {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
         if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
+        // 관리자 계정을 둘 둠 (admin · admin2, 처음 암호 1234) — 예전 설치에 admin2 가 없으면 한 번만 추가
+        if (AppStore.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
+          AppStore.setItem("IOSTAR_SECOND_ADMIN", "1");
+          if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
+            const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
+            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
+            const rv = this._readRevs(ProjectContext.DEFAULT);
+            if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
+            this._write(ProjectContext.DEFAULT, st, rv);
+          }
+        }
       } else {
         AppStore.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
       }

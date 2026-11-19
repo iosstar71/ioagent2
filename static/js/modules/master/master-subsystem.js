@@ -4,9 +4,10 @@
 // -------------------------------------------------------------
 let subsystemsMeta = [];
 
-// 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin / 초기 암호: 1234)
+// 프로젝트 및 시스템 접근 인력 관리 (기본 관리자: admin · admin2 / 초기 암호: 1234)
 let projectUsers = [
-  { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
+  { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
+  { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
 ];
 
 // [요건 2 & 7 신규] 단계별 표준산출물관리 마스터 (1차 / 2차 복수 체크 가능)

@@ -81,41 +81,6 @@ var FileAutoSyncManager = {
 
 window.FileAutoSyncManager = FileAutoSyncManager;
 
-Object.assign(LocalBackend, {
-  async load(keys) {
-    const data = {};
-    const revs = {};
-    const cache = {};
-    // [v3.0.0] 로컬 저장소 사용자 1회 이관 (프로젝트별 참여 정보)
-    try {
-      const st = this._read(ProjectContext.DEFAULT);
-      if (st && Array.isArray(st.projectUsers)) {
-        if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
-        // [v3.7.0] 관리자 계정 하나 더 (admin2 / 초기 암호 1234) — 없을 때 한 번만 추가
-        if (localStorage.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
-          localStorage.setItem("IOSTAR_SECOND_ADMIN", "1");
-          if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
-            const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
-            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
-            const rv = this._readRevs(ProjectContext.DEFAULT);
-            if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
-            this._write(ProjectContext.DEFAULT, st, rv);
-          }
-        }
-      } else {
-        localStorage.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
-      }
-    } catch (e) {}
-    (keys || DataRegistry.KEYS).forEach(k => {
-      const pid = this._pidFor(k);
-      if (!cache[pid]) cache[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid) };
-      if (k in cache[pid].stored) data[k] = cache[pid].stored[k];
-      revs[k] = cache[pid].revs[k] || {};
-    });
-    return { ok: true, data, revs };
-  },
-});
-
 Object.assign(ServerBackend, {
   async request(path, body, method = "POST", timeoutMs = 8000) {
     const controller = new AbortController();

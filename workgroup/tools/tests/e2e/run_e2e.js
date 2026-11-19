@@ -876,7 +876,7 @@ async function localMain() {
     mp41.file === mp41.before && mp41.apply === mp41.w1 && mp41.ign === mp41.file - mp41.w1 && mp41.after === mp41.before && mp41.closed === "none" && mp41.lockPrj, JSON.stringify(mp41));
   // [v3.9.0] 2027 제조 샘플 엑셀(전체 일괄)을 빈 프로젝트에 올리기
   await page.evaluate(async () => { if (!SyncManager.isLocal() && SyncManager.isDirty()) await SyncManager.save(null, { notify: false }); await ProjectManager.switchTo("P001"); }); await page.waitForTimeout(1200); await waitApp(page, "P001");
-  const xb64 = fs.readFileSync(path.join(ROOT, "Sample", "2027_제조_스마트공장_샘플_4레벨.xlsx")).toString("base64");
+  const xb64 = fs.readFileSync(path.join(ROOT, "tools", "tests", "fixtures", "sample_manufacturing_2027.xlsx")).toString("base64");
   const up39 = await page.evaluate(async (b64) => {
     GShell.go("tab-merge"); SmartMergeCenter.refreshMergeUiPermissions();
     document.getElementById("masterPkgSubsysSelect").value = "ALL";
@@ -1073,18 +1073,24 @@ async function serverScenarios() {
     check("v3.8 server: System settings Task reset of a chosen project clears only its tasks (project info kept, current project untouched)",
       tgt.includes("P001") && tgt.includes("__ALL__") && clr.p1wbs === 0 && clr.p1cfg && clr.cur === "DEFAULT" && clr.curWbs > 0, JSON.stringify({ tgt, clr }));
 
-    // [v4.1.0] 데이터 관리 (서버): 다른 프로젝트를 제조 샘플로 → 전체 초기화 — 바꿀 때 파일에 없는 기존 서브시스템도 지움
+    // 샘플 프로젝트 추가 (두 판 같은 기능 — 서버에 새 프로젝트로) → 그 프로젝트 전체 초기화 (지금 프로젝트는 그대로)
     const da41s = await a.evaluate(async () => {
-      document.getElementById("cfgClearTarget").value = "P001"; DataAdmin.renderActions();
+      const before = ProjectData.projects().length;
+      SampleProject.add(); await new Promise(r => setTimeout(r, 300));
+      document.getElementById("confirmDialogOkBtn").click();
+      for (let i = 0; i < 60 && ProjectData.projects().length === before; i++) await new Promise(r => setTimeout(r, 250));
+      const sp = ProjectData.projects().find(p => /샘플/.test(p.name)) || {};
+      const load = async () => { const r = await ServerBackend.request("/api/db/load", { keys: ["wbsData", "subsystemsMeta", "projectConfig"], projectId: sp.id }); return { wbs: (r.data.wbsData || []).length, subs: (r.data.subsystemsMeta || []).length, name: (r.data.projectConfig || {}).projectName }; };
+      const s1 = await load();
+      ProjectData.renderConfigTarget(); document.getElementById("cfgClearTarget").value = sp.id; DataAdmin.renderActions();
       const name = DataAdmin.target().name;
-      const load = async () => { const r = await ServerBackend.request("/api/db/load", { keys: ["wbsData", "subsystemsMeta", "projectConfig"], projectId: "P001" }); return { wbs: (r.data.wbsData || []).length, subs: (r.data.subsystemsMeta || []).length, name: (r.data.projectConfig || {}).projectName }; };
-      await DataAdmin._do("sample", DataAdmin.target()); const s1 = await load();
+      const noRestore = !/제조 샘플 복원/.test(document.getElementById("daActions").textContent);
       await DataAdmin._do("project", DataAdmin.target()); const s2 = await load();
-      const chat = await ServerBackend.request("/api/chat/clear", { projectId: "P001" });
-      return { name, s1, s2, chat: chat.ok, cur: ProjectContext.current };
+      const chat = await ServerBackend.request("/api/chat/clear", { projectId: sp.id });
+      return { id: sp.id, name, s1, s2, chat: chat.ok, cur: ProjectContext.current, noRestore };
     });
-    check("v4.1 server: Data management sample restore → full reset of another project (old subsystems removed, name kept, chat clear by project)",
-      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT", JSON.stringify(da41s));
+    check("Sample project add (server): new project with the sample (126 tasks, 4 subsystems), current project untouched; full reset clears it; no old sample-restore action",
+      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT" && da41s.noRestore, JSON.stringify(da41s));
 
     // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
     await a.evaluate(async () => {

@@ -31,12 +31,12 @@ Object.assign(SystemBackup, {
     set("bkAutoLast", "textContent", a.enabled ? `마지막 자동 백업: ${a.last || "아직 없음 (켜면 5분 안에 첫 백업)"}` : "자동 백업 꺼짐");
     set("bkFolder", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
     set("bkFolder2", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
-    // [v4.1.0] 백업 · 복원 탭에는 자동 백업 상태만 (설정은 시스템 설정 > 데이터 관리)
+    // [v4.1.0] 백업 · 복원 탭에는 자동 백업 상태만 (설정은 Admin > 데이터 관리)
     const st = document.getElementById("bkAutoStatus");
     if (st) st.innerHTML = `<b>⏱ 자동 백업</b> ${a.enabled
       ? `<span class="status-badge-chip chip-completed">켜짐</span> ${a.hours || 24}시간마다 · 최근 ${a.keep || 14}개 보관${a.withFiles ? " · 첨부파일 포함" : ""} · 마지막: ${escapeHtml(a.last || "아직 없음")}`
       : `<span class="status-badge-chip chip-ready">꺼짐</span>`}
-      <button class="btn btn-sm" data-btn="nav" data-click="DataAdmin.go">⚙️ 설정: 시스템 설정 &gt; 데이터 관리</button>`;
+      <button class="btn btn-sm" data-btn="nav" data-click="DataAdmin.go">⚙️ 설정: Admin &gt; 데이터 관리</button>`;
   },
   async refresh() { this._apply(await ServerBackend.request("/api/admin/backup/list", {})); },
   async create() {

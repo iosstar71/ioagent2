@@ -4,7 +4,7 @@
 
 - js/initial-data.js · 매뉴얼 · 법적 고지 · 화면 설정을 최신으로 다시 빌드한 뒤
   <제품>[-판]_v<버전>.zip 을 생성합니다. (예: IOSTAR-PM_v1.2.0.zip, IOSTAR-PM-Standard_v1.0.1.zip)
-- 한글 파일명(Sample/*.xlsx 등)이 Windows 탐색기·알집 등에서 깨지지 않도록
+- 한글 파일명이 Windows 탐색기·알집 등에서 깨지지 않도록
   zip 항목에 UTF-8 파일명 플래그(General purpose bit 11)를 명시합니다.
   (v1.0.5 배포본은 파일명이 '#Uc81c...' 형태로 깨져 있었음)
 

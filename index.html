@@ -1517,7 +1517,7 @@
           <div class="cal-nav-bar">
             <div class="u-flex u-ai-center u-gap-10">
               <button class="btn btn-outline btn-xs" data-click="MeetingManager.changeMonth" data-click-args='[-1]' title="이전달">◀ 이전달</button>
-              <span class="u-bold u-c-primary" id="meetingCalTitle" style="font-size:var(--fs-lg, 16px); letter-spacing:-0.3px;">2027년 5월 회의 캘린더</span>
+              <span class="u-bold u-c-primary" id="meetingCalTitle" style="font-size:var(--fs-lg, 16px); letter-spacing:-0.3px;">회의 캘린더</span>
               <button class="btn btn-outline btn-xs" data-click="MeetingManager.changeMonth" data-click-args='[1]' title="다음달">다음달 ▶</button>
               <select class="u-fs-xs u-bold" id="meetingCalMonthSelect" data-change="MeetingManager.setMonth" data-change-args='["$value"]' style="padding:2px 6px;">
                 <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option>
@@ -3552,9 +3552,6 @@
 <!--#sa-->
   <script src="static/js/modules/dataio/local-pkg.js"></script>
 <!--#/sa-->
-<template data-edition="workgroup">
-  <script src="static/js/core/sample-snapshot.js"></script>
-</template>
   <script src="static/js/core/storage.js"></script>
   <script src="static/js/modules/weekly/weekly-report.js"></script>
   <script src="static/js/modules/home/home.js"></script>
@@ -3565,10 +3562,8 @@
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
   <script src="static/js/core/project-transfer.js"></script>
-<!--#sa-->
   <script src="static/js/core/sample-snapshot.js"></script>
   <script src="static/js/core/sample-project.js"></script>
-<!--#/sa-->
   <script src="static/js/core/system-backup.js"></script>
   <script src="static/js/core/data-admin.js"></script>
 <template data-edition="workgroup">
@@ -3750,7 +3745,6 @@
   <script src="static/js/overrides/modules-home-home.js"></script>
   <script src="static/js/overrides/modules-master-project-config.js"></script>
   <script src="static/js/overrides/modules-master-users.js"></script>
-  <script src="static/js/overrides/modules-meeting-meeting-manager.js"></script>
   <script src="static/js/overrides/modules-report-report-exporter.js"></script>
 </template>
 </body>

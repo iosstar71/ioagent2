@@ -181,7 +181,7 @@ var ProjectManager = {
           <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
           <div class="pm-summary-actions">
             ${canManage && compact ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 →</button>' : ""}
-            ${canCreate && typeof SampleProject !== "undefined" && SyncManager.isLocal() ? '<button class="btn btn-sm" data-click="SampleProject.add" title="교육 · 시연용 샘플 프로젝트를 새 프로젝트로 추가 (지금 프로젝트는 그대로)">🧪 샘플 프로젝트 추가</button>' : ""}
+            ${canCreate && typeof SampleProject !== "undefined" ? '<button class="btn btn-sm" data-click="SampleProject.add" title="교육 · 시연용 샘플 프로젝트를 새 프로젝트로 추가 (지금 프로젝트는 그대로)">🧪 샘플 프로젝트 추가</button>' : ""}
             ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 관리자 또는 PM만 할 수 있습니다.</span>' : ""}
           </div>
         </div>${rows}`;
@@ -202,7 +202,7 @@ var ProjectManager = {
       const btn = (label, fn, type, args, extra = "") => `<button class="btn btn-xs" data-btn="${type}" data-click="ProjectManager.${fn}" data-click-args="${UiEvents.args(...args)}" ${extra}>${label}</button>`;
       return `<tr class="${cur ? "pm-current" : ""}">
         <td><code>${escapeHtml(p.id)}</code></td>
-        <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
+        <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}${p.id === ProjectContext.DEFAULT ? ' <span class="status-tag tag-ready" title="멤버 계정 · 화면 설정을 함께 보관하는 기본 자리라 삭제 · 사용 중지할 수 없습니다. 업무 자료는 [데이터 초기화]로 비울 수 있습니다.">기본 · 삭제 불가</span>' : ""}</td>
         <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="작업자 선택 화면의 프로젝트 목록에 나오지 않고, 관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
         <td>${I18N.tf("멤버 {n}명", { n: this.memberCount(p) })}</td>
         <td class="u-fs-xs">${escapeHtml(p.createdAt || "-")}</td>

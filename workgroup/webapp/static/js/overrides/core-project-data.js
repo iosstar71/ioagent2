@@ -25,7 +25,7 @@ Object.assign(ProjectData, {
     ids = (ids || []).filter(Boolean);
     if (!ids.length) return;
     const many = ids.length > 1;
-    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 관리자만 할 수 있습니다. (시스템 설정 > 데이터 관리)");
+    if (!this.isAdmin()) return showToast("🚫 Task 정보 초기화는 관리자만 할 수 있습니다. (Admin > 데이터 관리)");
     const names = ids.map(id => (this.projects().find(p => p.id === id) || { name: id }).name);
     const cur = ids.indexOf(ProjectContext.current) !== -1;
     const dirty = cur && SyncManager.dirtyCount ? SyncManager.dirtyCount() : 0;

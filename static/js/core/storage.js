@@ -72,7 +72,8 @@ var StorageManager = {
         weeklyReportsData = [];
         NoticeCommManager.activeChannel = "전체";
         DataRegistry.set("projectUsers", [
-          { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "", pwdHash: "", lang: "ko" }
+          { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
+    { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" }
         ]);
         try {
           AppStore.removeItem(AuthManager.STORAGE_POLICY_KEY);

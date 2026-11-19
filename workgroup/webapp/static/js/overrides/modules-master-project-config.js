@@ -1,17 +1,6 @@
 // Workgroup 판: modules/master/project-config.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
-Object.assign(projectConfig, {
-  projectName: "27년 가동률 시스템 개선",
-  domains: ["관리공통", "개선공정", "신규공정"], // [2027년 프로젝트] 3대 상위 분야
-  activeReqPreset: "REQ_MFG_2027",
-  // [ver1.0.4] 개선과제형(REQ) 서브시스템 공정 단계 기준정보 (4단계)
-  projectStartDate: "2027-01-01",
-  projectEndDate: "2027-12-31",
-  weekStartDay: 5, // 금요일 시작
-  reportDate: "2027-06-01",
-});
-
 Object.assign(SystemTitle, {
   get() { return String((typeof APP_CONFIG !== "undefined" && APP_CONFIG.systemTitle) || "").trim(); },
   async save() {
