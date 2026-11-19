@@ -8,6 +8,7 @@
 """
 import sys
 import zipfile
+import edition
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -48,7 +49,10 @@ def make(out_dir: Path) -> Path:
             info = zipfile.ZipInfo.from_file(path, arcname=f"{FOLDER}/{rel.as_posix()}")
             info.flag_bits |= 0x800  # UTF-8 파일명
             info.compress_type = zipfile.ZIP_DEFLATED
-            zf.writestr(info, path.read_bytes())
+            data = path.read_bytes()
+            if rel.as_posix() == "index.html":   # 판 표시(<template data-edition> · <!--#sa-->)를 Standalone 에 맞게
+                data = edition.render(data.decode("utf-8"), "standalone").encode("utf-8")
+            zf.writestr(info, data)
     print(f"[OK] {out} ({out.stat().st_size / 1048576:.2f}MB zip, {total / 1048576:.2f}MB unpacked, {len(files)} files, limit {LIMIT / 1048576:.0f}MB)")
     return out
 

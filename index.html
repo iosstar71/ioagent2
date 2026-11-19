@@ -2,11 +2,21 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+<!--#sa-->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:">
+<!--#/sa-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--#sa-->
   <title id="pageBrowserTitle">PM Hub · IOSTAR-PM Standalone</title>
+<!--#/sa-->
+<template data-edition="workgroup">
+  <title id="pageBrowserTitle">PM Hub · IOSTAR-PM Workgroup</title>
+</template>
   <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEUjKj0mLEMbJjEAAAAnNlEAAH8jKj0jHTAvSW+0VvwE/P4jKj0vxvtIM3IiKDwnLUHBU/4bZHhOpfhtRqytTPQbXG4G0tsP5PQjKjwmLUE3OGMvl8lYN4ZmOpiJd/cdSFsKydYhXXhzPKmKSc6EXNa0Zf8UnK8byfAQ1uskJDwoKEMlLUAkMDwoNUNDg8Z1Xs1hd9V1kf1qo/+UaPSHhP+mcv8bHigWc4IUgY4bn8INq7YTvtgiaYEt1f8h7P9RabJMnfBGv/9pbdN0ifmBRL+bSOGUWuMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsk0ebAAAAgHRSTlP9//8A/wLZ/////5b//y8v//////////+hmP///////////////////xUT0RUT/////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALf39SIAAAF0SURBVHjahVPXksIwDJRlh/QeSkIIcMDRO1zv7f8/6ZzAMEkgwZ7xg3fllSUtUCpQavpTyK2pbyYQ8GPmA4GzRcCfcRAEalYuwAmlYlIB6LwIjxlzLtEoxDmjQcGE0mWCSspwokLlwm0q5gSLKQIixmcmqG2ffg9MkgKOB2ltVlcexORClJrOZr3bEib/pN4gNeU+ERFt7dNZfUUuk2U9LcLaR6mhtmBxmn9ZHJ461eSFx9cm3AGS/kDXSZoxUmxgjDBNk/Bdwv4gJHKIqTRrSvW2PmpKmkPYd7QcuNizbs4IGid8MAyivYvo5gkHCceRAHWXq/9aYTqHjmLHSeJis+Il5LsleyRL6CZTxda7ZfzNlme1Mt98rncPbZCi/bbX82SeQaYXw7fuoV0Y9GXZ8rxsPED1hR2Ljsj0MFukfLsxbjfJTwQpHJirI2eUD61xfeyFSZlxJgK3nlFsPSO2nkDH6mXzquPYvInHDfXMHhXVSKB/ASkXCeYmbS8AAAAASUVORK5CYII=">
   <link rel="stylesheet" href="static/css/style.css">
+<template data-edition="workgroup">
+  <link rel="stylesheet" href="static/css/workgroup.css">
+</template>
   
   
 </head>
@@ -15,25 +25,57 @@
   <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
     <div class="security-lock-modal login-2col">
       <div class="login-side">
+<!--#sa-->
       <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">PM Hub <span>IOSTAR-PM · Standalone</span></div><div class="login-brand-full">프로젝트 일정 · 산출물 · 요구사항 · 주간보고 협업</div></div>
       <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: var(--fs-xl, 18px); color: var(--text-main);">멤버 선택</h2>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">PM Hub <span>IOSTAR-PM · Workgroup</span></div><div class="login-brand-full">In-situ Operations &amp; Smart Tasks for Accurate Resources — Project Manager</div></div>
+      <h2 id="lockModalTitle" style="margin-bottom: 6px; font-size: var(--fs-xl, 18px); color: var(--text-main);">시스템 로그인</h2>
+</template>
       <p id="lockModalDesc" style="font-size: var(--fs-sm, 12px); color: var(--text-sub); margin-bottom: 14px;"></p>
       <div id="lockServerInfo" style="display:none; font-size:var(--fs-xs, 11px); margin-bottom:10px; padding:5px 8px; border-radius:6px; background:rgba(59,130,246,0.08);"></div>
 
       <div class="login-side-foot">
       <div class="login-legal-links">
+<template data-edition="workgroup">
+        <a href="#" data-click="LegalNotice.open" data-click-args='["license"]'>사용권 계약</a> ·
+        <a href="#" data-click="LegalNotice.open" data-click-args='["privacy"]'>개인정보 처리 안내</a> ·
+</template>
         <a href="#" data-click="LegalNotice.open" data-click-args='["notices"]'>오픈소스 고지</a>
       </div>
+<!--#sa-->
       <div class="login-credit"></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <div class="login-credit">Developed &amp; Designed by Iostar</div>
+</template>
       </div>
       </div>
       <div class="login-main">
       <!-- 멤버 선택 폼 -->
       <div id="loginFormPane" style="text-align: left;">
+<!--#sa-->
         <div id="loginProjectRow">
           <label class="login-label" for="inputLoginProject">① 작업할 프로젝트:</label>
           <select id="inputLoginProject" class="login-input" data-change="WorkerPick.load"></select>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="login-row2">
+          <div id="loginProjectRow">
+            <label class="login-label" for="inputLoginProject">프로젝트:</label>
+            <select id="inputLoginProject" class="login-input"></select>
+          </div>
+          <div>
+            <label class="login-label" for="inputLoginLang">언어 / Language:</label>
+            <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+</template>
         </div>
+<!--#sa-->
         <div class="login-hint" id="loginProjectHint">관리자는 프로젝트를 고르지 않아도 됩니다.</div>
         <label class="login-label" for="inputLoginLang">언어 / Language:</label>
         <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
@@ -42,18 +84,36 @@
         </select>
         <label class="login-label" for="inputSecurityEmpNo">② 멤버 (목록에서 고르거나 멤버 ID 입력):</label>
         <input type="text" id="inputSecurityEmpNo" value="" list="workerPickList" placeholder="멤버 선택 (처음: admin)" autocomplete="off" class="login-input"
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="login-hint" id="loginProjectHint">시스템관리자는 프로젝트를 선택하지 않아도 로그인할 수 있습니다.</div>
+        <label class="login-label">사번 (멤버 ID):</label>
+        <input type="text" id="inputSecurityEmpNo" value="" placeholder="사번 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
+</template>
                data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
+<!--#sa-->
         <datalist id="workerPickList"></datalist>
         <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
         <label class="login-label">③ 멤버 암호:</label>
         <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 1234)" autocomplete="off" class="login-input"
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">비밀번호:</label>
+        <input type="password" id="inputSecurityPassword" placeholder="비밀번호 입력 (초기: 1234)" autocomplete="off" class="login-input"
+</template>
                data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
         <div id="lockErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); margin-top: 2px; display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 14px;">
           <button id="btnLockCancel" class="btn btn-secondary" style="flex: 1; padding: 10px; font-size: var(--fs-base, 13px); justify-content: center;" data-click="AuthManager.cancelUnlock">취소</button>
+<!--#sa-->
           <button id="btnLockSubmit" class="btn btn-primary" style="flex: 1.4; padding: 10px; font-size: var(--fs-base, 13px); justify-content: center;" data-click="AuthManager.unlock">▶ 작업 시작</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <button id="btnLockSubmit" class="btn btn-primary" style="flex: 1.4; padding: 10px; font-size: var(--fs-base, 13px); justify-content: center;" data-click="AuthManager.unlock">🔓 로그인</button>
+</template>
         </div>
         <div id="registerLinkRow" style="text-align:center; margin-top:12px; font-size:var(--fs-sm, 12px);">
+<!--#sa-->
           <span style="color:var(--text-muted);">멤버 등록은 관리자 · PM 이 합니다.</span>
         </div>
         <div class="local-start">
@@ -62,26 +122,95 @@
           <div id="localPkgChoice" class="pkg-choice" style="display:none;"></div>
           <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 마스터 파일을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
           <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:var(--warning);">🔑 암호 변경</a>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <span style="color:var(--text-muted);">계정이 없으신가요?</span>
+          <a href="#" data-click="AuthManager.showRegister" data-click-args='[true]' style="font-weight:bold; color:var(--primary);">👤 신규 멤버 등록</a>
+          <span style="color:var(--text-muted); margin:0 6px;">|</span>
+          <a href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]' style="font-weight:bold; color:var(--warning);">🔑 비밀번호 변경</a>
+          <span style="color:var(--text-muted); margin:0 6px;">|</span>
+          <a href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="font-weight:bold; color:#b91c1c;" title="입력한 사번의 비밀번호를 1234로 초기화 — 사내망에서만 쓰는 임시 기능입니다">🔄 비밀번호 초기화 <small>(사내망용 임시 기능)</small></a>
+</template>
         </div>
       </div>
 
       <!-- 멤버 선택 화면 암호 변경 폼 -->
       <div id="pwdChangeFormPane" style="display:none; text-align:left;">
+<!--#sa-->
         <label class="login-label">멤버 ID (멤버 선택 ID) *:</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">사번 (로그인 ID) *:</label>
+</template>
         <input type="text" id="pcEmpNo" class="login-input" autocomplete="off">
+<!--#sa-->
         <label class="login-label">현재 암호 *:</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">현재 비밀번호 *:</label>
+</template>
         <input type="password" id="pcOldPwd" class="login-input" autocomplete="current-password">
+<!--#sa-->
         <label class="login-label">새 암호 * (8자 이상, 영문+숫자):</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">새 비밀번호 * (8자 이상, 영문+숫자):</label>
+</template>
         <input type="password" id="pcNewPwd" class="login-input" autocomplete="new-password">
+<!--#sa-->
         <label class="login-label">새 암호 확인 *:</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">새 비밀번호 확인 *:</label>
+</template>
         <input type="password" id="pcNewPwd2" class="login-input" autocomplete="new-password" data-keydown="AuthManager.changePasswordFromLogin" data-keydown-key="Enter">
         <div id="pcErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
         <div style="display: flex; gap: 8px; margin-top: 12px;">
+<!--#sa-->
           <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 멤버 선택으로</button>
           <button class="btn" data-btn="save" style="flex: 1.4; padding: 10px; justify-content: center;" data-click="AuthManager.changePasswordFromLogin">🔑 암호 변경</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <button class="btn" data-btn="cancel" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 로그인으로</button>
+          <button class="btn" data-btn="save" style="flex: 1.4; padding: 10px; justify-content: center;" data-click="AuthManager.changePasswordFromLogin">🔑 비밀번호 변경</button>
+</template>
         </div>
       </div>
 
+<template data-edition="workgroup">
+      <!-- 신규 멤버 등록 폼 (등록 시 기본 권한: 멤버) -->
+      <div id="registerFormPane" style="display:none; text-align:left;">
+        <div class="login-hint" id="regProjectInfo"></div>
+        <div class="login-row2 even">
+          <div><label class="login-label">사번 (로그인 ID) *:</label>
+            <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 사번"></div>
+          <div><label class="login-label">성명 *:</label>
+            <input type="text" id="regName" class="login-input" autocomplete="off"></div>
+        </div>
+        <div class="login-row2 even">
+          <div><label class="login-label">담당 서브시스템 *:</label>
+            <select id="regSubsystem" class="login-input"></select></div>
+          <div><label class="login-label">언어 / Language:</label>
+            <select id="regLang" class="login-input">
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select></div>
+        </div>
+        <label class="login-label">소속 부서 / 담당 역할:</label>
+        <input type="text" id="regDept" class="login-input" autocomplete="off">
+        <div class="login-row2 even">
+          <div><label class="login-label">비밀번호 * (8자 이상, 영문+숫자):</label>
+            <input type="password" id="regPwd" class="login-input" autocomplete="new-password"></div>
+          <div><label class="login-label">비밀번호 확인 *:</label>
+            <input type="password" id="regPwd2" class="login-input" autocomplete="new-password"></div>
+        </div>
+        <div id="regErrorMessage" style="color: #ef4444; font-size: var(--fs-xs, 11px); display: none;"></div>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <button class="btn btn-secondary" style="flex: 1; padding: 10px; justify-content: center;" data-click="AuthManager.showRegister" data-click-args='[false]'>← 로그인으로</button>
+          <button class="btn btn-success" style="flex: 1.4; padding: 10px; justify-content: center;" data-click="AuthManager.register">✅ 등록하기</button>
+        </div>
+      </div>
+</template>
       </div>
     </div>
   </div>
@@ -91,9 +220,19 @@
   <header class="g-header">
     <div class="brand-title g-brand">
       <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
+<!--#sa-->
       <span id="headerSystemTitleText" title="IOSTAR-PM Standalone">PM Hub</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <span id="headerSystemTitleText" title="IOSTAR-PM Workgroup">PM Hub</span>
+</template>
       <span id="headerVersionBadge" class="brand-badge g-ver">v3.5.0</span>
+<!--#sa-->
       <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">프로젝트</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">27년 가동률 시스템 개선</span>
+</template>
       <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
     </div>
     <div class="global-report-date-box g-date" title="모든 화면의 진척률·달성률·지연 상태 계산 기준일">
@@ -110,11 +249,13 @@
       <span class="storage-text" id="storageStatusText">저장됨</span>
     </span>
     <span hidden><span id="headerDbStatusBadge" class="status-badge-chip chip-hold"></span><span id="fileSyncBadge" class="status-badge-chip chip-ready"></span></span>
+<!--#sa-->
     <!-- [Local] 마스터 파일(최신 자료 파일) 다운로드 · 가져오기 — 자주 쓰므로 상단에 -->
     <div class="g-menu-wrap">
       <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="마스터 파일(최신 자료 파일) 다운로드 · 가져오기 · 내 작업 파일 보내기">📦 마스터 파일 ▾</button>
       <div class="g-menu g-menu-right g-pkg-menu" id="gPkgMenu" hidden></div>
     </div>
+<!--#/sa-->
     <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
     <button type="button" id="btnHeaderRefreshAll" class="btn btn-sm g-refresh-btn" data-btn="refresh" data-click="SyncManager.refresh" data-click-args='[null]' title="저장된 자료를 다시 읽어 모든 화면을 새로 그립니다 (고른 조건은 그대로)">🔄 전체 새로고침</button>
     <!-- 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
@@ -156,13 +297,23 @@
         <div class="g-menu-title">관리</div>
         <div id="gAdminItems"></div>
         <a class="g-menu-item g-menu-link" id="btnHeaderManual" href="manual.html" target="_blank" rel="noopener" title="새 창에서 사용자 매뉴얼을 엽니다">❔ 도움말 (사용자 매뉴얼) <span class="g-ext" aria-hidden="true">↗</span></a>
+<!--#sa-->
         <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 오픈소스 고지</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 법적 고지</button>
+</template>
       </div>
     </div>
     <!-- 공지: 아이콘 + 건수 (멤버 메뉴 바로 앞) -->
     <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
     <div class="g-menu-wrap">
+<!--#sa-->
       <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="멤버 (언어 · 암호 · 잠금)">
+<!--#/sa-->
+<template data-edition="workgroup">
+      <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="멤버 (언어 · 비밀번호 · 잠금)">
+</template>
         <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress">👤 admin</span> ▾
       </button>
       <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
@@ -175,7 +326,12 @@
           </select>
         </label>
         <div class="g-menu-sep"></div>
+<!--#sa-->
         <button type="button" class="g-menu-item" data-click="GShell.goPassword">🔑 암호 변경</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <button type="button" class="g-menu-item" data-click="GShell.goPassword">🔑 비밀번호 변경</button>
+</template>
         <button type="button" class="g-menu-item" data-click="AuthManager.manualLock">🔒 잠금 / 계정 전환</button>
         <div class="g-menu-sep"></div>
         <div class="g-menu-row g-user-ver" id="gUserVer"></div>
@@ -183,7 +339,12 @@
     </div>
   </header>
   <nav class="g-nav" id="gNav" aria-label="메뉴"></nav>
+<!--#sa-->
   <div id="projectArchivedBar" class="project-archived-bar" style="display:none;">📦 보관된 프로젝트입니다. 관리자 외에는 읽기 전용이며 변경 내용은 저장되지 않습니다.</div>
+<!--#/sa-->
+<template data-edition="workgroup">
+  <div id="projectArchivedBar" class="project-archived-bar" style="display:none;">📦 보관된 프로젝트입니다. 시스템관리자 외에는 읽기 전용이며 변경 내용은 저장되지 않습니다.</div>
+</template>
 
   <!-- [요건 1] 메인 메뉴: 명칭 간략화 및 8개 탭 순서 정리 -->
   <div class="tab-bar">
@@ -197,7 +358,12 @@
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-deliverables"]' title="차수별 필수 표준 산출물 검수 및 관리">📑 산출물</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-weekly-report"]' title="서브시스템별 금주 실적 및 차주 계획 주간보고서 작성·출력">📝 주간보고</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-meeting"]' title="회의일정 캘린더, 회의록 작성 및 ActionItem 통합 관리">📅 회의관리</button>
+<!--#sa-->
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-merge"]' style="color:var(--primary); font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 파일 Merge</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-merge"]' style="color:var(--primary); font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 Import · Export</button>
+</template>
     <button class="tab-btn" data-click="NoticeCommManager.goToNotice" style="color:#059669; font-weight:800;" title="프로젝트 공지 및 업무 소통 광장">📢 공지/소통</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-master"]' style="color:#0f766e; font-weight:800;" title="프로젝트 기본정보, 도메인/서브시스템, SDLC, REQ, 휴일, ID 규칙">🗂️ 프로젝트 설정</button>
     <button class="tab-btn" data-click="switchTab" data-click-args='["tab-config"]' style="color:#7c3aed; font-weight:800;" title="화면 레이아웃, 보안 인증 정책, DB 연동 및 백업 복원">⚙️ Admin</button>
@@ -283,7 +449,12 @@
               </div>
               <div data-click="switchTab" data-click-args='["tab-voc"]' style="background:#fffbeb; border:1px solid #fef3c7; border-radius:6px; padding:12px; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s;" data-hover-lift="1" title="현장 VOC 관리 탭으로 바로 이동">
                 <div style="font-size:var(--fs-xs, 11px); font-weight:700; color:#92400e;">💬 현장 VOC</div>
+<!--#sa-->
                 <div id="portalVocStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:#b45309; margin:4px 0;">0/0건</div>
+<!--#/sa-->
+<template data-edition="workgroup">
+                <div id="portalVocStatValue" style="font-size:var(--fs-xl, 18px); font-weight:800; color:var(--warning); margin:4px 0;">0/0건</div>
+</template>
                 <div id="portalVocStatSub" style="font-size:var(--fs-2xs, 10px); color:#92400e;">조치율 0%</div>
               </div>
             </div>
@@ -1112,6 +1283,9 @@
               <th style="width: 145px;">실제제출일</th>
               <th style="width: 105px;">진행 상태</th>
               <th style="width: 90px;">담당자</th>
+<template data-edition="workgroup">
+              <th style="width: 58px;" title="산출물 파일 첨부 (DB 서버 방식)">첨부</th>
+</template>
               <th style="min-width: 180px;">검토 의견 및 보완 조치내역</th>
               <th style="width: 45px;">삭제</th>
             </tr>
@@ -1584,7 +1758,12 @@
     <div id="tab-merge" class="tab-pane">
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+<!--#sa-->
           <span class="sub-title">🔀 파일 Merge</span><span class="neo-ph-desc">여러 사람이 각자 PC에서 고친 자료를 하나로 모으는 곳입니다. 멤버는 내 작업 파일을 파일로 받아 PM에게 보내고, PM은 받은 파일을 업로드해 미리 보기로 확인한 뒤 합칩니다.</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <span class="sub-title">🔀 Import · Export</span><span class="neo-ph-desc">엑셀로 한꺼번에 고치거나 다른 곳에서 고친 자료 파일을 업로드해 지금 자료에 합치는 곳입니다. 올린 내용은 바로 바뀌지 않고, 미리 보기로 확인한 뒤 반영됩니다.</span>
+</template>
           <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
@@ -1593,6 +1772,9 @@
       <!-- 서브 탭: 파일 Merge(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 관리자 · PM) -->
       <div class="master-subtab-bar" data-group="merge">
         <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 다운로드·업로드</button>
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="locks" data-click="SubTabs.show" data-click-args='["merge", "locks"]'>🔐 체크아웃 현황</button>
+</template>
         <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
       </div>
       <div class="master-subpane active" data-group="merge" data-subpane="merge">
@@ -1644,15 +1826,50 @@
           <select id="masterPkgSubsysSelect"><option value="ALL" selected>ALL</option></select>
           <select id="excelSubsysExportSelect"></select>
           <select id="excelSubsysImportSelect"></select>
+<template data-edition="workgroup">
+          <span id="fileSyncDetailStatus"></span>
+          <button id="btnFileHandleSync"></button>
+</template>
         </div>
       </div>
 
+<template data-edition="workgroup">
+      <!-- [Workgroup 0.1] 🔐 체크아웃 현황 — 서브시스템별 편집 잠금 (DB 서버 방식, 자동 새로고침 없음) -->
+      <div class="master-subpane" data-group="merge" data-subpane="locks" id="mergeLocksPane">
+        <div class="card" style="border-left:4px solid #7c3aed;">
+          <div class="card-title"><span>🔐 서브시스템 체크아웃 현황</span>
+            <span style="display:flex; gap:6px; align-items:center;"><span class="bk-who" id="lkBoardNote"></span>
+            <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.refresh">🔄 상태 확인</button></span></div>
+          <div class="pm-hint" style="margin:0 0 8px;">서브시스템의 WBS · 요구사항 · 산출물 · VOC 를 고치려면 먼저 <b>📝 체크아웃</b>(편집 잠금)합니다. 다른 사람은 그동안 읽기만 하고 저장할 수 없습니다. 끝나면 <b>✅ 체크인</b>(저장 · 잠금 해제)합니다. 주간보고 · 회의록 · 공지 · 소통은 잠금 없이 지금처럼 씁니다.</div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table">
+              <thead><tr><th style="width:140px;">서브시스템</th><th style="width:120px;">상태</th><th style="width:200px;">편집하는 사람 · 메모</th><th style="width:200px;">체크아웃 · 마지막 활동</th><th style="width:120px;">만료</th><th>관리</th></tr></thead>
+              <tbody id="lkBoardBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🧾 최근 기록 (40건)</span></div>
+          <div class="table-container" style="max-height:320px;">
+            <table class="m-table">
+              <thead><tr><th style="width:110px;">때</th><th style="width:110px;">서브시스템</th><th style="width:120px;">구분</th><th style="width:130px;">사람</th><th style="width:110px;">처리자</th><th>메모 · 사유</th></tr></thead>
+              <tbody id="lkLogBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</template>
       <!-- 💾 백업 · 복원 (비상 대응) — 관리자 · PM 만, 권한 없는 기능은 비활성 / 3영역 (프로젝트 · 시스템 · 스냅샷), 초기화 · 자동 백업 설정은 시스템 설정 > 데이터 관리 -->
       <div class="master-subpane" data-group="merge" data-subpane="backup" id="mergeBackupPane">
         <div class="bk-role" id="bkRoleNote"></div>
 
         <div class="card bk-sec" data-need="manager" style="border-left:4px solid var(--primary);">
+<!--#sa-->
           <div class="card-title"><span>🗂️ ① 프로젝트 백업 · 복원 (엑셀 / JSON)</span><span class="bk-who">관리자: 모든 프로젝트 · PM: 지금 프로젝트</span></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="card-title"><span>🗂️ ① 프로젝트 백업 · 복원 (엑셀 / JSON)</span><span class="bk-who">시스템관리자: 모든 프로젝트 · PM: 지금 프로젝트</span></div>
+</template>
           <div class="grid-2" style="gap:14px;">
             <div class="proj-box proj-box-blue">
               <div class="proj-box-title">📥 백업 다운로드</div>
@@ -1676,12 +1893,34 @@
         </div>
 
         <div class="card bk-sec" data-need="admin" style="border-left:4px solid #dc2626;">
+<!--#sa-->
           <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">관리자 전용 — 모든 프로젝트 · 멤버 · SDLC 유형 · 설정</span></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">시스템관리자 전용 — 모든 프로젝트 · 멤버 계정 · SDLC 유형 · 시스템 설정</span></div>
+</template>
           <div id="bkServerBox">
+<!--#sa-->
             <div class="proj-box-btns">
               <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.download">📥 시스템 백업 다운로드 (.db)</button>
               <input type="file" id="bkUploadInput" style="display:none;" accept=".db" data-change="SystemBackup.upload" data-change-args='["$event"]'>
               <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 백업 파일로 복원</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+            <div class="proj-box-btns" style="margin-bottom:10px;">
+              <label class="bk-check"><input type="checkbox" id="bkWithFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.create">💾 지금 시스템 백업 만들기</button>
+              <input type="file" id="bkUploadInput" style="display:none;" accept=".zip" data-change="SystemBackup.upload" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 PC 의 백업 파일(zip) 올리기</button>
+              <span class="bk-hint" id="bkFolder"></span>
+            </div>
+            <div class="bk-auto" id="bkAutoStatus"></div>
+            <div class="table-container" style="max-height:260px; margin-top:10px;">
+              <table class="m-table">
+                <thead><tr><th style="width:150px;">만든 때</th><th style="width:110px;">구분</th><th style="width:80px;">첨부</th><th style="width:90px;">크기</th><th>파일 이름</th><th style="width:220px; text-align:center;">관리</th></tr></thead>
+                <tbody id="bkServerList"></tbody>
+              </table>
+</template>
             </div>
           </div>
           <div id="bkLocalBox" style="display:none;">
@@ -1719,13 +1958,21 @@
          ============================================================ -->
     <div id="tab-notices" class="tab-pane">
       <div class="sub-header-bar">
+<!--#sa-->
         <div><span class="sub-title">📢 게시판</span><span class="neo-ph-desc">팀 공지를 올리고 Task에 대한 의견을 주고받습니다.</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div><span class="sub-title">📢 게시판 · 채팅</span><span class="neo-ph-desc">팀 공지를 올리고 Task에 대한 의견을 주고받습니다.</span>
+</template>
 </div>
       </div>
       <!-- 서브 탭 네비게이션 바 -->
       <div class="master-subtab-bar sub-tabs" id="boardSubTabs">
         <button id="subtabBtn_NOTICES" class="master-subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지 등록 및 조회">📌 공지</button>
         <button id="subtabBtn_FEED" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 게시판 및 Task 매핑 안건">💬 게시판</button>
+<template data-edition="workgroup">
+        <button id="subtabBtn_CHAT" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["CHAT"]' title="서버 연동형 팀 실시간 채팅 룸">⚡ 채팅 <span id="chatServerStatusDot" class="chat-dot">● 오프라인</span></button>
+</template>
       </div>
 
       <!-- 서브 탭 1: 프로젝트 공지 (NOTICES) -->
@@ -1822,6 +2069,87 @@
           </div>
         </div>
       </div>
+<template data-edition="workgroup">
+      <!-- 서브 탭 3: 실시간 팀 채팅 (CHAT - 서버 연결 시에만 활성화) -->
+      <div id="subpane_CHAT" style="display: none;">
+        <div class="card" style="margin-bottom: 14px;">
+          <div class="card-title">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: var(--fs-xl, 18px);">⚡</span>
+              <strong style="font-size: calc(15px * var(--fs-scale, 1)); color: var(--primary);">다중 멤버 실시간 팀 채팅 (Live Chat)</strong>
+              <span class="badge" style="background:var(--primary); color:#fff;">다중 동시접속</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span id="chatServerStatusText" style="font-size: calc(11.5px * var(--fs-scale, 1)); font-weight: bold; color: #dc2626;">서버 미연결</span>
+              <button class="btn btn-secondary btn-sm" data-click="RealtimeChatManager.checkServerConnection" data-click-args='[true]'>
+                🔄 서버 연결 재확인
+              </button>
+            </div>
+          </div>
+          <p style="font-size: var(--fs-sm, 12px); color: var(--text-sub); margin-bottom: 0;">
+            파이썬 웹서버(<code class="kbd">wbs_db_server.py</code> / <code class="kbd">run_server.bat</code>)가 기동되어 포트 8080에 연결되었을 때 활성화되는 실시간 채널 채팅입니다. 동일 사내망에 접속한 모든 팀원과 실시간으로 메시지를 주고받을 수 있습니다.
+          </p>
+        </div>
+
+        <!-- 채팅 룸 메인 컨테이너 -->
+        <div class="chat-room-container">
+          <!-- 오프라인/서버 미연결 안내 배너 (서버 연결 시 display: none 처리됨) -->
+          <div id="chatServerOfflineBanner" class="chat-offline-banner">
+            <div style="font-size: calc(42px * var(--fs-scale, 1)); margin-bottom: 12px;">🔌</div>
+            <h3 style="font-size: var(--fs-xl, 18px); margin-bottom: 8px; color: #f8fafc;">채팅 오프라인</h3>
+            <p style="font-size: var(--fs-base, 13px); color: #cbd5e1; max-width: 520px; line-height: 1.6; margin-bottom: 18px;">
+              실시간 채팅은 <strong>DB 서버 모드</strong>(run_server.bat 실행 후 http://서버IP:8080 접속, 시스템 설정 &gt; DB 연동에서 SQLite 선택)에서만 사용할 수 있습니다.<br>
+              로컬 저장소(LocalStorage) 모드에서는 채팅 기능이 비활성화됩니다.
+            </p>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-primary" data-click="RealtimeChatManager.checkServerConnection" data-click-args='[true]'>
+                🔄 서버 재연결
+              </button>
+            </div>
+          </div>
+
+          <!-- 좌측: 채팅 채널 선택 사이드바 -->
+          <div class="chat-sidebar">
+            <div style="font-size: var(--fs-xs, 11px); font-weight: bold; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">
+              채팅 채널 (# CHANNELS)
+            </div>
+            <div id="chatChannelListContainer" style="flex: 1; overflow-y: auto;">
+              <!-- JavaScript 렌더링 -->
+            </div>
+            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color); font-size: var(--fs-xs, 11px); color: #64748b;">
+              💡 2.5초 간격 자동 동기화
+            </div>
+          </div>
+
+          <!-- 우측: 활성 채널 메시지 스트림 및 입력창 -->
+          <div id="chatActiveArea" class="chat-main-area">
+            <div class="chat-header-bar">
+              <div>
+                <strong id="chatCurrentChannelTitle" style="font-size: var(--fs-md, 14px); color: var(--tint-info-text);"># 전체 채널</strong>
+                <span style="font-size: var(--fs-xs, 11px); color: #64748b; margin-left: 6px;">실시간 팀 채팅 룸</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge" style="background: #10b981; color: #fff; font-size: var(--fs-2xs, 10px);">REST 실시간 소통</span>
+
+              </div>
+            </div>
+
+            <!-- 메시지 스크롤 영역 -->
+            <div id="chatMessagesStream" class="chat-stream-box">
+              <!-- JavaScript 실시간 렌더링 -->
+            </div>
+
+            <!-- 하단 입력 바 -->
+            <div class="chat-input-bar">
+              <input type="text" id="chatMessageInput" placeholder="메시지를 입력하세요... (Enter 키로 전송)" style="flex: 1; padding: 9px 14px; font-size: var(--fs-base, 13px); border: 1px solid var(--border-color); border-radius: 6px;" data-keydown="RealtimeChatManager.sendMessage" data-keydown-key="Enter" data-keydown-prevent="1">
+              <button id="btnChatSend" class="btn btn-primary" data-click="RealtimeChatManager.sendMessage" style="padding: 9px 18px;">
+                전송
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+</template>
 
     </div>
   <!-- 신규 공지 등록 모달 -->
@@ -1910,7 +2238,12 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">🗂️ 프로젝트 설정</span><span class="neo-ph-desc">기간 · 서브시스템 · 단계 · 휴일 · 멤버처럼 모든 화면의 기준이 되는 값을 정합니다.</span>
+<!--#sa-->
           <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 관리자(SYS_ADMIN)</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 시스템 관리자(SYS_ADMIN)</span>
+</template>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
       </div>
@@ -1924,7 +2257,12 @@
         <button class="master-subtab-btn" data-subtab="deliv" data-click="MasterSubTabs.show" data-click-args='["deliv"]'>📑 산출물</button>
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
+<!--#sa-->
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 · 채팅 채널</button>
+</template>
         <button class="master-subtab-btn master-subtab-link" data-click="ReportTabs.open" data-click-args='["settings"]' title="보고서 설정은 [보고] 메뉴로 옮겼습니다">📊 보고서 설정 →</button>
       </div>
 
@@ -1949,7 +2287,12 @@
             <div class="grid-2" style="gap: 8px;">
               <div>
                 <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:3px;">프로젝트명 정의 (배지 및 보고서 표기):</label>
+<!--#sa-->
                 <input type="text" id="cfgProjectName" value="프로젝트" style="width:100%; font-weight:bold;" data-change="updateProjectTitles">
+<!--#/sa-->
+<template data-edition="workgroup">
+                <input type="text" id="cfgProjectName" value="27년 가동률 시스템 개선" style="width:100%; font-weight:bold;" data-change="updateProjectTitles">
+</template>
               </div>
             </div>
 
@@ -2058,7 +2401,12 @@
               <strong>공정 유형</strong> <span class="lk-hint">유형별 단계 가중치 · 계획 일정 (시스템 설정의 모든 유형)</span>
             </div>
             <div style="display:flex; gap:6px;">
+<!--#sa-->
               <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 시스템관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
+</template>
             </div>
           </div>
           <div id="customSdlcCardsContainer" class="ss-proc"></div>
@@ -2251,8 +2599,15 @@
       <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
       
 
+<!--#sa-->
       <div class="config-group-banner" style="background: linear-gradient(90deg, #b45309, #d97706);">
         <span>👥 멤버 정보</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <div class="config-group-banner" style="background: linear-gradient(90deg, var(--warning), #d97706);">
+        <span>👥 멤버 정보 — 멤버 계정 · 권한 등급(시스템관리자 / PM / PL / 일반) · 담당 서브시스템 · 언어</span>
+        <span style="font-size:var(--fs-xs, 11px); font-weight:normal; opacity:0.95;">초기 비밀번호는 1234이며, Import · Export 탭에서도 멤버 목록을 다중선택하여 엑셀/JSON으로 일괄 업·다운로드할 수 있습니다.</span>
+</template>
       </div>
 
       <!-- 권한 등급별 요약 카드 -->
@@ -2260,10 +2615,20 @@
         <div class="kpi-card" style="border-left-color: #1e293b;">
           <div class="kpi-title">전체 등록 멤버</div>
           <div class="kpi-value" id="userStatTotal">9 명</div>
+<!--#sa-->
           <div class="kpi-sub">프로젝트 등록 멤버 ID 총계</div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="kpi-sub">프로젝트 등록 사번 총계</div>
+</template>
         </div>
         <div class="kpi-card" style="border-left-color: #7c3aed;">
+<!--#sa-->
           <div class="kpi-title">👑 관리자 (SYS_ADMIN)</div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="kpi-title">👑 시스템 관리자 (SYS_ADMIN)</div>
+</template>
           <div class="kpi-value" id="userStatAdmin">1 명</div>
           <div class="kpi-sub">시스템 환경설정 및 전 메뉴 총괄</div>
         </div>
@@ -2289,7 +2654,12 @@
           <div>
             <span>📋 프로젝트 멤버 계정 및 권한 일람표</span>
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal; margin-left:8px;">
+<!--#sa-->
               * <b>관리자</b>: 전 메뉴 | <b>PM</b>: 프로젝트 설정·멤버·전체 데이터 | <b>PL(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>멤버(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+<!--#/sa-->
+<template data-edition="workgroup">
+              * <b>시스템 관리자</b>: 전 메뉴 | <b>PM</b>: 프로젝트 설정·멤버·전체 데이터 | <b>PL(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>멤버(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+</template>
             </span>
           </div>
           <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
@@ -2299,7 +2669,12 @@
               <option value="en">English</option>
             </select>
             <button class="btn btn-secondary btn-sm" data-click="applyBulkUserLanguage">전체 멤버에 적용</button>
+<!--#sa-->
             <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 멤버(역할·담당·부서)를 이 프로젝트로 복사 (관리자)">📥 다른 프로젝트에서 복사</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+            <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 멤버(역할·담당·부서)를 이 프로젝트로 복사 (시스템관리자)">📥 다른 프로젝트에서 복사</button>
+</template>
             <button class="btn btn-primary btn-sm" data-click="addNewProjectUser">+ 신규 멤버 추가</button>
           </div>
         </div>
@@ -2308,13 +2683,23 @@
           <table id="projectUsersTable">
             <thead>
               <tr>
+<!--#sa-->
                 <th style="width: 130px;">멤버 ID (멤버 선택 ID)</th>
+<!--#/sa-->
+<template data-edition="workgroup">
+                <th style="width: 130px;">사번 (로그인 ID)</th>
+</template>
                 <th style="width: 120px;">성명</th>
                 <th style="width: 260px;">시스템 권한 등급 (4단계 RBAC)</th>
                 <th style="width: 150px;">담당 서브시스템</th>
                 <th>소속 부서 / 담당 역할</th>
                 <th style="width: 100px;">언어</th>
+<!--#sa-->
                 <th style="width: 260px;">암호 변경 / 초기화</th>
+<!--#/sa-->
+<template data-edition="workgroup">
+                <th style="width: 260px;">비밀번호 변경 / 초기화</th>
+</template>
                 <th style="width: 55px;">삭제</th>
               </tr>
             </thead>
@@ -2336,8 +2721,26 @@
       <div class="sub-header-bar">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">프로젝트 목록 · 전체 멤버 · SDLC 유형 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
+<!--#sa-->
           <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 관리자(SYS_ADMIN) 전용 메뉴</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 시스템 관리자(SYS_ADMIN) 전용 메뉴</span>
+</template>
           <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+<template data-edition="workgroup">
+        </div>
+      </div>
+
+      <!-- [ver1.0.4 신규] 시스템 아키텍처 및 소프트웨어 구조 정의서 카드 -->
+      <div class="card" style="border-left: 4px solid var(--primary); margin-bottom: 14px;">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>🏛️ 시스템 아키텍처 및 소프트웨어 구조 정의서 (Technical Architecture Guide)</span>
+          <button class="btn btn-primary btn-sm" data-click="window.open" data-click-args='["architecture.html", "_blank"]'>📄 아키텍처 정의서 새 창 열기</button>
+        </div>
+        <div style="font-size: var(--fs-sm, 12px); color: var(--text-sub); line-height: 1.6;">
+          본 엔터프라이즈 WBS 관리 시스템의 4계층(4-Tier) 아키텍처 구조, 디렉토리/모듈 명명 표준, WBS·산출물·회의록·ActionItem 데이터 모델(ERD), 런타임 상태 롤업 및 크로스탭 동기화 흐름, 클라이언트 기반 OpenXML(워드/엑셀) 변환 파이프라인 명세를 완벽히 정리한 공식 기술 명세서입니다.
+</template>
         </div>
       </div>
 
@@ -2373,7 +2776,12 @@
           <div class="card-title">
             <span>👥 전체 멤버 · 프로젝트별 권한 통합 관리</span>
             <span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+<!--#sa-->
               <input type="text" id="uaSearch" placeholder="멤버 ID · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
+<!--#/sa-->
+<template data-edition="workgroup">
+              <input type="text" id="uaSearch" placeholder="사번 · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
+</template>
               <select id="uaProjectFilter" data-change="UserAdmin.render"><option value="ALL">전체 프로젝트</option></select>
               <button class="btn btn-secondary btn-sm" data-click="UserAdmin.load">🔄 새로고침</button>
               <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 멤버 추가</button>
@@ -2382,7 +2790,12 @@
           <div id="uaSummary" style="font-size:var(--fs-sm, 12px); font-weight:700; margin:6px 0;"></div>
           <div class="table-container" style="max-height: 560px;">
             <table class="m-table ua-table">
+<!--#sa-->
               <thead><tr><th style="width:110px;">멤버 ID</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">암호</th><th style="width:120px;">관리</th></tr></thead>
+<!--#/sa-->
+<template data-edition="workgroup">
+              <thead><tr><th style="width:110px;">사번</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">비밀번호</th><th style="width:120px;">관리</th></tr></thead>
+</template>
               <tbody id="uaBody"></tbody>
             </table>
           </div>
@@ -2433,7 +2846,12 @@
           </div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; padding:4px 0;">
             <div class="home-role-box">
+<!--#sa-->
               <label>👑 관리자 (SYS_ADMIN)</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+              <label>👑 시스템 관리자 (SYS_ADMIN)</label>
+</template>
               <select id="cfgRoleHomeSysAdmin" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["SYS_ADMIN", "$value"]' class="home-role-select"><option value="EXECUTIVE" selected>🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO">🙋 My Work</option></select>
             </div>
             <div class="home-role-box">
@@ -2591,15 +3009,30 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
         <div class="card" style=" border-left: 4px solid var(--primary);">
           <div class="card-title">
+<!--#sa-->
             <span>2. 사내망 보안 인증 정책 · 자동 세션 잠금 및 관리자 암호 변경</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+            <span>2. 사내망 보안 인증 정책 · 자동 세션 잠금 및 시스템 관리자 비밀번호 변경</span>
+</template>
             <span style="font-size:var(--fs-xs, 11px); color:var(--success); font-weight:bold;">🛡️ 폐쇄망/사내망 HTTP 환경 SHA-256 암호화 인증 적용</span>
           </div>
           <div class="grid-2" style="gap: 16px;">
             <div style="display:flex; flex-direction:column; gap:10px;">
               <div>
+<!--#sa-->
                 <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">🔐 1. 멤버 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+                <label style="display:block; font-weight:bold; font-size:var(--fs-sm, 12px); margin-bottom:4px;">🔐 1. 로그인 및 관리 메뉴 접근 시 비밀번호 인증 정책:</label>
+</template>
                 <select id="cfgAuthPolicySelect" style="width:100%; font-weight:bold;" data-change="AuthManager.setAuthPolicy" data-change-args='["$value"]'>
+<!--#sa-->
                   <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+<!--#/sa-->
+<template data-edition="workgroup">
+                  <option value="STARTUP_ONLY">🔑 최초 접속(로그인) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+</template>
                   <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(프로젝트 설정·시스템설정) 진입 시 재인증 (고보안)</option>
                   <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
                   <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>
@@ -2617,11 +3050,20 @@
             </div>
 
             <div style="display:flex; flex-direction:column; gap:8px; border-left:1px solid var(--border-color); padding-left:16px;">
+<!--#sa-->
               <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(멤버 선택 멤버) 암호 변경:</label>
               <input type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 1234)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgNewPassword" placeholder="새 암호 입력 (8자 이상, 영문+숫자)" autocomplete="off" style="width:100%;">
               <input type="password" id="cfgConfirmPassword" placeholder="새 암호 확인 입력" autocomplete="off" style="width:100%;">
               <button class="btn btn-primary btn-sm" data-btn="save" style="margin-top:4px; padding:8px; justify-content:center;" data-click="AuthManager.changePassword">🔑 암호 변경</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+              <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">🔑 3. 내 계정(로그인 멤버) 비밀번호 변경:</label>
+              <input type="password" id="cfgCurrentPassword" placeholder="현재 비밀번호 입력 (초기: 1234)" autocomplete="off" style="width:100%;">
+              <input type="password" id="cfgNewPassword" placeholder="새 비밀번호 입력 (8자 이상, 영문+숫자)" autocomplete="off" style="width:100%;">
+              <input type="password" id="cfgConfirmPassword" placeholder="새 비밀번호 확인 입력" autocomplete="off" style="width:100%;">
+              <button class="btn btn-primary btn-sm" data-btn="save" style="margin-top:4px; padding:8px; justify-content:center;" data-click="AuthManager.changePassword">🔑 비밀번호 변경</button>
+</template>
             </div>
           </div>
         </div>
@@ -2630,14 +3072,164 @@
 
       <!-- 저장소 · 서버 연결 (Project Mgmt: SQLite 서버 하나) -->
       <div class="master-subpane" data-group="config" data-subpane="db">
+<!--#sa-->
         <div class="card" style="border-left:4px solid var(--primary);">
           <div class="card-title"><span>🔌 저장소 · 서버 연결</span>
             <span style="display:flex; gap:6px;">
               <button type="button" class="btn btn-primary btn-sm" data-click="DbConnector.testConnection">🔌 연결 확인</button>
               <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.loadFromDb">🔄 서버 자료 다시 받기</button>
             </span>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="card" style=" border-left: 4px solid var(--success);">
+          <div class="card-title">
+            <span>3. 데이터베이스(DB) 엔진 연결 및 데이터 저장 반영 방식(자동 / 수동) 설정</span>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary btn-sm" data-click="DbConnector.testConnection">🔌 연결 테스트</button>
+              <button type="button" class="btn btn-warning btn-sm" data-click="DbConnector.initSchema">🛠️ 테이블 생성</button>
+              <button type="button" class="btn btn-success btn-sm" data-click="DbConnector.saveToDb" data-click-args='[true]'>📤 DB 저장</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.loadFromDb">📥 DB 불러오기</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.downloadDdlScript">📜 DDL 다운로드</button>
+            </div>
+</template>
           </div>
+<!--#sa-->
           <div id="dbConnectionSummaryText" class="pm-hint" style="margin:0;"></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+
+          <div id="dbConnectionSummaryText" style="margin-bottom: 10px; padding: 7px 12px; background: rgba(59, 130, 246, 0.06); border: 1px solid var(--border-color); border-radius: 6px; font-size: var(--fs-xs, 11px);">
+            현재 DB 연결 상태를 불러오는 중...
+          </div>
+
+          <div class="grid-2" style="gap: 12px; margin-bottom: 12px;">
+            <div>
+              <label style="display:block; font-weight:bold; font-size:var(--fs-xs, 11px); margin-bottom:5px;">연동할 데이터베이스(DB) 엔진 선택:</label>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" id="btnDbMode_SQLITE" class="btn btn-primary btn-sm" data-click="DbConnector.selectMode" data-click-args='["SQLITE"]'>🪶 SQLite 파일 DB</button>
+                <button type="button" id="btnDbMode_ORACLE" class="btn btn-secondary btn-sm db-mode-disabled" disabled title="Workgroup 판은 SQLite 만 사용 — Oracle 은 Enterprise 판 예정" data-click="DbConnector.selectMode" data-click-args='["ORACLE"]'>🏛️ Oracle DB <small>(Enterprise)</small></button>
+                <button type="button" id="btnDbMode_EXCEL_ACCESS" class="btn btn-secondary btn-sm db-mode-disabled" data-btn="neutral" disabled title="Workgroup 판은 SQLite 만 사용" data-click="DbConnector.selectMode" data-click-args='["EXCEL_ACCESS"]'>📗 Excel / Access DB <small>(사용 안 함)</small></button>
+              </div>
+              <div style="font-size:var(--fs-xs, 11px); color:var(--warning); margin-top:4px;">※ Oracle · Excel/Access 연동은 비활성화되었습니다. 다중 멤버 서버 DB 는 SQLite(run_server.bat) 를 사용하세요.</div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:4px;">💾 데이터 저장 방식 (저장소 모드에 따라 자동 결정):</label>
+                <select id="dbSaveModeSelect" style="width:100%; font-weight:bold;" disabled title="저장 방식은 저장소 모드에 따라 자동 결정됩니다.">
+                  <option value="AUTO">⚡ 실시간 자동저장 (로컬 저장소 모드 전용)</option>
+                  <option value="MANUAL">🖐️ 저장 버튼 저장 (DB 서버 모드 · 충돌 경고)</option>
+                </select>
+              </div>
+              <div style="flex:1;">
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:4px;">중계 웹/API 서버 주소:</label>
+                <input type="text" id="dbApiBaseUrl" value="http://127.0.0.1:8080" style="width:100%;" data-change="DbConnector.readFormValues">
+              </div>
+            </div>
+          </div>
+
+          <div id="panelDbMode_SQLITE" style="padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 10px;">
+            <div class="grid-2" style="gap: 10px;">
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">SQLite DB 파일 경로 (서버 기준):</label>
+                <input type="text" id="dbSqlitePath" value="./data/wbs_enterprise.db" style="width:100%;">
+              </div>
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">저널 동시성 모드:</label>
+                  <select id="dbSqliteJournal" style="width:100%;">
+                    <option value="WAL">WAL (다중멤버 동시읽기/쓰기 권장)</option>
+                    <option value="DELETE">DELETE (기본 단일모드)</option>
+                    <option value="MEMORY">MEMORY (고속 인메모리)</option>
+                  </select>
+                </div>
+                <div style="width:110px;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">Lock 대기(ms):</label>
+                  <input type="number" id="dbSqliteTimeout" value="5000" style="width:100%;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="panelDbMode_ORACLE" style="padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 10px; display: none;">
+            <div class="grid-2" style="gap: 10px;">
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">Oracle Host IP:</label>
+                  <input type="text" id="dbOracleHost" value="10.10.20.15" style="width:100%;">
+                </div>
+                <div style="width:85px;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">Port:</label>
+                  <input type="number" id="dbOraclePort" value="1521" style="width:100%;">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <div style="width:120px;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">접속 구분:</label>
+                  <select id="dbOracleConnType" style="width:100%;">
+                    <option value="SERVICE_NAME">Service Name</option>
+                    <option value="SID">SID</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">Service Name / SID:</label>
+                  <input type="text" id="dbOracleService" value="ORCL" style="width:100%;">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">계정 (Username):</label>
+                  <input type="text" id="dbOracleUser" value="WBS_ADMIN" style="width:100%;">
+                </div>
+                <div style="flex:1;">
+                  <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">비밀번호 (Password):</label>
+                  <input type="password" id="dbOraclePassword" placeholder="DB 비밀번호 입력" style="width:100%;">
+                </div>
+              </div>
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">테이블 접두사 (Prefix):</label>
+                <input type="text" id="dbOraclePrefix" value="TB_WBS_" style="width:100%;">
+              </div>
+            </div>
+          </div>
+
+          <div id="panelDbMode_EXCEL_ACCESS" style="padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 10px; display: none;">
+            <div class="grid-2" style="gap: 10px;">
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">세부 파일 DB 엔진 선택:</label>
+                <select id="dbExcelAccessSubType" style="width:100%;" data-change="DbConnector.selectExcelAccessSubType" data-change-args='["$value"]'>
+                  <option value="ACCESS_ODBC">MS Access 데이터베이스 (.accdb / .mdb - ODBC 연동)</option>
+                  <option value="EXCEL_DB">MS Excel 공유 워크북 DB (.xlsx - 트랜잭션 시트 연동)</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">서버 내 파일 경로 (.accdb / .mdb / .xlsx):</label>
+                <input type="text" id="dbExcelAccessPath" value="./data/WBS_Database.accdb" style="width:100%;">
+              </div>
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">ODBC 드라이버명 / 처리 엔진:</label>
+                <input type="text" id="dbExcelAccessDriver" value="Microsoft Access Driver (*.mdb, *.accdb)" style="width:100%;">
+              </div>
+              <div>
+                <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:3px;">파일 잠금 대기시간 (ms):</label>
+                <input type="number" id="dbExcelAccessLockTimeout" value="3000" style="width:100%;">
+              </div>
+            </div>
+          </div>
+
+          <div id="panelDbMode_LOCAL" style="padding: 10px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 10px; display: none;">
+            <p style="font-size:var(--fs-xs, 11px); color:var(--text-sub);">
+              외부 DB 서버 없이 현재 PC 브라우저 내부 저장소에만 데이터를 보관합니다.
+            </p>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:var(--fs-xs, 11px); font-weight:bold; margin-bottom:4px;">선택된 DB 모드 전용 테이블 생성 DDL (SQL 스키마 미리보기):</label>
+            <textarea id="dbDdlPreviewBox" readonly style="width:100%; height:85px; font-family:monospace; font-size:var(--fs-xs, 11px); padding:8px; border:1px solid var(--border-color); border-radius:4px; background:rgba(0,0,0,0.03); color:var(--text-main);"></textarea>
+          </div>
+        </div>
+</template>
         </div>
       </div>
 
@@ -2645,13 +3237,35 @@
       <div class="master-subpane" data-group="config" data-subpane="data" id="dataAdminPane">
         <div class="cfg-scope-note">백업 · 복원은 한 곳에서 합니다 — <button type="button" class="btn btn-xs" data-btn="nav" data-click="ProjectData.goBackup">파일 Merge › 💾 백업 · 복원 →</button></div>
         <div class="card" style="border-left:4px solid var(--primary);">
+<!--#sa-->
           <div class="card-title"><span>💽 이 브라우저 저장 용량</span>
             <button class="btn btn-sm" data-btn="neutral" data-click="DataAdmin.usage">🔄 다시 계산</button></div>
           <div id="daUsage" class="pm-hint" style="margin:0;"></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="card-title"><span>⏱ 자동 백업 설정 (선택)</span><span class="bk-who">시스템 전체 백업(zip)을 정해진 간격으로 서버에 만듭니다 — 목록 · 복원은 Import · Export &gt; 💾 백업 · 복원</span></div>
+          <div id="daAutoServer">
+            <div class="bk-auto">
+              <label class="bk-check"><input type="checkbox" id="bkAutoOn"> 사용</label>
+              <label>간격 <input type="number" id="bkAutoHours" min="1" max="720" value="24" style="width:64px;"> 시간</label>
+              <label>보관 <input type="number" id="bkAutoKeep" min="1" max="365" value="14" style="width:64px;"> 개</label>
+              <label class="bk-check"><input type="checkbox" id="bkAutoFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.saveAuto">저장</button>
+              <span class="bk-hint" id="bkAutoLast"></span>
+            </div>
+            <div class="bk-hint" id="bkFolder2" style="margin-top:6px;"></div>
+          </div>
+          <div id="daAutoLocal" class="pm-hint" style="display:none; margin:0;">로컬 저장소 방식에는 자동 백업이 없습니다. 올리기 · 초기화 전에 만들어지는 <b>스냅샷</b>과, Import · Export &gt; 💾 백업 · 복원의 <b>시스템 전체 백업 (JSON)</b>을 쓰세요.</div>
+</template>
         </div>
 
         <div class="card" style="border-left:4px solid #dc2626;">
+<!--#sa-->
           <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 스냅샷을 남깁니다</span></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">시스템관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 스냅샷을 남깁니다</span></div>
+</template>
           <div class="da-target">
             <label style="font-weight:bold; font-size:var(--fs-sm, 12px);">대상 프로젝트:</label>
             <select id="cfgClearTarget" style="min-width:260px;" data-change="DataAdmin.renderActions"></select>
@@ -2664,7 +3278,15 @@
           </div>
         </div>
 
+<!--#sa-->
       </div>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🗑 첨부파일 휴지통</span></div>
+          <div id="daTrash" class="proj-box-btns"></div>
+        </div>
+</template>
       </div>
 
       <div class="master-subpane" data-group="config" data-subpane="backup">
@@ -2675,18 +3297,39 @@
           <div class="card-title" style="color: var(--tint-info-text); border-bottom: 2px solid #bae6fd;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: var(--fs-lg, 16px);">💬</span>
+<!--#sa-->
               <strong style="font-size: var(--fs-md, 14px);">프로젝트 게시판 채널 관리 및 대화/피드 데이터 초기화</strong>
+<!--#/sa-->
+<template data-edition="workgroup">
+              <strong style="font-size: var(--fs-md, 14px);">프로젝트 게시판 · 채팅 채널 관리 및 대화/피드 데이터 초기화</strong>
+</template>
             </div>
+<!--#sa-->
             <span style="font-size: calc(11.5px * var(--fs-scale, 1)); color: #64748b;">공지 &amp; 소통 탭의 피드 채널을 등록·삭제하고 데이터를 초기화합니다.</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+            <span style="font-size: calc(11.5px * var(--fs-scale, 1)); color: #64748b;">공지 &amp; 소통 탭의 피드 및 실시간 채팅 채널을 등록·삭제하고 데이터를 초기화합니다.</span>
+</template>
           </div>
+<!--#sa-->
           <div class="channel-scope-note">🗂️ <b>게시판 채널·공지·게시판는 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="channel-scope-note">🗂️ <b>게시판 · 채팅 채널·공지·게시판·채팅은 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
+</template>
 
           <div class="grid-2" style="margin-top: 10px;">
             <!-- 좌측: 채널 등록 및 관리 -->
             <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 14px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<!--#sa-->
                 <strong style="font-size: var(--fs-base, 13px); color: #1e293b;">📋 등록된 게시판 채널 목록</strong>
                 <span style="font-size: var(--fs-xs, 11px); color: #64748b;">(피드에 자동 반영)</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+                <strong style="font-size: var(--fs-base, 13px); color: #1e293b;">📋 등록된 게시판 · 채팅 채널 목록</strong>
+                <span style="font-size: var(--fs-xs, 11px); color: #64748b;">(피드 및 실시간 채팅에 자동 반영)</span>
+</template>
               </div>
               <div id="settingsChannelAddContainer" style="display: flex; gap: 8px; margin-bottom: 12px;">
                 <input type="text" id="newChannelNameInput" placeholder="신규 채널명 입력 (예: 품질감리Q&A)" style="flex: 1; padding: 6px 10px; font-size: var(--fs-sm, 12px); border: 1px solid var(--border-color); border-radius: 4px;">
@@ -2717,6 +3360,17 @@
                   테스트 작성 데이터나 완료된 이전 프로젝트 대화내역을 초기화할 수 있습니다. 삭제된 데이터는 영구 삭제되므로 신중하게 실행하세요.
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
+<template data-edition="workgroup">
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #dc2626;">⚡ 채팅 대화내역 전체 삭제</strong>
+                      <div style="font-size: var(--fs-xs, 11px); color: #64748b;">SQLite TB_WBS_CHAT 테이블 및 실시간 메시지 스트림 영구 삭제</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" data-click="RealtimeChatManager.clearAllChat">
+                      채팅 비우기
+                    </button>
+                  </div>
+</template>
                   <div style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-color);">
                     <div>
                       <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #d97706;">💬 업무 게시판(게시글) 전체 초기화</strong>
@@ -2805,6 +3459,43 @@
     </div>
   </div>
 
+<template data-edition="workgroup">
+  <!-- [Workgroup 0.1] 체크아웃 3자 비교 (받았던 때 · 다른 사람 결과 · 내 것) -->
+  <div class="modal-overlay" id="lkCompareModal">
+    <div class="modal" style="width:960px; max-width:96vw; max-height:90vh; overflow-y:auto;">
+      <div class="card-title"><span>🔀 그 사이 다른 사람이 바꾼 자료와 내 변경 비교</span></div>
+      <div class="bk-hint" id="lkCmpSum" style="margin-bottom:8px;"></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+        <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.pickAll" data-click-args='["mine"]'>모두 내 것 선택</button>
+        <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.pickAll" data-click-args='["theirs"]'>모두 다른 사람 것 선택</button>
+      </div>
+      <div class="table-container" style="max-height:52vh;">
+        <table class="m-table">
+          <thead><tr><th style="width:140px;">자료</th><th>행 · 바뀐 내용 (다른 사람 → 내 것)</th><th style="width:130px;">상태</th><th style="width:150px;">쓸 것</th></tr></thead>
+          <tbody id="lkCmpBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px; flex-wrap:wrap;">
+        <button class="btn btn-sm btn-danger" data-click="LockManager.compareDone" data-click-args='["theirs"]'>내 작업 버리고 다른 사람 것 사용</button>
+        <button class="btn btn-sm btn-warning" data-click="LockManager.compareDone" data-click-args='["mine"]'>모두 내 것으로 덮어쓰기</button>
+        <button class="btn btn-sm btn-primary" id="lkCmpOk" data-click="LockManager.compareDone" data-click-args='["rows"]'>✅ 고른 대로 반영</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [Workgroup 0.1] 체크인 메모 · 강제 해제 사유 -->
+  <div class="modal-overlay" id="lkMemoModal">
+    <div class="modal" style="width:520px; max-width:94vw;">
+      <div class="card-title"><span id="lkMemoTitle">메모</span></div>
+      <p id="lkMemoText" style="font-size:var(--fs-sm, 12px); margin:4px 0 8px;"></p>
+      <textarea id="lkMemoInput" rows="3" maxlength="300" style="width:100%;"></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" data-click="LockManager.memoDone" data-click-args='[false]'>취소</button>
+        <button class="btn btn-primary btn-sm" id="lkMemoOk" data-click="LockManager.memoDone" data-click-args='[true]'>확인</button>
+      </div>
+    </div>
+  </div>
+</template>
   <!-- 올리기 미리 보기 (파일 Merge · 각 화면 📤 공통) -->
   <div class="modal-overlay" id="mergePreviewModal">
     <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
@@ -2846,14 +3537,30 @@
         <button class="btn btn-secondary btn-sm" data-click="UserAdmin.closeEdit">닫기</button>
       </div>
       <div class="grid-2" style="gap:10px; margin-bottom:10px;">
+<!--#sa-->
         <label class="ua-field"><span>멤버 ID (멤버 선택 ID)</span><input type="text" id="uaEmpNo" maxlength="30" style="width:100%;"></label>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="ua-field"><span>사번 (로그인 ID)</span><input type="text" id="uaEmpNo" maxlength="30" style="width:100%;"></label>
+</template>
         <label class="ua-field"><span>이름</span><input type="text" id="uaName" maxlength="50" style="width:100%;"></label>
       </div>
       <label class="ua-field" style="margin-bottom:10px;"><span>부서 · 직책</span><input type="text" id="uaDept" maxlength="100" style="width:100%;"></label>
+<!--#sa-->
       <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
       <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 암호를 초기값(1234)으로 되돌림 — 바꾸고 싶으면 멤버가 [🔑 암호 변경]에서 바꿈</label>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <label class="ua-check"><input type="checkbox" id="uaSysAdmin" data-change="UserAdmin.syncEditRows"> <b>시스템관리자</b> — 모든 프로젝트와 시스템 설정을 관리</label>
+      <label class="ua-check" id="uaPwdResetRow"><input type="checkbox" id="uaPwdReset"> 비밀번호를 초기값(1234)으로 되돌림 — 다음 로그인 때 새 비밀번호로 바꿔야 함</label>
+</template>
       <div class="ua-sub-title">프로젝트별 권한</div>
+<!--#sa-->
       <div class="pm-hint" id="uaAdminNote" style="display:none;">관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <div class="pm-hint" id="uaAdminNote" style="display:none;">시스템관리자는 모든 프로젝트에 자동으로 들어가므로 프로젝트별 권한을 따로 주지 않습니다.</div>
+</template>
       <div class="table-container" style="max-height: 300px;">
         <table class="m-table">
           <thead><tr><th style="width:56px;">참여</th><th>프로젝트</th><th style="width:170px;">역할</th><th style="width:170px;">담당 서브시스템</th></tr></thead>
@@ -2864,6 +3571,36 @@
         <button class="btn btn-secondary btn-sm" data-click="UserAdmin.closeEdit">취소</button>
         <button class="btn btn-primary btn-sm" data-click="UserAdmin.saveEdit">💾 저장</button>
       </div>
+<template data-edition="workgroup">
+    </div>
+  </div>
+
+  <!-- [v3.6.0] 첨부파일 창 (산출물 관리의 📎) -->
+  <div class="modal-overlay" id="attachModal">
+    <div class="modal attach-modal">
+      <div class="card-title">
+        <span id="attachTitle">📎 첨부파일</span>
+        <span style="display:flex; gap:6px;">
+          <button class="btn btn-secondary btn-sm" id="attachTrashBtn" data-click="AttachManager.openTrash" title="삭제한 첨부파일 보기 · 되살리기 (PM · 시스템관리자)">🗑 휴지통</button>
+          <button class="btn btn-secondary btn-sm" data-click="AttachManager.close">닫기</button>
+        </span>
+      </div>
+      <div class="attach-target" id="attachTarget"></div>
+      <div class="attach-drop" id="attachDrop">
+        <div><b>여기에 파일을 끌어다 놓거나</b> <button class="btn btn-primary btn-sm" data-click="AttachManager.pick">📤 파일 선택</button></div>
+        <div class="attach-policy" id="attachPolicy"></div>
+        <div class="attach-status" id="attachStatus"></div>
+        <input type="file" id="attachFileInput" multiple style="display:none;" data-change="AttachManager.onPicked" data-change-args='["$this"]'>
+      </div>
+      <div class="attach-readonly" id="attachReadonly" style="display:none;">담당 서브시스템이 아니어서 다운로드만 할 수 있습니다.</div>
+      <div class="attach-list-wrap">
+        <table class="attach-list">
+          <thead><tr><th>파일 이름</th><th style="width:52px;">버전</th><th style="width:70px;">크기</th><th style="width:150px;">올린 사람 · 일시</th><th style="width:150px;"></th></tr></thead>
+          <tbody id="attachListBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px; text-align:right;"><button class="btn btn-secondary btn-sm" id="attachOldBtn" data-click="AttachManager.toggleOld" style="display:none;"></button></div>
+</template>
     </div>
   </div>
 
@@ -2969,15 +3706,33 @@
     </div>
   </div>
 
+<!--#sa-->
   
   
   
     <script src="static/js/config/app-config.js"></script>
+<!--#/sa-->
   <script src="static/js/core/app-store.js"></script>
+<template data-edition="workgroup">
+  <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+
+  <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+
+  <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+
+  <!-- WBS Enterprise ver1.0.4 Core Modular Scripts -->
+  <script src="static/js/config/app-config.js"></script>
+  <script src="static/js/core/features.js"></script>
+</template>
   <script src="static/js/core/week-format.js"></script>
   <script src="static/js/common/ui-events.js"></script>
-  <script src="static/js/common/i18n-en.js"></script>
+<template data-edition="workgroup">
   <script src="static/js/common/i18n.js"></script>
+</template>
+  <script src="static/js/common/i18n-en.js"></script>
+<!--#sa-->
+  <script src="static/js/common/i18n.js"></script>
+<!--#/sa-->
   <script src="static/js/core/initial-data.js"></script>
   <script src="static/js/modules/wbs/wbs-engine.js"></script>
   <script src="static/js/modules/wbs/metrics.js"></script>
@@ -2987,6 +3742,9 @@
   <script src="static/js/modules/dataio/excel-sync.js"></script>
   <script src="static/js/core/db-connector.js"></script>
   <script src="static/js/modules/report/report-exporter.js"></script>
+<template data-edition="workgroup">
+  <script src="static/js/common/manual-viewer.js"></script>
+</template>
   <script src="static/js/modules/meeting/meeting-manager.js"></script>
   <script src="static/js/common/charts.js"></script>
   <script src="static/js/modules/weekly/weekly-export.js"></script>
@@ -3004,15 +3762,26 @@
   <script src="static/js/modules/wbs/wbs-table.js"></script>
   <script src="static/js/modules/progress/phase-matrix.js"></script>
   <script src="static/js/modules/deliverable/deliverables.js"></script>
+<template data-edition="workgroup">
+  <script src="static/js/modules/deliverable/attach.js"></script>
+</template>
   <script src="static/js/modules/requirement/req-voc.js"></script>
   <script src="static/js/modules/progress/dashboard.js"></script>
   <script src="static/js/modules/wbs/wbs-template.js"></script>
   <script src="static/js/common/tabs-theme.js"></script>
   <script src="static/js/modules/board/notice-comm.js"></script>
+<template data-edition="workgroup">
+  <script src="static/js/modules/board/chat.js"></script>
+</template>
   <script src="static/js/common/layout.js"></script>
   <script src="static/js/modules/requirement/req-phase.js"></script>
   <script src="static/js/modules/dataio/smart-merge.js"></script>
+<!--#sa-->
   <script src="static/js/modules/dataio/local-pkg.js"></script>
+<!--#/sa-->
+<template data-edition="workgroup">
+  <script src="static/js/core/sample-snapshot.js"></script>
+</template>
   <script src="static/js/core/storage.js"></script>
   <script src="static/js/modules/weekly/weekly-report.js"></script>
   <script src="static/js/modules/home/home.js"></script>
@@ -3023,10 +3792,15 @@
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>
   <script src="static/js/core/project-transfer.js"></script>
+<!--#sa-->
   <script src="static/js/core/sample-snapshot.js"></script>
   <script src="static/js/core/sample-project.js"></script>
+<!--#/sa-->
   <script src="static/js/core/system-backup.js"></script>
   <script src="static/js/core/data-admin.js"></script>
+<template data-edition="workgroup">
+  <script src="static/js/core/lock-manager.js"></script>
+</template>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>
   <script src="static/js/common/legal-notice.js"></script>
@@ -3183,5 +3957,37 @@
     </div>
   </div>
 
+<template data-edition="workgroup">
+  <!-- Workgroup 판: 공통 화면 코드의 다른 부분을 덮어씀 (workgroup/webapp/static/js/overrides — docs/EDITIONS.md) -->
+  <script src="static/js/overrides/common-g-shell.js"></script>
+  <script src="static/js/overrides/common-i18n-en.js"></script>
+  <script src="static/js/overrides/common-ui-events.js"></script>
+  <script src="static/js/overrides/common-ui-standards.js"></script>
+  <script src="static/js/overrides/core-access-control.js"></script>
+  <script src="static/js/overrides/core-app-boot.js"></script>
+  <script src="static/js/overrides/core-data-admin.js"></script>
+  <script src="static/js/overrides/core-data-store.js"></script>
+  <script src="static/js/overrides/core-db-connector.js"></script>
+  <script src="static/js/overrides/core-project-data.js"></script>
+  <script src="static/js/overrides/core-project-manager.js"></script>
+  <script src="static/js/overrides/core-project-transfer.js"></script>
+  <script src="static/js/overrides/core-storage.js"></script>
+  <script src="static/js/overrides/core-system-backup.js"></script>
+  <script src="static/js/overrides/modules-admin-user-admin.js"></script>
+  <script src="static/js/overrides/modules-board-notice-comm.js"></script>
+  <script src="static/js/overrides/modules-dataio-data-io.js"></script>
+  <script src="static/js/overrides/modules-dataio-excel-sync.js"></script>
+  <script src="static/js/overrides/modules-dataio-merge-table.js"></script>
+  <script src="static/js/overrides/modules-dataio-smart-merge.js"></script>
+  <script src="static/js/overrides/modules-deliverable-deliverables.js"></script>
+  <script src="static/js/overrides/modules-home-home.js"></script>
+  <script src="static/js/overrides/modules-master-master-subsystem.js"></script>
+  <script src="static/js/overrides/modules-master-process-lib.js"></script>
+  <script src="static/js/overrides/modules-master-project-config.js"></script>
+  <script src="static/js/overrides/modules-master-users.js"></script>
+  <script src="static/js/overrides/modules-meeting-meeting-manager.js"></script>
+  <script src="static/js/overrides/modules-report-report-exporter.js"></script>
+  <script src="static/js/overrides/modules-requirement-req-phase.js"></script>
+</template>
 </body>
 </html>

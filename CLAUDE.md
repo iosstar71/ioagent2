@@ -1,7 +1,7 @@
 # PM Hub (IOSTAR-PM) — 작업 규칙
 
-브랜드 IOSTAR-PM · 사내 표시 PM Hub · 판: **Standalone**(이 브랜치 `iostar-pm-standalone`, DB · 서버 없음) /
-**Workgroup**(`iostar-pm-workgroup`, 서버 DB, 같은 화면이 `webapp/` 아래) / Enterprise(계획).
+브랜드 IOSTAR-PM · 사내 표시 PM Hub · 판: **Standalone**(DB · 서버 없음) / **Workgroup**(서버 DB) / Enterprise(계획).
+**두 판이 이 브랜치(`iostar-pm-standalone`) 한 코드에 있다** — 화면은 맨 위 `index.html` · `static/` 한 벌, Workgroup 만의 것은 `workgroup/` (구조: `docs/EDITIONS.md`).
 사용자와는 **한국어**로 답한다. 커밋 메시지 · 도구 콘솔 출력은 영어.
 
 ## 1. 사용량을 아끼는 작업 방식 (먼저 읽기)
@@ -76,16 +76,21 @@ Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업
 대기(예전 착수전) · N차(예전 N회차) · 보고 · 게시판 · 체크할 일 · Admin · Dashboard · Gantt.
 엑셀 시트 이름(`0_프로젝트기준정보` 등)과 읽기 규칙은 예전 이름도 받아야 한다(멤버 시트: 사용자/작업자/멤버).
 
-## 5. 두 판 운영 (사용자 결정)
-- **평소에는 Standalone 만 고치고 시험한다.** Workgroup 은 사용자가 "동기화"를 요청할 때만 맞춘다 (매번 두 판을 시험하지 않는다 — Workgroup E2E 는 ~20분).
-- 동기화할 때: Standalone 쪽 `git diff <지난 동기화 커밋> HEAD -- static index.html` 을 Workgroup 작업 폴더에서
-  `git apply --directory=webapp -3` (충돌은 Workgroup 내용을 살리고 색 · 클래스만 반영) → Workgroup E2E · 서버 시험 1회.
-  지난 동기화 커밋은 Workgroup 커밋 메시지의 `Synced from Standalone <hash>` 로 찾는다.
-- Workgroup 만의 것: 서버(`server/`), 체크아웃 잠금, 채팅, 도움말 내장(manual-viewer). Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB.
+## 5. 두 판 운영 (한 코드)
+- 화면 코드는 한 벌. 판마다 다른 것:
+  - `index.html` 의 `<!--#sa--> … <!--#/sa-->`(Standalone 에만) · `<template data-edition="workgroup"> … </template>`(Workgroup 에만) — `tools/edition.py` 가 배포할 때 판에 맞게 남김
+  - `workgroup/` — 서버(`server/`, `wbs_db_server.py`), 설정(`conf/app.ini`), Workgroup 도구 · 시험, 그리고 `workgroup/webapp/`(Workgroup 전용 화면 파일 · 생성 파일 · 덮어쓰기)
+  - `workgroup/webapp/static/js/overrides/*.js` — 공통 화면 코드 중 Workgroup 에서 다르게 동작하는 메서드(로그인 · 서버 저장 · 체크아웃 잠금 등)를 같은 이름으로 덮어씀.
+    **공통 파일의 메서드를 고칠 때 `grep -rn "<메서드 이름>" workgroup/webapp/static/js/overrides` 로 같은 이름이 있는지 확인**하고 있으면 함께 고친다.
+- 평소 시험은 Standalone 만. Workgroup 은 화면 동작 · 저장 · 로그인을 바꿨을 때, 또는 배포 전에:
+  `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 Workgroup 시험(아래 6).
+- Workgroup 만의 것: 서버, 로그인 · 계정 등록, 체크아웃 잠금, 채팅, 첨부, 도움말 내장(manual-viewer). Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB 저장(Workgroup 은 같은 이름의 localStorage `AppStore`).
 - 저장: 두 판 모두 자동저장 없음 — [저장]을 눌러야 기록. 화면 설정(기준일 · 테마)과 프로그램이 한 자료 변환만 조용히 기록(`SyncManager.saveSettingsQuiet`).
-- 초기 암호는 두 판 모두 `1234`, 처음 들어올 때 변경 필수. 설치본은 샘플 없이 빈 상태(Workgroup 시험은 `tools/tests/fixtures/initial_sample.json`).
+- 초기 암호는 두 판 모두 `1234`, 처음 들어올 때 변경 필수. 설치본은 샘플 없이 빈 상태(Workgroup 시험은 `workgroup/tools/tests/fixtures/initial_sample.json`).
+- 버전: 두 판 같은 번호 (`conf/app.ini` · `workgroup/conf/app.ini` 의 version). 릴리즈 노트: `RELEASE_NOTES.md` · `workgroup/RELEASE_NOTES.md`.
 
 ## 6. 시험 · 배포
 - Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>`
-- Workgroup: `node tools/tests/e2e/run_e2e.js` (실제 서버) · `python tools/tests/test_server_api.py` · `python tools/make_release.py <폴더>`
+- Workgroup: `python tools/edition.py assemble workgroup <폴더>` 다음 그 폴더에서 `node tools/tests/e2e/run_e2e.js`(실제 서버, ~20분 — 백그라운드로) · `python tools/tests/test_server_api.py`(10초) · `python tools/make_release.py <출력 폴더>`
+  (조립한 폴더에서 화면 부채 기준을 바꾸면 `tools/ui_debt.json` 을 `workgroup/tools/` 로 다시 복사)
 - 호환 시험 자료: `tools/tests/fixtures/` (상대 판에서 만든 프로젝트 백업 JSON)

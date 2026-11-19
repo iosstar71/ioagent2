@@ -1,0 +1,9 @@
+logs/
+__pycache__/
+*.pyc
+data/*.db-wal
+data/*.db-shm
+certs/
+upload/
+data/backups/
+data/snapshots/

@@ -27,6 +27,9 @@ SKIP_JS = {"i18n-en.js", "icons.js", "legal-text.js", "initial-data.js", "sample
 
 def html_counts():
     html = (WEB / "index.html").read_text(encoding="utf-8")
+    if WEB == ROOT and (ROOT / "tools" / "edition.py").exists():   # 한 코드 저장소: Standalone 에 나가는 화면만 셈 (Workgroup 은 조립한 폴더에서 따로)
+        import sys as _s; _s.path.insert(0, str(ROOT / "tools")); import edition
+        html = edition.render(html, "standalone")
     starts = [(m.start(), m.group(1)) for m in re.finditer(r'<div[^>]*\bid="(tab-[a-z-]+)"[^>]*class="tab-pane|<div[^>]*class="tab-pane[^"]*"[^>]*\bid="(tab-[a-z-]+)"', html)]
     starts = [(pos, a) for pos, a in starts if a]
     if not starts:  # attribute order differs
