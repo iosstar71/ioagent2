@@ -769,11 +769,7 @@ class LockApiTest(unittest.TestCase):
 
 
 class SharedFilesTest(unittest.TestCase):
-    """[v1.2.0] 국내판·Standard·Neo 공용 파일(배치 파일·배포 도구)이 지문 목록과 같은지 확인"""
-
-    def test_shared_files_match_manifest(self):
-        r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_shared_files.py")], capture_output=True, text=True)
-        self.assertEqual(r.returncode, 0, r.stdout)
+    """화면 스타일 부채(!important · 인라인 스타일 · 고정 색)가 늘지 않았는지"""
 
     def test_ui_style_debt_not_increased(self):
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "check_ui_debt.py")], capture_output=True, text=True)

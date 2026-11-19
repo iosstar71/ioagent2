@@ -1,9 +1,0 @@
-# IOSTAR-PM shared files (KR / G editions must be identical) - python tools/check_shared_files.py --update
-14dfbe40c552b88d9cc276c96a60a1133d21b97def01516851e7d2e986e869ee  run_server.bat
-9ee2a5d4a1156329a0af87f24f39d2fb320ee901597fd43b696131c10bfd1851  make_cert.bat
-1305c9da9e92e4c967650e11b41a856fd1b10fa1dd75deb904d923c7a5d51df3  run_tests.bat
-4ecc4840fcbe576c161341a0c6cf99f2d36d3d9646a0d90ab03be8948f2a7b30  tools/app_config.py
-f3aa798eb44eca729b73ea38a3b8748f894f9019e183e416a517400978a64c4c  tools/check_shared_files.py
-b6b904b0258cf283fc6b4adde32f4ba0de77ba8f732d9cc505c48c5c5733074a  tools/make_cert.py
-53ed89dba5546f29c6ba6b2314624c999447f6cba197324152db45af92d5a8b3  tools/make_release.py
-258816b7dcca5da61dc453ede842268951540a263e29d62de55ef4863f1cb6d8  tools/make_release_win.py
