@@ -18,6 +18,9 @@
 ## 고칠 때
 - 공통 파일의 메서드를 고치면 `workgroup/webapp/static/js/overrides/` 에 같은 이름이 있는지 확인한다 (`grep -rn "이름" workgroup/webapp/static/js/overrides`).
   있으면 Workgroup 쪽도 같은 뜻으로 고친다.
-- 덮어쓰기 파일은 두 판을 합칠 때(1.2.5) 자동으로 뽑은 것이라, 낱말만 다른 메서드(로그인 ↔ 멤버 선택, 비밀번호 ↔ 암호)도 들어 있다.
-  4단계에서 판 낱말 표 · 판 조건으로 바꿔 덮어쓰기를 줄여 간다.
+- 덮어쓰기는 **동작이 정말 다른 메서드만**(서버 저장 · 로그인 · 계정 · 백업 등) 둔다. 공통 메서드에 Workgroup 기능을 한두 줄 끼우는 경우는
+  덮어쓰기 대신 공통 코드에 연결 줄을 넣는다 — Workgroup 전용 객체가 있을 때만 부름:
+  `typeof AttachManager !== "undefined" ? AttachManager.btnHtml(...) : ""`
+  (체크아웃 `LockManager` 는 브라우저에도 같은 이름의 함수가 있어 `typeof LockManager === "object"` 로 확인)
+- 공통 메서드를 통째로 복사한 덮어쓰기는 공통 쪽이 바뀌면 낡는다. 큰 복사본이 생기면 연결 줄로 바꾼다.
 - Workgroup 에만 필요한 화면 조각은 `index.html` 의 `<template data-edition="workgroup">` 안에 둔다.

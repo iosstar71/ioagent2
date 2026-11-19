@@ -2,48 +2,7 @@
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(StorageManager, {
-  exportFullSystemBackup() {
-    const now = new Date();
-    const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
-    const fullPayload = Object.assign({
-      schemaVersion: `AX_PMYS_${APP_VERSION.version}_FULL_BACKUP`,
-      exportedAt: now.toISOString(),
-      exportedBy: AuthManager.getCurrentUser().empNo,
-      systemSettings: {
-        theme: document.body.getAttribute("data-theme") || defaultTheme(),
-        authPolicy: AuthManager.getAuthPolicy(),
-        autoLockMinutes: AuthManager.getAutoLockMinutes(),
-        dbConfig: DbConnector.config
-      }
-    }, DataRegistry.collect());
-    const blob = new Blob([JSON.stringify(fullPayload, null, 2)], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = ExcelSync.stdName("전체백업", [], "json", String(stamp).replace(/[^0-9]/g, "").slice(0, 14));
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast(`[전체 백업 완료] 시스템 설정, 프로젝트 설정, 업무 데이터(게시판·회의·주간보고 포함)를 저장했습니다.`);
-  },
-  resetAllToSample() {
-    this.closeResetModal();
-    openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 초기 데이터(initial_data.json)로 복원됩니다. 계속하시겠습니까?", () => {
-      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
-      location.reload();
-    });
-  },
 
-  _applySnapshot(snapshot, meetingFilter) {
-    const c = DataRegistry.clone(snapshot);
-    DataRegistry.apply(c, ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "projectUsers",
-      "wbsData", "deliverablesData", "reqMasterData", "vocData", "noticesData", "communicationsData"]);
-    weeklyReportsData = Array.isArray(c.weeklyReportsData) ? c.weeklyReportsData : [];
-    meetingsData = Array.isArray(c.meetingsData)
-      ? c.meetingsData
-      : MeetingManager.getDefaultMeetings().filter(meetingFilter || (() => true));
-  },
 
   // [v3.9.0] 2027 제조 분야 샘플 (PMO 1 · 폭포수 표준형 2 · 개선과제형 1, 레벨 4 WBS, 주간보고 · 회의록 포함)
   //  지금 프로젝트의 자료만 바꾸고, 샘플 담당자 계정은 없으면 이 프로젝트 참여자로 추가 (다른 사용자 · 프로젝트는 그대로)

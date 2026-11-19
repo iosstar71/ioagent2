@@ -343,10 +343,12 @@ var MergeTable = {
     this.WORK.forEach(k => {
       const p = by(k);
       if (!p) return;
+      const keys = k === "deliverables" && typeof AttachManager !== "undefined" ? AttachManager.rememberKeys() : null;
       if (p.scope === "ALL" && p.lockedOut && p.lockedOut.length) {
         // 잠긴 서브시스템은 그대로 두고, 파일에 있는 서브시스템만 바꿈
         [...new Set(p.rows.map(r => this._sysOf(r)))].forEach(x => SmartMergeCenter._mergeWorkArrayData(k, p.rows.filter(r => this._sysOf(r) === x), x));
       } else SmartMergeCenter._mergeWorkArrayData(k, p.rows, p.scope);
+      if (keys) AttachManager.reapplyKeys(keys);  // 첨부파일 연결 유지
       done.push(`${this.item(k).label} ${p.rows.length}건`);
     });
     this.COLLAB.forEach(k => {

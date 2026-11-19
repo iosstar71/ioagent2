@@ -199,6 +199,8 @@ var MasterSyncEngine = {
       if (typeof renderProjectTitles === "function") renderProjectTitles();
       if (typeof NoticeCommManager !== "undefined") NoticeCommManager.updateHeaderBadge();
       if (typeof RealtimeChatManager !== "undefined" && typeof RealtimeChatManager.renderChannels === "function") RealtimeChatManager.renderChannels();
+      // 주간보고 상태 (기준일 주차 · 열린 보고) — 다른 화면 · 보고서가 읽음
+      if (typeof WeeklyReportManager !== "undefined" && typeof WeeklyReportManager.init === "function") WeeklyReportManager.init();
       // 5. 화면: 보이는 화면만 다시 그림 (다른 화면은 열 때 그림 — common/tabs-theme.js ScreenRender)
       if (typeof ScreenRender !== "undefined") ScreenRender.refreshVisible();
 

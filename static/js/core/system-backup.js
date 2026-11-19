@@ -38,6 +38,7 @@ var BackupPane = {
     document.getElementById("bkServerBox").style.display = server ? "" : "none";
     document.getElementById("bkLocalBox").style.display = server ? "none" : "";
     if (!server) StorageManager.updateUsageInfo();
+    if (admin && server) await SystemBackup.refresh();
     BackupHistoryManager.renderBackupHistoryTable();
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("mergeBackupPane"));
   }

@@ -220,7 +220,7 @@ async function compare(oldCss) {
   return 1;
 }
 
-async function prune() {
+async function pruneSlow() {
   const css = fs.readFileSync(CSS_FILE, "utf8");
   const cand = candidates(css);
   let { page, close } = await openApp();
@@ -314,10 +314,90 @@ async function dump(name, file) {
   await close(); fs.writeFileSync(file, lines.join("\n")); console.log(`[OK] ${lines.length} elements -> ${file}`); return 0;
 }
 
+// 빠른 정리: 화면마다 한 번만 열어 두고, 그 화면에서 규칙 묶음을 지워 보며(반씩 나눠) 모양이 바뀌는 !important 를 찾음
+//  모든 화면에서 한 번도 모양을 바꾸지 않은 것만 지움 → 마지막에 모든 화면 x 테마 x 모든 속성으로 다시 확인
+async function prune2() {
+  const css = fs.readFileSync(CSS_FILE, "utf8");
+  const cand = candidates(css).map(c => Object.assign(c, { props: propsFor([c]), sels: c.sel.split(",").map(x => x.trim()) }));
+  let { page, close } = await openApp();
+  await setCss(page, css);
+  const names = await page.evaluate(() => window.__STATES.map(s => s.name));
+  console.log(`!important total=${(css.match(/!important/g) || []).length}  candidates=${cand.length}  screens=${names.length}`);
+  await page.evaluate(([css, cand, themes]) => {
+    window.__CSS = css; window.__CAND = cand; window.__THEMES = themes;
+    window.__removed = ids => { const l = ids.map(i => window.__CAND[i]).sort((a, b) => b.at - a.at); let s = window.__CSS; l.forEach(c => { s = s.slice(0, c.at) + s.slice(c.at + c.len); }); return s; };
+  }, [css, cand, THEMES]);
+  // 한 화면: 관련 후보 중 지우면 모양이 바뀌는 것(harmful) 찾기
+  async function harmfulIn(si, pool) {
+    return page.evaluate(async ([si, pool]) => {
+      const st = window.__STATES[si]; st.run(); await new Promise(r => setTimeout(r, 250));
+      const C = window.__CAND, css = document.getElementById("cssUnderTest");
+      const live = pool.filter(i => window.__matches(C[i].sels).some(Boolean));
+      const out = [];
+      const look = ids => { const props = [...new Set(ids.map(i => C[i].props).flat())], sels = [...new Set(ids.map(i => C[i].sels).flat())];
+        return window.__THEMES.map(th => window.__snap(th, props, sels)).join(","); };
+      async function test(ids) {
+        css.textContent = window.__CSS; const a = look(ids);
+        css.textContent = window.__removed(ids); const b = look(ids);
+        css.textContent = window.__CSS; return a === b;
+      }
+      async function bis(ids) { if (!ids.length) return; if (await test(ids)) return; if (ids.length === 1) { out.push(ids[0]); return; } const m = Math.ceil(ids.length / 2); await bis(ids.slice(0, m)); await bis(ids.slice(m)); }
+      await bis(live);
+      if (st.after) st.after();
+      return { out, live: live.length };
+    }, [si, pool]);
+  }
+  const all = cand.map(c => c.id);
+  let harmful = new Set();
+  // 진행 저장 (오래 걸려서 끊겨도 이어서): 같은 style.css 일 때만 이어 씀
+  const PROG = path.join(os.tmpdir(), "css_prune_progress.json");
+  const cssKey = require("crypto").createHash("sha1").update(css).digest("hex");
+  let doneUpTo = 0;
+  try { const pg = JSON.parse(fs.readFileSync(PROG, "utf8")); if (pg.cssKey === cssKey) { harmful = new Set(pg.harmful); doneUpTo = pg.next; console.log(`  resuming at screen ${doneUpTo + 1}`); } } catch (e) {}
+  for (let si = doneUpTo; si < names.length; si++) {
+    let r; for (let k = 0; k < 3; k++) { try { r = await harmfulIn(si, all.filter(i => !harmful.has(i))); break; } catch (e) { try { await close(); } catch (x) {} ({ page, close } = await openApp()); await setCss(page, css); await page.evaluate(([css, cand, themes]) => { window.__CSS = css; window.__CAND = cand; window.__THEMES = themes; window.__removed = ids => { const l = ids.map(i => window.__CAND[i]).sort((a, b) => b.at - a.at); let s = window.__CSS; l.forEach(c => { s = s.slice(0, c.at) + s.slice(c.at + c.len); }); return s; }; }, [css, cand, THEMES]); } }
+    if (!r) throw new Error("browser kept crashing");
+    r.out.forEach(i => harmful.add(i));
+    console.log(`  ${si + 1}/${names.length} ${names[si]}: related ${r.live}, needed so far ${harmful.size}`);
+    fs.writeFileSync(PROG, JSON.stringify({ cssKey, next: si + 1, harmful: [...harmful] }));
+  }
+  // 전체 확인 (모든 요소 · 모든 속성). 다르면 다른 화면에서 지우는 것 전체를 다시 반씩 나눠 봄
+  for (let round = 0; round < 4; round++) {
+    const rem = all.filter(i => !harmful.has(i));
+    await setCss(page, css); const a0 = await snapshot(page);
+    await page.evaluate(ids => { document.getElementById("cssUnderTest").textContent = window.__removed(ids); }, rem); const a1 = await snapshot(page);
+    const bad = [...new Set(Object.keys(a0).filter(k => a0[k] !== a1[k]).map(k => +k.split("|")[0]))];
+    if (!bad.length) {
+      let cur = fs.readFileSync(CSS_FILE, "utf8");
+      if (cur !== css) { console.log("[FAIL] style.css changed while running — nothing written"); await close(); return 1; }
+      cur = withRemoved(css, rem.map(i => cand[i]));
+      fs.writeFileSync(CSS_FILE, cur);
+      await close();
+      console.log(`[OK] removed ${rem.length} !important (now ${(cur.match(/!important/g) || []).length}); every screen x theme looks the same`);
+      return 0;
+    }
+    console.log(`  final check: ${bad.length} screens differ (${bad.map(i => names[i]).join(", ")}) — checking them again`);
+    await setCss(page, css);
+    for (const si of bad) {
+      // 지울 목록 전체를 그 화면의 모든 요소로 다시 나눠 봄
+      const r = await page.evaluate(async ([si, rem]) => {
+        const st = window.__STATES[si]; st.run(); await new Promise(r => setTimeout(r, 250));
+        const css = document.getElementById("cssUnderTest"), out = [];
+        const look = () => window.__THEMES.map(th => window.__snap(th)).join(",");
+        async function test(ids) { css.textContent = window.__CSS; const a = look(); css.textContent = window.__removed(ids); const b = look(); css.textContent = window.__CSS; return a === b; }
+        async function bis(ids) { if (!ids.length) return; if (await test(ids)) return; if (ids.length === 1) { out.push(ids[0]); return; } const m = Math.ceil(ids.length / 2); await bis(ids.slice(0, m)); await bis(ids.slice(m)); }
+        await bis(rem); if (st.after) st.after(); return out;
+      }, [si, all.filter(i => !harmful.has(i))]);
+      r.forEach(i => harmful.add(i));
+    }
+  }
+  await close(); console.log("[FAIL] could not reach a safe set"); return 1;
+}
+
 (async () => {
   const a = process.argv;
   let code = 0;
-  if (a.includes("--prune-important")) code = await prune();
+  if (a.includes("--prune-important")) code = await prune2();
   else if (a.includes("--dump")) code = await dump(a[a.indexOf("--dump") + 1], a[a.indexOf("--dump") + 2]);
   else if (a.includes("--save")) code = await saveOrCheck(a[a.indexOf("--save") + 1], "save");
   else if (a.includes("--check")) code = await saveOrCheck(a[a.indexOf("--check") + 1], "check");

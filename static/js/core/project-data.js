@@ -56,7 +56,7 @@ var ProjectData = {
     let json;
     try { json = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다: " + err.message); }
     const data = this._pick(json);
-    if (!data) return showToast("⚠️ Project Mgmt 백업 파일이 아닙니다. (프로젝트 백업 · 전체 백업 · 스냅샷 백업 JSON 을 쓰세요)");
+    if (!data) return showToast("⚠️ IOSTAR-PM 백업 파일이 아닙니다. (프로젝트 백업 · 전체 백업 · 스냅샷 백업 JSON 을 쓰세요)");
     const fromName = json.projectName || (data.projectConfig && data.projectConfig.projectName) || "";
     const other = json.projectId && json.projectId !== ProjectContext.current;
     openConfirmDialog(`[${this.currentName()}] 프로젝트를 백업 파일 [${file.name}] 의 내용으로 바꿉니다.\n` +

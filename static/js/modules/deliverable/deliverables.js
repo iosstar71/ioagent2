@@ -63,12 +63,14 @@ function renderDeliverablesTable() {
         </select>
       </td>
       <td><input type="text" value="${escapeHtml(row.manager || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "manager", "$value", "persistChanges")}"></td>
+      <td style="text-align:center;">${typeof AttachManager !== "undefined" ? AttachManager.cellHtml(idx, row) : ""}</td>
       <td><input type="text" value="${escapeHtml(row.remarks || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "remarks", "$value", "persistChanges")}"></td>
       <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("deliverablesData", idx, "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);
   });
   if (typeof StatusChips !== "undefined") StatusChips.render("deliv", chipScope);
+  if (typeof AttachManager !== "undefined") AttachManager.refreshSummary();  // 첨부파일 수 (서버 방식, 처음 한 번)
   if (typeof RecordPanel !== "undefined") RecordPanel.decorate("deliv");
 }
 

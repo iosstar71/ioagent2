@@ -2,29 +2,6 @@
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(BackupPane, {
-  async render() {
-    this.syncTab();
-    if (!this.isManager()) return;
-    const admin = this.isAdmin();
-    const note = document.getElementById("bkRoleNote");
-    if (note) note.innerHTML = admin
-      ? "👑 <b>관리자</b> — 모든 프로젝트와 시스템 전체 백업 · 복원을 쓸 수 있습니다."
-      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 스냅샷을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 관리자 전용)`;
-    // 권한 없는 부분은 비활성 (data-need="admin")
-    document.querySelectorAll('#mergeBackupPane [data-need="admin"]').forEach(el => {
-      el.classList.toggle("bk-locked", !admin);
-      el.querySelectorAll("button, input, select").forEach(c => { c.disabled = !admin; });
-      if (el.tagName === "BUTTON") { el.disabled = !admin; if (!admin) el.title = "관리자 전용"; }
-    });
-    await ProjectTransfer.render();
-    const server = !SyncManager.isLocal();
-    document.getElementById("bkServerBox").style.display = server ? "" : "none";
-    document.getElementById("bkLocalBox").style.display = server ? "none" : "";
-    if (!server) StorageManager.updateUsageInfo();
-    if (admin && server) await SystemBackup.refresh();
-    BackupHistoryManager.renderBackupHistoryTable();
-    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("mergeBackupPane"));
-  }
 });
 
 Object.assign(SystemBackup, {

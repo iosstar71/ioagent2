@@ -122,6 +122,7 @@ var SubTabs = {
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
     if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
     if (group === "merge" && name === "backup" && typeof BackupPane !== "undefined") BackupPane.render();
+    if (group === "merge" && name === "locks" && typeof LockManager === "object") { LockManager.renderBoard(); LockManager.refresh(true); }
     if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
     if (group === "config" && name === "process" && typeof ProcessLib !== "undefined") ProcessLib.renderAdmin();
     if (group === "config" && name === "data" && typeof DataAdmin !== "undefined") DataAdmin.render();

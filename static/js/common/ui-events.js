@@ -41,6 +41,7 @@ var UiEvents = {
       case "ReportExporter": return typeof ReportExporter !== "undefined" ? ReportExporter : undefined;
       case "SmartMergeCenter": return typeof SmartMergeCenter !== "undefined" ? SmartMergeCenter : undefined;
       case "JsonCollabManager": return typeof JsonCollabManager !== "undefined" ? JsonCollabManager : undefined;
+      case "ManualViewer": return typeof ManualViewer !== "undefined" ? ManualViewer : undefined;
       case "GanttRenderer": return typeof GanttRenderer !== "undefined" ? GanttRenderer : undefined;
       case "DashboardChart": return typeof DashboardChart !== "undefined" ? DashboardChart : undefined;
       case "WBSEngine": return typeof WBSEngine !== "undefined" ? WBSEngine : undefined;

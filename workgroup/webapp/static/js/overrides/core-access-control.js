@@ -94,78 +94,6 @@ Object.assign(AuthManager, {
     return inputHash === target ? { ok: true, user: u } : { ok: false, message: "암호가 일치하지 않습니다." };
   },
 
-  async unlock() {
-    const now = Date.now();
-    if (this.lockoutUntil > now) {
-      this._err("lockErrorMessage", `🛡️ 보안 잠금: ${Math.ceil((this.lockoutUntil - now) / 1000)}초 후 다시 시도할 수 있습니다.`);
-      return;
-    }
-    const empNo = (document.getElementById("inputSecurityEmpNo").value || "").trim();
-    const pwdEl = document.getElementById("inputSecurityPassword");
-    const pwd = pwdEl.value;
-    const langSel = document.getElementById("inputLoginLang");
-    const lang = langSel ? langSel.value : "ko";
-    if (!empNo || !pwd) {
-      this._err("lockErrorMessage", "멤버 ID과 암호를 입력하세요.");
-      return;
-    }
-
-    // [v3.0.0] 멤버 선택할 프로젝트: 관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
-    const project = this.lockMode === "CONFIG" ? ProjectContext.current : this.loginProject();
-    let result;
-    if (SyncManager.isLocal()) {
-      result = await this._verifyLocal(empNo, pwd);
-      if (result.ok && !ProjectContext.isAdminUser(result.user)) {
-        if (!project) result = { ok: false, message: "멤버 선택할 프로젝트를 선택하세요.", noCount: true };
-        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 멤버가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
-      }
-      if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
-    } else {
-      const res = await ServerBackend.request("/api/auth/login", { empNo, pwdHash: await this.hashPassword(pwd), lang, loginProject: project });
-      if (res.ok) {
-        ServerBackend.setToken(res.token);
-        if (Array.isArray(res.projects)) ProjectContext.projects = res.projects;
-        result = { ok: true, user: res.user, mustChange: !!(res.user && res.user.mustChangePassword) };
-      } else {
-        result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "멤버 선택 실패") };
-      }
-    }
-
-    if (!result.ok && result.noCount) {
-      this._err("lockErrorMessage", `⚠️ ${result.message}`);
-      return;
-    }
-    if (!result.ok) {
-      this.failedAttempts++;
-      if (this.failedAttempts >= 5) {
-        this.lockoutUntil = Date.now() + 30000;
-        this.failedAttempts = 0;
-        this._err("lockErrorMessage", "🛡️ 5회 연속 실패로 30초간 멤버 선택이 제한됩니다.");
-      } else {
-        this._err("lockErrorMessage", `⚠️ ${result.message} (실패 ${this.failedAttempts}/5회)`);
-      }
-      pwdEl.focus();
-      pwdEl.select();
-      return;
-    }
-
-    if (this.lockMode === "CONFIG" && this.pendingTabId && !this.canAccessTab(result.user.role, this.pendingTabId)) {
-      const meta = this.getTabMeta(this.pendingTabId);
-      this._err("lockErrorMessage", `⛔ 권한 부족: [${result.user.name}(${result.user.empNo})] 계정은 [${meta.name}] 접근 권한이 없습니다.`);
-      return;
-    }
-
-    this.failedAttempts = 0;
-    pwdEl.value = "";
-    const landing = this.lockMode === "CONFIG" ? this.pendingTabId : null;
-    if (project) { try { localStorage.setItem(this.LOGIN_PROJECT_KEY, project); } catch (e) {} }
-    if (result.mustChange) {
-      this._forced = { user: result.user, lang, landing, oldPwd: pwd, project };
-      this.showPwdChange(true, true);
-      return;
-    }
-    await this._completeLogin(result.user, { lang, landing, project });
-  },
 
   async _completeLogin(user, opts = {}) {
     const prev = this.currentUser ? this.currentUser.empNo : null;
@@ -232,32 +160,6 @@ Object.assign(AuthManager, {
   },
 
   // 계정 전환 전 미저장 변경 처리
-  showPwdChange(show, forced = false) {
-    if (!show) {
-      if (this._forced && !SyncManager.isLocal()) ServerBackend.setToken("");
-      this._forced = null;
-      this.openLogin();
-      return;
-    }
-    if (!forced) this._forced = null;
-    this._showPane("pwdChangeFormPane");
-    this._setText("lockModalTitle", forced ? "🔑 암호 변경 필요" : "🔑 암호 변경");
-    this._setText("lockModalDesc", forced
-      ? "초기 암호 또는 관리자가 지정한 임시 암호로 멤버 선택했습니다. 새 암호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
-      : "멤버 ID과 현재 암호를 확인한 후 새 암호로 변경합니다. (8자 이상, 영문+숫자)");
-    this._err("pcErrorMessage", "");
-    const emp = document.getElementById("pcEmpNo");
-    const loginEmp = document.getElementById("inputSecurityEmpNo");
-    if (emp) emp.value = loginEmp ? loginEmp.value : "";
-    ["pcOldPwd", "pcNewPwd", "pcNewPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-    if (forced && this._forced) {
-      if (emp) emp.value = this._forced.user.empNo;
-      const old = document.getElementById("pcOldPwd");
-      if (old) old.value = this._forced.oldPwd;
-    }
-    if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("securityLockOverlay"));
-    setTimeout(() => { const f = forced ? document.getElementById("pcNewPwd") : (emp && emp.value ? document.getElementById("pcOldPwd") : emp); if (f) f.focus(); }, 60);
-  },
 
   async changePasswordFromLogin() {
     const v = id => (document.getElementById(id) ? document.getElementById(id).value : "");

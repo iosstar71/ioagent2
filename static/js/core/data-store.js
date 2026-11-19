@@ -810,6 +810,10 @@ var SyncManager = {
     } finally {
       this._busy = false;
     }
+    if (res.locked && typeof LockManager === "object") {
+      this.setStatus("저장 안 됨 (체크아웃)", "warn");
+      return LockManager.onBlocked(changes, res.locked, opts);
+    }
     if (res.conflict) {
       this.setStatus("저장 충돌", "warn");
       return this.handleConflict(changes, res.conflicts, opts);
@@ -822,11 +826,13 @@ var SyncManager = {
     const savedKeys = Object.keys(res.data || {});
     DataRegistry.apply(res.data, savedKeys);
     this.afterDataApplied(savedKeys, false, res.revs);
+    if (typeof LockManager === "object" && LockManager.active()) LockManager.afterSave();
     if (res.blocked && res.blocked.length) {
       showToast(`⛔ 서버 권한 검증: ${res.blocked.join(", ")} 변경은 저장되지 않았습니다.`);
     }
     const cnt = Object.keys(changes).reduce((a, k) => a + Object.keys(changes[k].parts).length, 0);
     this.setStatus(`저장됨 (${new Date().toLocaleTimeString()})`, "ok");
+    if (typeof FileAutoSyncManager !== "undefined") FileAutoSyncManager.syncNow(false);
     if (opts.notify) {
       const labels = Object.keys(changes).map(k => DataRegistry.DEFS[k].label).join(", ");
       showToast(`💾 저장 완료: ${labels} (${cnt}개 단위 변경 · ${this.isLocal() ? "로컬 저장소" : "DB 서버"})`);
@@ -1155,6 +1161,7 @@ var SyncUI = {
     if (sbox) { sbox.toggleAttribute("data-dirty", all > 0); if (mode) sbox.title = mode.innerText; }
     // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
     if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
+    if (typeof LockManager === "object") LockManager.renderBadge();   // Workgroup 체크아웃 (브라우저에도 LockManager 함수가 있어 object 로 확인)
   },
 
   // 범용 선택 모달 → Promise<choiceId>

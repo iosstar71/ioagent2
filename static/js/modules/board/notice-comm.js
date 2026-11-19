@@ -434,6 +434,7 @@ var NoticeCommManager = {
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
+            ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("notice", String(item.id), item) : ""}
             ${actionButtons}
           </div>
         </div>
@@ -531,6 +532,7 @@ var NoticeCommManager = {
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml(post.date)}</span>
+            ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("post", String(post.id), post) : ""}
             ${postActionButtons}
           </div>
         </div>

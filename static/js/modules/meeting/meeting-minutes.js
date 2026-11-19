@@ -84,6 +84,7 @@ Object.assign(MeetingManager, {
             ${stBadge}
           </div>
           <div style="display:flex; gap:6px;">
+            ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("meeting", String(mtg.id), mtg, "첨부파일") : ""}
             <button class="btn btn-outline btn-xs" data-click="MeetingManager.openEditMeetingModal" data-click-args="${UiEvents.args(String(mtg.id))}">✏️ 기본정보 수정</button>
             <button class="btn btn-outline btn-xs" data-click="MeetingManager.toggleMeetingStatus" data-click-args="${UiEvents.args(String(mtg.id))}">
               ${mtg.status === "완료" ? "🔄 진행중으로 변경" : "✅ 회의 완료 처리"}

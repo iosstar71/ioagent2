@@ -5,25 +5,6 @@ var FileAutoSyncManager = {
   fileHandle: null,
   fileName: "",
 
-  async openExistingFileHandle() {
-    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
-    if (!("showOpenFilePicker" in window)) {
-      showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
-      return;
-    }
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        types: [{ description: "WBS 프로젝트 JSON 파일", accept: { "application/json": [".json"] } }],
-        multiple: false
-      });
-      this.fileHandle = handle;
-      this.fileName = handle.name;
-      this.updateStatus(true);
-      await this.reloadFromFileHandle(true);
-    } catch (err) {
-      if (err.name !== "AbortError") console.error("기존 JSON 열기 실패:", err);
-    }
-  },
 
   async reloadFromFileHandle(isInitialOpen = false) {
     if (!this.fileHandle) {
@@ -47,25 +28,6 @@ var FileAutoSyncManager = {
     }
   },
 
-  async setupFileHandle() {
-    if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
-    if (!("showSaveFilePicker" in window)) {
-      showToast("현재 브라우저는 File System Access API를 지원하지 않습니다. (Chrome/Edge PC 환경에서 지원)");
-      return;
-    }
-    try {
-      this.fileHandle = await window.showSaveFilePicker({
-        suggestedName: `WBS_Realtime_Sync_${projectConfig.reportDate}.json`,
-        types: [{ description: "WBS 프로젝트 백업 JSON 파일", accept: { "application/json": [".json"] } }]
-      });
-      this.fileName = this.fileHandle.name;
-      this.updateStatus(true);
-      await this.syncNow(false);
-      showToast(`로컬 파일 [${this.fileName}] 에 실시간 자동 동기화 연결이 완료되었습니다.`);
-    } catch (err) {
-      if (err.name !== "AbortError") console.error("파일 핸들 생성 실패:", err);
-    }
-  },
 
   async syncNow(showAlert = false) {
     if (typeof Features !== "undefined" && !Features.on("local_file_sync")) return;
@@ -264,49 +226,6 @@ Object.assign(SyncManager, {
     return this._commit(changes, !!opts.force, opts);
   },
 
-  async _commit(changes, force, opts) {
-    this._busy = true;
-    this.setStatus("저장 중...", "busy");
-    let res;
-    try {
-      res = await this.backend().save(changes, force, this.whoAmI(), opts);
-    } finally {
-      this._busy = false;
-    }
-    if (res.locked && typeof LockManager !== "undefined") {
-      this.setStatus("저장 안 됨 (체크아웃)", "warn");
-      return LockManager.onBlocked(changes, res.locked, opts);
-    }
-    if (res.conflict) {
-      this.setStatus("저장 충돌", "warn");
-      return this.handleConflict(changes, res.conflicts, opts);
-    }
-    if (!res.ok) {
-      this.setStatus("저장 실패", "error");
-      showToast(`❌ 저장 실패: ${res.error || "알 수 없는 오류"}${res.network ? " — 서버 연결을 확인하세요. (변경 내용은 화면에 유지됩니다)" : ""}`);
-      return res;
-    }
-    const savedKeys = Object.keys(res.data || {});
-    DataRegistry.apply(res.data, savedKeys);
-    this.afterDataApplied(savedKeys, false, res.revs);
-    if (typeof LockManager !== "undefined" && LockManager.active()) LockManager.afterSave();
-    if (res.blocked && res.blocked.length) {
-      showToast(`⛔ 서버 권한 검증: ${res.blocked.join(", ")} 변경은 저장되지 않았습니다.`);
-    }
-    const cnt = Object.keys(changes).reduce((a, k) => a + Object.keys(changes[k].parts).length, 0);
-    this.setStatus(`저장됨 (${new Date().toLocaleTimeString()})`, "ok");
-    if (typeof FileAutoSyncManager !== "undefined") FileAutoSyncManager.syncNow(false);
-    if (opts.notify) {
-      const labels = Object.keys(changes).map(k => DataRegistry.DEFS[k].label).join(", ");
-      showToast(`💾 저장 완료: ${labels} (${cnt}개 단위 변경 · ${this.isLocal() ? "로컬 저장소" : "DB 서버"})`);
-    }
-    if (this._pendingSave) {
-      const p = this._pendingSave;
-      this._pendingSave = null;
-      setTimeout(() => this.save(p.keys, p.opts), 50);
-    }
-    return { ok: true };
-  },
 
   // 다른 사용자가 먼저 저장한 데이터가 있을 때: 덮어쓰기 / 무시하기 / 취소
   async initialLoad() {
@@ -341,32 +260,6 @@ Object.assign(SyncManager, {
 });
 
 Object.assign(SyncUI, {
-  refreshIndicators() {
-    const local = SyncManager.isAutoSave();
-    document.querySelectorAll(".sync-toolbar-state").forEach(el => {
-      const ks = el.getAttribute("data-keys");
-      const keys = ks ? ks.split(",") : null;
-      const n = SyncManager.dirtyCount(keys);
-      el.className = "sync-toolbar-state " + (n > 0 ? "dirty" : "clean");
-      el.textContent = n > 0
-        ? `● 미저장 변경 ${n}건${local ? " (자동저장 대기)" : ""}`
-        : (local ? "✓ 실시간 자동저장" : "✓ 저장됨");
-    });
-    const all = SyncManager.dirtyCount();
-    const btn = document.getElementById("btnHeaderSaveAll");
-    if (btn) {
-      btn.innerText = all > 0 ? `💾 전체 저장 (${all})` : "💾 전체 저장";
-      btn.className = all > 0 ? "btn btn-warning btn-sm manual-save-dirty" : "btn btn-primary btn-sm";
-    }
-    const mode = document.getElementById("storageStatusText");
-    if (mode && all > 0 && !SyncManager._busy) mode.innerText = local ? "자동저장 대기" : `미저장 ${all}건`;
-    // 머리말 저장 상태는 점 하나 (변경 대기 = 주의 색), 글자는 마우스를 올리면 보임
-    const sbox = document.getElementById("storageStatusBox");
-    if (sbox) { sbox.toggleAttribute("data-dirty", all > 0); if (mode) sbox.title = mode.innerText; }
-    // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
-    if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
-    if (typeof LockManager !== "undefined") LockManager.renderBadge();
-  },
 
   // 범용 선택 모달 → Promise<choiceId>
 });

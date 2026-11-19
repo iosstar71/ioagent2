@@ -19,28 +19,6 @@ Object.assign(ProjectData, {
   },
 
   // 올린 JSON → 프로젝트 자료 (프로젝트 백업 · 시스템 전체 백업 · 스냅샷 백업 모두 받음),
-  async importProject(e) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
-    if (e && e.target) e.target.value = "";
-    if (!file) return;
-    if (!this.canManage()) return showToast("🚫 프로젝트 복원은 PM · 관리자만 할 수 있습니다.");
-    if (/\.(xlsx|xls)$/i.test(file.name)) return this._importExcel(file);
-    let json;
-    try { json = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다: " + err.message); }
-    const data = this._pick(json);
-    if (!data) return showToast("⚠️ IOSTAR-PM 백업 파일이 아닙니다. (프로젝트 백업 · 전체 백업 · 스냅샷 백업 JSON 을 쓰세요)");
-    const fromName = json.projectName || (data.projectConfig && data.projectConfig.projectName) || "";
-    const other = json.projectId && json.projectId !== ProjectContext.current;
-    openConfirmDialog(`[${this.currentName()}] 프로젝트를 백업 파일 [${file.name}] 의 내용으로 바꿉니다.\n` +
-      `${other || (fromName && fromName !== this.currentName()) ? `⚠️ 다른 프로젝트(${fromName || json.projectId})의 백업입니다.\n` : ""}` +
-      `· 바뀌는 것: 프로젝트 설정 + ${this.countText(data)}\n· 그대로: 프로젝트 이름, 멤버 계정, 다른 프로젝트\n바꾸기 전에 자동 스냅샷을 만듭니다. 계속할까요?`, () => {
-      BackupHistoryManager.createBackupSnapshot("프로젝트복원직전백업", "ALL", false);
-      const keepName = projectConfig.projectName;
-      DataRegistry.apply(data, Object.keys(data));
-      projectConfig.projectName = keepName;
-      StorageManager._afterBulkReplace(`✅ [${this.currentName()}] 프로젝트를 [${file.name}] 백업으로 복원했습니다.`);
-    });
-  },
 
   // [v3.9.1] 엑셀 백업(전체 일괄 양식)으로 복원: 이 프로젝트의 업무 · 협업 자료를 비우고 파일 내용으로 바꿈
   clearTasks(ids, label) {

@@ -329,6 +329,7 @@ var MeetingManager = {
   },
 
   render() {
+    if (typeof AttachManager !== "undefined") AttachManager.refreshSummary();  // 첨부파일 수 (서버 방식, 처음 한 번)
     this.populateSubsystemDropdowns();
     this.populateMonthFilterDropdowns();
     if (this.activeSubTab === "schedule") {

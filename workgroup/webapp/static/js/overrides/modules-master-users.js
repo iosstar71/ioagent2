@@ -2,38 +2,6 @@
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(SubTabs, {
-  show(group, name) {
-    // 화면·테마 · 보고서 템플릿 · 게시판 채널은 프로젝트 설정에만 있음 (Admin 에서 예전 탭을 열면 프로젝트 탭으로)
-    if ((group === "config" && name === "report") || (group === "master" && name === "ui-report")) {   // 보고서 설정은 [보고] 메뉴 한 곳
-      if (typeof ReportTabs !== "undefined") return ReportTabs.open("settings");
-      name = group === "config" ? "project" : "basic";
-    }
-    if (group === "config" && ["screen", "channel"].indexOf(name) !== -1) name = "project";
-    if (typeof SharedPanes !== "undefined") SharedPanes.place(group, name);  // 프로젝트별 설정 화면 (시스템 설정 ↔ 기준정보)
-    document.querySelectorAll(`.master-subtab-bar[data-group="${group}"] .master-subtab-btn`).forEach(b => b.classList.toggle("active", b.dataset.subtab === name));
-    document.querySelectorAll(`.master-subpane[data-group="${group}"]`).forEach(p => p.classList.toggle("active", p.dataset.subpane === name));
-    try { sessionStorage.setItem(this.KEY + group, name); } catch (e) {}
-    if (group === "master") {
-      if (name === "holiday") { ProgressBasisManager.render(); JudgeRules.render(); if (typeof WeekFmt !== "undefined") WeekFmt.renderSettings(); }
-      if (name === "deliv" && typeof DelivBulkDate !== "undefined") DelivBulkDate.render();
-      if (name === "phase") { renderDomainChips(); renderSubsystemsMetaTable(); }
-      if (name === "users") renderProjectUsersTable();
-      if (name === "basic") { MilestoneManager.render(); if (typeof ProjectManager !== "undefined") ProjectManager.renderPanels(); }
-      if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();
-    }
-    if (group === "config" && name === "db") DbConnector.renderConfigForm();
-    if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
-    if (group === "merge" && name === "backup" && typeof BackupPane !== "undefined") BackupPane.render();
-    if (group === "merge" && name === "locks" && typeof LockManager !== "undefined") { LockManager.renderBoard(); LockManager.refresh(true); }
-    if (group === "config" && name === "users" && typeof UserAdmin !== "undefined") UserAdmin.load();
-    if (group === "config" && name === "process" && typeof ProcessLib !== "undefined") ProcessLib.renderAdmin();
-    if (group === "config" && name === "data" && typeof DataAdmin !== "undefined") DataAdmin.render();
-    if (group === "master" && name === "phase") {
-      document.querySelectorAll('#masterSub-phase [data-admin-only]').forEach(b => { b.style.display = typeof ProcessLib !== "undefined" && ProcessLib.isAdmin() ? "" : "none"; });
-      if (typeof renderCustomSdlcCards === "function") renderCustomSdlcCards();
-      if (typeof ReqPhaseManager !== "undefined") ReqPhaseManager.renderTable();
-    }
-  },
 });
 
 

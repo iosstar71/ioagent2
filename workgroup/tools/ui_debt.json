@@ -82,12 +82,12 @@
   "js/modules/todo": 0,
   "js/modules/wbs": 3,
   "js/modules/weekly": 1,
-  "js/overrides": 14
+  "js/overrides": 4
  },
  "total": {
   "css_important": 619,
   "html_inline": 605,
   "html_inline_hex": 172,
-  "js_hex": 131
+  "js_hex": 121
  }
 }
