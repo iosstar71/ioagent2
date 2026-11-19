@@ -37,6 +37,7 @@ def iter_files():
 
 
 def make(out_dir: Path) -> Path:
+    edition._require_built_index()
     build_initial_data.build()
     app_config.build()
     files = list(iter_files())

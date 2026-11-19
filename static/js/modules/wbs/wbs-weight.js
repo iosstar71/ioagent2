@@ -83,7 +83,7 @@ var WbsWeight = {
   // 계획 기간(일수) 비율로 target 을 나눔 (소수점 1자리, 끝수는 가장 큰 행에)
   _days(t) {
     if (!t.pStart || !t.pEnd) return 0;
-    const d = (new Date(t.pEnd) - new Date(t.pStart)) / 86400000 + 1;
+    const d = (new Date(t.pEnd).getTime() - new Date(t.pStart).getTime()) / 86400000 + 1;
     return isNaN(d) ? 0 : Math.max(0, d);
   },
   _split(target, basis) {
@@ -174,7 +174,7 @@ var WbsWeight = {
   },
   _wasBad(g) { return this._badBefore ? this._badBefore.has(g.parent) : false; },
   runFix() {
-    const sel = document.getElementById("wbsSubsystemFilter");
+    const sel = /** @type {HTMLSelectElement|null} */ (document.getElementById("wbsSubsystemFilter"));
     const sys = sel ? sel.value : "ALL";
     const before = this.check(wbsData).groups.filter(g => !sys || sys === "ALL" || g.sys === sys);
     if (!before.length) return showToast(`✅ ${sys === "ALL" ? "" : `[${sys}] `}가중치 오류가 없습니다.`);
@@ -198,7 +198,8 @@ var WbsWeight = {
     tops.forEach((share, row) => { const i = data.indexOf(row); if (i !== -1) walk(i, share); });
     return out;
   },
-  _d(s) { return new Date(String(s).slice(0, 10) + "T00:00:00"); },
+  /** @returns {number} 그날 0시의 밀리초 (날짜끼리 빼서 일수를 셈) */
+  _d(s) { return new Date(String(s).slice(0, 10) + "T00:00:00").getTime(); },
   // 날짜(iso) 시점 계획 진척률 (달력 일수)
   planAt(t, iso) {
     if (!t.pStart || !t.pEnd) return 0;

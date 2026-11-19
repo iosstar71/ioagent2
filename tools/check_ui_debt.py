@@ -123,6 +123,13 @@ def report(cur):
 
 
 def main():
+    # 한 코드 저장소: index.html 은 partials/*.html 을 합친 것 — 따로 고쳐져 어긋나면 먼저 멈춤
+    if WEB == ROOT and (ROOT / "tools" / "build_index.py").exists():
+        sys.path.insert(0, str(ROOT / "tools"))
+        import build_index
+        if not build_index.in_sync():
+            print("[FAIL] index.html differs from partials/*.html - edit partials/ and run: python tools/build_index.py")
+            return 1
     cur = current()
     if "--report" in sys.argv:
         report(cur)

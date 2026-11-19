@@ -12,6 +12,7 @@
     python tools/make_release.py            → ../IOSTAR-PM_v<버전>.zip
     python tools/make_release.py <출력폴더>
 """
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -42,7 +43,7 @@ def iter_files():
         yield p, rel
 
 
-def make(out_dir: Path) -> Path:
+def make(out_dir: Path, prod: bool = False) -> Path:
     build_initial_data.build()
     build_legal.build()
     app_config.build()
@@ -53,12 +54,17 @@ def make(out_dir: Path) -> Path:
             info.flag_bits |= 0x800  # UTF-8 파일명 플래그
             info.compress_type = zipfile.ZIP_DEFLATED
             with open(path, "rb") as f:
-                zf.writestr(info, f.read())
+                data = f.read()
+            # 운영 배포(--prod): 본인 확인 없는 암호 초기화를 끈 설정으로 담음
+            if prod and rel.as_posix() == "conf/app.ini":
+                data = re.sub(rb"(?m)^self_password_reset\s*=.*$", b"self_password_reset=0", data)
+            zf.writestr(info, data)
     return out
 
 
 if __name__ == "__main__":
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT.parent
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    target = Path(args[0]) if args else ROOT.parent
     target.mkdir(parents=True, exist_ok=True)
-    result = make(target)
+    result = make(target, prod="--prod" in sys.argv)
     print(f"[OK] {result} created ({result.stat().st_size:,} bytes)")

@@ -415,7 +415,7 @@ const WBSEngine = {
   countBusinessDays(startStr, endStr, holidaySet) {
     const start = new Date(startStr + "T00:00:00");
     const end = new Date(endStr + "T00:00:00");
-    if (isNaN(start) || isNaN(end) || end <= start) return 0;
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return 0;
     let n = 0;
     const d = new Date(start);
     while (d < end) {
@@ -454,8 +454,8 @@ const WBSEngine = {
         const elapsed = this.countBusinessDays(task.pStart, reportDateStr, holidaySet);
         task.pProg = total <= 0 ? 0 : Math.min(100, Math.round((elapsed / total) * 100));
       } else {
-        const total = Math.max(1, (end - start) / (1000 * 60 * 60 * 24));
-        const elapsed = Math.max(0, (repDate - start) / (1000 * 60 * 60 * 24));
+        const total = Math.max(1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        const elapsed = Math.max(0, (repDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         task.pProg = Math.min(100, Math.round((elapsed / total) * 100));
       }
     });

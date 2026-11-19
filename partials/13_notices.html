@@ -1,0 +1,270 @@
+    <div id="tab-notices" class="tab-pane">
+      <div class="sub-header-bar">
+        <div><span class="sub-title">📢 게시판</span><span class="neo-ph-desc">팀 공지를 올리고 Task에 대한 의견을 주고받습니다.</span>
+</div>
+      </div>
+      <!-- 서브 탭 네비게이션 바 -->
+      <div class="master-subtab-bar sub-tabs" id="boardSubTabs">
+        <button id="subtabBtn_NOTICES" class="master-subtab-btn active" data-click="NoticeCommManager.switchSubTab" data-click-args='["NOTICES"]' title="프로젝트 주요 공지 등록 및 조회">📌 공지</button>
+        <button id="subtabBtn_FEED" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["FEED"]' title="팀원 간 업무 게시판 및 Task 매핑 안건">💬 게시판</button>
+<template data-edition="workgroup">
+        <button id="subtabBtn_CHAT" class="master-subtab-btn" data-click="NoticeCommManager.switchSubTab" data-click-args='["CHAT"]' title="서버 연동형 팀 실시간 채팅 룸">⚡ 채팅 <span id="chatServerStatusDot" class="chat-dot">● 오프라인</span></button>
+</template>
+      </div>
+
+      <!-- 서브 탭 1: 프로젝트 공지 (NOTICES) -->
+      <div id="subpane_NOTICES" style="display: block;">
+        <div class="card u-mb-14">
+          <div class="card-title">
+            <div class="u-flex u-ai-center u-gap-8">
+              <span style="font-size: var(--fs-xl, 18px);">📢</span>
+              <strong class="u-c-primary" style="font-size: calc(15px * var(--fs-scale, 1));">프로젝트 중요 공지 게시판</strong>
+            </div>
+            <div class="u-flex u-gap-8 u-ai-center">
+              <input class="u-fs-sm u-bd u-r-4" type="text" placeholder="🔍 공지 제목/내용 검색..." data-input="NoticeCommManager.filterNoticesByKeyword" data-input-args='["$value"]' style="padding: 5px 10px; min-width: 200px;">
+              <div class="u-flex u-gap-4">
+                <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.filterNoticesByPriority" data-click-args='["ALL"]'>전체</button>
+                <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.filterNoticesByPriority" data-click-args='["긴급"]'>🚨 긴급</button>
+                <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.filterNoticesByPriority" data-click-args='["중요"]'>⚠️ 중요</button>
+                <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.filterNoticesByPriority" data-click-args='["일반"]'>일반</button>
+              </div>
+              <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.openNewNoticeModal">
+                ➕ 공지 등록
+              </button>
+            </div>
+          </div>
+          <p class="u-fs-sm u-c-sub u-mb-0">
+            품질감리 수검 일정, 클라우드 점검, 산출물 양식 배포 등 프로젝트 인원 필독 공지를 관리합니다. 상단 핀(Pin) 고정 기능으로 중요 공지를 우선 노출할 수 있습니다.
+          </p>
+        </div>
+
+        <div class="card">
+          <div id="noticesListContainer" style="overflow-y: auto; max-height: 700px; padding-right: 4px;">
+            <!-- JavaScript 렌더링 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 서브 탭 2: 업무 게시판 & 안건 (FEED) -->
+      <div id="subpane_FEED" style="display: none;">
+        <div class="card u-mb-14">
+          <div class="card-title">
+            <div class="u-flex u-ai-center u-gap-8">
+              <span style="font-size: var(--fs-xl, 18px);">💬</span>
+              <strong class="u-c-primary" style="font-size: calc(15px * var(--fs-scale, 1));">업무 게시판 &amp; WBS Task 연계 토론</strong>
+            </div>
+          </div>
+
+          <!-- 빠른 글쓰기 영역 -->
+          <div class="u-bd u-r-8 u-p-12 u-mt-10" style="background: rgba(0,0,0,0.02);">
+            <div class="u-flex u-gap-8 u-mb-8">
+              <select class="u-fs-115 u-bd u-r-4 u-bold" id="commPostChannelSelect" style="padding: 5px 8px;">
+                <option value="전체">🌐 전체 채널</option>
+                <option value="PMO">📌 PMO 채널</option>
+                <option value="W1">⚙️ W1 (웨이퍼가공1) 채널</option>
+                <option value="W2">⚙️ W2 (웨이퍼가공2) 채널</option>
+                <option value="P1">📦 P1 (패키징) 채널</option>
+                <option value="A1">🔧 A1 (모듈조립) 채널</option>
+                <option value="A2">🔧 A2 (최종검사) 채널</option>
+                <option value="S1">📡 S1 (센서모듈) 채널</option>
+              </select>
+              <input class="u-fs-115 u-bd u-r-4" type="text" id="commPostTaskIdInput" placeholder="연관 WBS Task ID (예: 2.3.1.2, 선택사항)" style="width: 220px; padding: 5px 8px;">
+              <input class="u-flex1 u-fs-115 u-bold u-bd u-r-4" type="text" id="commPostTitleInput" placeholder="📌 소통 안건 제목을 입력하세요 (칸반/피드 표시용)" style="padding: 5px 10px;">
+            </div>
+            <textarea class="u-w100 u-fs-sm u-bd u-r-4 u-mb-8" id="commPostContentInput" rows="2" placeholder="팀원들과 공유할 Task 진행사항, 질문, 이슈를 자유롭게 입력하세요... (줄바꿈 지원)" style="padding: 8px 10px; resize: vertical;"></textarea>
+            <div class="u-flex u-jc-end">
+              <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.submitNewCommPost">
+                🚀 글 게시
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 피드/칸반/스탠드업 렌더링 컨테이너 -->
+        
+
+<div class="card">
+          <div class="u-mb-12" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-8 u-mb-8">
+              <div class="u-flex u-ai-center u-gap-8">
+                <span class="u-fs-base u-bold u-c-info">📢 채널별 피드 필터링:</span>
+                <span id="feedActiveChannelIndicator" class="badge u-fs-115 u-bold u-r-6" style="background:var(--tint-info-text); color:#fff; padding:4px 10px; box-shadow:0 1px 3px rgba(0,0,0,0.15);">📢 선택된 채널: # 전체</span>
+              </div>
+              <div class="feed-view-switch" role="group" aria-label="보기 방식">
+                <span class="feed-view-label">보기:</span>
+                                <button id="btnViewMode_FEED" class="btn btn-primary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["FEED"]'>💬 채널피드</button>
+                <button id="btnViewMode_KANBAN" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["KANBAN"]'>📋 칸반보드</button>
+                <button id="btnViewMode_STANDUP" class="btn btn-secondary btn-sm" data-click="NoticeCommManager.setViewMode" data-click-args='["STANDUP"]'>⏱️ 타임라인</button>
+              </div>
+            </div>
+            <div class="u-gap-6 u-wrap u-ai-center" id="feedChannelFilterContainer" style="display: flex;">
+              <!-- JavaScript 렌더링 -->
+            </div>
+          </div>
+          <div id="commMainDisplayArea" style="overflow-y: auto; max-height: 600px; padding-right: 4px;">
+            <!-- JavaScript 렌더링 -->
+          </div>
+        </div>
+      </div>
+<template data-edition="workgroup">
+      <!-- 서브 탭 3: 실시간 팀 채팅 (CHAT - 서버 연결 시에만 활성화) -->
+      <div id="subpane_CHAT" style="display: none;">
+        <div class="card u-mb-14">
+          <div class="card-title">
+            <div class="u-flex u-ai-center u-gap-8">
+              <span style="font-size: var(--fs-xl, 18px);">⚡</span>
+              <strong class="u-c-primary" style="font-size: calc(15px * var(--fs-scale, 1));">다중 멤버 실시간 팀 채팅 (Live Chat)</strong>
+              <span class="badge" style="background:var(--primary); color:#fff;">다중 동시접속</span>
+            </div>
+            <div class="u-flex u-ai-center u-gap-8">
+              <span class="u-fs-115 u-bold" id="chatServerStatusText" style="color: #dc2626;">서버 미연결</span>
+              <button class="btn btn-secondary btn-sm" data-click="RealtimeChatManager.checkServerConnection" data-click-args='[true]'>
+                🔄 서버 연결 재확인
+              </button>
+            </div>
+          </div>
+          <p class="u-fs-sm u-c-sub u-mb-0">
+            파이썬 웹서버(<code class="kbd">wbs_db_server.py</code> / <code class="kbd">run_server.bat</code>)가 기동되어 포트 8080에 연결되었을 때 활성화되는 실시간 채널 채팅입니다. 동일 사내망에 접속한 모든 팀원과 실시간으로 메시지를 주고받을 수 있습니다.
+          </p>
+        </div>
+
+        <!-- 채팅 룸 메인 컨테이너 -->
+        <div class="chat-room-container">
+          <!-- 오프라인/서버 미연결 안내 배너 (서버 연결 시 display: none 처리됨) -->
+          <div id="chatServerOfflineBanner" class="chat-offline-banner">
+            <div class="u-mb-12" style="font-size: calc(42px * var(--fs-scale, 1));">🔌</div>
+            <h3 class="u-mb-8" style="font-size: var(--fs-xl, 18px); color: #f8fafc;">채팅 오프라인</h3>
+            <p class="u-fs-base u-mb-18" style="color: #cbd5e1; max-width: 520px; line-height: 1.6;">
+              실시간 채팅은 <strong>DB 서버 모드</strong>(run_server.bat 실행 후 http://서버IP:8080 접속, 시스템 설정 &gt; DB 연동에서 SQLite 선택)에서만 사용할 수 있습니다.<br>
+              로컬 저장소(LocalStorage) 모드에서는 채팅 기능이 비활성화됩니다.
+            </p>
+            <div class="u-flex u-gap-10">
+              <button class="btn btn-primary" data-click="RealtimeChatManager.checkServerConnection" data-click-args='[true]'>
+                🔄 서버 재연결
+              </button>
+            </div>
+          </div>
+
+          <!-- 좌측: 채팅 채널 선택 사이드바 -->
+          <div class="chat-sidebar">
+            <div class="u-fs-xs u-bold u-mb-8" style="color: #64748b; text-transform: uppercase;">
+              채팅 채널 (# CHANNELS)
+            </div>
+            <div class="u-flex1" id="chatChannelListContainer" style="overflow-y: auto;">
+              <!-- JavaScript 렌더링 -->
+            </div>
+            <div class="u-fs-xs" style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-color); color: #64748b;">
+              💡 2.5초 간격 자동 동기화
+            </div>
+          </div>
+
+          <!-- 우측: 활성 채널 메시지 스트림 및 입력창 -->
+          <div id="chatActiveArea" class="chat-main-area">
+            <div class="chat-header-bar">
+              <div>
+                <strong class="u-c-info" id="chatCurrentChannelTitle" style="font-size: var(--fs-md, 14px);"># 전체 채널</strong>
+                <span class="u-fs-xs u-ml-6" style="color: #64748b;">실시간 팀 채팅 룸</span>
+              </div>
+              <div class="u-flex u-ai-center u-gap-8">
+                <span class="badge" style="background: #10b981; color: #fff; font-size: var(--fs-2xs, 10px);">REST 실시간 소통</span>
+
+              </div>
+            </div>
+
+            <!-- 메시지 스크롤 영역 -->
+            <div id="chatMessagesStream" class="chat-stream-box">
+              <!-- JavaScript 실시간 렌더링 -->
+            </div>
+
+            <!-- 하단 입력 바 -->
+            <div class="chat-input-bar">
+              <input class="u-flex1 u-fs-base u-bd u-r-6" type="text" id="chatMessageInput" placeholder="메시지를 입력하세요... (Enter 키로 전송)" style="padding: 9px 14px;" data-keydown="RealtimeChatManager.sendMessage" data-keydown-key="Enter" data-keydown-prevent="1">
+              <button id="btnChatSend" class="btn btn-primary" data-click="RealtimeChatManager.sendMessage" style="padding: 9px 18px;">
+                전송
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+</template>
+
+    </div>
+  <!-- 신규 공지 등록 모달 -->
+  <div class="modal-overlay" id="newNoticeModal" style="display: none;">
+    <div class="modal u-p-20" style="width: 90vw; max-width: 620px;">
+      <div class="card-title">
+        <span class="u-c-primary" style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800;">📢 신규 프로젝트 공지 등록</span>
+        <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeNewNoticeModal">✕</button>
+      </div>
+      <div class="u-flex u-col u-gap-12 u-mt-14">
+        <div>
+          <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">공지 제목 *</label>
+          <input class="u-w100 u-fs-base u-bold u-bd u-r-4" type="text" id="noticeTitleInput" placeholder="예: [필독] 2026년 상반기 감리 수검 일정 안내" style="padding: 8px 12px;">
+        </div>
+        <div class="u-flex u-gap-12">
+          <div class="u-flex1">
+            <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">중요도</label>
+            <select class="u-w100 u-fs-sm u-bd u-r-4 u-bold" id="noticePrioritySelect" style="padding: 7px 10px;">
+              <option value="일반">일반 공지</option>
+              <option value="중요">⚠️ 중요 공지</option>
+              <option value="긴급">🚨 긴급 공지 (경보)</option>
+            </select>
+          </div>
+          <div class="u-flex1 u-flex u-ai-end" style="padding-bottom: 6px;">
+            <label class="u-flex u-ai-center u-gap-6 u-pointer" style="font-size: calc(12.5px * var(--fs-scale, 1));">
+              <input type="checkbox" id="noticePinnedCheckbox" checked>
+              <strong>📌 목록 상단에 고정</strong>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">공지 상세 내용 *</label>
+          <textarea class="u-w100 u-p-10 u-bd u-r-4" id="noticeContentInput" rows="6" placeholder="팀원들에게 전달할 상세 일정, 대상 산출물, 지침 사항을 입력하세요..." style="font-size: calc(12.5px * var(--fs-scale, 1)); resize: vertical; line-height: 1.6;"></textarea>
+        </div>
+        <div class="u-flex u-jc-end u-gap-8 u-mt-8">
+          <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeNewNoticeModal">취소</button>
+          <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.submitNewNotice">📢 공지 등록 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 공지 수정 모달 -->
+  <div class="modal-overlay" id="editNoticeModal" style="display: none;">
+    <div class="modal u-p-20" style="width: 90vw; max-width: 620px;">
+      <div class="card-title">
+        <span class="u-c-primary" style="font-size: calc(14.5px * var(--fs-scale, 1)); font-weight: 800;">✏️ 공지 수정 (작성자/관리자/PM 전용)</span>
+        <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeEditNoticeModal">✕</button>
+      </div>
+      <input type="hidden" id="editNoticeId">
+      <div class="u-flex u-col u-gap-12 u-mt-14">
+        <div>
+          <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">공지 제목 *</label>
+          <input class="u-w100 u-fs-base u-bold u-bd u-r-4" type="text" id="editNoticeTitleInput" style="padding: 8px 12px;">
+        </div>
+        <div class="u-flex u-gap-12">
+          <div class="u-flex1">
+            <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">중요도</label>
+            <select class="u-w100 u-fs-sm u-bd u-r-4 u-bold" id="editNoticePrioritySelect" style="padding: 7px 10px;">
+              <option value="일반">일반 공지</option>
+              <option value="중요">⚠️ 중요 공지</option>
+              <option value="긴급">🚨 긴급 공지 (경보)</option>
+            </select>
+          </div>
+          <div class="u-flex1 u-flex u-ai-end" style="padding-bottom: 6px;">
+            <label class="u-flex u-ai-center u-gap-6 u-pointer" style="font-size: calc(12.5px * var(--fs-scale, 1));">
+              <input type="checkbox" id="editNoticePinnedCheckbox">
+              <strong>📌 목록 상단에 고정</strong>
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="u-fs-115 u-bold u-c-sub u-block u-mb-4">공지 상세 내용 *</label>
+          <textarea class="u-w100 u-p-10 u-bd u-r-4" id="editNoticeContentInput" rows="6" style="font-size: calc(12.5px * var(--fs-scale, 1)); resize: vertical; line-height: 1.6;"></textarea>
+        </div>
+        <div class="u-flex u-jc-end u-gap-8 u-mt-8">
+          <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.closeEditNoticeModal">취소</button>
+          <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.submitEditNotice">수정 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>

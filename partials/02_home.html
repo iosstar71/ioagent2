@@ -1,0 +1,130 @@
+
+    <div id="tab-home" class="tab-pane active">
+      <!-- 상단 모드 전환 및 실시간 상태 툴바 -->
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-12 u-wrap">
+          <span class="sub-title">🧭 Summary</span><span class="neo-ph-desc">프로젝트 상황을 한 화면으로 요약합니다 — 보고 · 회의용.</span>
+        </div>
+        <div class="u-flex u-ai-center u-gap-8">
+          <span class="lbl-progress-refreshed-at u-fs-xs" style="color:#64748b;"></span>
+          <button class="btn btn-outline btn-sm btn-progress-refresh" data-click="refreshHomeView" title="최신 저장 데이터(DB 서버 / JSON 파일 / 로컬 저장소)를 다시 불러와 계획·실적 진척률을 재계산하고 홈 화면을 새로고침합니다.">
+            🔄 실적 새로고침
+          </button>
+          <button class="btn btn-primary btn-sm" id="btnHomeSettings" data-click="HomeScreenManager.openSettings" title="역할별 기본 홈 스타일 설정 (시스템 설정 > 화면·테마)">
+            ⚙️ 첫 화면 설정
+          </button>
+        </div>
+      </div>
+
+      <!-- [모드 2] 🏛️ 이그제큐티브 브리핑 룸 (Executive Briefing Room) 컨테이너 -->
+      <div id="homeExecutiveContainer" style="display:block;">
+        <!-- 전사 달성률 히어로 배너 (Hero Banner) -->
+        <div class="card hero-banner" id="execHeroBanner" data-click="switchTab" data-click-args='["tab-dashboard"]' title="Dashboard 탭으로 바로 이동">
+          <div class="hero-row">
+            <div class="hero-main">
+              <span id="execHeroStatusBadge" class="hero-status" data-level="ok">🟢 정상 공정 궤도</span>
+              <h2 id="execHeroProjTitle" class="hero-title">프로젝트</h2>
+              <div id="execHeroMeta" class="hero-meta">공정 기준일: <b>-</b> | 보고 대상: <b>-</b> | 총괄 PM: <b>-</b></div>
+            </div>
+            <div class="hero-kpi">
+              <div class="hero-rate-box">
+                <div class="hero-kpi-label" title="종합 계획 · 실적 = 서브시스템별 진척률 × 서브시스템 가중치 (프로젝트 설정 > 기본정보)">계획 대비 달성률 <span class="w-note">(서브시스템 가중치 반영)</span></div>
+                <div id="execHeroAchieveRate" class="hero-rate">-</div>
+                <div id="execHeroGap" class="hero-gap" data-level="ok">공정 GAP: -</div>
+              </div>
+              <div class="hero-pills">
+                <div class="hero-pill">목표 계획: <b id="execHeroPlanRate">-</b></div>
+                <div class="hero-pill">누적 실적: <b id="execHeroActualRate" class="hero-actual">-</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5대 핵심 경영 KPI 스트립 -->
+        <div class="grid-4" id="execKpiStrip">
+          <!-- 1. WBS 전체 공정률 -->
+          <div class="kpi-card kpi-link kpi-tone-info" data-click="switchTab" data-click-args='["tab-wbs"]' data-hover-lift="1" title="WBS 종합 공정표 탭으로 바로 이동">
+            <div class="kpi-title">📊 WBS 종합 진척률</div>
+            <div class="kpi-value" id="execKpiWbsActual">38.0%</div>
+            <div class="kpi-sub" id="execKpiWbsSub">계획 42.0% (달성률 90.5%)</div>
+          </div>
+          <!-- 2. 지연 Task수 -->
+          <div class="kpi-card kpi-link kpi-tone-bad" data-click="switchTab" data-click-args='["tab-wbs"]' data-hover-lift="1" title="지연 Task WBS 공정표로 바로 이동">
+            <div class="kpi-title">⚠️ 지연 관리 Task</div>
+            <div class="kpi-value" id="execKpiDelayed">0건</div>
+            <div class="kpi-sub" id="execKpiDelayedSub">지연 리스크 정상 통제</div>
+          </div>
+          <!-- 3. 요구사항(REQ) 완료율 -->
+          <div class="kpi-card kpi-link kpi-tone-ok" data-click="switchTab" data-click-args='["tab-req"]' data-hover-lift="1" title="요구사항(REQ) 진척 관리 탭으로 바로 이동">
+            <div class="kpi-title">🎯 요구사항(REQ) 완료율</div>
+            <div class="kpi-value" id="execKpiReqRate">60.0%</div>
+            <div class="kpi-sub" id="execKpiReqSub">완료 12건 / 전체 20건</div>
+          </div>
+          <!-- 4. 필수 산출물 승인율 & VOC 조치율 -->
+          <div class="kpi-card kpi-link kpi-tone-warn" data-click="switchTab" data-click-args='["tab-deliverables"]' data-hover-lift="1" title="산출물 및 현장 VOC 관리 탭으로 바로 이동">
+            <div class="kpi-title">📑 산출물 승인 / 💬 VOC 조치</div>
+            <div class="kpi-value" id="execKpiDelivVoc">산출물 53% · VOC 50%</div>
+            <div class="kpi-sub" id="execKpiDelivVocSub">산출물 8건 승인 | VOC 5건 조치</div>
+          </div>
+        </div>
+
+        <!-- 서브시스템별 신호등(🟢/🟡/🔴) 타일 그리드 -->
+        <div class="card u-mb-14">
+          <div class="card-title">
+            <span class="u-bold">🚦 서브시스템별 공정 달성률 신호등 현황판</span>
+            <span class="u-fs-xs u-c-muted">* 신호등 기준: 🟢 정상(달성률 90% 이상) | 🟡 주의(70%~89%) | 🔴 경고(70% 미만) (카드 클릭 시 WBS 해당 서브시스템으로 즉시 이동)</span>
+          </div>
+          <div class="u-gap-12" id="execSubsystemGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));"></div>
+        </div>
+
+        <!-- 상위 도메인별 포트폴리오 표 & 주간보고서 원클릭 출력 바 -->
+        <div class="grid-2 u-mb-14">
+          <!-- 도메인별 포트폴리오 -->
+          <div class="card u-mb-0">
+            <div class="card-title">
+              <span class="u-bold">🏛️ 상위 도메인별 포트폴리오 추진 현황</span>
+            </div>
+            <div class="table-container" style="max-height:260px;">
+              <table class="matrix-table" id="execDomainPortfolioTable">
+                <thead>
+                  <tr>
+                    <th>상위 도메인명</th>
+                    <th>Task수</th>
+                    <th>가중치</th>
+                    <th>계획</th>
+                    <th>실적</th>
+                    <th>달성률</th>
+                    <th>상태</th>
+                  </tr>
+                </thead>
+                <tbody id="execDomainPortfolioBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <!-- 보고서: 종합보고서(PPT) · 주간보고(워드, 표 포함) — 기준일 주차 -->
+          <div class="card exec-report-card">
+            <div>
+              <div class="card-title">
+                <span class="exec-report-title">📑 보고서</span>
+                <button class="btn btn-xs" data-btn="nav" data-click="ExecReport.openWeekly" title="주간보고 화면에서 작성 현황 보기">주간보고 열기 →</button>
+              </div>
+              <div id="execReportInfo" class="exec-report-info"></div>
+              <div class="exec-report-sub">종합보고서</div>
+              <div class="exec-report-btns exec-deck-btns">
+                <button class="btn" data-btn="nav" data-click="ExecDeck.downloadPptx" title="표지 · 목차 · 종합 진척(그래프) · 서브시스템별 주간보고 장표 (PowerPoint)">📽 종합보고서 PPT</button>
+              </div>
+              <div class="exec-report-sub">주간보고</div>
+              <div class="exec-report-btns">
+                <button class="btn" data-btn="word-down" data-click="ExecReport.download" data-click-args='["WORD"]' title="표가 들어간 워드 주간보고">📄 주간보고 워드 (표 포함)</button>
+              </div>
+            </div>
+            <div class="exec-report-note">
+              💡 기준일 주차에 작성 완료된 종합·서브시스템 주간보고를 모아 만듭니다. 색상 · 글꼴 · 파일 약칭은 [보고 &gt; 보고서 설정]에서 정합니다.
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>

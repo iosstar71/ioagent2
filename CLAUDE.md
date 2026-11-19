@@ -6,7 +6,8 @@
 
 ## 1. 사용량을 아끼는 작업 방식 (먼저 읽기)
 - **큰 파일은 통째로 읽지 않는다.** `grep -n` 으로 줄을 찾고 `sed -n 'a,bp'` 또는 Read(offset/limit)로 그 부분만.
-  - `index.html` 3.3천 줄 · `static/css/style.css` 3.2천 줄 · `static/js/common/i18n-en.js` 3천 줄(번역 사전, 거의 읽을 일 없음)
+  - **화면 마크업은 `partials/NN_화면.html` 에서 고친다** (`index.html` 은 그것을 합친 결과물 — 고친 뒤 `python tools/build_index.py`. 어긋나면 부채 검사 · 배포 도구가 멈춤)
+  - `static/css/style.css` 2.9천 줄 · `static/js/common/i18n-en.js` 3천 줄(번역 사전, 거의 읽을 일 없음)
   - `static/js/core/sample-snapshot.js` · `initial-data.js` 는 데이터 파일 — 읽지 않는다.
 - **위치 지도** (찾기 전에 여기부터)
   | 무엇 | 어디 |
@@ -31,7 +32,10 @@
   | 체크할 일 집계 | `common/neo.js` (`NeoTodo.collect`) |
   | 차트(S-curve · 불릿) | `modules/progress/dashboard-chart.js`, `common/charts.js` (`ChartTheme`) |
   | 영어 화면 | `common/i18n.js` + 사전 `i18n-en.js` (`exact` 에 한국어 원문 → 영어 추가) |
-  | 저장 · 상태 표시 | `core/data-store.js` (`SyncUI`) |
+  | 저장 · 상태 표시 | `core/data-store.js` (`SyncManager` · `SyncUI`) — 자료 묶음 · 파티션 · 권한은 `core/data-registry.js`, 프로젝트 · 저장소(Local · Server)는 `core/data-backends.js` |
+  | 멤버 선택(로그인) 화면 · 멤버 목록 | `core/access-ui.js` (암호 · 권한 · 세션 규칙은 `core/access-control.js`) |
+  | 주간보고 화면 그리기 | `modules/weekly/weekly-report-ui.js` (보고서 만들기 · 저장 · 범위 규칙은 `weekly-report.js`) |
+  | 자료형(JSDoc) · 검사 | `types/types.js` · `types/globals.d.ts` · `jsconfig.json` — 계산 엔진을 고치면 `npx -p typescript@5.6.3 tsc -p jsconfig.json` (개발 때만, 배포본에 안 들어감) |
   | 화면 설정(app.ini) | `conf/app.ini` → `python tools/app_config.py` 가 `static/js/config/app-config.js` 생성 |
   | 예전 자료 변환 · 자료 정의 | `core/migrate.js` (`Migrate`), `docs/DATA_MODEL.md` |
   | 달성률 · 비율 · 건수 기준 | `modules/wbs/metrics.js` (`Metrics`), 시험 `tools/tests/unit/run_unit.js` |

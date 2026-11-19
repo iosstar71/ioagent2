@@ -87,6 +87,11 @@ def main():
     Store.init_schema()
     FileStore.init_schema()
     user_admin.ensure_second_admin()
+    # 멤버 선택 화면의 [암호 초기화](본인 확인 없이 1234 로)가 켜져 있으면 운영 서버에서는 위험하므로 알림
+    if str(APP_CONFIG.get("self_password_reset", "1")).strip().lower() not in ("0", "false", "no"):
+        msg = "[SECURITY WARNING] conf/app.ini [security] self_password_reset=1 - anyone can reset a password to 1234 on the login screen. Set it to 0 on a production server."
+        write_server_log(msg)
+        print(msg)
     backup.start_auto()
     server = WbsServer((args.host, args.port), WbsHttpHandler)
     scheme = "http"

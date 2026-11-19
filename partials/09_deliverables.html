@@ -1,0 +1,73 @@
+
+    <!-- =================================================================== -->
+    <!-- 7. 산출물관리 (tab-deliverables) - [요건 7] 다중필터 & 표준산출물연동-->
+    <!-- =================================================================== -->
+    <div id="tab-deliverables" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10">
+          <span class="sub-title">📑 산출물</span><span class="neo-ph-desc">제출해야 할 문서 · 결과물의 일정과 승인 상태를 관리합니다.</span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
+        </div>
+        <div class="u-flex u-gap-8 u-ai-center">
+          
+          <button class="btn btn-warning btn-sm" data-click="openBulkDeliverableModal">⚡ 표준 산출물 자동생성</button>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["deliverables"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (산출물)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["deliverables"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (산출물)</button>
+          <button class="btn btn-primary btn-sm" data-click="addNewDeliverable">+ 산출물 직접 추가</button>
+        </div>
+      </div>
+
+      <!-- [요건 7] 서브시스템별 · 제출차수별 · 산출물명별 다중 조회 필터 바 -->
+      <div class="filter-toolbar">
+        <div class="filter-item">
+          <label class="u-bold">🗂️ 도메인별:</label>
+          <select class="u-bold" id="delivDomainFilter" data-change="UiH.domainFilter" data-change-args='["delivDomainFilter", "delivSubsystemFilter", "renderDeliverablesTable"]'></select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🏢 서브시스템별:</label>
+          <select id="delivSubsystemFilter" data-change="renderDeliverablesTable">
+            <option value="ALL">전체 서브시스템</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🔢 제출 차수별:</label>
+          <select id="delivRoundFilter" data-change="renderDeliverablesTable">
+            <option value="ALL">전체 차수 (1차 + 2차)</option>
+            <option value="1차">1차 제출분만 보기</option>
+            <option value="2차">2차 제출분만 보기</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🔍 산출물명 조회:</label>
+          <input type="text" id="delivNameSearchInput" placeholder="산출물명 검색어 입력..." style="width:170px;" data-input="renderDeliverablesTable">
+          <button class="btn btn-secondary btn-sm" data-click="UiH.resetDelivFilters">초기화</button>
+        </div>
+        <div class="filter-item"><span class="neo-chips" id="delivStatusChips" role="group" aria-label="상태 필터"></span></div>
+        <span class="u-fs-xs u-c-sub" style="margin-left: auto;">
+          <b>진행상태:</b> 작성전 ➔ 작성중 ➔ 검토요청 ➔ 보완완료
+        </span>
+      </div>
+
+      <div class="table-container" style="max-height: 600px;">
+        <table id="deliverablesTable">
+          <thead>
+            <tr>
+              <th style="width: 105px;">제출 차수</th>
+              <th style="width: 135px;">서브시스템</th>
+              <th style="width: 120px;">단계 구분</th>
+              <th style="min-width: 220px;">산출물명</th>
+              <th style="width: 145px;">계획제출일</th>
+              <th style="width: 145px;">실제제출일</th>
+              <th style="width: 105px;">진행 상태</th>
+              <th style="width: 90px;">담당자</th>
+<template data-edition="workgroup">
+              <th style="width: 58px;" title="산출물 파일 첨부 (DB 서버 방식)">첨부</th>
+</template>
+              <th style="min-width: 180px;">검토 의견 및 보완 조치내역</th>
+              <th style="width: 45px;">삭제</th>
+            </tr>
+          </thead>
+          <tbody id="deliverablesTableBody"></tbody>
+        </table>
+      </div>
+    </div>

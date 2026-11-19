@@ -76,7 +76,16 @@ def assemble_workgroup(dst: Path) -> Path:
     return dst
 
 
+def _require_built_index():
+    # index.html 은 partials/*.html 을 합친 것 — 어긋난 채로 배포하지 않음
+    sys.path.insert(0, str(ROOT / "tools"))
+    import build_index
+    if not build_index.in_sync():
+        raise SystemExit("[FAIL] index.html differs from partials/*.html - run: python tools/build_index.py")
+
+
 def main(argv):
+    _require_built_index()
     if len(argv) < 4 or argv[1] not in ("render", "assemble") or argv[2] not in ("standalone", "workgroup"):
         print(__doc__)
         return 2
