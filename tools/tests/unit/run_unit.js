@@ -37,6 +37,7 @@ function eq(name, got, want) {
   const vocs = [{ status: "완료" }, { status: "제외" }, { status: "보류" }, { status: "" }, { status: "진행" }, { status: "삭제" }];
   const v = M.vocStats(vocs);
   eq("vocStats: done = 완료 + 제외, wait = 대기 · 보류 · 빈 값", [v.total, v.done, v.wait, v.prog, v.rate], [5, 2, 2, 1, 40]);
+  eq("vocOpen: deleted · done · excluded are not open", M.vocOpen(vocs).map(x => x.status), ["보류", "", "진행"]);
   const ds = [{ round: "1차", status: "보완완료" }, { round: "1차", status: "작성중" }, { round: "3차", status: "보완완료" }];
   const d = M.delivStats(ds, ["1차", "2차"]);
   eq("delivStats: active rounds only", [d.total, d.done, d.ing, d.rate], [2, 1, 1, 50]);

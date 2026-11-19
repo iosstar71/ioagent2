@@ -38,6 +38,8 @@ var Metrics = {
     const wait = v.filter(r => this.VOC_WAIT.indexOf(r.status || "") !== -1).length;
     return { list: v, total: v.length, done, prog, wait, rate: this.pct(done, v.length) };
   },
+  // 아직 조치가 끝나지 않은 VOC (삭제 · 완료 · 제외가 아닌 것) — My Work · 주간보고 · 종합보고서가 같은 기준으로 셈
+  vocOpen(list) { return (list || []).filter(v => v && v.status !== "삭제" && this.VOC_DONE.indexOf(v.status) === -1); },
   delivStats(list, rounds) {
     const v = (list || []).filter(d => d && (!rounds || rounds.indexOf(d.round) !== -1));
     const done = v.filter(d => this.DELIV_DONE.indexOf(d.status) !== -1).length;

@@ -361,45 +361,142 @@ async function prune2() {
     console.log(`  ${si + 1}/${names.length} ${names[si]}: related ${r.live}, needed so far ${harmful.size}`);
     fs.writeFileSync(PROG, JSON.stringify({ cssKey, next: si + 1, harmful: [...harmful] }));
   }
+  const unstable = new Set();
   // 전체 확인 (모든 요소 · 모든 속성). 다르면 다른 화면에서 지우는 것 전체를 다시 반씩 나눠 봄
   for (let round = 0; round < 4; round++) {
     const rem = all.filter(i => !harmful.has(i));
-    await setCss(page, css); const a0 = await snapshot(page);
+    // 원래 → 지움 → 원래 순서로 돌려, 원래끼리 같은(흔들리지 않는) 화면만 판정
+    await setCss(page, css); await snapshot(page); const a0 = await snapshot(page);
     await page.evaluate(ids => { document.getElementById("cssUnderTest").textContent = window.__removed(ids); }, rem); const a1 = await snapshot(page);
-    const bad = [...new Set(Object.keys(a0).filter(k => a0[k] !== a1[k]).map(k => +k.split("|")[0]))];
+    await setCss(page, css); const a2 = await snapshot(page);
+    Object.keys(a0).forEach(k => { if (a0[k] !== a2[k]) unstable.add(+k.split("|")[0]); });
+    const bad = [...new Set(Object.keys(a0).filter(k => a0[k] !== a1[k] && a1[k] !== a2[k]).map(k => +k.split("|")[0]))].filter(si => !unstable.has(si));
     if (!bad.length) {
       let cur = fs.readFileSync(CSS_FILE, "utf8");
       if (cur !== css) { console.log("[FAIL] style.css changed while running — nothing written"); await close(); return 1; }
       cur = withRemoved(css, rem.map(i => cand[i]));
       fs.writeFileSync(CSS_FILE, cur);
       await close();
+      if (unstable.size) console.log(`  not judged here (check with --save / --check): ${[...unstable].map(i => names[i]).join(", ")}`);
       console.log(`[OK] removed ${rem.length} !important (now ${(cur.match(/!important/g) || []).length}); every screen x theme looks the same`);
       return 0;
     }
     console.log(`  final check: ${bad.length} screens differ (${bad.map(i => names[i]).join(", ")}) — checking them again`);
     await setCss(page, css);
     for (const si of bad) {
-      // 지울 목록 전체를 그 화면의 모든 요소로 다시 나눠 봄
+      // 그 화면에서 달라진 요소만 보며, 지울 목록을 반씩 나눠 원인 규칙을 찾음 (빠름)
       const r = await page.evaluate(async ([si, rem]) => {
         const st = window.__STATES[si]; st.run(); await new Promise(r => setTimeout(r, 250));
-        const css = document.getElementById("cssUnderTest"), out = [];
-        const look = () => window.__THEMES.map(th => window.__snap(th)).join(",");
-        async function test(ids) { css.textContent = window.__CSS; const a = look(); css.textContent = window.__removed(ids); const b = look(); css.textContent = window.__CSS; return a === b; }
+        const css = document.getElementById("cssUnderTest"), P = window.__ALLP, out = [];
+        const els = () => [...document.body.getElementsByTagName("*")];
+        const sig = (e) => { const cs = getComputedStyle(e); return P.map(p => cs[p]).join("|"); };
+        const base = {}, watch = {};
+        for (const th of window.__THEMES) {
+          document.body.setAttribute("data-theme", th);
+          css.textContent = window.__CSS; const all = els(); const a = all.map(sig);
+          css.textContent = window.__removed(rem); const b = all.map(sig);
+          const idx = a.map((x, k) => (x !== b[k] ? k : -1)).filter(k => k >= 0);
+          if (idx.length) { watch[th] = idx; base[th] = idx.map(k => a[k]); }
+        }
+        const themes = Object.keys(watch);
+        async function test(ids) {
+          for (const th of themes) {
+            document.body.setAttribute("data-theme", th);
+            css.textContent = window.__removed(ids); const all = els();
+            if (watch[th].some((k, n) => !all[k] || sig(all[k]) !== base[th][n])) { css.textContent = window.__CSS; return false; }
+          }
+          css.textContent = window.__CSS; return true;
+        }
         async function bis(ids) { if (!ids.length) return; if (await test(ids)) return; if (ids.length === 1) { out.push(ids[0]); return; } const m = Math.ceil(ids.length / 2); await bis(ids.slice(0, m)); await bis(ids.slice(m)); }
-        await bis(rem); if (st.after) st.after(); return out;
+        // 지우지 않았는데도 달라지면 이 화면은 스타일을 바꿀 때 다시 그려져 흔들림 → 판정하지 않음 (마지막에 --check 로 확인)
+        if (themes.length && !(await test([]))) { if (st.after) st.after(); return { out, unstable: true }; }
+        if (themes.length) await bis(rem);
+        if (st.after) st.after(); return { out };
       }, [si, all.filter(i => !harmful.has(i))]);
-      r.forEach(i => harmful.add(i));
+      if (r.unstable) { unstable.add(si); console.log(`  recheck ${names[si]}: redraws when styles change — left to the final --check`); continue; }
+      r.out.forEach(i => harmful.add(i));
       fs.writeFileSync(PROG, JSON.stringify({ cssKey, next: names.length, harmful: [...harmful] }));
-      console.log(`  recheck ${names[si]}: needed so far ${harmful.size}`);
+      console.log(`  recheck ${names[si]}: +${r.out.length}, needed so far ${harmful.size}`);
     }
   }
   await close(); console.log("[FAIL] could not reach a safe set"); return 1;
+}
+
+// 정리 진행 파일의 "지워도 됨" 목록을 모두 지웠을 때 한 화면에서 바뀌는 요소 · 속성 (원인 찾기): --explain <화면 이름>
+async function explain(name) {
+  const css = fs.readFileSync(CSS_FILE, "utf8"), cand = candidates(css);
+  const pg = JSON.parse(fs.readFileSync(path.join(os.tmpdir(), "css_prune_progress.json"), "utf8"));
+  const rem = cand.filter(c => pg.harmful.indexOf(c.id) === -1);
+  const { page, close } = await openApp();
+  const grab = async c => { await setCss(page, c); return page.evaluate(async name => {
+    for (const st of window.__STATES) { st.run(); await new Promise(r => setTimeout(r, 250)); if (st.name === name) { window.__DUMP = []; window.__snap("urban-slate"); const d = window.__DUMP; window.__DUMP = null; return d; } if (st.after) st.after(); }
+    return []; }, name); };
+  const A = await grab(css), B = await grab(withRemoved(css, rem));
+  let n = 0;
+  for (let i = 0; i < Math.min(A.length, B.length) && n < 15; i++) if (A[i] !== B[i]) {
+    n++; const [ka, va] = A[i].split(" | "), vb = B[i].split(" | ")[1]; const pa = va.split(" "), pb = vb.split(" ");
+    console.log(ka.slice(0, 80), pa.filter((x, j) => x !== pb[j]).map((x, j) => x + " -> " + pb[pa.indexOf(x)]).join("  "));
+  }
+  console.log(`elements ${A.length} vs ${B.length}, differing shown ${n}`);
+  await close(); return 0;
+}
+
+// 화면 몇 개에서 원인 !important 찾기 (정리 진행 파일에 더함): --blame <화면 이름,화면 이름,...>
+async function blame(list) {
+  const css = fs.readFileSync(CSS_FILE, "utf8"), cand = candidates(css);
+  const PROG = path.join(os.tmpdir(), "css_prune_progress.json"), pg = JSON.parse(fs.readFileSync(PROG, "utf8"));
+  const harmful = new Set(pg.harmful);
+  const { page, close } = await openApp();
+  await setCss(page, css);
+  await page.evaluate(([css, cand, themes]) => { window.__CSS = css; window.__CAND = cand; window.__THEMES = themes; window.__removed = ids => { const l = ids.map(i => window.__CAND[i]).sort((a, b) => b.at - a.at); let s = window.__CSS; l.forEach(c => { s = s.slice(0, c.at) + s.slice(c.at + c.len); }); return s; }; }, [css, cand, THEMES]);
+  const names = await page.evaluate(() => window.__STATES.map(s => s.name));
+  const one = (si, rem) => {
+  return page.evaluate(async ([si, rem]) => {
+        const st = window.__STATES[si]; st.run(); await new Promise(r => setTimeout(r, 250));
+        const css = document.getElementById("cssUnderTest"), P = window.__ALLP, out = [];
+        const els = () => [...document.body.getElementsByTagName("*")];
+        const sig = (e) => { const cs = getComputedStyle(e); return P.map(p => cs[p]).join("|"); };
+        const base = {}, watch = {};
+        for (const th of window.__THEMES) {
+          document.body.setAttribute("data-theme", th);
+          css.textContent = window.__CSS; const all = els(); const a = all.map(sig);
+          css.textContent = window.__removed(rem); const b = all.map(sig);
+          const idx = a.map((x, k) => (x !== b[k] ? k : -1)).filter(k => k >= 0);
+          if (idx.length) { watch[th] = idx; base[th] = idx.map(k => a[k]); }
+        }
+        const themes = Object.keys(watch);
+        async function test(ids) {
+          for (const th of themes) {
+            document.body.setAttribute("data-theme", th);
+            css.textContent = window.__removed(ids); const all = els();
+            if (watch[th].some((k, n) => !all[k] || sig(all[k]) !== base[th][n])) { css.textContent = window.__CSS; return false; }
+          }
+          css.textContent = window.__CSS; return true;
+        }
+        async function bis(ids) { if (!ids.length) return; if (await test(ids)) return; if (ids.length === 1) { out.push(ids[0]); return; } const m = Math.ceil(ids.length / 2); await bis(ids.slice(0, m)); await bis(ids.slice(m)); }
+        // 지우지 않았는데도 달라지면 이 화면은 스타일을 바꿀 때 다시 그려져 흔들림 → 판정하지 않음 (마지막에 --check 로 확인)
+        if (themes.length && !(await test([]))) { if (st.after) st.after(); return { out, unstable: true }; }
+        if (themes.length) await bis(rem);
+        if (st.after) st.after(); return { out };
+      }, [si, rem]);
+  };
+  for (const nm of list.split(",")) {
+    const si = names.indexOf(nm); if (si < 0) { console.log("  no screen " + nm); continue; }
+    const r = await one(si, cand.map(c => c.id).filter(i => !harmful.has(i)));
+    if (r.unstable) { console.log(`  ${nm}: redraws when styles change`); continue; }
+    r.out.forEach(i => harmful.add(i));
+    console.log(`  ${nm}: +${r.out.length} ${r.out.map(i => cand[i].sel.slice(0, 50) + " {" + cand[i].prop + "}").join(" ; ")}`);
+  }
+  fs.writeFileSync(PROG, JSON.stringify(Object.assign(pg, { harmful: [...harmful] })));
+  await close(); return 0;
 }
 
 (async () => {
   const a = process.argv;
   let code = 0;
   if (a.includes("--prune-important")) code = await prune2();
+  else if (a.includes("--blame")) code = await blame(a[a.indexOf("--blame") + 1]);
+  else if (a.includes("--explain")) code = await explain(a[a.indexOf("--explain") + 1]);
   else if (a.includes("--dump")) code = await dump(a[a.indexOf("--dump") + 1], a[a.indexOf("--dump") + 2]);
   else if (a.includes("--save")) code = await saveOrCheck(a[a.indexOf("--save") + 1], "save");
   else if (a.includes("--check")) code = await saveOrCheck(a[a.indexOf("--check") + 1], "check");

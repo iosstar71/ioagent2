@@ -109,7 +109,7 @@ var NeoTodo = {
       .sort((a, b) => b.gap - a.gap);
     const dueSoon = leaves.filter(t => (parseFloat(t.aProg) || 0) < 100 && t.pEnd && t.pEnd >= rep && t.pEnd <= soon)
       .sort((a, b) => a.pEnd.localeCompare(b.pEnd));
-    const vocs = (vocData || []).filter(v => ["완료", "제외", "삭제"].indexOf(v.status) === -1 && this._inScope(systems, v.system, v.requester))
+    const vocs = Metrics.vocOpen(vocData).filter(v => this._inScope(systems, v.system, v.requester))
       .sort((a, b) => (a.targetDate || "9999").localeCompare(b.targetDate || "9999"));
     const delivs = (deliverablesData || []).filter(d => d.status !== "보완완료" && d.pDate && d.pDate <= soon && this._inScope(systems, d.system, d.manager))
       .sort((a, b) => a.pDate.localeCompare(b.pDate));

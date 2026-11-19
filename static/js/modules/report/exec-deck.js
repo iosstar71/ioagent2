@@ -452,7 +452,7 @@ var ExecDeck = {
     const mtgLines = [p(`회의 ${mtgCur.length}건`, 12, { bold: true })].concat(mtgCur.slice(0, 4).map(x => { const ag = agendaOf(x); return p(`${x.date} ${x.title}${ag.length ? ` — 안건: ${ag.join(", ")}` : ""}`, 11, { bullet: true }); }));
     const vocs = (snap.vocs || []).filter(v => v.system === sys);
     const newV = vocs.filter(v => v.reqDate && v.reqDate >= rep.startDate && v.reqDate <= rep.endDate);
-    const openV = vocs.filter(v => ["완료", "제외"].indexOf(v.status) === -1);
+    const openV = Metrics.vocOpen(vocs);
     const vocLines = [p(`신규 등록 ${newV.length}건 · 미조치 ${openV.length}건`, 12, { bold: true })].concat((newV.length ? newV : openV).slice(0, 3).map(v => p(`${v.title} (${v.status})`, 11, { bullet: true })));
     const nxtLines = [p(`차주 계획 ${nxt.length}건`, 12, { bold: true })]
       .concat(nxt.slice(0, 6).map(t => { const d = this.cleanDetail(t); return p(`${t.name}${d ? ` — ${d}` : ""}`, 11, { bullet: true }); }))

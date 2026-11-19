@@ -197,13 +197,13 @@ var WeeklyExport = {
       const o = reqBySys[r.system] = reqBySys[r.system] || { tot: 0, done: 0, prog: 0, hold: 0 };
       o.tot++; if (r.status === "완료") o.done++; else if (r.status === "진행") o.prog++; else if (r.status === "보류") o.hold++;
     });
-    const openVocs = (d.vocs || []).filter(v => inScope(v.system) && ["완료", "제외"].indexOf(v.status) === -1);
+    const openVocs = Metrics.vocOpen((d.vocs || []).filter(v => inScope(v.system)));
     const s4 = {
       title: "4. 이슈 · 요구사항 · VOC",
       texts: [["주요 현안 및 지원 요청", rep.issuesNotes || "특이사항 없음"]],
       tables: [
         T("서브시스템별 요구사항 진척", ["서브시스템", "전체", "진행", "완료", "보류", "완료율"], [16, 10, 10, 10, 10, 10],
-          Object.keys(reqBySys).map(s => { const o = reqBySys[s]; return [s, `${o.tot}건`, `${o.prog}건`, `${o.done}건`, `${o.hold}건`, `${o.tot ? Math.round(o.done / o.tot * 100) : 0}%`]; }),
+          Object.keys(reqBySys).map(s => { const o = reqBySys[s]; return [s, `${o.tot}건`, `${o.prog}건`, `${o.done}건`, `${o.hold}건`, `${Metrics.pct(o.done, o.tot)}%`]; }),
           r => `[${r[0]}] 요구사항 ${r[1]} 중 완료 ${r[3]} (완료율 ${r[5]}), 진행 ${r[2]}, 보류 ${r[4]}`, "요구사항 없음"),
         T("미완료 VOC · 이슈", ["VOC ID", "서브시스템", "우선순위", "제목", "요청자", "목표일", "상태", "조치 내용"], [10, 11, 8, 32, 10, 11, 8, 36],
           openVocs.map(v => [v.id, v.system, v.priority, v.title, v.requester, v.targetDate, v.status, v.action]),
