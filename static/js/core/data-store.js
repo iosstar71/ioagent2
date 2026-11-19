@@ -431,7 +431,7 @@ var LocalBackend = {
       } else {
         AppStore.setItem(ProjectContext.MIGRATE_KEY, "1"); // 새로 설치: 이관할 이전 데이터 없음
       }
-    } catch (e) {}
+    } catch (e) { console.warn("[LocalBackend] member migration skipped", e); }
     (keys || DataRegistry.KEYS).forEach(k => {
       const pid = this._pidFor(k);
       if (!cache[pid]) cache[pid] = { stored: this._read(pid) || {}, revs: this._readRevs(pid) };

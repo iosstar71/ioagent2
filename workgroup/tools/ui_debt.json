@@ -1,5 +1,5 @@
 {
- "css_important": 619,
+ "css_important": 458,
  "html": {
   "modals": {
    "inline": 108,
@@ -84,10 +84,29 @@
   "js/modules/weekly": 1,
   "js/overrides": 4
  },
+ "js_inline": {
+  "js/common": 3,
+  "js/core": 12,
+  "js/modules/admin": 0,
+  "js/modules/board": 53,
+  "js/modules/dataio": 5,
+  "js/modules/deliverable": 2,
+  "js/modules/home": 20,
+  "js/modules/master": 34,
+  "js/modules/meeting": 46,
+  "js/modules/progress": 28,
+  "js/modules/report": 5,
+  "js/modules/requirement": 4,
+  "js/modules/todo": 0,
+  "js/modules/wbs": 19,
+  "js/modules/weekly": 22,
+  "js/overrides": 12
+ },
  "total": {
-  "css_important": 619,
+  "css_important": 458,
   "html_inline": 605,
   "html_inline_hex": 172,
-  "js_hex": 121
+  "js_hex": 121,
+  "js_inline": 265
  }
 }
