@@ -750,15 +750,17 @@ var WbsFold = {
 // =============================================================================
 var StickyTop = {
   apply() {
-    let top = 0;
     const root = document.documentElement.style;
-    [document.querySelector("header"), document.querySelector(".g-nav")].forEach((el, i) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      if (getComputedStyle(el).position === "sticky" && r.width > window.innerWidth * 0.6) top += r.height;
-      if (i === 0) root.setProperty("--hdr-h", Math.round(top) + "px");  // 메뉴 줄은 머리글 바로 아래에 고정
-    });
-    root.setProperty("--sticky-top", Math.round(top) + "px");
+    // 반올림하지 않음: 브라우저 확대(90% · 110% 등)에서 높이가 소수일 때 반올림하면 스크롤 중 1px 씩 흔들림
+    const px = v => (Math.round(v * 100) / 100) + "px";
+    const sticky = el => !!el && getComputedStyle(el).position === "sticky" && el.getBoundingClientRect().width > window.innerWidth * 0.6;
+    const hdr = document.querySelector("header"), nav = document.querySelector(".g-nav");
+    // 메뉴 줄 위 여백(예: Pop 테마의 색 띠 자리)도 고정 위치에 넣어야 스크롤할 때 메뉴 줄이 위로 올라붙지 않음
+    const navGap = nav ? parseFloat(getComputedStyle(nav).marginTop) || 0 : 0;
+    let top = sticky(hdr) ? hdr.getBoundingClientRect().height : 0;
+    root.setProperty("--hdr-h", px(top + navGap));   // 메뉴 줄은 머리글(+ 그 아래 여백) 바로 아래에 고정
+    if (sticky(nav)) top += navGap + nav.getBoundingClientRect().height;
+    root.setProperty("--sticky-top", px(top));
     // 지금 화면의 이름 줄(+ 서브메뉴 줄) 높이: 서브메뉴 줄은 이름 줄 바로 아래에 고정
     const pane = document.querySelector(".tab-pane.active");
     const head = pane && pane.querySelector(":scope > .sub-header-bar");
@@ -766,10 +768,10 @@ var StickyTop = {
     const tabs = pane && pane.querySelector(":scope > .master-subtab-bar, :scope > .sub-tab-nav");
     // 메뉴 줄과 화면 이름 줄 사이의 틈: 그 틈만큼 아래에 고정해야 스크롤할 때 이름 줄이 위로 밀려 올라가지 않음
     //  (화면 틀은 고정되지 않으므로 그 위치 = 이름 줄의 원래 자리)
-    const gap = pane && head ? Math.max(0, Math.min(40, Math.round(pane.getBoundingClientRect().top + window.scrollY - top))) : 0;
-    root.setProperty("--pane-gap", gap + "px");
-    root.setProperty("--pane-head-h", Math.round(headH) + "px");
-    root.setProperty("--pane-sticky-h", Math.round(gap + headH + (tabs ? tabs.offsetHeight : 0)) + "px");
+    const gap = pane && head ? Math.max(0, Math.min(40, pane.getBoundingClientRect().top + window.scrollY - top)) : 0;
+    root.setProperty("--pane-gap", px(gap));
+    root.setProperty("--pane-head-h", px(headH));
+    root.setProperty("--pane-sticky-h", px(gap + headH + (tabs ? tabs.offsetHeight : 0)));
   },
   init() {
     this.apply();
