@@ -1,7 +1,8 @@
 """Remove CSS declarations that can never apply (same selector redefined later).
 
-A declaration `prop: value` in a top-level rule is dead when a LATER top-level rule with exactly
-the same selector sets the same property with the same or stronger priority (!important).
+A declaration `prop: value` in a top-level rule is dead when
+  - a LATER top-level rule with exactly the same selector sets the same property with the same or stronger priority, or
+  - an EARLIER top-level rule with exactly the same selector sets the same property with !important and this one is not.
 Removing it changes nothing on screen. Rules left empty are removed too.
 
   python tools/css_dedupe.py            rewrite static/css/style.css, print what was removed
@@ -83,6 +84,20 @@ def main():
             empty_rules.append((rs, re_))
         else:
             cuts.extend(dead)
+    # 앞에서 !important 로 정한 것을 뒤에서 !important 없이 다시 정한 선언
+    seen_imp = set()
+    for sel, bs, be, rs, re_ in rules:
+        if any(rs <= s < re_ for s, e in empty_rules):
+            continue
+        ds = decls(css[bs:be])
+        dead2 = [(bs + s, bs + e) for prop, imp, s, e in ds if (sel, prop) in seen_imp and not imp and (bs + s, bs + e) not in cuts]
+        for prop, imp, s, e in ds:
+            if imp:
+                seen_imp.add((sel, prop))
+        if dead2 and len(dead2) + sum(1 for x in cuts if bs <= x[0] < be) == len(ds):
+            empty_rules.append((rs, re_)); cuts[:] = [x for x in cuts if not (bs <= x[0] < be)]
+        else:
+            cuts.extend(dead2)
     removed_decl = len(cuts) + sum(1 for _ in empty_rules)
     imp_before = css.count("!important")
     out = css
