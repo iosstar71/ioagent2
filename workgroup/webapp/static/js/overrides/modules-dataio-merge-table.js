@@ -1,4 +1,4 @@
-// Workgroup 판: modules/dataio/merge-table.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: modules/dataio/merge-table.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(MergeTable, {
@@ -13,21 +13,9 @@ Object.assign(MergeTable, {
     { k: "comms", unit: "prj", icon: "💬", label: "게시판", desc: "채널별 게시글 (채팅 제외)" },
     { k: "config", unit: "prj", icon: "🗂️", label: "프로젝트 설정", desc: "기본정보 · 도메인 · SDLC · 공휴일 · 표준 산출물" },
     { k: "subsystems", unit: "prj", icon: "🏢", label: "서브시스템 프로젝트 설정", desc: "도메인 · 코드/명 · SDLC 모델 · 가중치 · 담당" },
-    { k: "users", unit: "prj", icon: "👥", label: "멤버(참여자)", desc: "사번 · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
+    { k: "users", unit: "prj", icon: "👥", label: "멤버(참여자)", desc: "멤버 ID · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
   ],
   _lockOn() { return typeof LockManager !== "undefined" && LockManager.active(); },
-  canUpload(k, scope) {
-    const it = this.item(k);
-    if (!it) return { ok: false, why: "알 수 없는 자료" };
-    if (it.unit === "prj") return SmartMergeCenter.isAdminOrPm() ? { ok: true } : { ok: false, why: "시스템관리자 · PM 만" };
-    if (!scope || scope === "ALL") return SmartMergeCenter.canBulkWork() ? { ok: true } : { ok: false, why: "전체 범위는 시스템관리자 · PM · 총괄리더만 — 담당 서브시스템을 고르세요" };
-    if (!Permission.canWriteSubsystem(scope)) return { ok: false, why: `${scope} 는 담당 서브시스템이 아님` };
-    // [Workgroup] 다른 사람이 체크아웃한 서브시스템은 올릴 수 없음
-    if (this.WORK.includes(k) && this._lockOn() && LockManager.byOther(scope)) return { ok: false, why: `${LockManager.who(LockManager.holder(scope))} 님이 체크아웃(편집 중)` };
-    return { ok: true };
-  },
-
-  // 지금 자료 (범위 적용)
   download(format) {
     const keys = this.selected();
     if (!keys.length) return showToast("⚠️ 다운로드할 자료를 1개 이상 체크하세요.");

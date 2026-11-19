@@ -97,7 +97,7 @@ var LockManager = {
     showToast(`↩️ ${systems.join(", ")} 체크아웃을 취소했습니다.`);
   },
 
-  // ---- 강제 해제 (PM · 시스템관리자, 사유 필수) ----
+  // ---- 강제 해제 (PM · 관리자, 사유 필수) ----
   async forceRelease(sys) {
     if (!this.isManager()) return;
     const h = this.holder(sys);
@@ -251,7 +251,7 @@ var LockManager = {
     });
     if (changed) this.writeHold(h);
   },
-  // 로그인 · 다시 불러온 뒤: 보류한 변경을 화면에 다시 올림 (저장 전 상태로)
+  // 멤버 선택 · 다시 불러온 뒤: 보류한 변경을 화면에 다시 올림 (저장 전 상태로)
   restoreHeld() {
     if (!this.active()) return;
     const h = this.readHold();
@@ -453,7 +453,7 @@ var LockManager = {
     if (!body) return;
     const note = document.getElementById("lkBoardNote");
     if (!this.active()) {
-      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px;">${SyncManager.isLocal() ? "로컬 저장소 방식에서는 체크아웃을 쓰지 않습니다. 담당 서브시스템만 Import · Export으로 올릴 수 있습니다." : "체크아웃 기능이 꺼져 있습니다. (conf/app.ini [lock] lock_mode)"}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px;">${SyncManager.isLocal() ? "로컬 저장소 방식에서는 체크아웃을 쓰지 않습니다. 담당 서브시스템만 파일 Merge으로 올릴 수 있습니다." : "체크아웃 기능이 꺼져 있습니다. (conf/app.ini [lock] lock_mode)"}</td></tr>`;
       if (note) note.textContent = "";
       return;
     }

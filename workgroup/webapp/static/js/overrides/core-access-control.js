@@ -1,79 +1,29 @@
-// Workgroup 판: core/access-control.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/access-control.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(AuthManager, {
-  ROLE_LABELS: {
-    SYS_ADMIN: "시스템관리자",
-    PM: "PM",
-    LEAD: "PL",
-    MEMBER: "멤버"
-  },
-  ROLE_DESCS: {
-    SYS_ADMIN: "👑 시스템 관리자 (전체 메뉴·시스템설정)",
-    PM: "🛡️ 프로젝트 관리자 (프로젝트 설정·Import · Export·전체 데이터)",
-    LEAD: "⭐ PL (담당 서브시스템 — 담당을 ALL 로 지정하면 프로젝트 전체)",
-    MEMBER: "👤 멤버 (담당 서브시스템 데이터만 저장)"
-  },
-  // 여기에 없는 탭은 모든 사용자 접근 가능
   validateNewPassword(pwd) {
     const p = String(pwd || "");
-    if (p.length < this.PWD_MIN_LENGTH) return `비밀번호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
-    if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "비밀번호는 영문과 숫자를 모두 포함해야 합니다.";
-    if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 비밀번호는 사용할 수 없습니다.";
+    if (p.length < this.PWD_MIN_LENGTH) return `암호는 ${this.PWD_MIN_LENGTH}자 이상이어야 합니다.`;
+    if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return "암호는 영문과 숫자를 모두 포함해야 합니다.";
+    if (/^(1234|12345678|password1?|qwer1234|admin1234)$/i.test(p)) return "추측하기 쉬운 암호는 사용할 수 없습니다.";
     return "";
   },
-  // 초기 비밀번호(1234) 사용 중이거나 관리자가 지정한 임시 비밀번호이면 첫 로그인 때 변경 필수
+  // 초기 암호(1234) 사용 중이거나 관리자가 지정한 임시 암호이면 첫 멤버 선택 때 변경 필수
   mustChangeLocal(u) { return !!u && (!u.pwdHash || !!u.pwdTemp); },
 
   // ---------------------------------------------------------------------------
   // 보안 정책
-  // ---------------------------------------------------------------------------
-  setAuthPolicy(policy) {
-    try { localStorage.setItem(this.STORAGE_POLICY_KEY, policy); } catch (e) {}
-    const labels = {
-      STARTUP_ONLY: "최초 접속(로그인) 시 1회 인증 (권장)",
-      STARTUP_AND_CONFIG: "최초 접속 시 + 권한 메뉴 진입 시 재인증",
-      CONFIG_ONLY: "권한 메뉴 진입 시에만 인증 (로컬 모드 전용)",
-      OFF: "인증 사용 안 함 (로컬 모드 전용 · 관리자로 동작)"
-    };
-    showToast(`보안 인증 정책이 [${labels[policy] || policy}] 로 변경되었습니다.`);
-  },
-  _guestUser() { return { empNo: "", name: "미로그인", role: "MEMBER", subsystem: "", dept: "", lang: "ko" }; },
-  getTabMeta(tabId) {
-    const metas = {
-      "tab-config": { name: "⚙️ Admin", reqRoleLabel: "시스템 관리자(SYS_ADMIN)", defaultEmpNo: "admin" },
-      "tab-master": { name: "🗂️ 프로젝트 설정", reqRoleLabel: "프로젝트 관리자(PM) 또는 시스템 관리자(SYS_ADMIN)", defaultEmpNo: "pm" }
-    };
-    return metas[tabId] || { name: "관리 메뉴", reqRoleLabel: "관리자", defaultEmpNo: "admin" };
-  },
-
-  updateUserBadge() {
-    const badge = document.getElementById("headerCurrentUserBadge");
-    if (!badge) return;
-    const u = this.getCurrentUser();
-    const norm = this.normalizeRole(u.role);
-    badge.className = "db-status-pill " + (norm === "MEMBER" ? "local" : "connected");
-    // 머리글 · 멤버 메뉴: 이름 — 권한 (ID 는 표시하지 않음)
-    const who = u.empNo ? `${u.name || u.empNo} — ${this.roleLabel(norm)}${norm === "MEMBER" || norm === "LEAD" ? " · " + (u.subsystem || "ALL") : ""}` : "미로그인";
-    badge.innerHTML = `👤 ${escapeHtml(u.empNo ? (u.name || u.empNo) : who)}`;
-    badge.title = who;
-    // 이름(자료)과 권한(화면 글)을 나눠 써서 영어 화면에서 권한이 번역되게
-    const whoEl = document.getElementById("gUserWho");
-    if (whoEl) whoEl.innerHTML = u.empNo ? `<span>${escapeHtml(u.name || u.empNo)}</span> — <span>${escapeHtml(this.roleLabel(norm))}</span>${norm === "MEMBER" || norm === "LEAD" ? " · " + escapeHtml(u.subsystem || "ALL") : ""}` : `<span>${escapeHtml(who)}</span>`;
-  },
-
-  // ---------------------------------------------------------------------------
-  // 세션
   // ---------------------------------------------------------------------------
   openLogin(title, desc) {
     this.lockMode = "LOGIN";
     this.pendingTabId = null;
     this._showPane("loginFormPane");
     const server = !SyncManager.isLocal();
-    this._setText("lockModalTitle", title || "🔐 시스템 로그인");
+    this._setText("lockModalTitle", title || "🔐 시스템 멤버 선택");
     this._setText("lockModalDesc",
-      (desc || "사번과 비밀번호를 입력하여 로그인하세요.") +
-      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 비밀번호: <b>1234</b> (기본 관리자 사번: admin)</span>`, true);
+      (desc || "멤버 ID과 암호를 입력하여 멤버 선택하세요.") +
+      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>1234</b> (기본 관리자 멤버 ID: admin)</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
@@ -89,7 +39,7 @@ Object.assign(AuthManager, {
     if (reg) reg.style.display = "block";
     const rst = document.getElementById("lnkSelfReset");
     if (rst) { rst.style.display = this.selfResetAllowed() ? "" : "none"; if (rst.previousElementSibling) rst.previousElementSibling.style.display = rst.style.display; }
-    this._setText("btnLockSubmit", "🔓 로그인");
+    this._setText("btnLockSubmit", "🔓 멤버 선택");
     const langSel = document.getElementById("inputLoginLang");
     if (langSel) langSel.value = (typeof I18N !== "undefined" ? I18N.lang : "ko");
     const projRow = document.getElementById("loginProjectRow");
@@ -115,7 +65,7 @@ Object.assign(AuthManager, {
     this._saveSession();
     this.openLogin(
       isIdle ? "⏱️ 자리 비움 자동 잠금" : "🔒 화면 잠금 / 계정 전환",
-      isIdle ? "일정 시간 동안 입력이 없어 자동 잠금되었습니다. 다시 로그인하세요." : "계속 작업하거나 다른 계정으로 전환하려면 로그인하세요."
+      isIdle ? "일정 시간 동안 입력이 없어 자동 잠금되었습니다. 다시 멤버 선택하세요." : "계속 작업하거나 다른 계정으로 전환하려면 멤버 선택하세요."
     );
   },
 
@@ -124,24 +74,24 @@ Object.assign(AuthManager, {
     this._expiredNotified = true;
     this.sessionAuthenticated = false;
     ServerBackend.setToken("");
-    this.openLogin("🔐 서버 인증 만료", "서버 로그인 세션이 만료되었습니다. 다시 로그인하세요. (화면의 미저장 변경 내용은 유지됩니다)");
+    this.openLogin("🔐 서버 인증 만료", "서버 멤버 선택 세션이 만료되었습니다. 다시 멤버 선택하세요. (화면의 미저장 변경 내용은 유지됩니다)");
   },
 
   // ---------------------------------------------------------------------------
-  // 로그인 처리
+  // 멤버 선택 처리
   // ---------------------------------------------------------------------------
-  // [v3.0.0] 로그인 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 로그인한 프로젝트를 미리 선택
+  // [v3.0.0] 멤버 선택 화면 프로젝트 목록 (보관된 프로젝트 제외) — 마지막에 멤버 선택한 프로젝트를 미리 선택
   LOGIN_PROJECT_KEY: "IOSTAR_LOGIN_PROJECT",
   async _verifyLocal(empNo, pwd) {
     const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
-    if (!u) return { ok: false, message: `등록되지 않은 사번(${empNo})입니다. 신규 멤버 등록을 이용하세요.` };
+    if (!u) return { ok: false, message: `등록되지 않은 멤버 ID(${empNo})입니다. 신규 멤버 등록을 이용하세요.` };
     const inputHash = await this.hashPassword(pwd);
     let target = u.pwdHash;
     if (!target && String(u.empNo).toLowerCase() === "admin") {
       try { target = localStorage.getItem(this.LEGACY_ADMIN_HASH_KEY) || ""; } catch (e) {}
     }
     if (!target) target = await this.hashPassword("1234");
-    return inputHash === target ? { ok: true, user: u } : { ok: false, message: "비밀번호가 일치하지 않습니다." };
+    return inputHash === target ? { ok: true, user: u } : { ok: false, message: "암호가 일치하지 않습니다." };
   },
 
   async unlock() {
@@ -156,17 +106,17 @@ Object.assign(AuthManager, {
     const langSel = document.getElementById("inputLoginLang");
     const lang = langSel ? langSel.value : "ko";
     if (!empNo || !pwd) {
-      this._err("lockErrorMessage", "사번과 비밀번호를 입력하세요.");
+      this._err("lockErrorMessage", "멤버 ID과 암호를 입력하세요.");
       return;
     }
 
-    // [v3.0.0] 로그인할 프로젝트: 시스템관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
+    // [v3.0.0] 멤버 선택할 프로젝트: 관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
     const project = this.lockMode === "CONFIG" ? ProjectContext.current : this.loginProject();
     let result;
     if (SyncManager.isLocal()) {
       result = await this._verifyLocal(empNo, pwd);
       if (result.ok && !ProjectContext.isAdminUser(result.user)) {
-        if (!project) result = { ok: false, message: "로그인할 프로젝트를 선택하세요.", noCount: true };
+        if (!project) result = { ok: false, message: "멤버 선택할 프로젝트를 선택하세요.", noCount: true };
         else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 멤버가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
       }
       if (result.ok && this.mustChangeLocal(result.user) && this.getAuthPolicy() !== "OFF") result.mustChange = true;
@@ -177,7 +127,7 @@ Object.assign(AuthManager, {
         if (Array.isArray(res.projects)) ProjectContext.projects = res.projects;
         result = { ok: true, user: res.user, mustChange: !!(res.user && res.user.mustChangePassword) };
       } else {
-        result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "로그인 실패") };
+        result = { ok: false, message: res.network ? `DB 서버에 연결할 수 없습니다 (${DbConnector.getApiBase()}). run_server.bat 실행 여부를 확인하세요.` : (res.message || "멤버 선택 실패") };
       }
     }
 
@@ -190,7 +140,7 @@ Object.assign(AuthManager, {
       if (this.failedAttempts >= 5) {
         this.lockoutUntil = Date.now() + 30000;
         this.failedAttempts = 0;
-        this._err("lockErrorMessage", "🛡️ 5회 연속 실패로 30초간 로그인이 제한됩니다.");
+        this._err("lockErrorMessage", "🛡️ 5회 연속 실패로 30초간 멤버 선택이 제한됩니다.");
       } else {
         this._err("lockErrorMessage", `⚠️ ${result.message} (실패 ${this.failedAttempts}/5회)`);
       }
@@ -259,7 +209,7 @@ Object.assign(AuthManager, {
     this.updateUserBadge();
     this.resetIdleTimer();
 
-    // 사용자별 언어 적용 (로그인 시 선택한 언어를 사용자 설정으로 저장)
+    // 사용자별 언어 적용 (멤버 선택 시 선택한 언어를 사용자 설정으로 저장)
     if (typeof I18N !== "undefined") {
       I18N.setLanguage(next.lang || "ko");
       if (opts.lang) this._rememberUserLang(next.empNo, opts.lang);
@@ -277,7 +227,7 @@ Object.assign(AuthManager, {
     const active = document.querySelector(".tab-pane.active");
     this._guardedActivate(landing || (active ? active.id : "tab-home"));
     if (!opts.silent) {
-      showToast(`✅ ${next.name}(${next.empNo} · ${this.roleLabel(next.role)}) 님으로 로그인되었습니다.`);
+      showToast(`✅ ${next.name}(${next.empNo} · ${this.roleLabel(next.role)}) 님으로 멤버 선택되었습니다.`);
     }
   },
 
@@ -291,10 +241,10 @@ Object.assign(AuthManager, {
     }
     if (!forced) this._forced = null;
     this._showPane("pwdChangeFormPane");
-    this._setText("lockModalTitle", forced ? "🔑 비밀번호 변경 필요" : "🔑 비밀번호 변경");
+    this._setText("lockModalTitle", forced ? "🔑 암호 변경 필요" : "🔑 암호 변경");
     this._setText("lockModalDesc", forced
-      ? "초기 비밀번호 또는 관리자가 지정한 임시 비밀번호로 로그인했습니다. 새 비밀번호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
-      : "사번과 현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다. (8자 이상, 영문+숫자)");
+      ? "초기 암호 또는 관리자가 지정한 임시 암호로 멤버 선택했습니다. 새 암호로 변경해야 계속 사용할 수 있습니다. (8자 이상, 영문+숫자)"
+      : "멤버 ID과 현재 암호를 확인한 후 새 암호로 변경합니다. (8자 이상, 영문+숫자)");
     this._err("pcErrorMessage", "");
     const emp = document.getElementById("pcEmpNo");
     const loginEmp = document.getElementById("inputSecurityEmpNo");
@@ -316,8 +266,8 @@ Object.assign(AuthManager, {
     if (!empNo || !oldPwd || !n1 || !n2) return this._err("pcErrorMessage", "모든 항목을 입력하세요.");
     const rule = this.validateNewPassword(n1);
     if (rule) return this._err("pcErrorMessage", rule);
-    if (n1 !== n2) return this._err("pcErrorMessage", "새 비밀번호와 확인 입력이 일치하지 않습니다.");
-    if (n1 === oldPwd) return this._err("pcErrorMessage", "현재 비밀번호와 다른 비밀번호를 입력하세요.");
+    if (n1 !== n2) return this._err("pcErrorMessage", "새 암호와 확인 입력이 일치하지 않습니다.");
+    if (n1 === oldPwd) return this._err("pcErrorMessage", "현재 암호와 다른 암호를 입력하세요.");
     const newHash = await this.hashPassword(n1);
     if (SyncManager.isLocal()) {
       const chk = await this._verifyLocal(empNo, oldPwd);
@@ -336,33 +286,33 @@ Object.assign(AuthManager, {
     const forced = this._forced;
     this._forced = null;
     if (forced && String(forced.user.empNo).toLowerCase() === empNo.toLowerCase()) {
-      showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다.`);
+      showToast(`🔑 [${empNo}] 암호가 변경되었습니다.`);
       const user = SyncManager.isLocal() ? (this.findUser(empNo) || forced.user) : Object.assign({}, forced.user, { mustChangePassword: false });
       await this._completeLogin(user, { lang: forced.lang, landing: forced.landing, project: forced.project });
       return;
     }
-    showToast(`🔑 [${empNo}] 비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.`);
+    showToast(`🔑 [${empNo}] 암호가 변경되었습니다. 새 암호로 멤버 선택하세요.`);
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;
     this.openLogin();
   },
 
-  // [v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 별도 인증 없이 1234 로 초기화, 다음 로그인 때 변경 필수)
+  // [v3.0.2] 멤버 선택 화면 암호 초기화 (테스트 버전: 별도 인증 없이 1234 로 초기화, 다음 멤버 선택 때 변경 필수)
   //  DB 서버는 app.ini [security] self_password_reset=0 이면 거부 — 운영 전환 시 끄거나 이 기능을 빼야 함
   selfResetAllowed() {
     return !(typeof APP_CONFIG !== "undefined" && APP_CONFIG.selfReset === false);
   },
   selfResetPassword() {
-    if (!this.selfResetAllowed()) return this._err("lockErrorMessage", "비밀번호 초기화가 꺼져 있습니다. 시스템관리자에게 요청하세요.");
+    if (!this.selfResetAllowed()) return this._err("lockErrorMessage", "암호 초기화가 꺼져 있습니다. 관리자에게 요청하세요.");
     const empInput = document.getElementById("inputSecurityEmpNo");
     const empNo = empInput ? empInput.value.trim() : "";
-    if (!empNo) { this._err("lockErrorMessage", "초기화할 사번을 먼저 입력하세요."); if (empInput) empInput.focus(); return; }
-    openConfirmDialog(`[${empNo}] 비밀번호를 초기값(1234)으로 초기화할까요? 다음 로그인 때 새 비밀번호로 바꿔야 합니다.`, () => this._doSelfReset(empNo));
+    if (!empNo) { this._err("lockErrorMessage", "초기화할 멤버 ID을 먼저 입력하세요."); if (empInput) empInput.focus(); return; }
+    openConfirmDialog(`[${empNo}] 암호를 초기값(1234)으로 초기화할까요? 다음 멤버 선택 때 새 암호로 바꿔야 합니다.`, () => this._doSelfReset(empNo));
   },
   async _doSelfReset(empNo) {
     if (SyncManager.isLocal()) {
       const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
-      if (!u) return this._err("lockErrorMessage", `등록되지 않은 사번(${empNo})입니다.`);
+      if (!u) return this._err("lockErrorMessage", `등록되지 않은 멤버 ID(${empNo})입니다.`);
       const row = Object.assign({}, u, { pwdHash: "", pwdTemp: false });
       delete row.pwdReset;
       const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password-reset(${row.empNo})`);
@@ -377,20 +327,20 @@ Object.assign(AuthManager, {
     this._err("lockErrorMessage", "");
     const pwd = document.getElementById("inputSecurityPassword");
     if (pwd) { pwd.value = ""; pwd.focus(); }
-    showToast(`🔄 [${empNo}] 비밀번호를 1234로 초기화했습니다. 1234로 로그인한 뒤 새 비밀번호로 바꾸세요.`);
+    showToast(`🔄 [${empNo}] 암호를 1234로 초기화했습니다. 1234로 멤버 선택한 뒤 새 암호로 바꾸세요.`);
   },
 
   async showRegister(show) {
     this._showPane(show ? "registerFormPane" : "loginFormPane");
     if (!show) return;
     this._setText("lockModalTitle", "👤 신규 멤버 등록");
-    this._setText("lockModalDesc", "등록 후 바로 로그인할 수 있습니다. (기본 권한: 멤버)");
+    this._setText("lockModalDesc", "등록 후 바로 멤버 선택할 수 있습니다. (기본 권한: 멤버)");
     this._err("regErrorMessage", "");
-    // [v3.0.0] 로그인 화면에서 고른 프로젝트의 사용자로 등록
+    // [v3.0.0] 멤버 선택 화면에서 고른 프로젝트의 사용자로 등록
     const pid = this.loginProject();
     const psel = document.getElementById("inputLoginProject");
     const pname = psel && psel.selectedIndex > 0 ? psel.options[psel.selectedIndex].textContent : "";
-    this._setText("regProjectInfo", pid ? `가입 프로젝트: ${escapeHtml(pname || pid)}` : "⚠️ 로그인 화면에서 가입할 프로젝트를 먼저 선택하세요.", true);
+    this._setText("regProjectInfo", pid ? `가입 프로젝트: ${escapeHtml(pname || pid)}` : "⚠️ 멤버 선택 화면에서 가입할 프로젝트를 먼저 선택하세요.", true);
     const sel = document.getElementById("regSubsystem");
     if (sel) {
       let subs = (subsystemsMeta || []).map(s => s.name);
@@ -418,14 +368,14 @@ Object.assign(AuthManager, {
     const p1 = document.getElementById("regPwd").value;
     const p2 = document.getElementById("regPwd2").value;
     const lang = v("regLang") || "ko";
-    if (!/^[A-Za-z0-9_.-]{2,30}$/.test(empNo)) return this._err("regErrorMessage", "사번은 영문/숫자/_.- 2~30자로 입력하세요.");
+    if (!/^[A-Za-z0-9_.-]{2,30}$/.test(empNo)) return this._err("regErrorMessage", "멤버 ID은 영문/숫자/_.- 2~30자로 입력하세요.");
     if (!name) return this._err("regErrorMessage", "성명을 입력하세요.");
     if (!subsystem) return this._err("regErrorMessage", "담당 서브시스템을 선택하세요.");
     const rule = this.validateNewPassword(p1);
     if (rule) return this._err("regErrorMessage", rule);
-    if (p1 !== p2) return this._err("regErrorMessage", "비밀번호 확인이 일치하지 않습니다.");
+    if (p1 !== p2) return this._err("regErrorMessage", "암호 확인이 일치하지 않습니다.");
     const pid = this.loginProject();
-    if (!pid) return this._err("regErrorMessage", "로그인 화면에서 가입할 프로젝트를 먼저 선택하세요.");
+    if (!pid) return this._err("regErrorMessage", "멤버 선택 화면에서 가입할 프로젝트를 먼저 선택하세요.");
 
     const newUser = {
       empNo, name, role: "MEMBER", subsystem, dept: dept || "",
@@ -436,16 +386,16 @@ Object.assign(AuthManager, {
 
     if (SyncManager.isLocal()) {
       await LocalBackend.load(["projectUsers"]).then(r => { if (r.data.projectUsers) DataRegistry.set("projectUsers", r.data.projectUsers); });
-      if (ProjectContext.findAny(empNo)) return this._err("regErrorMessage", `이미 등록된 사번(${empNo})입니다.`);
+      if (ProjectContext.findAny(empNo)) return this._err("regErrorMessage", `이미 등록된 멤버 ID(${empNo})입니다.`);
       const res = await LocalBackend.save({ projectUsers: { parts: { [empNo]: newUser }, base: { [empNo]: 0 } } }, false, "self-register");
-      if (!res.ok) return this._err("regErrorMessage", res.error || "등록 실패 (이미 등록된 사번일 수 있습니다)");
+      if (!res.ok) return this._err("regErrorMessage", res.error || "등록 실패 (이미 등록된 멤버 ID일 수 있습니다)");
       DataRegistry.set("projectUsers", res.data.projectUsers);
       SyncManager.setBaseline(["projectUsers"], res.revs);
     } else {
       const res = await ServerBackend.request("/api/auth/register", { user: newUser, projectId: pid });
       if (!res.ok) return this._err("regErrorMessage", res.message || "등록 실패");
     }
-    showToast(`✅ [${name}(${empNo})] 멤버 등록 완료 — 멤버 권한(${subsystem})으로 로그인하세요.`);
+    showToast(`✅ [${name}(${empNo})] 멤버 등록 완료 — 멤버 권한(${subsystem})으로 멤버 선택하세요.`);
     ["regEmpNo", "regName", "regDept", "regPwd", "regPwd2"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = empNo;
@@ -454,31 +404,31 @@ Object.assign(AuthManager, {
   },
 
   // ---------------------------------------------------------------------------
-  // 비밀번호 변경 (본인)
+  // 암호 변경 (본인)
   // ---------------------------------------------------------------------------
   async changePassword() {
     const cur = document.getElementById("cfgCurrentPassword").value;
     const n1 = document.getElementById("cfgNewPassword").value;
     const n2 = document.getElementById("cfgConfirmPassword").value;
-    if (!cur || !n1 || !n2) return showToast("모든 비밀번호 필드를 입력해주세요.");
-    if (n1 !== n2) return showToast("새 비밀번호와 확인 입력이 일치하지 않습니다.");
+    if (!cur || !n1 || !n2) return showToast("모든 암호 필드를 입력해주세요.");
+    if (n1 !== n2) return showToast("새 암호와 확인 입력이 일치하지 않습니다.");
     const rule = this.validateNewPassword(n1);
     if (rule) return showToast(rule);
     const me = this.getCurrentUser();
     const newHash = await this.hashPassword(n1);
     if (SyncManager.isLocal()) {
       const check = await this._verifyLocal(me.empNo, cur);
-      if (!check.ok) return showToast("현재 비밀번호가 일치하지 않습니다.");
+      if (!check.ok) return showToast("현재 암호가 일치하지 않습니다.");
       const u = this.findUser(me.empNo);
       u.pwdHash = newHash;
       u.pwdTemp = false;
       await SyncManager.save(["projectUsers"], { notify: false });
     } else {
       const res = await ServerBackend.request("/api/auth/password", { oldHash: await this.hashPassword(cur), newHash });
-      if (!res.ok) return showToast("비밀번호 변경 실패: " + (res.message || ""));
+      if (!res.ok) return showToast("암호 변경 실패: " + (res.message || ""));
     }
     ["cfgCurrentPassword", "cfgNewPassword", "cfgConfirmPassword"].forEach(id => { document.getElementById(id).value = ""; });
-    showToast(`🔑 ${me.name}(${me.empNo}) 계정의 비밀번호가 변경되었습니다.`);
+    showToast(`🔑 ${me.name}(${me.empNo}) 계정의 암호가 변경되었습니다.`);
   },
 
   // ---------------------------------------------------------------------------

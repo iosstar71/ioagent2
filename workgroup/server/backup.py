@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM 서버] 시스템 전체 백업 · 복원 · 자동 백업 (v4.0.0) — 시스템관리자
+"""[IOSTAR-PM 서버] 시스템 전체 백업 · 복원 · 자동 백업 (v4.0.0) — 관리자
 
 백업 파일: data/backups/system_<일시>_<구분>.zip
   manifest.json  — 만든 때 · 구분(manual/auto/before-restore/uploaded) · 첨부 포함 여부 · 버전

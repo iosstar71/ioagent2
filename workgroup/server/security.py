@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM 서버] 비밀번호 해시 (PBKDF2)"""
+"""[IOSTAR-PM 서버] 암호 해시 (PBKDF2)"""
 import hashlib
 import hmac
 import secrets
@@ -32,7 +32,7 @@ def make_pwd_record(client_hash: str, iterations: int = None) -> str:
 
 
 def verify_pwd(stored, client_hash) -> bool:
-    """저장값(빈 값=초기 비밀번호 / PBKDF2 레코드 / v1.0.9 이하 SHA-256)과 브라우저 1차 해시 비교 (상수 시간)"""
+    """저장값(빈 값=초기 암호 / PBKDF2 레코드 / v1.0.9 이하 SHA-256)과 브라우저 1차 해시 비교 (상수 시간)"""
     ch = str(client_hash or "").lower()
     if not is_client_hash(ch):
         return False
@@ -49,5 +49,5 @@ def verify_pwd(stored, client_hash) -> bool:
 
 
 def must_change_password(row) -> bool:
-    """초기 비밀번호(1234) 사용 중이거나 관리자가 지정한 임시 비밀번호이면 첫 로그인 시 변경 필수"""
+    """초기 암호(1234) 사용 중이거나 관리자가 지정한 임시 암호이면 첫 멤버 선택 시 변경 필수"""
     return not (row or {}).get("pwdHash") or bool((row or {}).get("pwdTemp"))

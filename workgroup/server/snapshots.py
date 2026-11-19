@@ -2,7 +2,7 @@
 """[IOSTAR-PM 서버] 프로젝트 복원 지점(스냅샷) — 서버 저장 (v4.0.0)
 
 올리기 · 복원 · 초기화 직전에 화면이 만든 프로젝트 스냅샷을 서버(data/snapshots/<프로젝트>/)에 보관 → 다른 PC 에서도 복원
-프로젝트마다 최근 30개 보관. 권한: 그 프로젝트의 PM · 시스템관리자 (시스템관리자는 모든 프로젝트 목록)
+프로젝트마다 최근 30개 보관. 권한: 그 프로젝트의 PM · 관리자 (관리자는 모든 프로젝트 목록)
 
   POST /api/snapshots/save {projectId, meta, payload} | list {projectId | all} | get {projectId, id} | delete {projectId, id}
 """

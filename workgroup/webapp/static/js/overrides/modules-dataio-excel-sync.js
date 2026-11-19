@@ -1,89 +1,10 @@
-// Workgroup 판: modules/dataio/excel-sync.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: modules/dataio/excel-sync.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(ExcelSync, {
-  TAB_SCHEMAS: {
-    // 프로젝트 기준정보 (설정 행 단위)
-    config: [
-      { key: "category", label: "설정구분", width: 18 },
-      { key: "key", label: "설정키/코드", width: 22 },
-      { key: "value", label: "설정값/명칭", width: 32 },
-      { key: "extra1", label: "세부속성1(가중치/요일)", width: 22 },
-      { key: "extra2", label: "세부속성2(산출물/비고)", width: 32 },
-      { key: "extra3", label: "세부속성3(매칭키워드)", width: 36 }
-    ],
-    // 사용자 목록
-    users: [
-      { key: "empNo", label: "사번(ID)", width: 16 },
-      { key: "name", label: "성명", width: 16 },
-      { key: "role", label: "권한등급(SYS_ADMIN/PM/LEAD/MEMBER)", width: 30 },
-      { key: "subsystem", label: "담당서브시스템", width: 18 },
-      { key: "dept", label: "소속부서/담당역할", width: 38 },
-      { key: "lang", label: "언어(ko/en)", width: 12 }
-    ],
-    subsystems: [
-      { key: "domain", label: "도메인(상위그룹)", width: 18 },
-      { key: "code", label: "서브시스템코드", width: 18 },
-      { key: "name", label: "서브시스템명", width: 20 },
-      { key: "type", label: "프로젝트유형(SDLC/REQ)", width: 22 },
-      { key: "sdlcCode", label: "SDLC타입코드", width: 16 },
-      { key: "weight", label: "가중치(%)", width: 12 },
-      { key: "pm", label: "담당자", width: 14 },
-      { key: "desc", label: "Task개요", width: 42 }
-    ],
-    wbs: [
-      { key: "id", label: "WBS ID", width: 12 },
-      { key: "level", label: "레벨", width: 8 },
-      { key: "system", label: "서브시스템", width: 16 },
-      { key: "name", label: "작업명", width: 34 },
-      { key: "weight", label: "가중치(%)", width: 12 },
-      { key: "reqId", label: "요구사항 ID", width: 16 },
-      { key: "pStart", label: "계획시작일", width: 16 },
-      { key: "pEnd", label: "계획종료일", width: 16 },
-      { key: "aStart", label: "실제 시작일", width: 16 },
-      { key: "aEnd", label: "실제 종료일", width: 16 },
-      { key: "pProg", label: "계획(%)", width: 11 },
-      { key: "aProg", label: "실적(%)", width: 11 },
-      { key: "owner", label: "담당자", width: 14 },
-      { key: "output", label: "산출물 / 조치계획", width: 24 }
-    ],
-    deliverables: [
-      { key: "round", label: "제출 차수", width: 12 },
-      { key: "system", label: "서브시스템", width: 16 },
-      { key: "phase", label: "단계구분", width: 16 },
-      { key: "name", label: "산출물명", width: 32 },
-      { key: "pDate", label: "계획제출일", width: 16 },
-      { key: "aDate", label: "실제제출일", width: 16 },
-      { key: "status", label: "진행상태", width: 14 },
-      { key: "manager", label: "담당자", width: 14 },
-      { key: "remarks", label: "검토의견 및 조치내역", width: 36 }
-    ],
-    req: [
-      { key: "id", label: "요구사항 ID", width: 16 },
-      { key: "system", label: "서브시스템", width: 16 },
-      { key: "name", label: "요구사항 명칭", width: 36 },
-      { key: "type", label: "유형", width: 14 },
-      { key: "priority", label: "중요도", width: 12 },
-      { key: "accept", label: "수용여부", width: 12 },
-      { key: "status", label: "진행상태", width: 14 }
-    ],
-    voc: [
-      { key: "id", label: "VOC ID", width: 14 },
-      { key: "vocType", label: "구분", width: 10 },
-      { key: "system", label: "서브시스템", width: 16 },
-      { key: "priority", label: "우선순위", width: 12 },
-      { key: "title", label: "요청제목", width: 36 },
-      { key: "requester", label: "요청자", width: 14 },
-      { key: "reqDate", label: "접수일자", width: 16 },
-      { key: "targetDate", label: "목표완료일", width: 16 },
-      { key: "status", label: "처리상태", width: 14 },
-      { key: "action", label: "처리결과 및 조치계획", width: 36 }
-    ]
-  },
-
   HEADER_ALIASES: {
     users: {
-      empNo: ["사번(id)", "사번", "사번 (로그인 id)", "id", "empno"],
+      empNo: ["멤버 ID(id)", "멤버 ID", "멤버 ID (멤버 선택 id)", "id", "empno"],
       name: ["성명", "이름", "사용자명", "name"],
       role: ["권한등급(sys_admin/pm/lead/member)", "권한등급(sys_admin/pm/member)", "권한등급", "권한", "시스템 권한 등급", "role"],
       subsystem: ["담당서브시스템", "담당 서브시스템", "서브시스템", "subsystem"],

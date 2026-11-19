@@ -214,7 +214,7 @@ class Store:
             cur.execute("INSERT OR REPLACE INTO TB_META VALUES ('mirror_schema', ?)", (MIRROR_SCHEMA_VERSION,))
         conn.commit()
 
-    # ---- [v1.0.10] v1.0.9 이하 SHA-256 비밀번호 → PBKDF2 레코드로 일괄 전환 (같은 비밀번호로 계속 로그인 가능) ----
+    # ---- [v1.0.10] v1.0.9 이하 SHA-256 암호 → PBKDF2 레코드로 일괄 전환 (같은 암호로 계속 멤버 선택 가능) ----
     @classmethod
     def _upgrade_password_records(cls, conn):
         cur = conn.cursor()
@@ -249,7 +249,7 @@ class Store:
                     write_server_log(f"[WARN] Failed to read initial_data.json: {ex}")
         users = data.get("projectUsers") or []
         if not any(str(u.get("empNo", "")).lower() == "admin" for u in users):
-            users.insert(0, {"empNo": "admin", "name": "시스템관리자", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "", "pwdHash": "", "lang": "ko"})
+            users.insert(0, {"empNo": "admin", "name": "관리자", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "", "pwdHash": "", "lang": "ko"})
         data["projectUsers"] = users
         for key in DATASETS:
             if key in data:
@@ -331,7 +331,7 @@ class Store:
 
     @staticmethod
     def public_value(key, value):
-        """응답에서 비밀번호 해시 제거"""
+        """응답에서 암호 해시 제거"""
         if key == "projectUsers" and isinstance(value, list):
             return [{k: v for k, v in dict(u, pwdHash="").items() if k not in ("pwdReset",)} for u in value if isinstance(u, dict)]
         return value
@@ -457,10 +457,10 @@ class Store:
 
     @staticmethod
     def _sanitize_user_row(user, part, incoming, stored, pid=DEFAULT_PROJECT):
-        """[v3.0.0] 사용자 정보는 프로젝트별 (계정·비밀번호는 하나):
-        - 이 프로젝트에서 바뀌는 것은 그 프로젝트의 참여 정보(projectRoles[pid] = 역할·담당·부서)와 이름·언어·비밀번호 초기화뿐
+        """[v3.0.0] 사용자 정보는 프로젝트별 (계정·암호는 하나):
+        - 이 프로젝트에서 바뀌는 것은 그 프로젝트의 참여 정보(projectRoles[pid] = 역할·담당·부서)와 이름·언어·암호 초기화뿐
         - 삭제 = 이 프로젝트에서 빼기 (다른 프로젝트 참여가 없으면 계정 삭제)
-        - 다른 프로젝트에만 있는 사번은 시스템관리자만 이 프로젝트에 추가 가능 (그 밖에는 [다른 프로젝트에서 복사] 사용)"""
+        - 다른 프로젝트에만 있는 멤버 ID은 관리자만 이 프로젝트에 추가 가능 (그 밖에는 [다른 프로젝트에서 복사] 사용)"""
         is_admin = user.get("baseRole", user["role"]) == "SYS_ADMIN"
         manager = user["role"] in MANAGER_ROLES
         stored_admin = is_sys_admin(stored)
@@ -477,7 +477,7 @@ class Store:
         row = dict(incoming)
         if stored and not stored_admin and not membership(stored, pid) and not is_admin:
             return "BLOCK"  # 다른 프로젝트 사용자를 이 프로젝트에서 덮어쓰기 방지
-        # 시스템관리자 지정·해제는 시스템관리자만
+        # 관리자 지정·해제는 관리자만
         want_admin = normalize_role(row.get("role")) == "SYS_ADMIN"
         if not is_admin:
             want_admin = stored_admin
@@ -501,10 +501,10 @@ class Store:
         incoming_pwd = str(row.pop("pwdHash", "") or "")
         row.pop("pwdTemp", None)
         if reset:
-            row["pwdHash"] = ""  # 관리자/PM 비밀번호 초기화 → 기본값(1234), 다음 로그인 시 변경 필수
+            row["pwdHash"] = ""  # 관리자/PM 암호 초기화 → 기본값(1234), 다음 멤버 선택 시 변경 필수
             row["pwdTemp"] = False
         elif manager and is_client_hash(incoming_pwd):
-            row["pwdHash"] = make_pwd_record(incoming_pwd)  # 관리자가 지정한 임시 비밀번호
+            row["pwdHash"] = make_pwd_record(incoming_pwd)  # 관리자가 지정한 임시 암호
             row["pwdTemp"] = True
         else:
             row["pwdHash"] = (stored or {}).get("pwdHash", "")
@@ -690,7 +690,7 @@ class Store:
                 members = [user["empNo"]] if req.get("restricted") else []
                 cur.execute("INSERT INTO TB_PROJECT VALUES (?, ?, 'ACTIVE', ?, ?, ?, ?, ?)",
                             (pid, name, 1 if req.get("restricted") else 0, json.dumps(members), now_str(), user["empNo"], len(ids)))
-                # 만든 사람이 시스템관리자가 아니면 새 프로젝트의 PM 으로 지정
+                # 만든 사람이 관리자가 아니면 새 프로젝트의 PM 으로 지정
                 if user.get("baseRole", user["role"]) != "SYS_ADMIN":
                     users, revs = cls._read_dataset(cur, "projectUsers")
                     me = next((u for u in users or [] if str(u.get("empNo", "")).lower() == user["empNo"].lower()), None)
@@ -717,7 +717,7 @@ class Store:
         if pid == DEFAULT_PROJECT:
             restricted, status = False, "ACTIVE"  # 기본 프로젝트는 항상 공개·사용 중
         if status != p["status"] and not is_admin:
-            raise AuthError("보관/복원은 시스템관리자만 할 수 있습니다.", 403)
+            raise AuthError("보관/복원은 관리자만 할 수 있습니다.", 403)
         with DB_LOCK:
             conn = cls.connect()
             try:
@@ -762,15 +762,15 @@ class Store:
             finally:
                 conn.close()
 
-    # ---- 사용자 등록 / 비밀번호 ----
+    # ---- 사용자 등록 / 암호 ----
     @classmethod
     def register_user(cls, new_user, pid=None):
         emp = str(new_user.get("empNo", "")).strip()
         if not emp or len(emp) > 30 or not all(ch.isalnum() or ch in "_.-" for ch in emp):
-            raise AuthError("사번은 영문/숫자/_.- 2~30자로 입력하세요.", 400)
+            raise AuthError("멤버 ID은 영문/숫자/_.- 2~30자로 입력하세요.", 400)
         pwd = str(new_user.get("pwdHash", "")).lower()
         if not is_client_hash(pwd) or hmac.compare_digest(pwd, DEFAULT_PWD_HASH):
-            raise AuthError("비밀번호 형식이 올바르지 않습니다.", 400)
+            raise AuthError("암호 형식이 올바르지 않습니다.", 400)
         row = {
             "empNo": emp,
             "name": str(new_user.get("name", "")).strip()[:50] or emp,
@@ -781,7 +781,7 @@ class Store:
             "lang": "en" if new_user.get("lang") == "en" else "ko",
             "registeredAt": now_str(),
         }
-        # [v3.0.0] 자가 등록은 로그인 화면에서 고른 프로젝트의 일반 사용자로
+        # [v3.0.0] 자가 등록은 멤버 선택 화면에서 고른 프로젝트의 일반 사용자로
         project = cls.get_project(pid) if pid else None
         if not project or project.get("status") == "ARCHIVED":
             raise AuthError("가입할 프로젝트를 선택하세요.", 400)
@@ -793,7 +793,7 @@ class Store:
                 users, revs = cls._read_dataset(cur, "projectUsers")
                 users = users or []
                 if any(str(u.get("empNo", "")).lower() == emp.lower() for u in users):
-                    raise AuthError(f"이미 등록된 사번({emp})입니다.", 409)
+                    raise AuthError(f"이미 등록된 멤버 ID({emp})입니다.", 409)
                 users.append(row)
                 revs[emp] = {"rev": int((revs.get(emp) or {}).get("rev", 0)) + 1, "by": f"self-register({emp})", "at": now_str()}
                 cls._write_dataset(cur, "projectUsers", users, revs, f"self-register({emp})")
@@ -807,9 +807,9 @@ class Store:
     def change_password(cls, emp, old_hash, new_hash):
         new_hash = str(new_hash or "").lower()
         if not is_client_hash(new_hash):
-            raise AuthError("비밀번호 형식이 올바르지 않습니다.", 400)
+            raise AuthError("암호 형식이 올바르지 않습니다.", 400)
         if hmac.compare_digest(new_hash, DEFAULT_PWD_HASH) or hmac.compare_digest(new_hash, str(old_hash or "").lower()):
-            raise AuthError("초기 비밀번호나 현재 비밀번호와 다른 새 비밀번호를 입력하세요.", 400)
+            raise AuthError("초기 암호나 현재 암호와 다른 새 암호를 입력하세요.", 400)
         with DB_LOCK:
             conn = cls.connect()
             try:
@@ -819,7 +819,7 @@ class Store:
                 if not target:
                     raise AuthError("사용자를 찾을 수 없습니다.", 404)
                 if not verify_pwd(target.get("pwdHash"), old_hash):
-                    raise AuthError("현재 비밀번호가 일치하지 않습니다.", 403)
+                    raise AuthError("현재 암호가 일치하지 않습니다.", 403)
                 target["pwdHash"] = make_pwd_record(new_hash)
                 target["pwdTemp"] = False
                 target["pwdChangedAt"] = now_str()
@@ -832,7 +832,7 @@ class Store:
 
     @classmethod
     def self_reset_password(cls, emp):
-        """[v3.0.2] 로그인 화면 비밀번호 초기화 → 기본값(1234), 다음 로그인 때 변경 필수"""
+        """[v3.0.2] 멤버 선택 화면 암호 초기화 → 기본값(1234), 다음 멤버 선택 때 변경 필수"""
         with DB_LOCK:
             conn = cls.connect()
             try:
@@ -840,7 +840,7 @@ class Store:
                 users, revs = cls._read_dataset(cur, "projectUsers")
                 target = next((u for u in (users or []) if str(u.get("empNo", "")).lower() == emp.lower()), None)
                 if not target:
-                    raise AuthError(f"등록되지 않은 사번({emp})입니다.", 404)
+                    raise AuthError(f"등록되지 않은 멤버 ID({emp})입니다.", 404)
                 target["pwdHash"] = ""
                 target["pwdTemp"] = False
                 target["pwdChangedAt"] = now_str()

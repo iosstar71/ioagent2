@@ -67,7 +67,7 @@ function readZipEntry(file, name) {
   return "";
 }
 
-// 화면 준비 완료(로그인 완료·잠금 화면 닫힘)까지 대기 — 계정 전환·프로젝트 전환은 화면을 다시 불러오므로 고정 대기 대신 사용
+// 화면 준비 완료(멤버 선택 완료·잠금 화면 닫힘)까지 대기 — 계정 전환·프로젝트 전환은 화면을 다시 불러오므로 고정 대기 대신 사용
 async function waitApp(page, extra) {
   await page.waitForFunction(extra => {
     try {
@@ -79,10 +79,10 @@ async function waitApp(page, extra) {
   await page.waitForTimeout(300);
 }
 
-// 시나리오별 현재 비밀번호 (초기 1234 → 첫 로그인 때 변경 필수)
+// 시나리오별 현재 암호 (초기 1234 → 첫 멤버 선택 때 변경 필수)
 const LOCAL_PWD = {};
 const SERVER_PWD = {};
-// [v3.0.0] 로그인 화면에서 프로젝트 선택 — 시스템관리자는 선택하지 않아도 됨(null), 그 외 사용자는 기본값 DEFAULT
+// [v3.0.0] 멤버 선택 화면에서 프로젝트 선택 — 관리자는 선택하지 않아도 됨(null), 그 외 사용자는 기본값 DEFAULT
 async function login(page, emp, store = LOCAL_PWD, project) {
   if (project === undefined) project = emp === "admin" ? null : "DEFAULT";
   if (project !== null) {
@@ -140,7 +140,7 @@ async function localMain() {
   check("Storage mode stays server DB (SQLite) — local storage mode removed", await page.evaluate(() => DbConnector.config.mode === "SQLITE" && !document.getElementById("btnDbMode_LOCAL")));
   await page.context().close();
 
-  // 이전에 English 를 쓴 브라우저여도 로그인 화면은 app.ini 기본 언어(한국어)로 시작
+  // 이전에 English 를 쓴 브라우저여도 멤버 선택 화면은 app.ini 기본 언어(한국어)로 시작
   // 메인 시나리오는 정적 웹 서버(http://, DB 서버 없음)로 열어 로컬 저장소 모드로 실행
   //  (테스트 브라우저는 file:// 페이지를 다시 불러올 때 브라우저 저장소를 잃는 경우가 있어
   //   계정 전환·프로젝트 전환처럼 화면을 다시 불러오는 검사는 http:// 에서 수행)
@@ -468,7 +468,7 @@ async function localMain() {
   const rq = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
     o.subTabs = ["meetingSubTabs", "rpTabs", "boardSubTabs"].every(id => { const e = document.getElementById(id); return e && e.classList.contains("master-subtab-bar") && !e.closest(".sub-header-bar"); });
-    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector('#gAdminMenu a#btnHeaderManual[href="manual.html"]') && /법적 고지/.test(document.querySelector("#gAdminMenu a#btnHeaderManual").nextElementSibling.textContent);
+    o.header = document.getElementById("btnHeaderRefreshAll").tagName === "BUTTON" && !document.getElementById("gStatusMenu") && !document.getElementById("btnProjectManager") && !!document.querySelector('#gAdminMenu a#btnHeaderManual[href="manual.html"]') && /오픈소스 고지|법적 고지/.test(document.querySelector("#gAdminMenu a#btnHeaderManual").nextElementSibling.textContent);
     GShell.go("tab-config"); SubTabs.show("config", "data"); await wait(400);
     o.delRow = /프로젝트 삭제/.test(document.getElementById("daActions").textContent) && typeof DataAdmin.removeProject === "function";
     o.who = document.getElementById("gUserWho").textContent.includes("—");
@@ -664,7 +664,7 @@ async function localMain() {
     await page.evaluate(() => UserAdmin.remove("ua_e2e")); await page.waitForTimeout(300);
     await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(900);
     const ua3 = await page.evaluate(() => ({ gone: !UserAdmin.users.some(x => x.empNo === "ua_e2e") && !projectUsers.some(x => x.empNo === "ua_e2e") }));
-    check("System settings > All users: every user with project roles in one table (admin2 present)", ua1.rows === ua1.all && ua1.all >= 9 && ua1.admin2 && ua1.chip.includes("·") && ua1.sum.includes("시스템관리자 2명"), JSON.stringify(ua1));
+    check("System settings > All users: every user with project roles in one table (admin2 present)", ua1.rows === ua1.all && ua1.all >= 9 && ua1.admin2 && ua1.chip.includes("·") && ua1.sum.includes("관리자 2명"), JSON.stringify(ua1));
     check("All users: add a user with a project role (LEAD of W1 becomes the template owner), then delete", ua2.saved && ua2.inProject && ua2.lead === "통합 사용자" && ua3.gone, JSON.stringify({ ua2, ua3 }));
 
     const heads = await page.evaluate(() => [...document.querySelectorAll(".tab-pane")].map(p => { const h = p.querySelector(":scope > .sub-header-bar.neo-ph"); return [p.id, !!h && !!h.querySelector(".neo-ph-main .sub-title") && !!h.querySelector(".neo-ph-main .neo-ph-desc"), p.querySelectorAll(".sync-toolbar-state").length <= 1 && (!p.querySelector(".sync-toolbar-state") || !!h.querySelector(".sync-toolbar-state"))]; }).filter(x => !(x[1] && x[2])));
@@ -828,7 +828,7 @@ async function localMain() {
     v340.gantt.bars > 10 && v340.gantt.fill === v340.gantt.bars && v340.gantt.late >= 1 && v340.gantt.mark >= 1 && v340.gantt.summary >= 1 && v340.dashBullet >= 1 && v340.homeBullet === 0 &&
     /^표지,목차,종합 진척 현황,S-커브,불릿 차트,서브시스템별 진척율,SDLC 매트릭스(,SDLC 매트릭스)*,지연·마일스톤,/.test(v340.names) && v340.noOldSlide && v340.hasPoly, JSON.stringify(v340));
 
-  // 로그인 프로젝트 선택 · 암호 초기화 · 프로젝트별 테마 · 백업/복원/초기화는 서버 시나리오에서 시험 ([Workgroup 0.4])
+  // 멤버 선택 프로젝트 선택 · 암호 초기화 · 프로젝트별 테마 · 백업/복원/초기화는 서버 시나리오에서 시험 ([Workgroup 0.4])
   await page.evaluate(async () => { try { await SyncManager.save(null, { notify: false, force: true }); } catch (e) {} AuthManager.manualLock(); }); await page.waitForTimeout(300);
   await login(page, "admin", LOCAL_PWD, ""); await waitApp(page);
   // [v3.9.0] 공정 유형: 시스템 설정에서 관리, 프로젝트는 활성화 · 계획 일정만
@@ -1137,7 +1137,7 @@ async function serverScenarios() {
     await a.check('input[name="dupAction"][value="overwrite"]'); await a.click("#dupOkBtn");
     const ow = await a.evaluate(async () => { await window.__up2; await new Promise(r => setTimeout(r, 600)); return { n: ProjectData.projects().length }; });
     check("v4.0 server: same project name on upload → choose new name or overwrite (modal)", dupShown.shown && dupShown.name.length > 0 && dupShown.def.includes("(2)") && ow.n === nBefore, JSON.stringify({ dupShown, ow, nBefore }));
-    // 시스템 전체 백업 (시스템관리자): 만들기 → 목록
+    // 시스템 전체 백업 (관리자): 만들기 → 목록
     const sb40 = await a.evaluate(async () => { document.getElementById("bkWithFiles").checked = false; await SystemBackup.create();
       return { rows: document.querySelectorAll("#bkServerList tr").length, server: getComputedStyle(document.getElementById("bkServerBox")).display, first: (SystemBackup.list[0] || {}).kind, locked: document.querySelectorAll("#mergeBackupPane .bk-locked").length }; });
     check("v4.0 server: admin creates a system backup in Smart merge > Backup · Restore (listed, nothing locked)", sb40.rows >= 1 && sb40.server !== "none" && sb40.first === "manual" && sb40.locked === 0, JSON.stringify(sb40));

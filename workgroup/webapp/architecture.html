@@ -688,7 +688,7 @@
         <p class="lead-desc">
           본 문서는 <strong>IOSTAR-PM v3.5.0</strong>의 소프트웨어 아키텍처 원칙, 4계층 레이어 구조,
           디렉토리 및 모듈별 단일 책임 원칙(SRP), WBS-산출물-회의록-ActionItem 통합 데이터 모델, 순수 클라이언트 기반
-          OpenXML(DOCX/XLSX) 변환 파이프라인 명세를 기술한 시스템 관리자 및 개발자용 공식 아키텍처 정의서입니다.
+          OpenXML(DOCX/XLSX) 변환 파이프라인 명세를 기술한 관리자 및 개발자용 공식 아키텍처 정의서입니다.
         </p>
       </div>
 
@@ -868,7 +868,7 @@
               </div>
               <div class="tier-store-card">
                 <strong>AuthManager</strong>
-                <p>SHA-256 비대칭 해시 암호화 인증, 3대 RBAC 역할(시스템관리자, PM, 팀원) 메뉴별 세분화 접근 제어</p>
+                <p>SHA-256 비대칭 해시 암호화 인증, 3대 RBAC 역할(관리자, PM, 팀원) 메뉴별 세분화 접근 제어</p>
               </div>
               <div class="tier-store-card">
                 <strong>BackupHistoryManager</strong>
@@ -1006,7 +1006,7 @@
               <tr>
                 <td><strong>js/access-control.js</strong></td>
                 <td>Auth &amp; RBAC (v1.0.6)</td>
-                <td>로그인·신규 사용자 등록·서버 토큰 인증, 4단계 권한(SYS_ADMIN/PM/LEAD/MEMBER), 탭 접근 제어 단일 정의.</td>
+                <td>멤버 선택·신규 사용자 등록·서버 토큰 인증, 4단계 권한(SYS_ADMIN/PM/LEAD/MEMBER), 탭 접근 제어 단일 정의.</td>
               </tr>
               <tr>
                 <td><strong>tools/tests/</strong></td>
@@ -1394,7 +1394,7 @@
               <tr>
                 <td><strong>SYS_ADMIN</strong></td>
                 <td>전체 시스템 마스터 권한</td>
-                <td>시스템 설정(tab-config), 비밀번호 변경, SDLC 마스터 커스터마이징, <strong>아키텍처 정의서 조회</strong>, 전체 데이터 초기화 및 복원.</td>
+                <td>시스템 설정(tab-config), 암호 변경, SDLC 마스터 커스터마이징, <strong>아키텍처 정의서 조회</strong>, 전체 데이터 초기화 및 복원.</td>
               </tr>
               <tr>
                 <td><strong>PM</strong></td>
@@ -1420,7 +1420,7 @@
         <div class="spec-card">
           <ul style="margin-left: 20px; font-size: 13px; line-height: 1.8;">
             <li><strong>데이터 백업:</strong> 시스템 설정 메뉴의 <code>💾 전체 데이터 즉시 백업</code> 또는 <code>Export JSON</code>을 통해 실시간 스냅샷을 보관하십시오.</li>
-            <li><strong>비밀번호 분실 시:</strong> 단일 파일 Standalone HTML을 텍스트 편집기로 열어 <code>pwdHash: ""</code>로 초기화하면 기본 암호(1234)로 리셋됩니다.</li>
+            <li><strong>암호 분실 시:</strong> 단일 파일 Standalone HTML을 텍스트 편집기로 열어 <code>pwdHash: ""</code>로 초기화하면 기본 암호(1234)로 리셋됩니다.</li>
             <li><strong>데이터 충돌 복구:</strong> 비정상 종료 시 시스템 설정의 <code>🔄 제조_시스템_샘플_과제_4레벨.xlsx 복원</code> 또는 <code>🏭 27년 가동률 시스템 개선 복원</code> 버튼을 통해 언제든지 무결한 원본 상태로 복원할 수 있습니다.</li>
           </ul>
         </div>

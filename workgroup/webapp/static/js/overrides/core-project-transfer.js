@@ -1,46 +1,7 @@
-// Workgroup 판: core/project-transfer.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/project-transfer.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(ProjectTransfer, {
-  async download(format) {
-    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
-    let target = (document.getElementById("ptDownTarget") || {}).value || ProjectContext.current;
-    if (!ProjectData.isAdmin()) target = ProjectContext.current;  // PM 은 지금 프로젝트만
-    const list = ProjectData.projects();
-    const ids = target === this.ALL ? list.map(p => p.id) : [target];
-    const stamp = ProjectData._stamp();
-    try {
-      const items = [];
-      const full = ProjectData.isAdmin() ? await this.fullUsers() : this.allUsers();
-      for (const pid of ids) {
-        const { data, users } = await this.load(pid, full);
-        items.push({ pid, name: (list.find(p => p.id === pid) || {}).name || (data.projectConfig || {}).projectName || pid, data, users });
-      }
-      if (format === "JSON") {
-        const one = it => ({ schemaVersion: ProjectData.SCHEMA, appVersion: APP_VERSION.version, projectId: it.pid, projectName: it.name,
-          exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo, data: it.data, users: it.users });
-        const payload = target === this.ALL ? { schemaVersion: this.BUNDLE, appVersion: APP_VERSION.version, exportedAt: new Date().toISOString(), projects: items.map(one) } : one(items[0]);
-        const fname = target === this.ALL ? ExcelSync.stdName("전체프로젝트", [], "json", stamp) : this.withProject(items[0].pid, items[0].data, items[0].users, () => ExcelSync.stdName("프로젝트백업", [], "json", stamp));
-        ExcelSync._triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }), fname);
-      } else {
-        for (const it of items) {
-          const out = this.withProject(it.pid, it.data, it.users, () => ({ blob: ExcelSync._buildXlsxBlob(SmartMergeCenter.buildPackageSheets()), name: ExcelSync.stdName("프로젝트백업", [], "xlsx", stamp) }));
-          ExcelSync._triggerDownload(out.blob, out.name);
-          if (items.length > 1) await new Promise(r => setTimeout(r, 400));
-        }
-      }
-      showToast(`📥 ${target === this.ALL ? `모든 프로젝트 ${items.length}개` : `[${items[0].name}] 프로젝트`}를 ${format === "JSON" ? "JSON" : "엑셀"}으로 내려받았습니다.${format !== "JSON" && items.length > 1 ? " (프로젝트마다 파일 1개)" : ""}`);
-    } catch (err) {
-      showToast("❌ 다운로드 실패: " + err.message);
-    }
-  },
-
-  // ---- 올리기 ----
-  // 파일 → [{ name, data, users }]
-  async pick() {
-    if (!ProjectData.canManage()) return showToast("🚫 시스템관리자 · PM 만 할 수 있습니다.");
-    document.getElementById("ptUpInput").click();
-  },
   async write(pid, item, replace) {
     const data = this._c(item.data);
     const keepName = replace ? ((ProjectData.projects().find(p => p.id === pid) || {}).name) : item.name;

@@ -3,9 +3,9 @@
 // -----------------------------------------------------------------------------
 //  - DB 서버 방식에서만 사용 (파일은 서버의 upload 폴더에 저장, 로컬 저장소 방식 · Standalone 은 안내만)
 //  - 정책(서버 conf/app.ini [files]): 파일 1개 최대 20MB · 허용 확장자 · 같은 이름은 새 버전 ·
-//    삭제하면 휴지통 30일 보관 뒤 자동 완전 삭제 (그 전에는 PM · 시스템관리자가 되살리기)
+//    삭제하면 휴지통 30일 보관 뒤 자동 완전 삭제 (그 전에는 PM · 관리자가 되살리기)
 //  - 권한: 올리기 · 삭제 = 그 서브시스템 담당자와 PM · 총괄리더, 내려받기 = 프로젝트 참여자 전체
-//          공지 · 게시물은 글쓴이와 PM · 시스템관리자, 회의록은 프로젝트 참여자 (삭제는 올린 사람과 PM · 시스템관리자)
+//          공지 · 게시물은 글쓴이와 PM · 관리자, 회의록은 프로젝트 참여자 (삭제는 올린 사람과 PM · 관리자)
 //  - 공지 · 게시물 · 회의록은 한 건에 파일 5개까지
 //  - 대상 행과 파일은 행의 fileKey(처음 첨부할 때 자동 부여)로 연결
 // =============================================================================
@@ -237,7 +237,7 @@ var AttachManager = {
     const c = this.cur;
     if (!c || c.trash || !files.length) return;
     const def = this.TYPES[c.type];
-    if (!def.writable(c.row)) { showToast(c.type === "deliverable" ? `🚫 ${c.row.system} 서브시스템은 담당이 아니어서 올릴 수 없습니다.` : "🚫 글쓴이와 PM · 시스템관리자만 파일을 올릴 수 있습니다."); return; }
+    if (!def.writable(c.row)) { showToast(c.type === "deliverable" ? `🚫 ${c.row.system} 서브시스템은 담당이 아니어서 올릴 수 없습니다.` : "🚫 글쓴이와 PM · 관리자만 파일을 올릴 수 있습니다."); return; }
     const max = this.maxCount(c.type);
     if (max) {  // 공지 · 게시물 · 회의록: 한 건에 파일 5개까지 (같은 이름은 새 버전이라 개수에 넣지 않음)
       const names = new Set(c.files.map(f => f.name.toLowerCase()));
@@ -313,7 +313,7 @@ var AttachManager = {
   remove(id) {
     const f = this.cur && this.cur.files.find(x => x.id === id);
     if (!f) return;
-    openConfirmDialog(`[${f.name}] v${f.version} 을(를) 삭제할까요? 휴지통에 ${this.rules().trashDays}일 동안 보관되며, 그동안 PM · 시스템관리자가 되살릴 수 있습니다.`, async () => {
+    openConfirmDialog(`[${f.name}] v${f.version} 을(를) 삭제할까요? 휴지통에 ${this.rules().trashDays}일 동안 보관되며, 그동안 PM · 관리자가 되살릴 수 있습니다.`, async () => {
       const res = await ServerBackend.request("/api/files/delete", { id });
       showToast(res.ok ? "🗑 첨부파일을 휴지통으로 옮겼습니다." : "⚠️ " + (res.message || "삭제하지 못했습니다."));
       await this.reload();

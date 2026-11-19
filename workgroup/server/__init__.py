@@ -4,7 +4,7 @@ IOSTAR-PM ver1.2.0 - 다중 사용자 DB 웹 서버 (인증 + 충돌 감지)
 ================================================================================
 [v1.0.6 주요 변경]
 1) 인증(Authentication)
-   - /api/auth/login 으로 사번 + 비밀번호(SHA-256 해시) 검증 후 세션 토큰 발급
+   - /api/auth/login 으로 멤버 ID + 암호(SHA-256 해시) 검증 후 세션 토큰 발급
    - 모든 데이터·채팅 API 는 "Authorization: Bearer <token>" 필수 (미인증 401)
    - 신규 사용자 자가 등록(/api/auth/register) → 기본 권한 MEMBER(일반 사용자)
 2) 권한(Authorization) - 브라우저(js/data-store.js Permission)와 동일 규칙을 서버에서 재검증

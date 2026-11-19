@@ -6,7 +6,7 @@
   - 유형      : 허용 확장자만 (문서 · 이미지 · 압축). 실행 파일은 확장자를 바꿔도 내용으로 거부
   - 저장 위치 : upload/<프로젝트>/<연월>/<임의 이름> — 웹 루트(webapp) 밖, 원래 파일 이름은 DB 에만 기록
   - 버전      : 같은 이름으로 다시 올리면 새 버전, 이전 버전은 최근 10개까지 보관 (넘으면 휴지통)
-  - 삭제      : 휴지통으로 이동 → 30일 뒤 자동으로 완전 삭제 (그 전에는 PM · 시스템관리자가 되살릴 수 있음)
+  - 삭제      : 휴지통으로 이동 → 30일 뒤 자동으로 완전 삭제 (그 전에는 PM · 관리자가 되살릴 수 있음)
   - 권한      : 올리기 · 삭제 = 그 서브시스템을 저장할 수 있는 사람, 내려받기 = 프로젝트 참여자 전체
 """
 import datetime
@@ -110,9 +110,9 @@ class FileStore:
         elif cfg["rule"] == "author":
             author = str((row or {}).get("authorEmpNo") or "").lower()
             if row is not None and not manager and author and author != me:
-                raise AuthError("글쓴이와 PM · 시스템관리자만 첨부파일을 바꿀 수 있습니다.", 403)
+                raise AuthError("글쓴이와 PM · 관리자만 첨부파일을 바꿀 수 있습니다.", 403)
         if file is not None and cfg["rule"] != "subsystem" and not manager and str(file.get("uploadedBy") or "").lower() != me:
-            raise AuthError("올린 사람과 PM · 시스템관리자만 첨부파일을 지울 수 있습니다.", 403)
+            raise AuthError("올린 사람과 PM · 관리자만 첨부파일을 지울 수 있습니다.", 403)
         return system
 
     @staticmethod
@@ -309,5 +309,5 @@ class FileStore:
 
 def manager_only(user):
     if user["role"] not in MANAGER_ROLES:
-        raise AuthError("PM · 시스템관리자만 할 수 있습니다.", 403)
+        raise AuthError("PM · 관리자만 할 수 있습니다.", 403)
 

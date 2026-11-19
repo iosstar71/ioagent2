@@ -101,7 +101,7 @@ class ServerApiTest(unittest.TestCase):
 
     @classmethod
     def ready(cls, emp, project="DEFAULT"):
-        """로그인 → 초기 비밀번호면 변경(필수) → 사용 가능한 토큰 반환"""
+        """멤버 선택 → 초기 암호면 변경(필수) → 사용 가능한 토큰 반환"""
         cur = cls.pwd.get(emp, "1234")
         s, d = cls.login(emp, cur, project)
         assert s == 200, (emp, s, d)
@@ -200,7 +200,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(s, 200)
         s, d = self.login("qa_han", "1234")
         self.assertEqual(s, 200)
-        self.assertTrue(d["user"]["mustChangePassword"])  # 초기화 후 첫 로그인 → 변경 필수
+        self.assertTrue(d["user"]["mustChangePassword"])  # 초기화 후 첫 멤버 선택 → 변경 필수
 
     def test_22_login_throttle(self):
         last = None
@@ -217,7 +217,7 @@ class ServerApiTest(unittest.TestCase):
             self.assertEqual(s, 403)
             self.assertEqual(r.get("code"), "MUST_CHANGE_PASSWORD")
             s, _ = self.call("/api/auth/change-password", {"empNo": "pmo_kim", "oldHash": h("1234"), "newHash": h("1234")})
-            self.assertEqual(s, 400)  # 초기 비밀번호로 변경 불가
+            self.assertEqual(s, 400)  # 초기 암호로 변경 불가
 
     def test_24_pbkdf2_storage_and_no_raw_hash(self):
         conn = sqlite3.connect(str(self.tmp / "data" / "wbs_enterprise.db"))
@@ -328,20 +328,20 @@ class ServerApiTest(unittest.TestCase):
         type(self).pid = pid
 
     def test_41_project_users_and_login(self):
-        """[v3.0.0] 사용자 정보는 프로젝트별 · 로그인 시 프로젝트 선택 · 시스템관리자 외에는 로그인한 프로젝트만"""
+        """[v3.0.0] 사용자 정보는 프로젝트별 · 멤버 선택 시 프로젝트 선택 · 관리자 외에는 멤버 선택한 프로젝트만"""
         pid = self.pid
-        self.ready("lead_park")  # 초기 비밀번호 변경
-        # 로그인: 프로젝트 미선택 → 400 (시스템관리자는 미선택 가능), 참여하지 않은 프로젝트 → 403
+        self.ready("lead_park")  # 초기 암호 변경
+        # 멤버 선택: 프로젝트 미선택 → 400 (관리자는 미선택 가능), 참여하지 않은 프로젝트 → 403
         s, d = self.login("lead_park", self.pwd["lead_park"], "")
         self.assertEqual((s, d.get("code")), (400, "PROJECT_REQUIRED"))
         s, d = self.login("lead_park", self.pwd["lead_park"], pid)
         self.assertEqual((s, d.get("code")), (403, "NOT_PROJECT_MEMBER"))
         s, d = self.call("/api/auth/login", {"empNo": "admin", "pwdHash": h(self.pwd["admin"])})
         self.assertEqual(s, 200, d)
-        # 새 프로젝트 사용자 목록: 시스템관리자만 (DEFAULT 참여자는 보이지 않음)
+        # 새 프로젝트 사용자 목록: 관리자만 (DEFAULT 참여자는 보이지 않음)
         data, _ = self.load(["projectUsers"], project=pid)
         self.assertTrue(all(u["role"] == "SYS_ADMIN" for u in data["projectUsers"]))
-        # 다른 프로젝트에서 사용자 복사 (시스템관리자) → 역할·담당 함께 복사, 이미 있으면 건너뜀
+        # 다른 프로젝트에서 사용자 복사 (관리자) → 역할·담당 함께 복사, 이미 있으면 건너뜀
         s, r = self.call("/api/projects/members", {"fromProject": "DEFAULT"}, self.admin, project=pid)
         self.assertIn("lead_park", [m["empNo"] for m in r["members"]])
         s, r = self.call("/api/projects/copy-users", {"fromProject": "DEFAULT", "empNos": ["lead_park", "lead_lee"]}, self.admin, project=pid)
@@ -363,7 +363,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(s, 200, d)
         token = d["token"]
         self.assertEqual((d["user"]["role"], d["user"]["dept"]), ("PM", "2차 PMO"))
-        # 로그인한 프로젝트만: 다른 프로젝트 접근·목록 불가
+        # 멤버 선택한 프로젝트만: 다른 프로젝트 접근·목록 불가
         s, d = self.call("/api/db/load", {"keys": ["wbsData"]}, token, project="DEFAULT")
         self.assertEqual((s, d.get("code")), (403, "PROJECT_LOCKED"))
         _, lst = self.call("/api/projects/list", {}, token, project=pid)
@@ -371,14 +371,14 @@ class ServerApiTest(unittest.TestCase):
         # 기본 프로젝트에서는 원래 역할(MEMBER) 그대로
         _, d = self.login("lead_park", self.pwd["lead_park"], "DEFAULT")
         self.assertEqual(d["user"]["role"], "MEMBER")
-        # PM 은 자기 프로젝트 기준정보 수정 가능, 다른 프로젝트에만 있는 사번을 덮어쓰기는 불가
+        # PM 은 자기 프로젝트 기준정보 수정 가능, 다른 프로젝트에만 있는 멤버 ID을 덮어쓰기는 불가
         cfg, revs = self.load(["projectConfig"], token, project=pid)
         cfg["projectConfig"]["projectName"] = "2차 확산 과제(수정)"
         s, r = self.call("/api/db/save", {"changes": {"projectConfig": {"parts": {"*": cfg["projectConfig"]}, "base": {"*": revs["projectConfig"]["*"]["rev"]}}}}, token, project=pid)
         self.assertEqual(r.get("blocked"), [])
         s, r = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"qa_han": {"empNo": "qa_han", "name": "가로채기", "role": "MEMBER"}}, "base": {}}}}, token, project=pid)
         self.assertIn("projectUsers[qa_han]", r["blocked"])
-        # 이 프로젝트에서 사용자 삭제 = 이 프로젝트에서만 빠짐 (기본 프로젝트 로그인은 그대로)
+        # 이 프로젝트에서 사용자 삭제 = 이 프로젝트에서만 빠짐 (기본 프로젝트 멤버 선택은 그대로)
         data, revs = self.load(["projectUsers"], token, project=pid)
         s, r = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_lee": None}, "base": {"lead_lee": revs["projectUsers"]["lead_lee"]["rev"]}}}}, token, project=pid)
         self.assertEqual(r.get("blocked"), [])
@@ -388,7 +388,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(s, 200)
         s, r = self.call("/api/projects/list", {}, self.admin)
         self.assertEqual(next(p for p in r["projects"] if p["id"] == pid)["name"], "2차 확산 과제(수정)")
-        # 공개 프로젝트 목록 (로그인 화면용): 이름만
+        # 공개 프로젝트 목록 (멤버 선택 화면용): 이름만
         s, r = self.call("/api/projects/public", {})
         self.assertEqual(s, 200)
         self.assertIn(pid, [p["id"] for p in r["projects"]])
@@ -425,7 +425,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual((a1[-1]["aProg"], a1[-2]["aProg"], a1[-3]["weight"]), (100, 0, 0))
 
     def test_45_self_password_reset(self):
-        """[v3.0.2] 로그인 화면 비밀번호 초기화 → 1234 로 로그인되고 변경 필수"""
+        """[v3.0.2] 멤버 선택 화면 암호 초기화 → 1234 로 멤버 선택되고 변경 필수"""
         s, d = self.call("/api/auth/reset-password", {"empNo": "pmo_kim"})
         self.assertEqual(s, 200, d)
         s, d = self.login("pmo_kim", "1234")
@@ -469,7 +469,7 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.upload(lee, "화면설계서.pdf", pdf + b" v2")
         self.assertEqual((s, d["file"]["version"]), (200, 2))
         fid = d["file"]["id"]
-        # 제한: 로그인 필요 · 담당이 아닌 서브시스템 · 허용하지 않는 확장자 · 실행 파일 내용 · 20MB 초과 · 빈 파일
+        # 제한: 멤버 선택 필요 · 담당이 아닌 서브시스템 · 허용하지 않는 확장자 · 실행 파일 내용 · 20MB 초과 · 빈 파일
         self.assertEqual(self.upload(None, "a.pdf", pdf)[0], 401)
         self.assertEqual(self.upload(lee, "a.pdf", pdf, system="W2", owner="Ftest0002")[0], 403)
         self.assertEqual(self.upload(lee, "tool.exe", pdf)[0], 415)
@@ -485,7 +485,7 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/files/summary", {}, park)
         self.assertEqual(d["counts"]["deliverable"]["Ftest0001"], 1)
         self.assertEqual((d["policy"]["maxBytes"], d["policy"]["trashDays"], "hwp" in d["policy"]["extensions"]), (20 * 1024 * 1024, 30, True))
-        # 내려받기: 프로젝트 참여자 누구나 / 로그인 없이는 불가 / 저장 폴더는 웹으로 직접 열 수 없음
+        # 내려받기: 프로젝트 참여자 누구나 / 멤버 선택 없이는 불가 / 저장 폴더는 웹으로 직접 열 수 없음
         req = urllib.request.Request(self.base + "/api/files/download?id=" + fid, headers={"Authorization": "Bearer " + park})
         with urllib.request.urlopen(req) as r:
             self.assertEqual(r.read(), pdf + b" v2")
@@ -498,7 +498,7 @@ class ServerApiTest(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             urllib.request.urlopen(self.base + "/upload/" + stored[0].relative_to(self.tmp / "upload").as_posix())
         self.assertEqual(ctx.exception.code, 404)
-        # 삭제(휴지통): 담당자만 / 휴지통 보기 · 되살리기 · 완전 삭제: PM · 시스템관리자만
+        # 삭제(휴지통): 담당자만 / 휴지통 보기 · 되살리기 · 완전 삭제: PM · 관리자만
         self.assertEqual(self.call("/api/files/delete", {"id": fid}, park)[0], 403)
         self.assertEqual(self.call("/api/files/delete", {"id": fid}, lee)[0], 200)
         _, d = self.call("/api/files/list", {"ownerType": "deliverable", "ownerId": "Ftest0001"}, lee)
@@ -519,7 +519,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual((s, d["files"]), (200, []))
 
     def test_51_post_attachments_limit(self):
-        """[v3.7.0] 공지 · 게시물 · 회의록 첨부: 한 건에 5개까지, 같은 이름은 새 버전, 삭제는 올린 사람과 PM · 시스템관리자"""
+        """[v3.7.0] 공지 · 게시물 · 회의록 첨부: 한 건에 5개까지, 같은 이름은 새 버전, 삭제는 올린 사람과 PM · 관리자"""
         lee, park = self.ready("lead_lee"), self.ready("lead_park")
         for kind in ("notice", "post", "meeting"):
             owner = "Fpost" + kind
@@ -538,7 +538,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(self.upload(lee, "a.pdf", b"%PDF", kind="wbs", owner="Fx")[0], 400)
 
     def test_52_admin_users(self):
-        """[v3.7.0] 전체 사용자 통합 관리(시스템관리자 전용) + 두 번째 시스템관리자 admin2"""
+        """[v3.7.0] 전체 사용자 통합 관리(관리자 전용) + 두 번째 관리자 admin2"""
         self.assertEqual(self.call("/api/admin/users/list", {}, self.ready("lead_lee"))[0], 403)
         s, d = self.call("/api/admin/users/list", {}, self.admin)
         self.assertEqual(s, 200, d)
@@ -547,7 +547,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertNotIn("pwdHash", by["admin"])
         self.assertIn("DEFAULT", by["lead_lee"]["projectRoles"])
         self.assertTrue(any(p["id"] == "DEFAULT" and "W1" in p["subsystems"] for p in d["projects"]))
-        admin2 = self.ready("admin2", project="")  # 시스템관리자는 프로젝트를 고르지 않아도 로그인
+        admin2 = self.ready("admin2", project="")  # 관리자는 프로젝트를 고르지 않아도 멤버 선택
         self.assertEqual(self.call("/api/admin/users/list", {}, admin2)[0], 200)
         # 새 사용자 등록 + 두 프로젝트에 서로 다른 역할
         req = {"isNew": True, "empNo": "ua_new", "name": "통합관리 시험", "dept": "QA", "sysAdmin": False,
@@ -556,7 +556,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(s, 200, d)
         row = next(u for u in d["users"] if u["empNo"] == "ua_new")
         self.assertEqual((sorted(row["projectRoles"]), row["projectRoles"]["DEFAULT"]["role"], row["pwdDefault"]), (sorted(["DEFAULT", self.pid]), "LEAD", True))
-        self.assertEqual(self.call("/api/admin/users/save", req, self.admin)[0], 409)  # 같은 사번으로 다시 등록
+        self.assertEqual(self.call("/api/admin/users/save", req, self.admin)[0], 409)  # 같은 멤버 ID으로 다시 등록
         s, d = self.login("ua_new", "1234", self.pid)
         self.assertEqual((s, d["user"]["role"]), (200, "PM"))
         # 권한 바꾸기 · 지킬 규칙 · 삭제
@@ -564,15 +564,15 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/admin/users/save", req, self.admin)
         self.assertEqual(sorted(next(u for u in d["users"] if u["empNo"] == "ua_new")["projectRoles"]), ["DEFAULT"])
         self.assertEqual(self.login("ua_new", "1234", self.pid)[0], 403)
-        s, d = self.call("/api/admin/users/save", {"empNo": "admin", "name": "시스템관리자", "sysAdmin": False}, admin2)
-        self.assertTrue(s == 200 and next(u for u in d["users"] if u["empNo"] == "admin")["sysAdmin"])  # admin 은 항상 시스템관리자
-        self.assertEqual(self.call("/api/admin/users/save", {"empNo": "admin2", "name": "시스템관리자2", "sysAdmin": False}, admin2)[0], 400)  # 자기 권한 해제 불가
+        s, d = self.call("/api/admin/users/save", {"empNo": "admin", "name": "관리자", "sysAdmin": False}, admin2)
+        self.assertTrue(s == 200 and next(u for u in d["users"] if u["empNo"] == "admin")["sysAdmin"])  # admin 은 항상 관리자
+        self.assertEqual(self.call("/api/admin/users/save", {"empNo": "admin2", "name": "관리자2", "sysAdmin": False}, admin2)[0], 400)  # 자기 권한 해제 불가
         self.assertEqual(self.call("/api/admin/users/delete", {"empNo": "admin"}, self.admin)[0], 400)
         s, d = self.call("/api/admin/users/delete", {"empNo": "ua_new"}, self.admin)
         self.assertEqual((s, any(u["empNo"] == "ua_new" for u in d["users"])), (200, False))
 
     def test_53_clear_project_tasks(self):
-        """[v3.8.0] 프로젝트 Task 정보 초기화: 기준정보 유지 · 서버 백업 파일 · 권한 (PM 은 자기 프로젝트 1개, 여러 개는 시스템관리자)"""
+        """[v3.8.0] 프로젝트 Task 정보 초기화: 기준정보 유지 · 서버 백업 파일 · 권한 (PM 은 자기 프로젝트 1개, 여러 개는 관리자)"""
         pid = self.pid
         row = {"id": "9.9", "level": 1, "system": "W1", "name": "CLEAR-ME", "pProg": 0, "aProg": 0}
         _, revs = self.load(["wbsData"], project=pid)
@@ -619,7 +619,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual((s, d.get("blocked")), (200, []), d)
 
     def test_55_system_backup_restore(self):
-        """[v4.0.0] 시스템 전체 백업(첨부 선택) · 목록 · 내려받기 · 올리기 · 복원 · 자동 백업 설정 — 시스템관리자 전용"""
+        """[v4.0.0] 시스템 전체 백업(첨부 선택) · 목록 · 내려받기 · 올리기 · 복원 · 자동 백업 설정 — 관리자 전용"""
         self.assertEqual(self.call("/api/admin/backup/list", {}, self.ready("pmo_kim"))[0], 403)
         s, d = self.call("/api/admin/backup/create", {"withFiles": False}, self.admin)
         self.assertEqual(s, 200, d)
@@ -640,7 +640,7 @@ class ServerApiTest(unittest.TestCase):
         s, d = self.call("/api/admin/backup/restore", {"name": up["name"]}, self.admin)
         self.assertEqual(s, 200, d)
         self.assertTrue(any(b["name"] == d["before"] and b["kind"] == "before-restore" for b in d["backups"]))
-        admin = self.ready("admin")  # 계정은 백업 시점 그대로라 다시 로그인
+        admin = self.ready("admin")  # 계정은 백업 시점 그대로라 다시 멤버 선택
         data, _ = self.load(["noticesData"], token=admin)
         self.assertFalse(any(n.get("id") == "N-AFTER" for n in data["noticesData"]))
         type(self).admin = admin
@@ -650,7 +650,7 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(self.call("/api/admin/backup/restore", {"name": "../x.zip"}, admin)[0], 400)
 
     def test_56_server_snapshots(self):
-        """[v4.0.0] 복원 지점(스냅샷)을 서버에 보관 — PM 은 자기 프로젝트, 시스템관리자는 모두"""
+        """[v4.0.0] 복원 지점(스냅샷)을 서버에 보관 — PM 은 자기 프로젝트, 관리자는 모두"""
         pm = self.ready("pmo_kim")
         meta = {"id": "BKP-T1", "createdAt": "2027-06-04 10:00:00", "actionType": "시험", "wbsCount": 1}
         s, d = self.call("/api/snapshots/save", {"projectId": "DEFAULT", "meta": meta, "payload": {"wbsData": [{"id": "1"}]}}, pm)
@@ -781,7 +781,7 @@ class SharedFilesTest(unittest.TestCase):
 
 
 class TlsAndUpgradeTest(unittest.TestCase):
-    """[v1.0.10] HTTPS(사내 CA 인증서 검증) + v1.0.9 이하 SHA-256 비밀번호 → PBKDF2 자동 전환"""
+    """[v1.0.10] HTTPS(사내 CA 인증서 검증) + v1.0.9 이하 SHA-256 암호 → PBKDF2 자동 전환"""
 
     def test_https_and_legacy_upgrade(self):
         tmp = Path(tempfile.mkdtemp(prefix="axpmys_tls_"))
@@ -789,7 +789,7 @@ class TlsAndUpgradeTest(unittest.TestCase):
             copy_program(tmp)
             subprocess.run([sys.executable, str(ROOT / "tools" / "make_cert.py"), "--out", str(tmp / "certs")],
                            check=True, stdout=subprocess.DEVNULL)
-            # v1.0.9 형식 DB: 비밀번호를 SHA-256 1차 해시 그대로 저장
+            # v1.0.9 형식 DB: 암호를 SHA-256 1차 해시 그대로 저장
             port = free_port()
             sys.path.insert(0, str(tmp))
             try:

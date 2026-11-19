@@ -15,7 +15,7 @@
     /api/locks/checkout       {scopes:[...], memo}      → 잡은 것 · 남이 잡아 못 잡은 것
     /api/locks/checkin        {scopes:[...], memo}      → 내 잠금 해제 (저장은 화면이 먼저 함)
     /api/locks/cancel         {scopes:[...]}            → 내 잠금 해제 (체크아웃 취소)
-    /api/locks/force-release  {scopes:[...], reason}    → PM · 시스템관리자, 사유 필수, 기록
+    /api/locks/force-release  {scopes:[...], reason}    → PM · 관리자, 사유 필수, 기록
   저장(/api/db/save)이 막히면 423 {locked:[{key, part, scope, reason, empNo, name, since, lastAt}]}
 
   [Enterprise] 저장소를 바꿀 때는 이 파일의 SQL 만 옮기면 됨 (docs/ENTERPRISE_ROADMAP.md)
@@ -232,7 +232,7 @@ def _release(h, req, action):
     force = action == "FORCE"
     if force:
         if info["role"] not in MANAGER:
-            raise AuthError("강제 해제는 PM · 시스템관리자만 할 수 있습니다.", 403)
+            raise AuthError("강제 해제는 PM · 관리자만 할 수 있습니다.", 403)
         if not memo.strip():
             raise AuthError("강제 해제 사유를 입력하세요.", 400)
 

@@ -1,4 +1,4 @@
-// Workgroup 판: core/system-backup.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/system-backup.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(BackupPane, {
@@ -8,13 +8,13 @@ Object.assign(BackupPane, {
     const admin = this.isAdmin();
     const note = document.getElementById("bkRoleNote");
     if (note) note.innerHTML = admin
-      ? "👑 <b>시스템관리자</b> — 모든 프로젝트와 시스템 전체 백업 · 복원을 쓸 수 있습니다."
-      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 스냅샷을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 시스템관리자 전용)`;
+      ? "👑 <b>관리자</b> — 모든 프로젝트와 시스템 전체 백업 · 복원을 쓸 수 있습니다."
+      : `🛡️ <b>PM</b> — 지금 프로젝트 <b>${escapeHtml(ProjectData.currentName())}</b> 의 백업 · 복원과 스냅샷을 쓸 수 있습니다. (시스템 전체 백업 · 초기화는 관리자 전용)`;
     // 권한 없는 부분은 비활성 (data-need="admin")
     document.querySelectorAll('#mergeBackupPane [data-need="admin"]').forEach(el => {
       el.classList.toggle("bk-locked", !admin);
       el.querySelectorAll("button, input, select").forEach(c => { c.disabled = !admin; });
-      if (el.tagName === "BUTTON") { el.disabled = !admin; if (!admin) el.title = "시스템관리자 전용"; }
+      if (el.tagName === "BUTTON") { el.disabled = !admin; if (!admin) el.title = "관리자 전용"; }
     });
     await ProjectTransfer.render();
     const server = !SyncManager.isLocal();
@@ -79,7 +79,7 @@ Object.assign(SystemBackup, {
   },
   restore(name) {
     const b = (this.list || []).find(x => x.name === name) || {};
-    openConfirmDialog(`⚠️ [시스템 전체 복원] ${name}\n모든 프로젝트 · 멤버 계정 · SDLC 유형 · 설정을 ${b.createdAt || ""} 시점으로 되돌립니다.${b.withFiles ? "\n첨부파일도 그 시점으로 바뀝니다." : "\n(이 백업에는 첨부파일이 없어 첨부파일은 그대로)"}\n복원 직전 상태를 먼저 자동 백업합니다. 다른 멤버는 다시 로그인해야 할 수 있습니다. 계속할까요?`, async () => {
+    openConfirmDialog(`⚠️ [시스템 전체 복원] ${name}\n모든 프로젝트 · 멤버 계정 · SDLC 유형 · 설정을 ${b.createdAt || ""} 시점으로 되돌립니다.${b.withFiles ? "\n첨부파일도 그 시점으로 바뀝니다." : "\n(이 백업에는 첨부파일이 없어 첨부파일은 그대로)"}\n복원 직전 상태를 먼저 자동 백업합니다. 다른 멤버는 다시 멤버 선택해야 할 수 있습니다. 계속할까요?`, async () => {
       const res = await ServerBackend.request("/api/admin/backup/restore", { name }, "POST", 600000);
       if (!res.ok) return showToast("❌ 복원 실패: " + (res.message || ""));
       showToast(`✅ 시스템을 복원했습니다. (복원 직전 백업: ${res.before}) 화면을 다시 불러옵니다...`);
@@ -117,15 +117,6 @@ Object.assign(SystemBackup, {
   },
 
   // ---- 로컬 저장소 방식 ----
-  exportLocal() {
-    if (!ProjectData.isAdmin()) return showToast("🚫 시스템관리자만 할 수 있습니다.");
-    const items = {};
-    this._localKeys().forEach(k => { items[k] = localStorage.getItem(k); });
-    const payload = { schemaVersion: this.LOCAL_SCHEMA, appVersion: APP_VERSION.version, exportedAt: new Date().toISOString(), exportedBy: AuthManager.getCurrentUser().empNo,
-      projects: ProjectContext.localList().map(p => p.name), items };
-    ExcelSync._triggerDownload(new Blob([JSON.stringify(payload)], { type: "application/json;charset=utf-8" }), ExcelSync.stdName("시스템전체백업", [], "json", ProjectData._stamp()));
-    showToast(`💾 이 브라우저의 시스템 전체(프로젝트 ${payload.projects.length}개 · 멤버 · 설정)를 백업했습니다.`);
-  },
   async importLocal(e) {
     const file = e && e.target && e.target.files ? e.target.files[0] : null;
     if (e && e.target) e.target.value = "";

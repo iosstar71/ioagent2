@@ -6,8 +6,8 @@
   POST /api/files/summary                                    대상별 파일 수 · 사용량 · 정책
   POST /api/files/list     {ownerType, ownerId} | {trash:true}
   POST /api/files/delete   {id}      휴지통으로
-  POST /api/files/restore  {id}      되살리기 (PM · 시스템관리자)
-  POST /api/files/purge    {id}      완전 삭제 (PM · 시스템관리자)
+  POST /api/files/restore  {id}      되살리기 (PM · 관리자)
+  POST /api/files/purge    {id}      완전 삭제 (PM · 관리자)
 """
 import shutil
 import urllib.parse

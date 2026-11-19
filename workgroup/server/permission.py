@@ -28,7 +28,7 @@ def is_sys_admin(row_or_info):
 
 
 def effective_user(base, project, row=None):
-    """[v3.0.0] 사용자 정보는 프로젝트별: 시스템관리자는 모든 프로젝트 관리자, 그 밖에는 그 프로젝트의 참여 정보(역할·담당·부서)"""
+    """[v3.0.0] 사용자 정보는 프로젝트별: 관리자는 모든 프로젝트 관리자, 그 밖에는 그 프로젝트의 참여 정보(역할·담당·부서)"""
     out = dict(base)
     pid = (project or {}).get("id", DEFAULT_PROJECT)
     out["projectId"] = pid
@@ -48,7 +48,7 @@ def effective_user(base, project, row=None):
 
 
 def can_access_project(base, project):
-    """[v3.0.0] 시스템관리자는 모든 프로젝트, 그 밖의 사용자는 참여 중인 프로젝트만"""
+    """[v3.0.0] 관리자는 모든 프로젝트, 그 밖의 사용자는 참여 중인 프로젝트만"""
     if not project:
         return False
     if base.get("role") == "SYS_ADMIN":
@@ -57,7 +57,7 @@ def can_access_project(base, project):
 
 
 def project_users_view(users, pid):
-    """[v3.0.0] 프로젝트 화면에 보이는 사용자: 시스템관리자 + 이 프로젝트 참여자 (다른 프로젝트 참여 정보는 숨김)"""
+    """[v3.0.0] 프로젝트 화면에 보이는 사용자: 관리자 + 이 프로젝트 참여자 (다른 프로젝트 참여 정보는 숨김)"""
     out = []
     for u in users or []:
         if not isinstance(u, dict):
@@ -177,7 +177,7 @@ def can_write(user, key, part, row):
 
 def own_rows(key, value, revs, user, pid=DEFAULT_PROJECT):
     """[v2.4.0] 개인 데이터(todosData)는 본인 항목과 그 버전 정보만 돌려줌
-    [v3.0.0] 사용자 목록은 이 프로젝트의 사용자(시스템관리자 + 참여자)만"""
+    [v3.0.0] 사용자 목록은 이 프로젝트의 사용자(관리자 + 참여자)만"""
     if key == "projectUsers" and value is not None:
         rows = project_users_view(value, pid)
         ids = {str(u.get("empNo", "")) for u in rows}

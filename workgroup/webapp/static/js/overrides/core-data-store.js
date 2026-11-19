@@ -1,4 +1,4 @@
-// Workgroup 판: core/data-store.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/data-store.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 var FileAutoSyncManager = {
@@ -80,7 +80,7 @@ var FileAutoSyncManager = {
         badge.innerText = `파일동기화 (${new Date().toLocaleTimeString()})`;
         badge.className = "status-badge-chip chip-completed";
       }
-      if (showAlert) showToast(`로컬 파일 [${this.fileName}] 에 최신 데이터(게시판 · 채팅·회의·주간보고 포함)가 저장되었습니다.`);
+      if (showAlert) showToast(`로컬 파일 [${this.fileName}] 에 최신 데이터(게시판·회의·주간보고 포함)가 저장되었습니다.`);
     } catch (err) {
       const badge = document.getElementById("fileSyncBadge");
       if (badge) {
@@ -129,12 +129,12 @@ Object.assign(LocalBackend, {
       const st = this._read(ProjectContext.DEFAULT);
       if (st && Array.isArray(st.projectUsers)) {
         if (ProjectContext.migrateLocalUsers(st.projectUsers)) this._write(ProjectContext.DEFAULT, st, this._readRevs(ProjectContext.DEFAULT));
-        // [v3.7.0] 시스템관리자 계정 하나 더 (admin2 / 초기 비밀번호 1234) — 없을 때 한 번만 추가
+        // [v3.7.0] 관리자 계정 하나 더 (admin2 / 초기 암호 1234) — 없을 때 한 번만 추가
         if (localStorage.getItem("IOSTAR_SECOND_ADMIN") !== "1") {
           localStorage.setItem("IOSTAR_SECOND_ADMIN", "1");
           if (!st.projectUsers.some(u => String(u.empNo || "").toLowerCase() === "admin2")) {
             const at = st.projectUsers.findIndex(u => String(u.empNo || "").toLowerCase() === "admin") + 1;
-            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "시스템관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
+            st.projectUsers.splice(at, 0, { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko", projectRoles: {} });
             const rv = this._readRevs(ProjectContext.DEFAULT);
             if (rv.projectUsers) rv.projectUsers.admin2 = { rev: 1, by: "system", at: new Date().toLocaleString() };
             this._write(ProjectContext.DEFAULT, st, rv);
@@ -226,7 +226,7 @@ Object.assign(SyncManager, {
   async save(keys, opts = {}) {
     if (typeof ProjectManager !== "undefined" && ProjectManager._switching) return { ok: false, switching: true };
     if (this._busy) { this._pendingSave = { keys, opts }; return { ok: false, busy: true }; }
-    // [v1.0.10] 보관된 프로젝트는 시스템관리자 외에는 읽기 전용
+    // [v1.0.10] 보관된 프로젝트는 관리자 외에는 읽기 전용
     const proj = ProjectContext.info();
     if (proj && proj.status === "ARCHIVED" && Permission.user().baseRole !== "SYS_ADMIN") {
       if (opts.notify || !this._archivedNotified) showToast("📦 사용 중지(보관)된 프로젝트는 읽기 전용입니다. 변경 내용은 저장되지 않습니다.");

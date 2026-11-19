@@ -98,18 +98,18 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         return pid if pid and len(pid) <= 32 and set(pid) <= PROJECT_ID_CHARS else DEFAULT_PROJECT
 
     def _require_user(self, roles=None, allow_must_change=False, req=None):
-        """로그인 사용자 + 요청한 프로젝트(X-Project-Id)의 역할을 적용한 사용자 정보"""
+        """멤버 선택 사용자 + 요청한 프로젝트(X-Project-Id)의 역할을 적용한 사용자 정보"""
         base = Sessions.refresh_user(self._token())
         if not base:
-            raise AuthError("로그인이 필요합니다. (세션 만료 또는 미인증)", 401)
+            raise AuthError("멤버 선택이 필요합니다. (세션 만료 또는 미인증)", 401)
         if base.get("mustChange") and not allow_must_change:
-            raise AuthError("초기 비밀번호 또는 임시 비밀번호를 사용 중입니다. 비밀번호를 변경한 뒤 사용할 수 있습니다.", 403, "MUST_CHANGE_PASSWORD")
+            raise AuthError("초기 암호 또는 임시 암호를 사용 중입니다. 암호를 변경한 뒤 사용할 수 있습니다.", 403, "MUST_CHANGE_PASSWORD")
         project = Store.get_project(self._project_id(req))
         if not project or not can_access_project(base, project):
             raise AuthError("이 프로젝트에 접근할 권한이 없습니다.", 403, "PROJECT_FORBIDDEN")
-        # [v3.0.0] 시스템관리자가 아니면 로그인한 프로젝트에서만 작업
+        # [v3.0.0] 관리자가 아니면 멤버 선택한 프로젝트에서만 작업
         if base.get("role") != "SYS_ADMIN" and base.get("loginProject") and project["id"] != base["loginProject"]:
-            raise AuthError("로그인한 프로젝트에서만 작업할 수 있습니다. 다른 프로젝트는 다시 로그인하세요.", 403, "PROJECT_LOCKED")
+            raise AuthError("멤버 선택한 프로젝트에서만 작업할 수 있습니다. 다른 프로젝트는 다시 멤버 선택하세요.", 403, "PROJECT_LOCKED")
         info = effective_user(base, project)
         info["projectStatus"] = project["status"]
         if roles and info["role"] not in roles:
@@ -232,8 +232,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         if not row or not verify_pwd(row.get("pwdHash"), pwd_hash):
             LoginThrottle.fail(emp)
             write_server_log(f"[AUTH] Login failed: {emp} ({self.address_string()})")
-            raise AuthError("사번 또는 비밀번호가 일치하지 않습니다.", 401)
-        # [v3.0.0] 로그인할 프로젝트: 시스템관리자는 선택하지 않아도 됨, 그 밖에는 참여 중인 프로젝트를 반드시 선택
+            raise AuthError("멤버 ID 또는 암호가 일치하지 않습니다.", 401)
+        # [v3.0.0] 멤버 선택할 프로젝트: 관리자는 선택하지 않아도 됨, 그 밖에는 참여 중인 프로젝트를 반드시 선택
         login_pid = str(req.get("loginProject") or "").strip()
         project = Store.get_project(login_pid) if login_pid else None
         if is_sys_admin(row):
@@ -241,7 +241,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         else:
             if not project:
                 LoginThrottle.ok(emp)
-                raise AuthError("로그인할 프로젝트를 선택하세요.", 400, "PROJECT_REQUIRED")
+                raise AuthError("멤버 선택할 프로젝트를 선택하세요.", 400, "PROJECT_REQUIRED")
             if not membership(row, project["id"]):
                 LoginThrottle.ok(emp)
                 raise AuthError("선택한 프로젝트의 사용자가 아닙니다. 프로젝트를 확인하세요.", 403, "NOT_PROJECT_MEMBER")
@@ -257,11 +257,11 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
                               "projects": self._visible_projects(info)})
 
     def api_projects_public(self, req):
-        """[v3.0.0] 로그인 화면의 프로젝트 선택 목록 (이름만, 보관된 프로젝트 제외)"""
+        """[v3.0.0] 멤버 선택 화면의 프로젝트 선택 목록 (이름만, 보관된 프로젝트 제외)"""
         self._send_json(200, {"ok": True, "projects": [{"id": p["id"], "name": p["name"]} for p in Store.list_projects() if p.get("status") != "ARCHIVED"]})
 
     def api_projects_copy_users(self, req):
-        """[v3.0.0] 다른 프로젝트의 사용자를 지금 프로젝트로 복사 (시스템관리자)"""
+        """[v3.0.0] 다른 프로젝트의 사용자를 지금 프로젝트로 복사 (관리자)"""
         info = self._require_user(roles={"SYS_ADMIN"}, req=req)
         src = str(req.get("fromProject") or "")
         if not Store.get_project(src):
@@ -271,13 +271,13 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         self._send_json(200, {"ok": True, "copied": copied, "skipped": skipped})
 
     def api_projects_members(self, req):
-        """[v3.0.0] 다른 프로젝트의 사용자 목록 (복사할 사용자 고르기, 시스템관리자)"""
+        """[v3.0.0] 다른 프로젝트의 사용자 목록 (복사할 사용자 고르기, 관리자)"""
         self._require_user(roles={"SYS_ADMIN"}, req=req)
         src = str(req.get("fromProject") or "")
         self._send_json(200, {"ok": True, "members": Store.project_members(src)})
 
     def _visible_projects(self, base):
-        # [v3.0.0] 시스템관리자가 아니면 로그인한 프로젝트만 (프로젝트 바꾸기 불가)
+        # [v3.0.0] 관리자가 아니면 멤버 선택한 프로젝트만 (프로젝트 바꾸기 불가)
         if base.get("role") != "SYS_ADMIN" and base.get("loginProject"):
             return [p for p in Store.list_projects() if p["id"] == base["loginProject"] and can_access_project(base, p)]
         return [p for p in Store.list_projects() if can_access_project(base, p)]
@@ -295,7 +295,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def api_me(self, req):
         base = Sessions.refresh_user(self._token())
         if not base:
-            raise AuthError("로그인이 필요합니다. (세션 만료 또는 미인증)", 401)
+            raise AuthError("멤버 선택이 필요합니다. (세션 만료 또는 미인증)", 401)
         self._send_json(200, {"ok": True, "user": public_user(dict(self._effective_for(base, req), mustChange=base.get("mustChange"))),
                               "projects": self._visible_projects(base)})
 
@@ -305,10 +305,10 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         self._send_json(200, {"ok": True, "user": Store.public_value("projectUsers", [row])[0]})
 
     def api_change_password(self, req):
-        """로그인 화면 비밀번호 변경 (토큰 없이 사번 + 현재 비밀번호 검증)"""
+        """멤버 선택 화면 암호 변경 (토큰 없이 멤버 ID + 현재 암호 검증)"""
         emp = str(req.get("empNo", "")).strip()
         if not emp:
-            raise AuthError("사번을 입력하세요.", 400)
+            raise AuthError("멤버 ID을 입력하세요.", 400)
         LoginThrottle.check(emp)
         try:
             Store.change_password(emp, str(req.get("oldHash", "")), str(req.get("newHash", "")))
@@ -317,24 +317,24 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             raise
         LoginThrottle.ok(emp)
         write_server_log(f"[AUTH] Password changed (login screen): {emp}")
-        self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
+        self._send_json(200, {"ok": True, "message": "암호가 변경되었습니다."})
 
     def api_reset_password(self, req):
-        """[v3.0.2] 로그인 화면 비밀번호 초기화 (테스트 버전: 별도 인증 없음) — app.ini [security] self_password_reset=0 이면 거부"""
+        """[v3.0.2] 멤버 선택 화면 암호 초기화 (테스트 버전: 별도 인증 없음) — app.ini [security] self_password_reset=0 이면 거부"""
         if str(APP_CONFIG.get("self_password_reset", "1")).strip().lower() in ("0", "false", "no"):
-            raise AuthError("비밀번호 초기화가 꺼져 있습니다. 시스템관리자에게 요청하세요.", 403, "RESET_DISABLED")
+            raise AuthError("암호 초기화가 꺼져 있습니다. 관리자에게 요청하세요.", 403, "RESET_DISABLED")
         emp = str(req.get("empNo", "")).strip()
         if not emp:
-            raise AuthError("사번을 입력하세요.", 400)
+            raise AuthError("멤버 ID을 입력하세요.", 400)
         LoginThrottle.check(emp)
         Store.self_reset_password(emp)
         write_server_log(f"[AUTH] Password reset to default (login screen, no auth): {emp}")
-        self._send_json(200, {"ok": True, "message": "비밀번호를 1234로 초기화했습니다."})
+        self._send_json(200, {"ok": True, "message": "암호를 1234로 초기화했습니다."})
 
     def api_password(self, req):
         info = self._require_user(allow_must_change=True)
         Store.change_password(info["empNo"], str(req.get("oldHash", "")), str(req.get("newHash", "")))
-        self._send_json(200, {"ok": True, "message": "비밀번호가 변경되었습니다."})
+        self._send_json(200, {"ok": True, "message": "암호가 변경되었습니다."})
 
     # ---- 데이터 API ----
     def api_db_test(self, req):
@@ -404,7 +404,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def api_projects_create(self, req):
         info = self._require_user()
         if info.get("baseRole") != "SYS_ADMIN":
-            raise AuthError("프로젝트는 시스템관리자만 만들 수 있습니다.", 403)
+            raise AuthError("프로젝트는 관리자만 만들 수 있습니다.", 403)
         p = Store.create_project(info, req)
         write_server_log(f"[PROJECT] Created {p['id']} by {info['empNo']}")
         self._send_json(200, {"ok": True, "project": p})
@@ -412,9 +412,9 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
     def _require_project_manager(self, pid):
         base = Sessions.refresh_user(self._token())
         if not base:
-            raise AuthError("로그인이 필요합니다. (세션 만료 또는 미인증)", 401)
+            raise AuthError("멤버 선택이 필요합니다. (세션 만료 또는 미인증)", 401)
         if base.get("mustChange"):
-            raise AuthError("비밀번호를 변경한 뒤 사용할 수 있습니다.", 403, "MUST_CHANGE_PASSWORD")
+            raise AuthError("암호를 변경한 뒤 사용할 수 있습니다.", 403, "MUST_CHANGE_PASSWORD")
         project = Store.get_project(pid)
         if not project:
             raise AuthError("프로젝트를 찾을 수 없습니다.", 404)
@@ -430,7 +430,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         self._send_json(200, {"ok": True, "project": p})
 
     def api_system_title(self, req):
-        """시스템 타이틀 (화면 왼쪽 위 · 브라우저 탭 이름) — 시스템관리자만, 모든 프로젝트 공통"""
+        """시스템 타이틀 (화면 왼쪽 위 · 브라우저 탭 이름) — 관리자만, 모든 프로젝트 공통"""
         self._require_user(roles={"SYS_ADMIN"}, req=req)
         title = " ".join(str(req.get("title") or "").split())[:40]
         backup._meta_set("system_title", {"title": title})

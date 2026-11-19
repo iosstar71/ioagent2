@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM 서버] 로그인 세션 · 로그인 시도 제한"""
+"""[IOSTAR-PM 서버] 멤버 선택 세션 · 멤버 선택 시도 제한"""
 import secrets
 import threading
 import time
@@ -69,7 +69,7 @@ class Sessions:
 
 
 class LoginThrottle:
-    """사번별 연속 실패 5회 시 60초간 로그인/비밀번호 변경 차단 (무차별 대입 방지)"""
+    """멤버 ID별 연속 실패 5회 시 60초간 멤버 선택/암호 변경 차단 (무차별 대입 방지)"""
     _fails = {}
     _lock = threading.Lock()
 
@@ -78,7 +78,7 @@ class LoginThrottle:
         with cls._lock:
             cnt, until = cls._fails.get(emp.lower(), (0, 0))
             if until > time.time():
-                raise AuthError(f"로그인 5회 실패로 {int(until - time.time())}초 후 다시 시도할 수 있습니다.", 429)
+                raise AuthError(f"멤버 선택 5회 실패로 {int(until - time.time())}초 후 다시 시도할 수 있습니다.", 429)
 
     @classmethod
     def fail(cls, emp):

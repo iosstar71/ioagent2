@@ -1,7 +1,32 @@
-// Workgroup 판: core/storage.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/storage.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(StorageManager, {
+  exportFullSystemBackup() {
+    const now = new Date();
+    const stamp = BackupHistoryManager._formatTimestamp(now).fileStamp;
+    const fullPayload = Object.assign({
+      schemaVersion: `AX_PMYS_${APP_VERSION.version}_FULL_BACKUP`,
+      exportedAt: now.toISOString(),
+      exportedBy: AuthManager.getCurrentUser().empNo,
+      systemSettings: {
+        theme: document.body.getAttribute("data-theme") || defaultTheme(),
+        authPolicy: AuthManager.getAuthPolicy(),
+        autoLockMinutes: AuthManager.getAutoLockMinutes(),
+        dbConfig: DbConnector.config
+      }
+    }, DataRegistry.collect());
+    const blob = new Blob([JSON.stringify(fullPayload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = ExcelSync.stdName("전체백업", [], "json", String(stamp).replace(/[^0-9]/g, "").slice(0, 14));
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast(`[전체 백업 완료] 시스템 설정, 프로젝트 설정, 업무 데이터(게시판·회의·주간보고 포함)를 저장했습니다.`);
+  },
   resetAllToSample() {
     this.closeResetModal();
     openConfirmDialog("⚠️ 주의: 브라우저 로컬 저장소에 저장된 모든 데이터가 삭제되고 초기 데이터(initial_data.json)로 복원됩니다. 계속하시겠습니까?", () => {
@@ -74,8 +99,8 @@ Object.assign(StorageManager, {
         RealtimeChatManager.messages = [];
         NoticeCommManager.activeChannel = "전체";
         DataRegistry.set("projectUsers", [
-          { empNo: "admin", name: "시스템관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
-          { empNo: "admin2", name: "시스템관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
+          { empNo: "admin", name: "관리자", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
+          { empNo: "admin2", name: "관리자2", role: "SYS_ADMIN", subsystem: "ALL", dept: "시스템 총괄관리자", pwdHash: "", lang: "ko" },
           { empNo: "pm", name: "프로젝트관리자", role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM", pwdHash: "", lang: "ko",
             projectRoles: { [ProjectContext.current]: { role: "PM", subsystem: "ALL", dept: "프로젝트 총괄 PM" } } }
         ]);
@@ -89,96 +114,3 @@ Object.assign(StorageManager, {
   }
 });
 
-Object.assign(MasterSyncEngine, {
-  syncAll(notify = true, source = "manual", immediateSave = false) {
-    if (this._isSyncing) return;
-    this._isSyncing = true;
-    try {
-      // 1. Read or populate input values between DOM and projectConfig
-      // 화면 입력값 → 기준정보 반영은 사용자가 [⚡ 전체 동기화]를 누른 경우에만 수행
-      if (source === "manual") {
-        this.readAllDomInputs();
-      } else {
-        populateConfigInputsFromState();
-      }
-
-      // 2. Rollup and recalculations in WBSEngine
-      if (typeof WBSEngine !== "undefined") {
-        WBSEngine.sortAndAutoNumber(wbsData);
-        if (WBSEngine.lastIdMap && source !== "data-applied") remapWbsReferences(WBSEngine.lastIdMap);
-        WBSEngine.calculatePlanProgress(wbsData, projectConfig.reportDate);
-        WBSEngine.rollup(wbsData);
-      }
-
-      // 3. Sync all dropdowns across DOM
-      if (typeof updateAllSubsystemFilterDropdowns === "function") {
-        updateAllSubsystemFilterDropdowns();
-      }
-      this.syncAllDropdowns();
-
-      // 4. Master tab & Header components
-      renderReportDateLabels();
-      if (typeof renderProjectTitles === "function") renderProjectTitles();
-      if (typeof renderIdPrefixSettings === "function") renderIdPrefixSettings();
-      if (typeof renderDomainChips === "function") renderDomainChips();
-      if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable();
-      if (typeof renderCustomSdlcCards === "function") renderCustomSdlcCards();
-      if (typeof ReqPhaseManager !== "undefined" && typeof ReqPhaseManager.renderTable === "function") {
-        ReqPhaseManager.renderTable();
-      }
-      if (typeof renderStandardDeliverablesMetaTable === "function") renderStandardDeliverablesMetaTable();
-      if (typeof renderHolidays === "function") renderHolidays();
-      if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
-
-      // 5. Operations & Monitoring Tabs
-      if (typeof renderDashboard === "function") renderDashboard();
-      if (typeof renderPhaseMatrix === "function") renderPhaseMatrix();
-      if (typeof renderGantt === "function") renderGantt();
-      if (typeof renderWbsTable === "function") renderWbsTable();
-      if (typeof renderReqMasterTable === "function") renderReqMasterTable();
-      if (typeof renderVocTable === "function") renderVocTable();
-      if (typeof renderDeliverablesTable === "function") renderDeliverablesTable();
-
-      // 6. Smart Merge Center (Tab 7)
-      if (typeof SmartMergeCenter !== "undefined") {
-        if (typeof SmartMergeCenter.populateSourceSubsystems === "function") SmartMergeCenter.populateSourceSubsystems();
-        if (typeof SmartMergeCenter.populateTargetSubsystems === "function") SmartMergeCenter.populateTargetSubsystems();
-        if (typeof onDomainFilterChanged === "function") {
-          onDomainFilterChanged('workDataDomainSelect', 'workDataSubsysSelect');
-          onDomainFilterChanged('mergeSourceDomainSelect', 'mergeSourceSubsysSelect');
-          onDomainFilterChanged('mergeTargetDomainSelect', 'mergeTargetSubsysSelect');
-        }
-      }
-
-      // 7. Notices & Comm Plaza (Tab 8)
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.renderAll === "function") {
-        NoticeCommManager.renderAll();
-      }
-
-      // 8. Weekly Report Manager (Tab 9)
-      if (typeof WeeklyReportManager !== "undefined" && typeof WeeklyReportManager.init === "function") {
-        WeeklyReportManager.init();
-      }
-      if (typeof RealtimeChatManager !== "undefined" && typeof RealtimeChatManager.renderChannels === "function") {
-        RealtimeChatManager.renderChannels();
-      }
-
-      // 8. Layout & Density
-      if (typeof LayoutManager !== "undefined" && typeof LayoutManager.adjustSidebar === "function") {
-        LayoutManager.adjustSidebar();
-      }
-
-      // 9. 변경 알림 (로컬 모드: 자동저장 / 서버 모드: 미저장 표시) — 데이터 적용 직후에는 생략
-      if (source !== "data-applied") {
-        persistChanges(immediateSave);
-      }
-
-      // 11. Toast notification
-      if (notify && typeof showToast === "function") {
-        showToast("⚡ [실시간 적용 완료] 변경된 프로젝트 설정 및 시스템 설정이 모든 탭(WBS, 간트, 대시보드, 매트릭스, REQ, VOC, 산출물, Import · Export, 소통광장)에 즉시 반영되었습니다.", "success");
-      }
-    } finally {
-      this._isSyncing = false;
-    }
-  },
-});

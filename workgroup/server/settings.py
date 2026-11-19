@@ -104,7 +104,7 @@ FILE_ALLOWED_EXTENSIONS = frozenset(
     e.strip().lstrip(".").lower() for e in re.split(r"[\s,]+", APP_CONFIG.get("allowed_extensions") or FILE_DEFAULT_EXTENSIONS) if e.strip())
 FILE_MAX_PER_POST = _cfg_int("max_files_per_post", 5, 1, 50)  # 공지 · 게시물 · 회의록 1건에 붙일 수 있는 파일 수
 # 첨부 대상 → 권한을 따르는 데이터셋 / 한 건에 붙일 수 있는 파일 수(0 = 제한 없음) / 올리기 · 삭제 규칙
-#   subsystem: 그 서브시스템을 저장할 수 있는 사람   author: 글쓴이와 PM · 시스템관리자   member: 프로젝트 참여자 (삭제는 올린 사람과 PM · 시스템관리자)
+#   subsystem: 그 서브시스템을 저장할 수 있는 사람   author: 글쓴이와 PM · 관리자   member: 프로젝트 참여자 (삭제는 올린 사람과 PM · 관리자)
 FILE_OWNER_TYPES = {
     "deliverable": {"dataset": "deliverablesData", "max": 0, "rule": "subsystem"},
     "notice": {"dataset": "noticesData", "max": FILE_MAX_PER_POST, "rule": "author"},
@@ -115,7 +115,7 @@ BLOCKED_URL_PREFIXES = ("/server", "/data", "/logs", "/tools", "/certs", "/pytho
 BLOCKED_URL_EXTENSIONS = {".py", ".db", ".sqlite", ".sqlite3", ".accdb", ".mdb", ".sql", ".bat", ".sh", ".env", ".log", ".pem", ".key", ".crt", ".pfx"}
 
 PWD_SALT = "WBS_OFFLINE_SECURITY_SALT_2026"  # js/access-control.js 와 동일 (브라우저 1차 해시용)
-# [v1.0.10] 서버 저장 비밀번호: 브라우저가 보낸 1차 해시(SHA-256)를 사용자별 솔트 + PBKDF2-SHA256 으로 다시 해시하여 저장
+# [v1.0.10] 서버 저장 암호: 브라우저가 보낸 1차 해시(SHA-256)를 사용자별 솔트 + PBKDF2-SHA256 으로 다시 해시하여 저장
 #   저장 형식: pbkdf2_sha256$<반복 횟수>$<솔트 hex>$<해시 hex>
 PBKDF2_ITERATIONS = 600_000
 PWD_RECORD_PREFIX = "pbkdf2_sha256$"
@@ -148,7 +148,7 @@ DATASETS = {
     "weeklyReportsData":        {"part": "id",     "scope": "weekly"},
     "todosData":                {"part": "id",     "scope": "personal"},  # [v2.4.0] 사용자별 할 일 (본인만)
     "theme":                    {"part": None,     "scope": "pref"},
-    "processTypes":             {"part": None,     "scope": "system"},  # [v3.9.0] 공정 유형 라이브러리 (시스템관리자)
+    "processTypes":             {"part": None,     "scope": "system"},  # [v3.9.0] 공정 유형 라이브러리 (관리자)
 }
 # [v1.0.10] 여러 프로젝트: 사용자 계정·화면 테마는 모든 프로젝트 공통, 그 밖의 데이터는 프로젝트별 저장
 DEFAULT_PROJECT = "DEFAULT"

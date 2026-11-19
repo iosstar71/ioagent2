@@ -1,4 +1,4 @@
-// Workgroup 판: modules/meeting/meeting-manager.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: modules/meeting/meeting-manager.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(MeetingManager, {
@@ -208,7 +208,7 @@ Object.assign(MeetingManager, {
             title: "가상 PLC 시뮬레이터 공용 테스트베드 계정 발급 및 네트워크 오픈",
             content: "개발사 및 서브시스템 PM 대상 테스트베드 접속 환경 구성",
             requester: "김총괄 수석PM",
-            assignee: "시스템관리자",
+            assignee: "관리자",
             system: "ALL",
             meetingDate: "2027-06-04",
             targetDate: "2027-06-07",

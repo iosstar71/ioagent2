@@ -7,7 +7,7 @@
 Task 정보(WBS · 요구사항 · 산출물 · 주간보고 · VOC · 회의 · 공지 · 업무 소통 · 채팅)만 지웁니다.
   - 지우기 전에 data/backups/<프로젝트>_<일시>_before-clear.json 으로 자동 백업
   - 그 Task 에 붙은 첨부파일은 휴지통으로 (보존 기간 동안 되살리기 가능)
-  - 권한: 지금 접속한 프로젝트 1개 = 그 프로젝트의 PM · 시스템관리자 / 여러 프로젝트 = 시스템관리자
+  - 권한: 지금 접속한 프로젝트 1개 = 그 프로젝트의 PM · 관리자 / 여러 프로젝트 = 관리자
 """
 import datetime
 import json
@@ -69,7 +69,7 @@ def api_clear_tasks(h, req):
     if user.get("baseRole", user["role"]) != "SYS_ADMIN":
         p = Store.get_project(ids[0])
         if p and p["status"] == "ARCHIVED":
-            raise AuthError("사용 중지(보관)된 프로젝트는 시스템관리자만 초기화할 수 있습니다.", 403)
+            raise AuthError("사용 중지(보관)된 프로젝트는 관리자만 초기화할 수 있습니다.", 403)
     h._send_json(200, {"ok": True, "results": [clear_tasks(pid, user["empNo"]) for pid in ids]})
 
 

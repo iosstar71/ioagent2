@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""[IOSTAR-PM 서버] 전체 사용자 통합 관리 (v3.7.0) — 시스템관리자 전용
+"""[IOSTAR-PM 서버] 전체 사용자 통합 관리 (v3.7.0) — 관리자 전용
 
-  POST /api/admin/users/list     전체 사용자 + 프로젝트(서브시스템 목록) — 비밀번호 정보는 내보내지 않음
+  POST /api/admin/users/list     전체 사용자 + 프로젝트(서브시스템 목록) — 암호 정보는 내보내지 않음
   POST /api/admin/users/save     {empNo, name, dept, lang, sysAdmin, projectRoles:{프로젝트:{role, subsystem, dept}}, pwdReset, isNew}
   POST /api/admin/users/delete   {empNo}
 
-계정(사번 · 이름 · 비밀번호)은 하나이고, 프로젝트마다 참여 정보(역할 · 담당 서브시스템 · 부서)를 따로 둡니다.
+계정(멤버 ID · 이름 · 암호)은 하나이고, 프로젝트마다 참여 정보(역할 · 담당 서브시스템 · 부서)를 따로 둡니다.
 """
 import re
 
@@ -16,7 +16,7 @@ from .settings import DB_LOCK, DEFAULT_PROJECT
 from .store import Store
 
 EMP_NO_RE = re.compile(r"^[A-Za-z0-9_.\-]{2,30}$")
-SECOND_ADMIN = {"empNo": "admin2", "name": "시스템관리자2", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "시스템 총괄관리자",
+SECOND_ADMIN = {"empNo": "admin2", "name": "관리자2", "role": "SYS_ADMIN", "subsystem": "ALL", "dept": "시스템 총괄관리자",
                 "pwdHash": "", "lang": "ko", "projectRoles": {}}
 
 
@@ -35,7 +35,7 @@ def list_all():
 
 
 def _update(mutator, who):
-    """사용자 목록을 읽어 고친 뒤 저장 (고친 사번의 버전을 올려 다른 화면의 저장 충돌 감지와 맞춤)"""
+    """사용자 목록을 읽어 고친 뒤 저장 (고친 멤버 ID의 버전을 올려 다른 화면의 저장 충돌 감지와 맞춤)"""
     with DB_LOCK:
         conn = Store.connect()
         try:
@@ -54,7 +54,7 @@ def _update(mutator, who):
 def save_user(admin, req):
     emp = str(req.get("empNo") or "").strip()
     if not EMP_NO_RE.match(emp):
-        raise AuthError("사번은 영문 · 숫자 · _ . - 로 2~30자여야 합니다.", 400)
+        raise AuthError("멤버 ID은 영문 · 숫자 · _ . - 로 2~30자여야 합니다.", 400)
     name = str(req.get("name") or "").strip()[:50]
     if not name:
         raise AuthError("이름을 입력하세요.", 400)
@@ -68,14 +68,14 @@ def save_user(admin, req):
     if key == "admin":
         want_admin = True
     if key == str(admin["empNo"]).lower() and not want_admin:
-        raise AuthError("자기 자신의 시스템관리자 권한은 해제할 수 없습니다.", 400)
+        raise AuthError("자기 자신의 관리자 권한은 해제할 수 없습니다.", 400)
 
     def mutate(users):
         row = next((u for u in users if str(u.get("empNo", "")).lower() == key), None)
         if req.get("isNew") and row is not None:
-            raise AuthError(f"이미 등록된 사번입니다: {emp}", 409)
+            raise AuthError(f"이미 등록된 멤버 ID입니다: {emp}", 409)
         if row is None:
-            row = {"empNo": emp, "pwdHash": "", "lang": "ko"}  # 새 계정: 초기 비밀번호 1234, 첫 로그인 때 변경
+            row = {"empNo": emp, "pwdHash": "", "lang": "ko"}  # 새 계정: 초기 암호 1234, 첫 멤버 선택 때 변경
             users.append(row)
         row.update({"name": name, "dept": str(req.get("dept") or "")[:100], "projectRoles": roles})
         if req.get("lang") in ("ko", "en"):
@@ -99,7 +99,7 @@ def delete_user(admin, emp):
     if key == "admin":
         raise AuthError("기본 관리자(admin) 계정은 삭제할 수 없습니다.", 400)
     if key == str(admin["empNo"]).lower():
-        raise AuthError("지금 로그인한 계정은 삭제할 수 없습니다.", 400)
+        raise AuthError("지금 멤버 선택한 계정은 삭제할 수 없습니다.", 400)
 
     def mutate(users):
         row = next((u for u in users if str(u.get("empNo", "")).lower() == key), None)
@@ -113,7 +113,7 @@ def delete_user(admin, emp):
 
 
 def ensure_second_admin():
-    """[v3.7.0] 시스템관리자 계정을 하나 더 둠 (admin2 / 초기 비밀번호 1234) — 없을 때 한 번만 만듦"""
+    """[v3.7.0] 관리자 계정을 하나 더 둠 (admin2 / 초기 암호 1234) — 없을 때 한 번만 만듦"""
     with DB_LOCK:
         conn = Store.connect()
         try:

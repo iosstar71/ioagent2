@@ -1,12 +1,12 @@
-// Workgroup 판: core/project-manager.js 의 다른 부분 (서버 DB · 로그인 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// Workgroup 판: core/project-manager.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(ProjectManager, {
   async afterLogin() {
     await this.refreshList();
-    // [v3.0.0] 시스템관리자가 아닌데 이 프로젝트의 사용자가 아니면 다시 로그인 (프로젝트 선택)
+    // [v3.0.0] 관리자가 아닌데 이 프로젝트의 사용자가 아니면 다시 멤버 선택 (프로젝트 선택)
     if (!this.isAdmin() && !ProjectContext.info()) {
-      AuthManager.openLogin("🗂️ 프로젝트 로그인", "이 프로젝트의 멤버가 아닙니다. 참여 중인 프로젝트를 선택해 다시 로그인하세요.");
+      AuthManager.openLogin("🗂️ 프로젝트 멤버 선택", "이 프로젝트의 멤버가 아닙니다. 참여 중인 프로젝트를 선택해 다시 멤버 선택하세요.");
       return false;
     }
     if (!ProjectContext.info()) {
@@ -27,14 +27,14 @@ Object.assign(ProjectManager, {
     if (!sel) return;
     const list = ProjectContext.projects.length ? ProjectContext.projects : [{ id: ProjectContext.current, name: projectConfig.projectName || ProjectContext.current, status: "ACTIVE" }];
     sel.innerHTML = list.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === ProjectContext.current ? "selected" : ""}>${escapeHtml(p.name || p.id)}${p.status === "ARCHIVED" ? " (사용 중지)" : ""}</option>`).join("");
-    // [v3.0.0] 프로젝트 전환은 시스템관리자만 — 그 밖의 사용자는 프로젝트 이름만 표시
+    // [v3.0.0] 프로젝트 전환은 관리자만 — 그 밖의 사용자는 프로젝트 이름만 표시
     const badge = document.getElementById("headerProjectNameBadge");
     const admin = this.isAdmin();
     sel.style.display = admin ? "" : "none";
     if (badge) {
       badge.style.display = admin ? "none" : "";
       badge.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current;
-      badge.title = "로그인한 프로젝트 (다른 프로젝트는 다시 로그인하여 선택)";
+      badge.title = "멤버 선택한 프로젝트 (다른 프로젝트는 다시 멤버 선택하여 선택)";
     }
     const btn = document.getElementById("btnProjectManager");
     if (btn) btn.style.display = this.canCreate() || this.canManage(ProjectContext.info()) ? "" : "none";
@@ -47,7 +47,7 @@ Object.assign(ProjectManager, {
   async switchTo(pid, onCancel) {
     if (!pid || pid === ProjectContext.current) return;
     if (!this.isAdmin()) {
-      showToast("ℹ️ 다른 프로젝트는 로그아웃 후 로그인 화면에서 프로젝트를 선택해 들어가세요.");
+      showToast("ℹ️ 다른 프로젝트는 로그아웃 후 멤버 선택 화면에서 프로젝트를 선택해 들어가세요.");
       if (onCancel) onCancel();
       return;
     }
@@ -124,7 +124,7 @@ Object.assign(ProjectManager, {
           <div class="pm-summary-item"><span>저장 위치</span><b>${escapeHtml(mode)}</b></div>
           <div class="pm-summary-actions">
             ${canManage && compact ? '<button class="btn btn-sm" data-btn="nav" data-click="ProjectManager.open">🗂️ 프로젝트 관리 →</button>' : ""}
-            ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 시스템관리자 또는 PM만 할 수 있습니다.</span>' : ""}
+            ${!canManage ? '<span class="pm-role-tag">프로젝트 추가·변경은 관리자 또는 PM만 할 수 있습니다.</span>' : ""}
           </div>
         </div>${rows}`;
       if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
@@ -142,7 +142,7 @@ Object.assign(ProjectManager, {
       return `<tr class="${cur ? "pm-current" : ""}">
         <td><code>${escapeHtml(p.id)}</code></td>
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
-        <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="로그인 화면의 프로젝트 목록에 나오지 않고, 시스템관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
+        <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="멤버 선택 화면의 프로젝트 목록에 나오지 않고, 관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
         <td>${I18N.tf("멤버 {n}명", { n: this.memberCount(p) })}</td>
         <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(p.createdAt || "-")}</td>
         <td style="display:flex; gap:4px; flex-wrap:wrap;">
@@ -159,39 +159,6 @@ Object.assign(ProjectManager, {
   },
 
   // ---- 만들기 ----
-  toggleArchive(pid) {
-    const p = ProjectContext.info(pid);
-    if (!p) return;
-    const next = p.status === "ARCHIVED" ? "ACTIVE" : "ARCHIVED";
-    openConfirmDialog(next === "ARCHIVED"
-      ? `[${p.name}] 프로젝트를 사용 중지(보관)하시겠습니까?\n사용 중지한 프로젝트는 로그인 화면의 프로젝트 목록에 나오지 않고, 시스템관리자 외에는 읽기 전용이 됩니다. (자료는 그대로 남고 [다시 사용]으로 되돌릴 수 있습니다)`
-      : `[${p.name}] 프로젝트를 다시 사용 중으로 바꾸시겠습니까?`, () => this._update(pid, { status: next }));
-  },
-
-  // 프로젝트 삭제: 프로젝트와 그 안의 자료를 모두 지움 (지금 열려 있는 프로젝트면 지운 뒤 기본 프로젝트로 이동)
-  setUserAssignment(idx, field, value) {
-    const u = projectUsers[idx];
-    if (!u) return;
-    const pid = ProjectContext.current;
-    if (ProjectContext.isAdminUser(u)) {
-      if (field === "dept") u.dept = value;
-      else if (field === "role" && value !== "SYS_ADMIN" && this.isAdmin() && String(u.empNo).toLowerCase() !== "admin") {
-        // 시스템관리자 해제 → 이 프로젝트의 사용자로
-        u.role = value;
-        u.projectRoles = Object.assign({}, u.projectRoles, { [pid]: { role: value, subsystem: u.subsystem || "ALL", dept: u.dept || "" } });
-      }
-    } else if (field === "role" && value === "SYS_ADMIN") {
-      if (!this.isAdmin()) { showToast("시스템관리자 권한은 시스템관리자만 줄 수 있습니다."); return renderProjectUsersTable(); }
-      u.role = "SYS_ADMIN";
-    } else {
-      const cur = this.userAssignment(u);
-      const next = { role: cur.role, subsystem: cur.subsystem, dept: cur.dept || "" };
-      next[field] = value;
-      u.projectRoles = Object.assign({}, u.projectRoles, { [pid]: next });
-    }
-    renderProjectUsersTable();
-    persistChanges();
-  }
 });
 
 Object.assign(UserCopy, {
@@ -207,11 +174,11 @@ Object.assign(UserCopy, {
           <h3>📥 다른 프로젝트에서 멤버 복사</h3>
           <button class="btn btn-sm" data-btn="cancel" data-click="UserCopy.close">닫기</button>
         </div>
-        <div class="pm-hint">고른 멤버의 역할·담당 서브시스템·부서를 지금 프로젝트로 복사합니다. 계정(사번·비밀번호)은 같으므로 같은 비밀번호로 이 프로젝트에 로그인할 수 있습니다. 이미 이 프로젝트에 있는 멤버는 건너뜁니다.</div>
+        <div class="pm-hint">고른 멤버의 역할·담당 서브시스템·부서를 지금 프로젝트로 복사합니다. 계정(멤버 ID·암호)은 같으므로 같은 암호로 이 프로젝트에 멤버 선택할 수 있습니다. 이미 이 프로젝트에 있는 멤버는 건너뜁니다.</div>
         <label class="pm-check" style="gap:8px;">복사할 프로젝트 <select id="ucSource" data-change="UserCopy.load"></select></label>
         <div class="table-container" style="max-height:320px;">
           <table class="matrix-table pm-table">
-            <thead><tr><th style="width:36px;"><input type="checkbox" id="ucAll" data-change="UserCopy.toggleAll" aria-label="모두 선택"></th><th>사번</th><th>이름</th><th>역할</th><th>담당</th><th>부서</th><th style="width:100px;">이 프로젝트</th></tr></thead>
+            <thead><tr><th style="width:36px;"><input type="checkbox" id="ucAll" data-change="UserCopy.toggleAll" aria-label="모두 선택"></th><th>멤버 ID</th><th>이름</th><th>역할</th><th>담당</th><th>부서</th><th style="width:100px;">이 프로젝트</th></tr></thead>
             <tbody id="ucBody"></tbody>
           </table>
         </div>
@@ -222,17 +189,5 @@ Object.assign(UserCopy, {
       </div>`;
     document.body.appendChild(m);
     return m;
-  },
-  async open() {
-    if (!ProjectManager.isAdmin()) return showToast("다른 프로젝트의 멤버 복사는 시스템관리자만 할 수 있습니다.");
-    const m = this._modal();
-    await ProjectManager.refreshList();
-    const others = (ProjectContext.projects || []).filter(p => p.id !== ProjectContext.current);
-    const sel = document.getElementById("ucSource");
-    sel.innerHTML = others.length ? others.map(p => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name || p.id)} (${escapeHtml(p.id)})</option>`).join("") : `<option value="">다른 프로젝트가 없습니다</option>`;
-    m.style.display = "flex";
-    await this.load();
-    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
-    if (typeof I18N !== "undefined") I18N.translateTree(m);
   },
 });
