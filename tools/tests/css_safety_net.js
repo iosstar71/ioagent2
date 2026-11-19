@@ -389,6 +389,8 @@ async function prune2() {
         await bis(rem); if (st.after) st.after(); return out;
       }, [si, all.filter(i => !harmful.has(i))]);
       r.forEach(i => harmful.add(i));
+      fs.writeFileSync(PROG, JSON.stringify({ cssKey, next: names.length, harmful: [...harmful] }));
+      console.log(`  recheck ${names[si]}: needed so far ${harmful.size}`);
     }
   }
   await close(); console.log("[FAIL] could not reach a safe set"); return 1;
