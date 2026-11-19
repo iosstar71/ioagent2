@@ -1087,10 +1087,13 @@ async function serverScenarios() {
       const noRestore = !/제조 샘플 복원/.test(document.getElementById("daActions").textContent);
       await DataAdmin._do("project", DataAdmin.target()); const s2 = await load();
       const chat = await ServerBackend.request("/api/chat/clear", { projectId: sp.id });
-      return { id: sp.id, name, s1, s2, chat: chat.ok, cur: ProjectContext.current, noRestore };
+      // 뒤 시험이 같은 이름의 샘플 백업을 올리므로 지움
+      await ProjectManager.removeNow(sp.id);
+      const gone = !ProjectData.projects().some(p => p.id === sp.id);
+      return { id: sp.id, name, s1, s2, chat: chat.ok, cur: ProjectContext.current, noRestore, gone };
     });
     check("Sample project add (server): new project with the sample (126 tasks, 4 subsystems), current project untouched; full reset clears it; no old sample-restore action",
-      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT" && da41s.noRestore, JSON.stringify(da41s));
+      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT" && da41s.noRestore && da41s.gone, JSON.stringify(da41s));
 
     // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
     await a.evaluate(async () => {
