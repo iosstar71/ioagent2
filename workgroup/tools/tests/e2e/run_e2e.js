@@ -646,9 +646,9 @@ async function localMain() {
     await page.evaluate(() => window.scrollTo(0, 900)); await page.waitForTimeout(300);
     const stick = await page.evaluate(() => ({ bar: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().top), nav: Math.round(document.querySelector(".g-nav").getBoundingClientRect().bottom), y: window.scrollY,
       hdr: Math.round(document.querySelector("header").getBoundingClientRect().top), hdrB: Math.round(document.querySelector("header").getBoundingClientRect().bottom), navT: Math.round(document.querySelector(".g-nav").getBoundingClientRect().top),
-      barB: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().bottom) }));
+      barB: Math.round(document.querySelector("#tab-master .master-subtab-bar").getBoundingClientRect().bottom), navGap: parseFloat(getComputedStyle(document.querySelector(".g-nav")).marginTop) || 0 }));
     await page.evaluate(() => window.scrollTo(0, 0));
-    check("Header, menu row, screen title and sub-tab bar all stay fixed while scrolling (fixed area under 240px)", stick.y > 100 && stick.hdr === 0 && Math.abs(stick.navT - stick.hdrB) <= 1 && stick.bar > stick.nav && stick.barB <= 240, JSON.stringify(stick));   // 1.2.5: 화면 이름 줄도 함께 고정
+    check("Header, menu row, screen title and sub-tab bar all stay fixed while scrolling (fixed area under 240px)", stick.y > 100 && stick.hdr === 0 && Math.abs(stick.navT - stick.hdrB - stick.navGap) <= 1 && stick.bar > stick.nav && stick.barB <= 240, JSON.stringify(stick));   // 1.2.5: 화면 이름 줄도 함께 고정
     // [v3.7.1] 계획 0 · 실적 0 은 지연이 아님 (달성률 100% 로 보고 정상 표시)
     const zero = await page.evaluate(() => ({ rate: BulletChart.rate({ plan: 0, actual: 0 }), lv: BulletChart.level({ plan: 0, actual: 0 }), late: BulletChart.level({ plan: 50, actual: 10 }) }));
     check("Plan 0 / actual 0 is not shown as delayed (rate treated as on track)", zero.rate === 100 && zero.lv === "ok" && zero.late === "bad", JSON.stringify(zero));
