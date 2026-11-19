@@ -132,60 +132,60 @@ button, textarea, input, select { font-size: var(--fs-sm, 12px); }
 .btn-sm { border-radius: 4px; }
 
 .modal-overlay {
-  background: rgba(15, 23, 42, 0.65) !important;
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(3px);
-  z-index: 9999 !important;
+  z-index: 9999;
 }
 .modal {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
   color: var(--text-main, #1e293b);
 }
 .modal-content {
-  background: var(--bg-card, #ffffff) !important;
-  color: var(--text-main, #1e293b) !important;
-  border: 1px solid var(--border-color, #cbd5e1) !important;
+  background: var(--bg-card, #ffffff);
+  color: var(--text-main, #1e293b);
+  border: 1px solid var(--border-color, #cbd5e1);
   border-radius: 8px !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .modal-header {
   padding: 12px 16px !important;
   background: var(--lvl-1-bg, #f1f5f9) !important;
-  border-bottom: 1px solid var(--border-color, #cbd5e1) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
+  border-bottom: 1px solid var(--border-color, #cbd5e1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: var(--primary, #1e3a8a) !important;
 }
 .modal-header h3 {
-  margin: 0 !important;
-  font-size: calc(15px * var(--fs-scale, 1)) !important;
-  font-weight: bold !important;
+  margin: 0;
+  font-size: calc(15px * var(--fs-scale, 1));
+  font-weight: bold;
   color: var(--primary, #1e3a8a) !important;
 }
 .modal-body {
   padding: 16px !important;
   background: var(--bg-card, #ffffff) !important;
-  color: var(--text-main, #1e293b) !important;
-  box-sizing: border-box !important;
+  color: var(--text-main, #1e293b);
+  box-sizing: border-box;
 }
 .modal-body label {
   color: var(--text-main, #1e293b) !important;
 }
 .modal-body input, .modal-body select, .modal-body textarea {
   background: var(--bg-card, #ffffff) !important;
-  color: var(--text-main, #1e293b) !important;
+  color: var(--text-main, #1e293b);
   border: 1px solid var(--border-color, #cbd5e1) !important;
 }
 .modal-footer {
   padding: 12px 16px !important;
   background: var(--lvl-4-bg, #f8fafc) !important;
   border-top: 1px solid var(--border-color, #cbd5e1) !important;
-  display: flex !important;
-  align-items: center !important;
+  display: flex;
+  align-items: center;
   justify-content: flex-end !important;
-  gap: 8px !important;
+  gap: 8px;
 }
 .meeting-sub-tab.active {
   color: var(--primary, #1e3a8a) !important;
@@ -1675,7 +1675,7 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 #wbsTable th, #wbsTable td { padding: 4px 3px; }
 #wbsTable .date-input-wrap input[type="date"] { width: 94px; }
 /* 확인 대화 상자는 로그인 화면 위에도 보이게 (로그인 화면의 비밀번호 초기화 확인) */
-#confirmDialogModal { z-index: 100001 !important; }
+#confirmDialogModal { z-index: 100001; }
 
 /* 주간보고 항목 표: 담당자 칸, 일정 2줄, 상세 내용은 2줄 입력 칸 */
 #wrCurrentTasksTable td, #wrNextTasksTable td { vertical-align: middle; }
