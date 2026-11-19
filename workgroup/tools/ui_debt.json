@@ -1,68 +1,68 @@
 {
  "css_important": 619,
  "html": {
+  "modals": {
+   "inline": 108,
+   "inline_hex": 51
+  },
   "shell": {
-   "inline": 32,
+   "inline": 20,
    "inline_hex": 7
   },
   "tab-config": {
-   "inline": 354,
-   "inline_hex": 87
+   "inline": 96,
+   "inline_hex": 36
   },
   "tab-dashboard": {
-   "inline": 55,
+   "inline": 26,
    "inline_hex": 8
   },
   "tab-deliverables": {
-   "inline": 21,
-   "inline_hex": 0
-  },
-  "tab-gantt": {
-   "inline": 8,
+   "inline": 14,
    "inline_hex": 0
   },
   "tab-home": {
-   "inline": 12,
+   "inline": 4,
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 88,
+   "inline": 54,
    "inline_hex": 12
   },
   "tab-matrix": {
-   "inline": 23,
+   "inline": 16,
    "inline_hex": 5
   },
   "tab-meeting": {
-   "inline": 73,
+   "inline": 42,
    "inline_hex": 7
   },
   "tab-merge": {
-   "inline": 48,
+   "inline": 43,
    "inline_hex": 4
   },
   "tab-mywork": {
-   "inline": 43,
+   "inline": 31,
    "inline_hex": 17
   },
   "tab-notices": {
-   "inline": 81,
+   "inline": 49,
    "inline_hex": 10
   },
   "tab-req": {
-   "inline": 17,
+   "inline": 12,
    "inline_hex": 0
   },
   "tab-voc": {
-   "inline": 20,
+   "inline": 13,
    "inline_hex": 0
   },
   "tab-wbs": {
-   "inline": 32,
+   "inline": 23,
    "inline_hex": 0
   },
   "tab-weekly-report": {
-   "inline": 69,
+   "inline": 54,
    "inline_hex": 14
   }
  },
@@ -86,7 +86,7 @@
  },
  "total": {
   "css_important": 619,
-  "html_inline": 976,
+  "html_inline": 605,
   "html_inline_hex": 172,
   "js_hex": 131
  }

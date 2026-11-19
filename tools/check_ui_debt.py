@@ -35,6 +35,11 @@ def html_counts():
     if not starts:  # attribute order differs
         starts = [(m.start(), m.group(1)) for m in re.finditer(r'id="(tab-[a-z-]+)"[^>]*class="tab-pane', html)]
     starts.sort()
+    # 마지막 화면 뒤의 대화상자(창)들은 "modals" 로 따로 셈
+    if starts:
+        m = re.compile(r'<div[^>]*class="modal-overlay').search(html, starts[-1][0])
+        if m:
+            starts.append((m.start(), "modals"))
     regions = []
     for i, (pos, name) in enumerate(starts):
         end = starts[i + 1][0] if i + 1 < len(starts) else len(html)

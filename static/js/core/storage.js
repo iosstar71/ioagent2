@@ -194,52 +194,13 @@ var MasterSyncEngine = {
       }
       this.syncAllDropdowns();
 
-      // 4. Master tab & Header components
+      // 4. 머리말 · 공통 표시
       renderReportDateLabels();
       if (typeof renderProjectTitles === "function") renderProjectTitles();
-      if (typeof renderIdPrefixSettings === "function") renderIdPrefixSettings();
-      if (typeof renderDomainChips === "function") renderDomainChips();
-      if (typeof renderSubsystemsMetaTable === "function") renderSubsystemsMetaTable();
-      if (typeof renderCustomSdlcCards === "function") renderCustomSdlcCards();
-      if (typeof ReqPhaseManager !== "undefined" && typeof ReqPhaseManager.renderTable === "function") {
-        ReqPhaseManager.renderTable();
-      }
-      if (typeof renderStandardDeliverablesMetaTable === "function") renderStandardDeliverablesMetaTable();
-      if (typeof renderHolidays === "function") renderHolidays();
-      if (typeof renderProjectUsersTable === "function") renderProjectUsersTable();
-
-      // 5. Operations & Monitoring Tabs
-      if (typeof renderDashboard === "function") renderDashboard();
-      if (typeof renderPhaseMatrix === "function") renderPhaseMatrix();
-      if (typeof renderGantt === "function") renderGantt();
-      if (typeof renderWbsTable === "function") renderWbsTable();
-      if (typeof renderReqMasterTable === "function") renderReqMasterTable();
-      if (typeof renderVocTable === "function") renderVocTable();
-      if (typeof renderDeliverablesTable === "function") renderDeliverablesTable();
-
-      // 6. Smart Merge Center (Tab 7)
-      if (typeof SmartMergeCenter !== "undefined") {
-        if (typeof SmartMergeCenter.populateSourceSubsystems === "function") SmartMergeCenter.populateSourceSubsystems();
-        if (typeof SmartMergeCenter.populateTargetSubsystems === "function") SmartMergeCenter.populateTargetSubsystems();
-        if (typeof onDomainFilterChanged === "function") {
-          onDomainFilterChanged('workDataDomainSelect', 'workDataSubsysSelect');
-          onDomainFilterChanged('mergeSourceDomainSelect', 'mergeSourceSubsysSelect');
-          onDomainFilterChanged('mergeTargetDomainSelect', 'mergeTargetSubsysSelect');
-        }
-      }
-
-      // 7. Notices & Comm Plaza (Tab 8)
-      if (typeof NoticeCommManager !== "undefined" && typeof NoticeCommManager.renderAll === "function") {
-        NoticeCommManager.renderAll();
-      }
-
-      // 8. Weekly Report Manager (Tab 9)
-      if (typeof WeeklyReportManager !== "undefined" && typeof WeeklyReportManager.init === "function") {
-        WeeklyReportManager.init();
-      }
-      if (typeof RealtimeChatManager !== "undefined" && typeof RealtimeChatManager.renderChannels === "function") {
-        RealtimeChatManager.renderChannels();
-      }
+      if (typeof NoticeCommManager !== "undefined") NoticeCommManager.updateHeaderBadge();
+      if (typeof RealtimeChatManager !== "undefined" && typeof RealtimeChatManager.renderChannels === "function") RealtimeChatManager.renderChannels();
+      // 5. 화면: 보이는 화면만 다시 그림 (다른 화면은 열 때 그림 — common/tabs-theme.js ScreenRender)
+      if (typeof ScreenRender !== "undefined") ScreenRender.refreshVisible();
 
       // 8. Layout & Density
       if (typeof LayoutManager !== "undefined" && typeof LayoutManager.adjustSidebar === "function") {

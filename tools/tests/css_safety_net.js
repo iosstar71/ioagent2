@@ -2,10 +2,12 @@
 // CSS safety net — "the screens look exactly the same" check, and !important pruning
 // -----------------------------------------------------------------------------
 //  Captures the computed style of every visible element on every screen
-//  (5 themes x all tabs / sub tabs / open menus / detail panel / left menu / large text)
+//  (6 themes x all tabs / sub tabs / open menus / detail panel / left menu / large text)
 //  with the sample project, and compares two style sheets.
 //
 //  node tools/tests/css_safety_net.js --compare <old.css>   current style.css vs old.css (exit 1 if any screen differs)
+//  node tools/tests/css_safety_net.js --save <file.json>      remember how every screen looks now (index.html + style.css)
+//  node tools/tests/css_safety_net.js --check <file.json>     compare with --save (use when moving inline styles into classes)
 //  node tools/tests/css_safety_net.js --prune-important     remove every !important whose removal changes nothing,
 //                                                           write static/css/style.css (verified as a whole)
 //  Only rules that match something on the captured screens are touched; rules for :hover / :focus,
@@ -17,13 +19,13 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const net = require("net");
-const { spawn } = require("child_process");
+const { spawn, execFileSync } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "../..");
 const WEB = fs.existsSync(path.join(ROOT, "webapp", "index.html")) ? path.join(ROOT, "webapp") : ROOT;
 const CSS_FILE = path.join(WEB, "static", "css", "style.css");
 const PY = process.platform === "win32" ? "python" : "python3";
-const THEMES = ["urban-slate", "brown", "classic", "dark", "electric"];
+const THEMES = ["urban-slate", "brown", "navy", "classic", "dark", "electric"];
 
 function freePort() { return new Promise(r => { const s = net.createServer(); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => r(p)); }); }); }
 
@@ -67,14 +69,32 @@ function withRemoved(css, list) {
 // ---- browser: states and computed-style hashes ----
 async function openApp() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "csssafety_"));
-  fs.symlinkSync(WEB, path.join(tmp, "pprjmgmt"));
+  // 한 코드 저장소의 index.html 에는 판 표시가 있어 Standalone 판으로 그려서 엶 (static 은 링크 — 고친 CSS 가 그대로 보임)
+  const app = path.join(tmp, "pprjmgmt");
+  if (WEB === ROOT && fs.existsSync(path.join(ROOT, "tools", "edition.py"))) {
+    fs.mkdirSync(app);
+    fs.readdirSync(ROOT).filter(f => f === "static" || /\.html$/.test(f)).forEach(f => fs.symlinkSync(path.join(ROOT, f), path.join(app, f)));
+    fs.unlinkSync(path.join(app, "index.html"));
+    execFileSync(PY, [path.join(ROOT, "tools", "edition.py"), "render", "standalone", path.join(app, "index.html")], { stdio: "ignore" });
+  } else fs.symlinkSync(WEB, app);
   const port = await freePort();
   const srv = spawn(PY, ["-m", "http.server", String(port), "--bind", "127.0.0.1"], { cwd: tmp, stdio: "ignore" });
   await new Promise(r => setTimeout(r, 1200));
   const browser = await chromium.launch();
   const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+  // 실행마다 같은 화면이 되도록: 무작위 값 고정, 시계는 오늘 정오에서 시작
+  await page.addInitScript(() => {
+    let seed = 12345; Math.random = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+    const RealDate = Date, t0 = new RealDate(); t0.setHours(12, 0, 0, 0); const start = RealDate.now(), base = t0.getTime();
+    class FixedDate extends RealDate { constructor(...a) { if (a.length) super(...a); else super(base + (RealDate.now() - start)); } static now() { return base + (RealDate.now() - start); } }
+    window.Date = FixedDate;
+  });
   await page.goto(`http://127.0.0.1:${port}/pprjmgmt/index.html`); await page.waitForTimeout(1500);
-  await page.fill("#inputSecurityEmpNo", "admin"); await page.fill("#inputSecurityPassword", "admin123!"); await page.click("#btnLockSubmit"); await page.waitForTimeout(1500);
+  await page.fill("#inputSecurityEmpNo", "admin"); await page.fill("#inputSecurityPassword", "1234"); await page.click("#btnLockSubmit"); await page.waitForTimeout(1300);
+  if (await page.$eval("#pwdChangeFormPane", e => getComputedStyle(e).display !== "none").catch(() => false)) {   // 처음 들어올 때 암호 변경
+    await page.fill("#pcNewPwd", "Pmadmin2026x"); await page.fill("#pcNewPwd2", "Pmadmin2026x");
+    await page.click('#pwdChangeFormPane [data-click="AuthManager.changePasswordFromLogin"]'); await page.waitForTimeout(1500);
+  }
   if (await page.evaluate(() => typeof SampleProject !== "undefined")) {
     await page.evaluate(() => SampleProject.add()); await page.waitForTimeout(300); await page.click("#confirmDialogOkBtn"); await page.waitForTimeout(1200);
     await page.evaluate(async () => { const x = ProjectContext.localList().find(x => /샘플/.test(x.name)); if (x) await ProjectManager.switchTo(x.id); }); await page.waitForTimeout(2000);
@@ -88,10 +108,13 @@ async function openApp() {
     const T = ["tab-mywork","tab-home","tab-dashboard","tab-matrix","tab-wbs","tab-gantt","tab-req","tab-voc","tab-deliverables","tab-weekly-report","tab-meeting","tab-notices","tab-merge","tab-config","tab-master"];
     const S = window.__STATES, go = t => { GShell.go(t); window.scrollTo(0, 0); };
     T.forEach(t => S.push({ name: t, run: () => go(t) }));
-    ["basic","phase","holiday","users","ui-screen","ui-report","ui-channel"].forEach(n => S.push({ name: "master:" + n, run: () => { go("tab-master"); MasterSubTabs.show(n); } }));
+    ["basic","holiday","phase","deliv","users","ui-screen","ui-channel"].forEach(n => S.push({ name: "master:" + n, run: () => { go("tab-master"); MasterSubTabs.show(n); } }));
     ["project","users","process","security","data","db"].forEach(n => S.push({ name: "config:" + n, run: () => { go("tab-config"); SubTabs.show("config", n); } }));
+    ["minutes","actionitems"].forEach(n => S.push({ name: "meeting:" + n, run: () => { go("tab-meeting"); MeetingManager.switchSubTab(n); }, after: () => MeetingManager.switchSubTab("schedule") }));
     S.push({ name: "merge:backup", run: () => { go("tab-merge"); SubTabs.show("merge", "backup"); } });
     ["gUiMenu","gUserMenu","gStatusMenu","gPkgMenu","gAdminMenu"].forEach(id => S.push({ name: "menu:" + id, run: () => { go("tab-home"); const m = document.getElementById(id); if (m) m.hidden = false; }, after: () => { const m = document.getElementById(id); if (m) m.hidden = true; } }));
+    // 대화상자: 빈 상태로 열어 틀 모양만 봄 (인라인 스타일을 클래스로 옮길 때 확인)
+    document.querySelectorAll(".modal-overlay[id]").forEach(m => S.push({ name: "modal:" + m.id, run: () => { go("tab-home"); m.style.display = "flex"; }, after: () => { m.style.display = ""; } }));
     S.push({ name: "wbs:detail", run: () => { go("tab-wbs"); const i = wbsData.findIndex(t => t.isLeaf); if (i >= 0) NeoDetail.open(i); }, after: () => NeoDetail.close() });
     S.push({ name: "sidebar:wbs", run: () => { LayoutManager.setLayout("sidebar-left", false); go("tab-wbs"); }, after: () => LayoutManager.setLayout("top-nav", false) });
     S.push({ name: "large:home", run: () => { UiScale.set(1.3); go("tab-home"); }, after: () => UiScale.set(1) });
@@ -101,18 +124,26 @@ async function openApp() {
       "whiteSpace","textAlign","verticalAlign","zIndex","overflowX","overflowY","transform","filter","outlineStyle","flexDirection","justifyContent","alignItems","fill","stroke"];
     // 메모리를 아끼려고 문자열을 모으지 않고 바로 해시에 섞음
     window.__ALLP = P;
-    window.__snap = (theme, props) => {
+    window.__snap = (theme, props, sels) => {
       const P = props || window.__ALLP;
       document.body.setAttribute("data-theme", theme);
       let x = 2166136261, n = 0;
       const mix = str => { for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } };
-      const all = document.body.getElementsByTagName("*");
+      // sels 가 있으면 그 규칙이 걸리는 요소와 그 안쪽만 (묶음 시험을 빠르게 — 마지막 전체 확인은 모든 요소)
+      let all = document.body.getElementsByTagName("*");
+      if (sels) {
+        const set = new Set();
+        sels.forEach(sl => { let found = []; try { found = document.querySelectorAll(sl.replace(/::?(before|after|placeholder|selection)\b/g, "")); } catch (e) {}
+          found.forEach(e => { set.add(e); for (const d of e.getElementsByTagName("*")) set.add(d); if (e.parentElement) set.add(e.parentElement); }); });
+        all = [...set];
+      }
       for (let k = 0; k < all.length; k++) {
         const e = all[k];
         if (e.tagName === "SCRIPT" || e.tagName === "STYLE" || e.tagName === "OPTION") continue;
         const cs = getComputedStyle(e); if (cs.display === "none") continue;
         if (!e.offsetParent && cs.position !== "fixed" && !(e instanceof SVGElement)) continue;
         for (let j = 0; j < P.length; j++) mix(cs[P[j]]);
+        if (window.__DUMP) window.__DUMP.push(e.tagName + "." + (typeof e.className === "string" ? e.className : "") + " | " + P.map(p => p + "=" + cs[p]).join(" "));
         n++;
       }
       return (x >>> 0).toString(36) + ":" + n;
@@ -125,18 +156,18 @@ async function openApp() {
 async function setCss(page, css) { await page.evaluate(c => { document.getElementById("cssUnderTest").textContent = c; }, css); }
 
 // state x theme -> hash (only states in `only`, if given)
-async function snapshot(page, only, props, themes) {
-  return page.evaluate(async ([themes, only, props]) => {
+async function snapshot(page, only, props, themes, wait, sels) {
+  return page.evaluate(async ([themes, only, props, wait, sels]) => {
     const res = {};
     for (let si = 0; si < window.__STATES.length; si++) {
       if (only && !only.includes(si)) continue;
       const st = window.__STATES[si];
-      st.run(); await new Promise(r => setTimeout(r, 60));
-      for (const th of themes) res[si + "|" + th] = window.__snap(th, props);
+      st.run(); await new Promise(r => setTimeout(r, wait || 250));   // 늦게 그려지는 화면(Phase 진척 등)까지 기다림
+      for (const th of themes) res[si + "|" + th] = window.__snap(th, props, sels);
       if (st.after) st.after();
     }
     return res;
-  }, [themes || THEMES, only || null, props || null]);
+  }, [themes || THEMES, only || null, props || null, wait || 0, sels || null]);
 }
 async function matchesPerState(page, sels) {
   return page.evaluate(async sels => {
@@ -214,8 +245,9 @@ async function prune() {
   async function ok(list) {
     const only = keysFor(list), props = propsFor(list);
     return safe(async () => {
-      await setCss(page, withRemoved(css, accepted)); const before = await snapshot(page, only, props);
-      await setCss(page, withRemoved(css, accepted.concat(list))); const after = await snapshot(page, only, props);
+      const sels = [...new Set(list.map(c => c.sel.split(",")).flat().map(x => x.trim()))];
+      await setCss(page, withRemoved(css, accepted)); const before = await snapshot(page, only, props, null, 60, sels);
+      await setCss(page, withRemoved(css, accepted.concat(list))); const after = await snapshot(page, only, props, null, 60, sels);
       return same(after, before, Object.keys(before));
     });
   }
@@ -226,7 +258,7 @@ async function prune() {
     const mid = Math.ceil(chunk.length / 2);
     await tryChunk(chunk.slice(0, mid)); await tryChunk(chunk.slice(mid));
   }
-  const SIZE = 16;
+  const SIZE = 24;
   for (let i = 0; i < live.length; i += SIZE) {
     await tryChunk(live.slice(i, i + SIZE));
     console.log(`  checked ${Math.min(i + SIZE, live.length)}/${live.length}, removable ${accepted.length}`);
@@ -256,11 +288,40 @@ async function prune() {
   return 0;
 }
 
+// 화면 모양 기억 · 비교 (index.html 의 인라인 스타일을 클래스로 옮길 때 — 페이지와 CSS 를 함께 봄)
+async function saveOrCheck(file, mode) {
+  const { page, close } = await openApp();
+  await setCss(page, fs.readFileSync(CSS_FILE, "utf8"));
+  const cur = await snapshot(page);
+  const names = await page.evaluate(() => window.__STATES.map(s => s.name));
+  await close();
+  if (mode === "save") { fs.writeFileSync(file, JSON.stringify({ names, cur })); console.log(`[OK] saved ${Object.keys(cur).length} screen x theme states -> ${file}`); return 0; }
+  const old = JSON.parse(fs.readFileSync(file, "utf8"));
+  const diff = Object.keys(old.cur).filter(k => old.cur[k] !== cur[k]);
+  if (!diff.length) { console.log(`[OK] all ${Object.keys(cur).length} screen x theme states look the same`); return 0; }
+  console.log(`[FAIL] ${diff.length} states differ:`); diff.slice(0, 30).forEach(k => { const [si, th] = k.split("|"); console.log("   - " + old.names[si] + " / " + th); });
+  return 1;
+}
+
+// 한 화면의 요소별 스타일을 파일로 (두 판을 비교해 어디가 다른지 찾을 때): --dump <화면 이름> <file>
+async function dump(name, file) {
+  const { page, close } = await openApp();
+  await setCss(page, fs.readFileSync(CSS_FILE, "utf8"));
+  const lines = await page.evaluate(async name => {
+    for (const st of window.__STATES) { st.run(); await new Promise(r => setTimeout(r, 250)); if (st.name === name) { window.__DUMP = []; window.__snap("urban-slate"); const d = window.__DUMP; window.__DUMP = null; return d; } if (st.after) st.after(); }
+    return [];
+  }, name);
+  await close(); fs.writeFileSync(file, lines.join("\n")); console.log(`[OK] ${lines.length} elements -> ${file}`); return 0;
+}
+
 (async () => {
   const a = process.argv;
   let code = 0;
   if (a.includes("--prune-important")) code = await prune();
+  else if (a.includes("--dump")) code = await dump(a[a.indexOf("--dump") + 1], a[a.indexOf("--dump") + 2]);
+  else if (a.includes("--save")) code = await saveOrCheck(a[a.indexOf("--save") + 1], "save");
+  else if (a.includes("--check")) code = await saveOrCheck(a[a.indexOf("--check") + 1], "check");
   else if (a.includes("--compare")) code = await compare(fs.readFileSync(a[a.indexOf("--compare") + 1], "utf8"));
-  else console.log("usage: --compare <old.css> | --prune-important");
+  else console.log("usage: --save <file> | --check <file> | --compare <old.css> | --prune-important");
   process.exit(code);
 })();

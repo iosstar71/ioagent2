@@ -17,58 +17,63 @@ function activateTab(tabId) {
   const pane = document.getElementById(tabId);
   if (pane) pane.classList.add("active");
 
-  switch (tabId) {
-    case "tab-home":
-    case "tab-mywork":
-      HomeScreenManager.render();
-      break;
-    case "tab-dashboard":
+  ScreenRender.onShow(tabId);
+  if (typeof LayoutManager !== "undefined") LayoutManager.adjustSidebar();
+  if (typeof SyncUI !== "undefined") SyncUI.refreshIndicators();
+}
+
+// =============================================================================
+// 화면 그리기 표 — 탭을 열 때와 자료가 바뀌었을 때(MasterSyncEngine.syncAll) 같은 함수를 씀
+//  자료가 바뀌면 보이는 화면만 다시 그리고, 다른 화면은 열 때 그린다 (화면을 더하면 여기 한 줄)
+// =============================================================================
+var ScreenRender = {
+  MAP: {
+    "tab-home": () => HomeScreenManager.render(),
+    "tab-mywork": () => HomeScreenManager.render(),
+    "tab-dashboard": () => {
       updateAllSubsystemFilterDropdowns();
       renderDashboard();
       setTimeout(() => {
-        const filterSys = document.getElementById("scurveSystemFilter") ? document.getElementById("scurveSystemFilter").value : "ALL";
-        DashboardChart.renderSCurve("scurveCanvas", wbsData, projectConfig.reportDate, projectConfig.weekStartDay, filterSys);
+        const f = document.getElementById("scurveSystemFilter");
+        DashboardChart.renderSCurve("scurveCanvas", wbsData, projectConfig.reportDate, projectConfig.weekStartDay, f ? f.value : "ALL");
       }, 60);
-      break;
-    case "tab-matrix":
-      renderPhaseMatrix();
-      break;
-    case "tab-gantt":
-      renderGantt();
-      break;
-    case "tab-weekly-report":
+    },
+    "tab-matrix": () => renderPhaseMatrix(),
+    "tab-gantt": () => renderGantt(),
+    "tab-wbs": () => renderWbsTable(),
+    "tab-req": () => renderReqMasterTable(),
+    "tab-voc": () => renderVocTable(),
+    "tab-deliverables": () => renderDeliverablesTable(),
+    "tab-weekly-report": () => {
       WeeklyReportManager.init();
       if (typeof ReportTabs !== "undefined") { ReportTabs.sync(); if (ReportTabs.cur === "deck") ReportTabs.renderDeck(); }
-      break;
-    case "tab-meeting":
-      MeetingManager.init();
-      break;
-    case "tab-notices":
-      NoticeCommManager.renderAll();
-      break;
-    case "tab-merge": {
+    },
+    "tab-meeting": () => MeetingManager.init(),
+    "tab-notices": () => NoticeCommManager.renderAll(),
+    "tab-merge": () => {
       if (typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.syncAutoDownloadBox) BackupHistoryManager.syncAutoDownloadBox();
       if (typeof BackupPane !== "undefined") BackupPane.syncTab();
       SubTabs.restore("merge", "merge");
-      const dSel = document.getElementById("workDataDomainSelect");
-      if (dSel && (!dSel.options || dSel.options.length === 0)) updateAllSubsystemFilterDropdowns();
-      onDomainFilterChanged("workDataDomainSelect", "workDataSubsysSelect");
       updateAllSubsystemFilterDropdowns();
+      ["populateSourceSubsystems", "populateTargetSubsystems"].forEach(m => { if (typeof SmartMergeCenter !== "undefined" && typeof SmartMergeCenter[m] === "function") SmartMergeCenter[m](); });
+      onDomainFilterChanged("workDataDomainSelect", "workDataSubsysSelect");
+      onDomainFilterChanged("mergeSourceDomainSelect", "mergeSourceSubsysSelect");
+      onDomainFilterChanged("mergeTargetDomainSelect", "mergeTargetSubsysSelect");
       if (typeof BackupHistoryManager !== "undefined") BackupHistoryManager.renderBackupHistoryTable();
-      break;
-    }
-    case "tab-master":
+    },
+    "tab-master": () => {
       renderProjectTitles();
       renderDomainChips();
       renderCustomSdlcCards();
       renderIdPrefixSettings();
       renderSubsystemsMetaTable();
+      if (typeof ReqPhaseManager !== "undefined" && ReqPhaseManager.renderTable) ReqPhaseManager.renderTable();
       renderStandardDeliverablesMetaTable();
       renderHolidays();
       renderProjectUsersTable();
       if (typeof MasterSubTabs !== "undefined") MasterSubTabs.restore();
-      break;
-    case "tab-config":
+    },
+    "tab-config": () => {
       StorageManager.updateUsageInfo();
       DbConnector.renderConfigForm();
       HomeScreenManager.syncConfigUi();
@@ -77,11 +82,29 @@ function activateTab(tabId) {
       if (typeof ProjectData !== "undefined") ProjectData.renderConfigTarget();
       document.querySelectorAll(".lbl-current-project-name").forEach(el => { el.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current; });
       if (typeof UiMode !== "undefined") UiMode.syncSelects();
-      break;
+    }
+  },
+  // 표가 큰 화면은 자료가 바뀌었을 때만 열 때 다시 그림 (스크롤 위치 유지). 나머지는 열 때마다 그림
+  ONLY_WHEN_STALE: ["tab-wbs", "tab-req", "tab-voc", "tab-deliverables"],
+  _stale: new Set(["tab-wbs", "tab-req", "tab-voc", "tab-deliverables"]),
+  current() { return (document.querySelector(".tab-pane.active") || {}).id; },
+  render(tabId) {
+    const f = this.MAP[tabId]; if (!f) return;
+    this._stale.delete(tabId); f();
+  },
+  // 탭을 열 때
+  onShow(tabId) {
+    if (this.ONLY_WHEN_STALE.indexOf(tabId) !== -1 && !this._stale.has(tabId)) return;
+    this.render(tabId);
+  },
+  // 자료가 바뀌었을 때: 보이는 화면만 다시 그리고, 다른 화면은 열 때 그림
+  refreshVisible() {
+    const cur = this.current();
+    Object.keys(this.MAP).forEach(t => { if (t !== cur) this._stale.add(t); });
+    this.render(cur);
   }
-  if (typeof LayoutManager !== "undefined") LayoutManager.adjustSidebar();
-  if (typeof SyncUI !== "undefined") SyncUI.refreshIndicators();
-}
+};
+window.ScreenRender = ScreenRender;
 
 function switchTab(tabId) {
   activateTab(tabId);

@@ -3075,3 +3075,91 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .g-header .g-notice svg.iostar-ico { width: 18px; height: 18px; }
 .pl-sum-ok { color: var(--chart-good-text); }
 .pl-sum-bad { color: var(--chart-bad-text); }
+
+/* ==== 공통 꾸밈 클래스 (예전 인라인 style 을 옮김) — 같은 모양을 여러 곳에서 쓸 때. 색은 테마 변수만
+   :is(.u-x, #u_) = id 하나만큼의 우선순위: 인라인 style 처럼 화면 규칙보다 앞서되 important 표시는 쓰지 않음 ==== */
+:is(.u-ai-center, #u_) { align-items: center; }
+:is(.u-ai-end, #u_) { align-items: flex-end; }
+:is(.u-bd, #u_) { border: 1px solid var(--border-color); }
+:is(.u-bg-card, #u_) { background: var(--bg-card); }
+:is(.u-block, #u_) { display: block; }
+:is(.u-bold, #u_) { font-weight: bold; }
+:is(.u-c-danger, #u_) { color: var(--danger); }
+:is(.u-c-info, #u_) { color: var(--tint-info-text); }
+:is(.u-c-main, #u_) { color: var(--text-main); }
+:is(.u-c-muted, #u_) { color: var(--text-muted); }
+:is(.u-c-primary, #u_) { color: var(--primary); }
+:is(.u-c-sub, #u_) { color: var(--text-sub); }
+:is(.u-c-success, #u_) { color: var(--success); }
+:is(.u-c-warning, #u_) { color: var(--warning); }
+:is(.u-col, #u_) { flex-direction: column; }
+:is(.u-flex, #u_) { display: flex; }
+:is(.u-flex1, #u_) { flex: 1; }
+:is(.u-fs-115, #u_) { font-size: calc(11.5px * var(--fs-scale, 1)); }
+:is(.u-fs-base, #u_) { font-size: var(--fs-base, 13px); }
+:is(.u-fs-sm, #u_) { font-size: var(--fs-sm, 12px); }
+:is(.u-fs-xs, #u_) { font-size: var(--fs-xs, 11px); }
+:is(.u-gap-10, #u_) { gap: 10px; }
+:is(.u-gap-12, #u_) { gap: 12px; }
+:is(.u-gap-14, #u_) { gap: 14px; }
+:is(.u-gap-16, #u_) { gap: 16px; }
+:is(.u-gap-2, #u_) { gap: 2px; }
+:is(.u-gap-3, #u_) { gap: 3px; }
+:is(.u-gap-4, #u_) { gap: 4px; }
+:is(.u-gap-6, #u_) { gap: 6px; }
+:is(.u-gap-8, #u_) { gap: 8px; }
+:is(.u-grid, #u_) { display: grid; }
+:is(.u-iblock, #u_) { display: inline-block; }
+:is(.u-iflex, #u_) { display: inline-flex; }
+:is(.u-jc-between, #u_) { justify-content: space-between; }
+:is(.u-jc-center, #u_) { justify-content: center; }
+:is(.u-jc-end, #u_) { justify-content: flex-end; }
+:is(.u-m0, #u_) { margin: 0; }
+:is(.u-mb-0, #u_) { margin-bottom: 0; }
+:is(.u-mb-10, #u_) { margin-bottom: 10px; }
+:is(.u-mb-12, #u_) { margin-bottom: 12px; }
+:is(.u-mb-14, #u_) { margin-bottom: 14px; }
+:is(.u-mb-18, #u_) { margin-bottom: 18px; }
+:is(.u-mb-3, #u_) { margin-bottom: 3px; }
+:is(.u-mb-4, #u_) { margin-bottom: 4px; }
+:is(.u-mb-5, #u_) { margin-bottom: 5px; }
+:is(.u-mb-6, #u_) { margin-bottom: 6px; }
+:is(.u-mb-8, #u_) { margin-bottom: 8px; }
+:is(.u-ml-12, #u_) { margin-left: 12px; }
+:is(.u-ml-4, #u_) { margin-left: 4px; }
+:is(.u-ml-6, #u_) { margin-left: 6px; }
+:is(.u-ml-8, #u_) { margin-left: 8px; }
+:is(.u-mt-10, #u_) { margin-top: 10px; }
+:is(.u-mt-12, #u_) { margin-top: 12px; }
+:is(.u-mt-14, #u_) { margin-top: 14px; }
+:is(.u-mt-16, #u_) { margin-top: 16px; }
+:is(.u-mt-2, #u_) { margin-top: 2px; }
+:is(.u-mt-3, #u_) { margin-top: 3px; }
+:is(.u-mt-4, #u_) { margin-top: 4px; }
+:is(.u-mt-6, #u_) { margin-top: 6px; }
+:is(.u-mt-8, #u_) { margin-top: 8px; }
+:is(.u-normal, #u_) { font-weight: normal; }
+:is(.u-nowrap, #u_) { white-space: nowrap; }
+:is(.u-p-10, #u_) { padding: 10px; }
+:is(.u-p-12, #u_) { padding: 12px; }
+:is(.u-p-14, #u_) { padding: 14px; }
+:is(.u-p-16, #u_) { padding: 16px; }
+:is(.u-p-20, #u_) { padding: 20px; }
+:is(.u-p-3, #u_) { padding: 3px; }
+:is(.u-p-4, #u_) { padding: 4px; }
+:is(.u-p-6, #u_) { padding: 6px; }
+:is(.u-p-8, #u_) { padding: 8px; }
+:is(.u-pointer, #u_) { cursor: pointer; }
+:is(.u-r-1, #u_) { border-radius: 1px; }
+:is(.u-r-10, #u_) { border-radius: 10px; }
+:is(.u-r-2, #u_) { border-radius: 2px; }
+:is(.u-r-3, #u_) { border-radius: 3px; }
+:is(.u-r-4, #u_) { border-radius: 4px; }
+:is(.u-r-6, #u_) { border-radius: 6px; }
+:is(.u-r-8, #u_) { border-radius: 8px; }
+:is(.u-semibold, #u_) { font-weight: 600; }
+:is(.u-tc, #u_) { text-align: center; }
+:is(.u-tl, #u_) { text-align: left; }
+:is(.u-tr, #u_) { text-align: right; }
+:is(.u-w100, #u_) { width: 100%; }
+:is(.u-wrap, #u_) { flex-wrap: wrap; }
