@@ -492,10 +492,68 @@ async function blame(list) {
   await close(); return 0;
 }
 
+// 정확한 정리: 화면마다, 이미 지우기로 한 것(acc)과 함께 지워 원래와 비교 (모든 요소 · 6개 테마). 오래 걸려 진행을 저장
+//  --prune-important : 끝나면 style.css 를 고쳐 씀. 그 뒤 --save/--check 로 새 창에서 한 번 더 확인할 것
+async function prune3() {
+  const css = fs.readFileSync(CSS_FILE, "utf8");
+  const cand = candidates(css).map(c => Object.assign(c, { sels: c.sel.split(",").map(x => x.trim()) }));
+  const PROG = path.join(os.tmpdir(), "css_prune3_progress.json");
+  const cssKey = require("crypto").createHash("sha1").update(css).digest("hex");
+  let st = { cssKey, next: 0, acc: [], rejected: [], unstable: [] };
+  try { const pg = JSON.parse(fs.readFileSync(PROG, "utf8")); if (pg.cssKey === cssKey) st = pg; } catch (e) {}
+  let { page, close } = await openApp();
+  const prep = async () => { await setCss(page, css); await page.evaluate(([css, cand, themes]) => {
+    window.__CSS = css; window.__CAND = cand; window.__THEMES = themes;
+    window.__removed = ids => { const l = ids.map(i => window.__CAND[i]).sort((a, b) => b.at - a.at); let s = window.__CSS; l.forEach(c => { s = s.slice(0, c.at) + s.slice(c.at + c.len); }); return s; };
+  }, [css, cand, THEMES]); };
+  await prep();
+  const names = await page.evaluate(() => window.__STATES.map(s => s.name));
+  console.log(`!important total=${(css.match(/!important/g) || []).length}  candidates=${cand.length}  screens=${names.length}  resume at ${st.next + 1}`);
+  for (let si = st.next; si < names.length; si++) {
+    let r = null;
+    for (let k = 0; k < 3 && !r; k++) {
+      try {
+        r = await page.evaluate(async ([si, acc, rejected]) => {
+          const S = window.__STATES[si]; S.run(); await new Promise(r => setTimeout(r, 400));
+          const el = document.getElementById("cssUnderTest");
+          const look = () => window.__THEMES.map(th => window.__snap(th)).join(",");
+          el.textContent = window.__CSS; const base = look(); const base2 = look();
+          if (base !== base2) { if (S.after) S.after(); return { unstable: true, acc, rejected }; }
+          const ok = ids => { el.textContent = window.__removed(ids); const h = look(); el.textContent = window.__CSS; return h === base; };
+          let A = acc.slice(); const rej = rejected.slice();
+          // 앞 화면에서 지우기로 한 것이 이 화면을 바꾸면 하나씩 찾아 되살림
+          let guard = 0;
+          while (A.length && !ok(A) && guard++ < 60) {
+            let lo = 1, hi = A.length;   // ok(A[0..k)) 가 처음 깨지는 k
+            while (lo < hi) { const m = (lo + hi) >> 1; if (ok(A.slice(0, m))) lo = m + 1; else hi = m; }
+            rej.push(A[lo - 1]); A.splice(lo - 1, 1);
+          }
+          const C = window.__CAND, seen = new Set(A.concat(rej));
+          const pool = C.filter(c => !seen.has(c.id) && window.__matches(c.sels).some(Boolean)).map(c => c.id);
+          const bis = ids => { if (!ids.length) return; if (ok(A.concat(ids))) { A = A.concat(ids); return; } if (ids.length === 1) { rej.push(ids[0]); return; } const m = Math.ceil(ids.length / 2); bis(ids.slice(0, m)); bis(ids.slice(m)); };
+          bis(pool);
+          if (S.after) S.after();
+          return { acc: A, rejected: rej, tried: pool.length };
+        }, [si, st.acc, st.rejected]);
+      } catch (e) { try { await close(); } catch (x) {} ({ page, close } = await openApp()); await prep(); }
+    }
+    if (!r) throw new Error("browser kept crashing");
+    if (r.unstable) st.unstable.push(names[si]);
+    st.acc = r.acc; st.rejected = r.rejected; st.next = si + 1;
+    fs.writeFileSync(PROG, JSON.stringify(st));
+    console.log(`  ${si + 1}/${names.length} ${names[si]}: ${r.unstable ? "moves by itself — skipped" : "tried " + r.tried}, removable ${st.acc.length}, kept ${st.rejected.length}`);
+  }
+  await close();
+  const out = withRemoved(css, st.acc.map(i => cand[i]));
+  fs.writeFileSync(CSS_FILE, out);
+  console.log(`[OK] removed ${st.acc.length} !important (now ${(out.match(/!important/g) || []).length}). Screens that move by themselves: ${st.unstable.join(", ") || "none"}. Confirm with --save/--check.`);
+  return 0;
+}
+
 (async () => {
   const a = process.argv;
   let code = 0;
-  if (a.includes("--prune-important")) code = await prune2();
+  if (a.includes("--prune-important")) code = await prune3();
   else if (a.includes("--blame")) code = await blame(a[a.indexOf("--blame") + 1]);
   else if (a.includes("--explain")) code = await explain(a[a.indexOf("--explain") + 1]);
   else if (a.includes("--dump")) code = await dump(a[a.indexOf("--dump") + 1], a[a.indexOf("--dump") + 2]);
