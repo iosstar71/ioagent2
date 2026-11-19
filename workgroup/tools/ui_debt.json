@@ -10,7 +10,7 @@
    "inline_hex": 7
   },
   "tab-config": {
-   "inline": 96,
+   "inline": 93,
    "inline_hex": 36
   },
   "tab-dashboard": {
@@ -104,7 +104,7 @@
  },
  "total": {
   "css_important": 376,
-  "html_inline": 605,
+  "html_inline": 602,
   "html_inline_hex": 172,
   "js_hex": 121,
   "js_inline": 265
