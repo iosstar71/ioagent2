@@ -1,0 +1,112 @@
+// Workgroup 판: core/system-backup.js 의 다른 부분 (서버 DB · 멤버 선택 · 체크아웃 잠금 등). 공통 파일 다음에 불러와 같은 이름을 덮어씀
+// 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
+
+Object.assign(BackupPane, {
+});
+
+Object.assign(SystemBackup, {
+  KINDS: { manual: "수동", auto: "자동", "before-restore": "복원 직전", uploaded: "PC 에서 올림", "before-clear": "Task 초기화 전" },
+  size(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB"; },
+  _apply(res) {
+    if (!res || !res.ok) return;
+    this.list = res.backups || this.list || [];
+    if (res.auto) this.auto = res.auto;
+    const body = document.getElementById("bkServerList");
+    if (body) body.innerHTML = this.list.length ? this.list.map(b => `<tr>
+        <td>${escapeHtml(b.createdAt || "")}</td>
+        <td><span class="status-badge-chip ${b.kind === "auto" ? "chip-progress" : b.kind === "before-restore" ? "chip-delayed" : "chip-completed"}">${escapeHtml(this.KINDS[b.kind] || b.kind)}</span></td>
+        <td>${b.type === "system" ? (b.withFiles ? `포함 (${b.files})` : "없음") : "-"}</td>
+        <td>${this.size(b.size)}</td>
+        <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(b.name)}</td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn btn-primary btn-sm" data-click="SystemBackup.download" data-click-args="${UiEvents.args(b.name)}">📥 다운로드</button>
+          ${b.type === "system" ? `<button class="btn btn-warning btn-sm" data-click="SystemBackup.restore" data-click-args="${UiEvents.args(b.name)}">⏪ 복원</button>` : ""}
+          <button class="btn btn-danger btn-sm" data-click="SystemBackup.remove" data-click-args="${UiEvents.args(b.name)}">삭제</button>
+        </td></tr>`).join("")
+      : `<tr><td colspan="6" style="text-align:center; padding:14px; color:var(--text-muted);">아직 시스템 백업이 없습니다.</td></tr>`;
+    const a = this.auto || {};
+    const set = (id, prop, v) => { const el = document.getElementById(id); if (el) el[prop] = v; };
+    set("bkAutoOn", "checked", !!a.enabled); set("bkAutoFiles", "checked", !!a.withFiles);
+    set("bkAutoHours", "value", a.hours || 24); set("bkAutoKeep", "value", a.keep || 14);
+    set("bkAutoLast", "textContent", a.enabled ? `마지막 자동 백업: ${a.last || "아직 없음 (켜면 5분 안에 첫 백업)"}` : "자동 백업 꺼짐");
+    set("bkFolder", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
+    set("bkFolder2", "textContent", res.folder ? `서버 보관 위치: ${res.folder}` : "");
+    // [v4.1.0] 백업 · 복원 탭에는 자동 백업 상태만 (설정은 Admin > 데이터 관리)
+    const st = document.getElementById("bkAutoStatus");
+    if (st) st.innerHTML = `<b>⏱ 자동 백업</b> ${a.enabled
+      ? `<span class="status-badge-chip chip-completed">켜짐</span> ${a.hours || 24}시간마다 · 최근 ${a.keep || 14}개 보관${a.withFiles ? " · 첨부파일 포함" : ""} · 마지막: ${escapeHtml(a.last || "아직 없음")}`
+      : `<span class="status-badge-chip chip-ready">꺼짐</span>`}
+      <button class="btn btn-sm" data-btn="nav" data-click="DataAdmin.go">⚙️ 설정: Admin &gt; 데이터 관리</button>`;
+  },
+  async refresh() { this._apply(await ServerBackend.request("/api/admin/backup/list", {})); },
+  async create() {
+    const withFiles = !!(document.getElementById("bkWithFiles") || {}).checked;
+    showToast("💾 시스템 백업을 만드는 중입니다...");
+    const res = await ServerBackend.request("/api/admin/backup/create", { withFiles }, "POST", 600000);
+    if (!res.ok) return showToast("❌ 시스템 백업 실패: " + (res.message || ""));
+    this._apply(res);
+    showToast(`✅ 시스템 백업을 만들었습니다: ${res.name}${withFiles ? " (첨부파일 포함)" : ""} — [📥 다운로드]로 PC 에도 보관하세요.`);
+  },
+  async download(name) {
+    try {
+      const r = await fetch(ServerBackend.baseUrl() + "/api/admin/backup/download?name=" + encodeURIComponent(name), { headers: { "Authorization": "Bearer " + ServerBackend.token }, cache: "no-store" });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); return showToast("⚠️ " + (j.message || "다운로드하지 못했습니다.")); }
+      ExcelSync._triggerDownload(await r.blob(), name);
+    } catch (err) { showToast("⚠️ 다운로드 오류: " + err.message); }
+  },
+  restore(name) {
+    const b = (this.list || []).find(x => x.name === name) || {};
+    openConfirmDialog(`⚠️ [시스템 전체 복원] ${name}\n모든 프로젝트 · 멤버 계정 · SDLC 유형 · 설정을 ${b.createdAt || ""} 시점으로 되돌립니다.${b.withFiles ? "\n첨부파일도 그 시점으로 바뀝니다." : "\n(이 백업에는 첨부파일이 없어 첨부파일은 그대로)"}\n복원 직전 상태를 먼저 자동 백업합니다. 다른 멤버는 다시 멤버 선택해야 할 수 있습니다. 계속할까요?`, async () => {
+      const res = await ServerBackend.request("/api/admin/backup/restore", { name }, "POST", 600000);
+      if (!res.ok) return showToast("❌ 복원 실패: " + (res.message || ""));
+      showToast(`✅ 시스템을 복원했습니다. (복원 직전 백업: ${res.before}) 화면을 다시 불러옵니다...`);
+      setTimeout(() => window.location.reload(), 1500);
+    });
+  },
+  remove(name) {
+    openConfirmDialog(`백업 파일 [${name}] 을(를) 삭제할까요? 되돌릴 수 없습니다.`, async () => {
+      const res = await ServerBackend.request("/api/admin/backup/delete", { name });
+      if (!res.ok) return showToast("❌ 삭제 실패: " + (res.message || ""));
+      this._apply(res);
+      showToast("🗑 백업 파일을 삭제했습니다.");
+    });
+  },
+  async upload(e) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (e && e.target) e.target.value = "";
+    if (!file) return;
+    try {
+      const r = await fetch(ServerBackend.baseUrl() + "/api/admin/backup/upload", { method: "POST", headers: { "Authorization": "Bearer " + ServerBackend.token, "Content-Type": "application/octet-stream" }, body: file });
+      const res = await r.json().catch(() => ({}));
+      if (!res.ok) return showToast("❌ 올리기 실패: " + (res.message || ""));
+      this._apply(res);
+      showToast(`📤 백업 파일을 서버 목록에 올렸습니다: ${res.name} — 목록에서 [⏪ 복원]을 누르세요.`);
+    } catch (err) { showToast("❌ 올리기 오류: " + err.message); }
+  },
+  async saveAuto() {
+    const v = id => document.getElementById(id);
+    const res = await ServerBackend.request("/api/admin/backup/settings", { enabled: v("bkAutoOn").checked, withFiles: v("bkAutoFiles").checked,
+      hours: parseInt(v("bkAutoHours").value, 10) || 24, keep: parseInt(v("bkAutoKeep").value, 10) || 14 });
+    if (!res.ok) return showToast("❌ 저장 실패: " + (res.message || ""));
+    this.auto = res.auto;
+    await this.refresh();
+    showToast(res.auto.enabled ? `⏱ 자동 백업을 켰습니다: ${res.auto.hours}시간마다, 최근 ${res.auto.keep}개 보관${res.auto.withFiles ? ", 첨부파일 포함" : ""}` : "⏱ 자동 백업을 껐습니다.");
+  },
+
+  // ---- 로컬 저장소 방식 ----
+  async importLocal(e) {
+    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    if (e && e.target) e.target.value = "";
+    if (!file || !ProjectData.isAdmin()) return;
+    let j;
+    try { j = JSON.parse(await file.text()); } catch (err) { return showToast("⚠️ JSON 파일을 읽지 못했습니다."); }
+    if (!j || j.schemaVersion !== this.LOCAL_SCHEMA || !j.items) return showToast("⚠️ 시스템 전체 백업(JSON) 파일이 아닙니다. 프로젝트 하나는 [① 프로젝트 백업 · 복원]에서 올리세요.");
+    openConfirmDialog(`⚠️ [시스템 전체 복원] ${file.name}\n이 브라우저의 모든 프로젝트(${(j.projects || []).join(", ")}) · 멤버 · 설정을 백업 시점으로 바꿉니다. 지금 상태는 스냅샷에 남깁니다. 계속할까요?`, () => {
+      BackupHistoryManager.createBackupSnapshot("시스템복원직전백업", "ALL", false);
+      this._localKeys().forEach(k => localStorage.removeItem(k));
+      Object.keys(j.items).forEach(k => { try { localStorage.setItem(k, j.items[k]); } catch (err) {} });
+      showToast("✅ 시스템 전체를 복원했습니다. 화면을 다시 불러옵니다...");
+      setTimeout(() => window.location.reload(), 1200);
+    });
+  }
+});

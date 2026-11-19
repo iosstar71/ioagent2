@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+<!--#sa-->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self' blob:">
+<!--#/sa-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--#sa-->
+  <title id="pageBrowserTitle">PM Hub · IOSTAR-PM Standalone</title>
+<!--#/sa-->
+<template data-edition="workgroup">
+  <title id="pageBrowserTitle">PM Hub · IOSTAR-PM Workgroup</title>
+</template>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEUjKj0mLEMbJjEAAAAnNlEAAH8jKj0jHTAvSW+0VvwE/P4jKj0vxvtIM3IiKDwnLUHBU/4bZHhOpfhtRqytTPQbXG4G0tsP5PQjKjwmLUE3OGMvl8lYN4ZmOpiJd/cdSFsKydYhXXhzPKmKSc6EXNa0Zf8UnK8byfAQ1uskJDwoKEMlLUAkMDwoNUNDg8Z1Xs1hd9V1kf1qo/+UaPSHhP+mcv8bHigWc4IUgY4bn8INq7YTvtgiaYEt1f8h7P9RabJMnfBGv/9pbdN0ifmBRL+bSOGUWuMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACsk0ebAAAAgHRSTlP9//8A/wLZ/////5b//y8v//////////+hmP///////////////////xUT0RUT/////////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALf39SIAAAF0SURBVHjahVPXksIwDJRlh/QeSkIIcMDRO1zv7f8/6ZzAMEkgwZ7xg3fllSUtUCpQavpTyK2pbyYQ8GPmA4GzRcCfcRAEalYuwAmlYlIB6LwIjxlzLtEoxDmjQcGE0mWCSspwokLlwm0q5gSLKQIixmcmqG2ffg9MkgKOB2ltVlcexORClJrOZr3bEib/pN4gNeU+ERFt7dNZfUUuk2U9LcLaR6mhtmBxmn9ZHJ461eSFx9cm3AGS/kDXSZoxUmxgjDBNk/Bdwv4gJHKIqTRrSvW2PmpKmkPYd7QcuNizbs4IGid8MAyivYvo5gkHCceRAHWXq/9aYTqHjmLHSeJis+Il5LsleyRL6CZTxda7ZfzNlme1Mt98rncPbZCi/bbX82SeQaYXw7fuoV0Y9GXZ8rxsPED1hR2Ljsj0MFukfLsxbjfJTwQpHJirI2eUD61xfeyFSZlxJgK3nlFsPSO2nkDH6mXzquPYvInHDfXMHhXVSKB/ASkXCeYmbS8AAAAASUVORK5CYII=">
+  <link rel="stylesheet" href="static/css/style.css">
+<template data-edition="workgroup">
+  <link rel="stylesheet" href="static/css/workgroup.css">
+</template>
+  
+  
+</head>
+<body data-theme="urban-slate" data-layout="top-nav" data-density="standard">
+  <!-- 멤버 선택 / 신규 멤버 등록 / 권한 메뉴 인증 오버레이 -->
+  <div id="securityLockOverlay" class="security-lock-overlay" style="display: none;">
+    <div class="security-lock-modal login-2col">
+      <div class="login-side">
+<!--#sa-->
+      <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">PM Hub <span>IOSTAR-PM · Standalone</span></div><div class="login-brand-full">In-situ Operations &amp; Smart Tasks for Accurate Resources — Project Manager</div></div>
+      <h2 class="u-mb-6 u-c-main" id="lockModalTitle" style="font-size: var(--fs-xl, 18px);">멤버 선택</h2>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <div class="login-brand"><img class="brand-logo-lg" src="data:image/png;base64,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" width="56" height="56" alt="IOSTAR-PM"><div class="login-brand-name">PM Hub <span>IOSTAR-PM · Workgroup</span></div><div class="login-brand-full">In-situ Operations &amp; Smart Tasks for Accurate Resources — Project Manager</div></div>
+      <h2 class="u-mb-6 u-c-main" id="lockModalTitle" style="font-size: var(--fs-xl, 18px);">시스템 멤버 선택</h2>
+</template>
+      <p class="u-fs-sm u-c-sub u-mb-14" id="lockModalDesc"></p>
+      <div class="u-fs-xs u-mb-10 u-r-6" id="lockServerInfo" style="display:none; padding:5px 8px; background:rgba(59,130,246,0.08);"></div>
+
+      <div class="login-side-foot">
+      <div class="login-legal-links">
+<template data-edition="workgroup">
+        <a href="#" data-click="LegalNotice.open" data-click-args='["license"]'>사용권 계약</a> ·
+        <a href="#" data-click="LegalNotice.open" data-click-args='["privacy"]'>개인정보 처리 안내</a> ·
+</template>
+        <a href="#" data-click="LegalNotice.open" data-click-args='["notices"]'>오픈소스 고지</a>
+      </div>
+      <div class="login-credit"></div>
+      </div>
+      </div>
+      <div class="login-main">
+      <!-- 멤버 선택 폼 -->
+      <div class="u-tl" id="loginFormPane">
+<!--#sa-->
+        <div id="loginProjectRow">
+          <label class="login-label" for="inputLoginProject">① 작업할 프로젝트:</label>
+          <select id="inputLoginProject" class="login-input" data-change="WorkerPick.load"></select>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="login-row2">
+          <div id="loginProjectRow">
+            <label class="login-label" for="inputLoginProject">프로젝트:</label>
+            <select id="inputLoginProject" class="login-input"></select>
+          </div>
+          <div>
+            <label class="login-label" for="inputLoginLang">언어 / Language:</label>
+            <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+</template>
+        </div>
+<!--#sa-->
+        <div class="login-hint" id="loginProjectHint">관리자는 프로젝트를 고르지 않아도 됩니다.</div>
+        <label class="login-label" for="inputLoginLang">언어 / Language:</label>
+        <select id="inputLoginLang" class="login-input" data-change="I18N.preview" data-change-args='["$value"]'>
+          <option value="ko">한국어 (Korean)</option>
+          <option value="en">English</option>
+        </select>
+        <label class="login-label" for="inputSecurityEmpNo">② 멤버 (목록에서 고르거나 멤버 ID 입력):</label>
+        <input type="text" id="inputSecurityEmpNo" value="" list="workerPickList" placeholder="멤버 선택 (처음: admin)" autocomplete="off" class="login-input"
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="login-hint" id="loginProjectHint">관리자는 프로젝트를 선택하지 않아도 멤버 선택할 수 있습니다.</div>
+        <label class="login-label">멤버 ID (멤버 ID):</label>
+        <input type="text" id="inputSecurityEmpNo" value="" placeholder="멤버 ID 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
+</template>
+               data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
+<!--#sa-->
+        <datalist id="workerPickList"></datalist>
+        <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
+        <label class="login-label">③ 멤버 암호:</label>
+        <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 1234)" autocomplete="off" class="login-input"
+<!--#/sa-->
+<template data-edition="workgroup">
+        <label class="login-label">암호:</label>
+        <input type="password" id="inputSecurityPassword" placeholder="암호 입력 (초기: 1234)" autocomplete="off" class="login-input"
+</template>
+               data-keydown="UiH.loginKeys" data-keydown-args='["$event"]'>
+        <div class="u-fs-xs u-mt-2" id="lockErrorMessage" style="color: #ef4444; display: none;"></div>
+        <div class="u-flex u-gap-8 u-mt-14">
+          <button id="btnLockCancel" class="btn btn-secondary u-flex1 u-p-10 u-fs-base u-jc-center" data-click="AuthManager.cancelUnlock">취소</button>
+          <button id="btnLockSubmit" class="btn btn-primary u-p-10 u-fs-base u-jc-center" style="flex: 1.4;" data-click="AuthManager.unlock">▶ 작업 시작</button>
+        </div>
+        <div class="u-tc u-mt-12 u-fs-sm" id="registerLinkRow">
+<!--#sa-->
+          <span class="u-c-muted">멤버 등록은 관리자 · PM 이 합니다.</span>
+        </div>
+        <div class="local-start">
+          <input type="file" id="localStartInput" style="display:none;" accept=".json,.xlsx" data-change="WorkerPick.startFromPackage" data-change-args='["$event"]'>
+          <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["localStartInput"]'>📥 PM 이 보낸 마스터 파일 업로드 (최신 자료 받기)</button>
+          <div id="localPkgChoice" class="pkg-choice" style="display:none;"></div>
+          <div class="login-hint">처음 쓰는 PC · 목록에 내 이름이 없을 때 · PM 이 새 마스터 파일을 보냈을 때 올리세요. 이 PC 에 자료가 있으면 최신으로 맞출지, 그대로 쓸지 고릅니다.</div>
+          <a class="u-bold u-c-warning" href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]'>🔑 암호 변경</a>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <span class="u-c-muted">계정이 없으신가요?</span>
+          <a class="u-bold u-c-primary" href="#" data-click="AuthManager.showRegister" data-click-args='[true]'>👤 신규 멤버 등록</a>
+          <span class="u-c-muted" style="margin:0 6px;">|</span>
+          <a class="u-bold u-c-warning" href="#" data-click="AuthManager.showPwdChange" data-click-args='[true]'>🔑 암호 변경</a>
+          <span class="u-c-muted" style="margin:0 6px;">|</span>
+          <a class="u-bold" href="#" id="lnkSelfReset" data-click="AuthManager.selfResetPassword" style="color:#b91c1c;" title="입력한 멤버 ID의 암호를 1234로 초기화 — 사내망에서만 쓰는 임시 기능입니다">🔄 암호 초기화 <small>(사내망용 임시 기능)</small></a>
+</template>
+        </div>
+      </div>
+
+      <!-- 멤버 선택 화면 암호 변경 폼 -->
+      <div class="u-tl" id="pwdChangeFormPane" style="display:none;">
+        <label class="login-label">멤버 ID (멤버 선택 ID) *:</label>
+        <input type="text" id="pcEmpNo" class="login-input" autocomplete="off">
+        <label class="login-label">현재 암호 *:</label>
+        <input type="password" id="pcOldPwd" class="login-input" autocomplete="current-password">
+        <label class="login-label">새 암호 * (8자 이상, 영문+숫자):</label>
+        <input type="password" id="pcNewPwd" class="login-input" autocomplete="new-password">
+        <label class="login-label">새 암호 확인 *:</label>
+        <input type="password" id="pcNewPwd2" class="login-input" autocomplete="new-password" data-keydown="AuthManager.changePasswordFromLogin" data-keydown-key="Enter">
+        <div class="u-fs-xs" id="pcErrorMessage" style="color: #ef4444; display: none;"></div>
+        <div class="u-flex u-gap-8 u-mt-12">
+          <button class="btn u-flex1 u-p-10 u-jc-center" data-btn="cancel" data-click="AuthManager.showPwdChange" data-click-args='[false]'>← 멤버 선택으로</button>
+          <button class="btn u-p-10 u-jc-center" data-btn="save" style="flex: 1.4;" data-click="AuthManager.changePasswordFromLogin">🔑 암호 변경</button>
+        </div>
+      </div>
+
+<template data-edition="workgroup">
+      <!-- 신규 멤버 등록 폼 (등록 시 기본 권한: 멤버) -->
+      <div class="u-tl" id="registerFormPane" style="display:none;">
+        <div class="login-hint" id="regProjectInfo"></div>
+        <div class="login-row2 even">
+          <div><label class="login-label">멤버 ID (멤버 선택 ID) *:</label>
+            <input type="text" id="regEmpNo" class="login-input" autocomplete="off" placeholder="영문/숫자 멤버 ID"></div>
+          <div><label class="login-label">성명 *:</label>
+            <input type="text" id="regName" class="login-input" autocomplete="off"></div>
+        </div>
+        <div class="login-row2 even">
+          <div><label class="login-label">담당 서브시스템 *:</label>
+            <select id="regSubsystem" class="login-input"></select></div>
+          <div><label class="login-label">언어 / Language:</label>
+            <select id="regLang" class="login-input">
+              <option value="ko">한국어 (Korean)</option>
+              <option value="en">English</option>
+            </select></div>
+        </div>
+        <label class="login-label">소속 부서 / 담당 역할:</label>
+        <input type="text" id="regDept" class="login-input" autocomplete="off">
+        <div class="login-row2 even">
+          <div><label class="login-label">암호 * (8자 이상, 영문+숫자):</label>
+            <input type="password" id="regPwd" class="login-input" autocomplete="new-password"></div>
+          <div><label class="login-label">암호 확인 *:</label>
+            <input type="password" id="regPwd2" class="login-input" autocomplete="new-password"></div>
+        </div>
+        <div class="u-fs-xs" id="regErrorMessage" style="color: #ef4444; display: none;"></div>
+        <div class="u-flex u-gap-8 u-mt-12">
+          <button class="btn btn-secondary u-flex1 u-p-10 u-jc-center" data-click="AuthManager.showRegister" data-click-args='[false]'>← 멤버 선택으로</button>
+          <button class="btn btn-success u-p-10 u-jc-center" style="flex: 1.4;" data-click="AuthManager.register">✅ 등록하기</button>
+        </div>
+      </div>
+</template>
+      </div>
+    </div>
+  </div>
+
+  <!-- [요건 1] 상단 헤더: 상태 표시 영역(Status Zone)과 동작 버튼 영역(Action Zone) 분리 -->
+  <!-- [Standard] 한 줄 머리글 (B2): 로고 · 프로젝트 · 기준일 · 검색 · 저장 상태 + 전체 저장 · 공지 · 도움말 · ⚙ 관리 · 멤버 -->
+  <header class="g-header">
+    <div class="brand-title g-brand">
+      <img class="brand-logo" src="data:image/png;base64,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" width="28" height="28" alt="IOSTAR-PM">
+<!--#sa-->
+      <span id="headerSystemTitleText" title="IOSTAR-PM Standalone">PM Hub</span>
+<!--#/sa-->
+<template data-edition="workgroup">
+      <span id="headerSystemTitleText" title="IOSTAR-PM Workgroup">PM Hub</span>
+</template>
+      <span id="headerVersionBadge" class="brand-badge g-ver">v3.5.0</span>
+      <span id="headerProjectNameBadge" class="brand-badge" style="display:none;">프로젝트</span>
+      <select id="headerProjectSelect" class="header-project-select" title="프로젝트 전환" data-change="ProjectManager.onSelect" data-change-args='["$value"]'></select>
+    </div>
+    <div class="global-report-date-box g-date" title="모든 화면의 진척률·달성률·지연 상태 계산 기준일">
+      <span class="report-date-label">기준일</span>
+      <input type="date" id="globalReportDate" data-change="syncGlobalDate" data-change-args='["$value"]'>
+      <span id="globalReportDayOfWeek" class="day-of-week-tag">(수)</span>
+      <span id="globalReportWeek" class="week-chip" title="기준일의 주차 (프로젝트 설정 > 기본정보 > 주차 표시 방식)"></span>
+    </div>
+    <span class="g-grow"></span>
+    <button type="button" class="g-search" id="gSearchBtn" data-click="GShell.openPalette" title="화면·WBS·요구사항·VOC·멤버 검색 (Ctrl+K)">🔍 <span>검색</span> <kbd>Ctrl+K</kbd></button>
+    <!-- 저장 상태 표시 (점) — 새로고침은 [전체 저장] 옆 단추 -->
+    <span class="storage-status-box g-status" id="storageStatusBox" title="저장 상태">
+      <span class="storage-icon" id="storageIcon">💾</span>
+      <span class="storage-text" id="storageStatusText">저장됨</span>
+    </span>
+    <span hidden><span id="headerDbStatusBadge" class="status-badge-chip chip-hold"></span><span id="fileSyncBadge" class="status-badge-chip chip-ready"></span></span>
+<!--#sa-->
+    <!-- [Local] 마스터 파일(최신 자료 파일) 다운로드 · 가져오기 — 자주 쓰므로 상단에 -->
+    <div class="g-menu-wrap">
+      <button type="button" class="btn btn-sm g-pkg-btn" id="gPkgBtn" data-click="LocalPkg.toggle" data-click-stop="1" title="마스터 파일(최신 자료 파일) 다운로드 · 가져오기 · 내 작업 파일 보내기">📦 마스터 파일 ▾</button>
+      <div class="g-menu g-menu-right g-pkg-menu" id="gPkgMenu" hidden></div>
+    </div>
+<!--#/sa-->
+    <button id="btnHeaderSaveAll" class="btn btn-primary btn-sm" data-click="SyncManager.save" data-click-args='[null, {"notify": true, "forceFile": true}]' title="모든 화면의 변경 내용을 한 번에 저장합니다. (Ctrl+S)">💾 전체 저장</button>
+    <button type="button" id="btnHeaderRefreshAll" class="btn btn-sm g-refresh-btn" data-btn="refresh" data-click="SyncManager.refresh" data-click-args='[null]' title="저장된 자료를 다시 읽어 모든 화면을 새로 그립니다 (고른 조건은 그대로)">🔄 전체 새로고침</button>
+    <!-- 화면 설정: 테마 · 글자 크기 · 메뉴 위치 · 밀도 -->
+    <div class="g-menu-wrap">
+      <button type="button" class="g-icon-btn g-labeled g-ui-btn" id="gUiBtn" data-click="GShell.toggleMenu" data-click-args='["gUiMenu"]' data-click-stop="1" aria-label="화면 설정" title="화면 설정 (테마 · 글자 크기 · 메뉴 위치)">🎨</button>
+      <div class="g-menu g-menu-right g-ui-menu" id="gUiMenu" hidden>
+        <div class="g-menu-title">테마</div>
+        <div class="g-theme-swatches" role="group" aria-label="테마" data-theme-swatches>
+        </div>
+        <div class="g-menu-title">글자 크기</div>
+        <div class="g-scale-btns" role="group" aria-label="글자 크기">
+          <button type="button" class="g-scale" data-scale="1" data-click="UiScale.set" data-click-args='[1]'>보통</button>
+          <button type="button" class="g-scale" data-scale="1.15" data-click="UiScale.set" data-click-args='[1.15]'>크게</button>
+          <button type="button" class="g-scale" data-scale="1.3" data-click="UiScale.set" data-click-args='[1.3]'>아주 크게</button>
+        </div>
+        <div class="g-menu-hint">글자 크기는 멤버마다 기억합니다. 넓은 표(WBS 등)는 가로로 스크롤될 수 있습니다.</div>
+        <div class="g-menu-sep"></div>
+        <label class="g-menu-field g-hidden-field">테마 (목록)
+          <select id="themeSelector" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
+          </select>
+        </label>
+        <label class="g-menu-field">메뉴 위치
+          <select id="headerLayoutSelector" data-change="LayoutManager.setLayout" data-change-args='["$value", true]'>
+            <option value="top-nav">위쪽 메뉴 (기본)</option>
+            <option value="sidebar-left">왼쪽 메뉴</option>
+          </select>
+        </label>
+        <label class="g-menu-field">화면 밀도
+          <select id="gDensitySelect" data-change="LayoutManager.setDensity" data-change-args='["$value", true]'>
+            <option value="standard">기본</option>
+            <option value="compact">촘촘</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="g-menu-wrap">
+      <button type="button" class="g-icon-btn g-labeled" id="gAdminBtn" data-click="GShell.toggleMenu" data-click-args='["gAdminMenu"]' data-click-stop="1" aria-label="관리" title="관리 (프로젝트 설정 · 시스템 설정 · 프로젝트)">⚙</button>
+      <div class="g-menu g-menu-right" id="gAdminMenu" hidden>
+        <div class="g-menu-title">관리</div>
+        <div id="gAdminItems"></div>
+        <button type="button" class="g-menu-item" id="btnHeaderManual" data-click="ManualViewer.open">❔ 도움말 (사용자 매뉴얼)</button>
+        <button type="button" class="g-menu-item" data-click="LegalNotice.open">⚖️ 오픈소스 고지</button>
+      </div>
+    </div>
+    <!-- 공지: 아이콘 + 건수 (멤버 메뉴 바로 앞) -->
+    <span id="headerNoticeCountBadge" class="g-icon-btn g-notice" data-click="NoticeCommManager.goToNotice" title="긴급 공지">🔔 1</span>
+    <div class="g-menu-wrap">
+      <button type="button" class="g-user" data-click="GShell.toggleMenu" data-click-args='["gUserMenu"]' data-click-stop="1" title="멤버 (언어 · 암호 · 잠금)">
+        <span id="headerCurrentUserBadge" class="status-badge-chip chip-progress">👤 admin</span> ▾
+      </button>
+      <div class="g-menu g-menu-right g-user-menu" id="gUserMenu" hidden>
+        <div class="g-menu-title">멤버</div>
+        <div class="g-menu-row g-user-who" id="gUserWho"></div>
+        <label class="g-menu-field">언어
+          <select id="gLangSelect" data-change="GShell.setLanguage" data-change-args='["$value"]'>
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <div class="g-menu-sep"></div>
+        <button type="button" class="g-menu-item" data-click="GShell.goPassword">🔑 암호 변경</button>
+        <button type="button" class="g-menu-item" data-click="AuthManager.manualLock">🔒 잠금 / 계정 전환</button>
+        <div class="g-menu-sep"></div>
+        <div class="g-menu-row g-user-ver" id="gUserVer"></div>
+      </div>
+    </div>
+  </header>
+  <nav class="g-nav" id="gNav" aria-label="메뉴"></nav>
+  <div id="projectArchivedBar" class="project-archived-bar" style="display:none;">📦 보관된 프로젝트입니다. 관리자 외에는 읽기 전용이며 변경 내용은 저장되지 않습니다.</div>
+
+  <!-- [요건 1] 메인 메뉴: 명칭 간략화 및 8개 탭 순서 정리 -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-click="switchTab" data-click-args='["tab-home"]' title="맞춤형 프로젝트 종합 홈 (이그제큐티브 브리핑 / 스마트 포털)">🏠 홈</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-dashboard"]' title="프로젝트 핵심 KPI 및 종합 진척 현황 대시보드">📊 대시보드</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-matrix"]' title="SDLC 및 개선과제 단계별 공정 매트릭스">📈 Phase 진척</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-gantt"]' title="WBS 일정 공정표 및 주차별 타임라인">🗓️ Gantt</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-wbs"]' title="4레벨 계층형 통합 WBS 공정표 관리">📋 WBS 공정</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-req"]' title="요구사항 추적표(RTM) 및 요건 단위 진행 현황">📌 요구사항</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-voc"]' title="현장 VOC 및 개선 이슈 등록 통제">📣 VOC·이슈</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-deliverables"]' title="차수별 필수 표준 산출물 검수 및 관리">📑 산출물</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-weekly-report"]' title="서브시스템별 금주 실적 및 차주 계획 주간보고서 작성·출력">📝 주간보고</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-meeting"]' title="회의일정 캘린더, 회의록 작성 및 ActionItem 통합 관리">📅 회의관리</button>
+    <button class="tab-btn u-c-primary" data-click="switchTab" data-click-args='["tab-merge"]' style="font-weight:800;" title="서브시스템별 Task데이터 및 마스터 통합 병합 센터">🔀 파일 Merge</button>
+    <button class="tab-btn" data-click="NoticeCommManager.goToNotice" style="color:#059669; font-weight:800;" title="프로젝트 공지 및 업무 소통 광장">📢 공지/소통</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-master"]' style="color:#0f766e; font-weight:800;" title="프로젝트 기본정보, 도메인/서브시스템, SDLC, REQ, 휴일, ID 규칙">🗂️ 프로젝트 설정</button>
+    <button class="tab-btn" data-click="switchTab" data-click-args='["tab-config"]' style="color:#7c3aed; font-weight:800;" title="화면 레이아웃, 보안 인증 정책, DB 연동 및 백업 복원">⚙️ Admin</button>
+  </div>
+
+  <div class="main-container">
