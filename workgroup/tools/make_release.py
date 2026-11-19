@@ -21,7 +21,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import app_config  # noqa: E402
 import build_initial_data  # noqa: E402
-import build_manual_docx  # noqa: E402
 import build_legal  # noqa: E402
 
 # [v1.2.0] 제품 이름·판·버전은 app.ini 에서 읽음 (국내판·Standard·Neo 공용 파일)
@@ -45,7 +44,6 @@ def iter_files():
 
 def make(out_dir: Path) -> Path:
     build_initial_data.build()
-    build_manual_docx.build()
     build_legal.build()
     app_config.build()
     out = out_dir / f"{PKG}.zip"

@@ -2751,6 +2751,11 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .pl-sum-ok { color: var(--chart-good-text); }
 .pl-sum-bad { color: var(--chart-bad-text); }
 
+/* 사용자 매뉴얼 보기 창 (common/manual-viewer.js) */
+.manual-viewer-box { width: min(1200px, 96vw); height: 90vh; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; }
+.manual-viewer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+.manual-viewer-frame { flex: 1; width: 100%; border: 0; background: var(--bg-card); }
+
 /* ==== 공통 꾸밈 클래스 (예전 인라인 style 을 옮김) — 같은 모양을 여러 곳에서 쓸 때. 색은 테마 변수만
    :is(.u-x, #u_) = id 하나만큼의 우선순위: 인라인 style 처럼 화면 규칙보다 앞서되 important 표시는 쓰지 않음 ==== */
 :is(.u-ai-center, #u_) { align-items: center; }

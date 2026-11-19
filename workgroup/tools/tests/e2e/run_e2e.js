@@ -160,7 +160,7 @@ async function localMain() {
   let tabOk = true;
   for (const t of tabs) { await page.evaluate(t => switchTab(t), t); await page.waitForTimeout(120); if (await page.evaluate(() => document.querySelector(".tab-pane.active").id) !== t) tabOk = false; }
   check(`Navigate all tabs (${tabs.length})`, tabOk);
-  check("Oracle / Excel-Access disabled", await page.evaluate(() => document.getElementById("btnDbMode_ORACLE").disabled && document.getElementById("btnDbMode_EXCEL_ACCESS").disabled));
+  check("Oracle disabled, no Excel/Access engine", await page.evaluate(() => document.getElementById("btnDbMode_ORACLE").disabled && !document.getElementById("btnDbMode_EXCEL_ACCESS")));
 
   // 3) WBS 레벨 변경 → 하위 과업 동반 + 재채번
   const lvl = await page.evaluate(() => {
@@ -482,7 +482,7 @@ async function localMain() {
     MergeTable.selectGroup("work"); const w = MergeTable.selected().join(); MergeTable.selectGroup("base"); const b2 = MergeTable.selected().join();
     o.groups = /wbs/.test(w) && !/config/.test(w) && /config/.test(b2) && !/wbs/.test(b2) && !document.querySelector(".mt-pkg");
     o.tabs = [...document.querySelectorAll('.master-subtab-bar[data-group="master"] .master-subtab-btn')].slice(0, 3).map(x => x.textContent.trim()).join("|");
-    o.manual = /사용자 매뉴얼/.test(ManualViewer.standaloneManualHtml) && /릴리즈 노트/.test(ManualViewer.standaloneManualHtml) && !ManualViewer.docxBase64;
+    ManualViewer.open(); o.manual = getComputedStyle(document.getElementById("manualViewerModal")).display === "flex" && document.querySelector("#manualViewerModal iframe").getAttribute("src") === "manual.html"; ManualViewer.close();
     const cur = document.body.getAttribute("data-theme");
     changeTheme("classic"); await wait(300); o.classic = document.querySelectorAll("svg[data-ico]").length === 0;
     changeTheme("navy"); await wait(300); o.navy = document.body.getAttribute("data-theme") === "navy" && document.querySelectorAll("svg[data-ico]").length > 10;

@@ -43,7 +43,7 @@ def load_app_config(base_dir):
 
 
 
-FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "db_excel_access", "local_file_sync")
+FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "local_file_sync")
 
 
 def _on(v, default="0"):

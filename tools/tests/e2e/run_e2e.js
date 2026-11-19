@@ -547,7 +547,8 @@ async function main() {
       document.getElementById("delivBulkRound").value = "1차"; document.getElementById("delivBulkDate").value = "2027-03-31"; DelivBulkDate.apply(); await wait(200);
       document.getElementById("confirmDialogOkBtn").click(); await wait(300);
       o.bulk = deliverablesData[0].pDate === "2027-03-31" && deliverablesData[1].pDate === "2027-01-01"; deliverablesData = keepD;
-      const hl = document.querySelector("#gAdminMenu a#btnHeaderManual"); o.help = !!hl && hl.getAttribute("href") === "manual.html" && hl.nextElementSibling && /오픈소스 고지/.test(hl.nextElementSibling.textContent) && /사용자 매뉴얼/.test(await (await fetch("manual.html")).text());
+      const hl = document.querySelector("#gAdminMenu #btnHeaderManual"); ManualViewer.open(); const fr = document.querySelector("#manualViewerModal iframe"); const shown = getComputedStyle(document.getElementById("manualViewerModal")).display === "flex"; ManualViewer.close();
+      o.help = !!hl && hl.tagName === "BUTTON" && hl.nextElementSibling && /오픈소스 고지/.test(hl.nextElementSibling.textContent) && shown && fr && fr.getAttribute("src") === "manual.html" && /사용자 매뉴얼/.test(await (await fetch("manual.html")).text());
       GShell.go("tab-config"); SubTabs.show("config", "data"); await wait(400);
       o.delRow = /프로젝트 삭제/.test(document.getElementById("daActions").textContent) && typeof DataAdmin.removeProject === "function" && typeof ProjectManager.removeNow === "function";
       o.tabs = [...document.querySelectorAll('.master-subtab-bar[data-group="master"] .master-subtab-btn')].slice(0, 3).map(x => x.textContent.trim()).join("|");

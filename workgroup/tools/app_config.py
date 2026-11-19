@@ -17,7 +17,7 @@ DEFAULTS = {
 }
 # 판 코드 → 표시 이름 (app.ini 의 edition_name 으로 바꿀 수 있음, 국내판은 표시하지 않음)
 EDITION_NAMES = {"KR": "", "MAIN": "", "STANDARD": "Standard", "NEO": "Neo", "WORKGROUP": "Workgroup", "ENTERPRISE": "Enterprise"}
-FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "db_excel_access", "local_file_sync")
+FEATURE_KEYS = ("chat", "server_heartbeat", "db_oracle", "local_file_sync")
 
 
 def _on(v, default="0"):

@@ -5,13 +5,12 @@ Object.assign(DbConnector, {
   CONFIG_STORAGE_KEY: "WBS_DB_CONNECTOR_CONFIG_2026_V1_1",
 
   config: {
-    mode: "SQLITE", // [Workgroup 0.4] 서버 DB 만 (서버 없이 쓰려면 IOSTAR-PM Standalone) — SQLITE | ORACLE | EXCEL_ACCESS
+    mode: "SQLITE", // 서버 DB 는 SQLite (Oracle 은 Enterprise 판 예정 — 화면에서 비활성)
     apiBaseUrl: "http://127.0.0.1:8080",
     connected: false,
     lastSyncTime: "-",
     sqlite: { filePath: "./data/wbs_enterprise.db", journalMode: "WAL", busyTimeout: 5000 },
-    oracle: { connType: "SERVICE_NAME", host: "10.10.20.15", port: 1521, serviceOrSid: "ORCL", user: "WBS_ADMIN", password: "", tablePrefix: "TB_WBS_" },
-    excelAccess: { subType: "ACCESS_ODBC", filePath: "./data/WBS_Database.accdb", odbcDriver: "Microsoft Access Driver (*.mdb, *.accdb)", lockTimeoutMs: 3000, readOnly: false }
+    oracle: { connType: "SERVICE_NAME", host: "10.10.20.15", port: 1521, serviceOrSid: "ORCL", user: "WBS_ADMIN", password: "", tablePrefix: "TB_WBS_" }
   },
 
   DDL_SCRIPTS: {
@@ -183,83 +182,6 @@ CREATE TABLE TB_WBS_VOC (
   STATUS VARCHAR2(50) DEFAULT '대기',
   ACTION_NOTE VARCHAR2(1000),
   SORT_ORDER NUMBER(6) DEFAULT 0
-);`,
-
-    EXCEL_ACCESS: `-- [MS Access (.accdb/.mdb) ODBC & MS Excel (.xlsx) DB] 스키마 정의
-CREATE TABLE TB_WBS_CONFIG (
-  PROJECT_ID VARCHAR(50) PRIMARY KEY,
-  PROJECT_START_DATE VARCHAR(10),
-  PROJECT_END_DATE VARCHAR(10),
-  REPORT_DATE VARCHAR(10),
-  WEEK_START_DAY INT,
-  THEME VARCHAR(30),
-  HOLIDAYS_JSON LONGTEXT,
-  STD_DELIV_JSON LONGTEXT,
-  UPDATED_AT VARCHAR(30)
-);
-
-CREATE TABLE TB_WBS_SUBSYSTEM (
-  SUBSYSTEM_CODE VARCHAR(100) PRIMARY KEY,
-  SUBSYSTEM_NAME VARCHAR(200),
-  PROJ_TYPE VARCHAR(20),
-  WEIGHT DOUBLE,
-  PM_NAME VARCHAR(100),
-  DESCRIPTION LONGTEXT,
-  SORT_ORDER INT
-);
-
-CREATE TABLE TB_WBS_TASK (
-  ROW_SEQ INT PRIMARY KEY,
-  WBS_ID VARCHAR(50),
-  LVL INT,
-  SUBSYSTEM_NAME VARCHAR(200),
-  TASK_NAME VARCHAR(255),
-  WEIGHT DOUBLE,
-  REQ_ID VARCHAR(100),
-  PLAN_START VARCHAR(10),
-  PLAN_END VARCHAR(10),
-  ACT_START VARCHAR(10),
-  ACT_END VARCHAR(10),
-  PLAN_PROG DOUBLE,
-  ACT_PROG DOUBLE,
-  OUTPUT_NOTE VARCHAR(255)
-);
-
-CREATE TABLE TB_WBS_DELIVERABLE (
-  DELIV_ID INT PRIMARY KEY,
-  SUBMIT_ROUND VARCHAR(30),
-  SUBSYSTEM_NAME VARCHAR(200),
-  PHASE_NAME VARCHAR(100),
-  DELIV_NAME VARCHAR(255),
-  PLAN_DATE VARCHAR(10),
-  ACT_DATE VARCHAR(10),
-  STATUS VARCHAR(50),
-  MANAGER_NAME VARCHAR(100),
-  REMARKS LONGTEXT
-);
-
-CREATE TABLE TB_WBS_REQ (
-  REQ_ID VARCHAR(100) PRIMARY KEY,
-  SUBSYSTEM_NAME VARCHAR(200),
-  REQ_NAME VARCHAR(255),
-  REQ_TYPE VARCHAR(50),
-  PRIORITY VARCHAR(30),
-  ACCEPT_YN VARCHAR(30),
-  STATUS VARCHAR(50),
-  SORT_ORDER INT
-);
-
-CREATE TABLE TB_WBS_VOC (
-  VOC_ID VARCHAR(100) PRIMARY KEY,
-  SUBSYSTEM_NAME VARCHAR(200),
-  PRIORITY VARCHAR(30),
-  VOC_TITLE VARCHAR(255),
-  REQUESTER VARCHAR(100),
-  REQ_DATE VARCHAR(10),
-  TARGET_DATE VARCHAR(10),
-  STATUS VARCHAR(50),
-  ACTION_NOTE LONGTEXT,
-  SORT_ORDER INT
 );`
   },
 
@@ -277,10 +199,10 @@ CREATE TABLE TB_WBS_VOC (
         const saved = JSON.parse(raw);
         delete saved.saveMode;
         this.config = Object.assign({}, this.config, saved);
-        ["sqlite", "oracle", "excelAccess"].forEach(k => {
+        ["sqlite", "oracle"].forEach(k => {
           if (saved[k]) this.config[k] = Object.assign({}, this.config[k], saved[k]);
         });
-        // 이전 버전에서 로컬 저장소 · Oracle · Excel/Access 를 골라 둔 경우도 서버 DB(SQLite)로
+        // 이전 버전에서 로컬 저장소 · Oracle · Excel/Access 를 골라 둔 경우도 서버 DB(SQLite)로 (예전 설정의 excelAccess 는 버림)
         if (!this.SUPPORTED_MODES.includes(this.config.mode)) this.config.mode = "SQLITE";
       }
     } catch (e) {}
@@ -296,16 +218,16 @@ CREATE TABLE TB_WBS_VOC (
   },
 
   // 저장 모드 변경: 로컬 저장소 ↔ DB 서버 (변경 후 재멤버 선택/재조회를 위해 화면을 다시 불러옴)
-  SUPPORTED_MODES: ["SQLITE"], // [Workgroup 0.4] 로컬 저장소 모드 없음 · Oracle / Excel·Access 비활성화
+  SUPPORTED_MODES: ["SQLITE"], // 로컬 저장소 모드 없음 · Oracle 비활성
 
   selectMode(mode) {
-    // [Workgroup] Oracle · Excel/Access 는 app.ini [features] 로 켜기 전에는 선택 불가 (Enterprise 판 예정)
-    if ((mode === "ORACLE" && !Features.on("db_oracle")) || (mode === "EXCEL_ACCESS" && !Features.on("db_excel_access"))) {
-      showToast("🏛️ " + Features.offText(mode === "ORACLE" ? "db_oracle" : "db_excel_access"));
+    // Oracle 은 app.ini [features] 로 켜기 전에는 선택 불가 (Enterprise 판 예정)
+    if (mode === "ORACLE" && !Features.on("db_oracle")) {
+      showToast("🏛️ " + Features.offText("db_oracle"));
       return;
     }
     if (!this.SUPPORTED_MODES.includes(mode)) {
-      showToast("⛔ Oracle · Excel/Access 연동은 비활성화되었습니다. 서버 DB 는 SQLite 를 사용하세요.");
+      showToast("⛔ Oracle 연동은 비활성화되었습니다. 서버 DB 는 SQLite 를 사용하세요.");
       return;
     }
     if (mode === this.config.mode) return;
@@ -324,19 +246,6 @@ CREATE TABLE TB_WBS_VOC (
     } else {
       go();
     }
-  },
-
-  selectExcelAccessSubType(subType) {
-    this.config.excelAccess.subType = subType;
-    if (subType === "ACCESS_ODBC") {
-      if (this.config.excelAccess.filePath.endsWith(".xlsx")) this.config.excelAccess.filePath = "./data/WBS_Database.accdb";
-      this.config.excelAccess.odbcDriver = "Microsoft Access Driver (*.mdb, *.accdb)";
-    } else {
-      if (/\.(accdb|mdb)$/.test(this.config.excelAccess.filePath)) this.config.excelAccess.filePath = "./data/WBS_Shared_DB.xlsx";
-      this.config.excelAccess.odbcDriver = "openpyxl / Microsoft Excel Driver (*.xls, *.xlsx)";
-    }
-    this.saveConfig();
-    this.renderConfigForm();
   },
 
   readFormValues() {
@@ -358,18 +267,13 @@ CREATE TABLE TB_WBS_VOC (
       this.config.oracle.user = getVal("dbOracleUser") || "WBS_ADMIN";
       this.config.oracle.password = getVal("dbOraclePassword");
       this.config.oracle.tablePrefix = getVal("dbOraclePrefix") || "TB_WBS_";
-    } else if (this.config.mode === "EXCEL_ACCESS") {
-      this.config.excelAccess.subType = getVal("dbExcelAccessSubType") || "ACCESS_ODBC";
-      this.config.excelAccess.filePath = getVal("dbExcelAccessPath") || "./data/WBS_Database.accdb";
-      this.config.excelAccess.odbcDriver = getVal("dbExcelAccessDriver") || "Microsoft Access Driver (*.mdb, *.accdb)";
-      this.config.excelAccess.lockTimeoutMs = parseInt(getVal("dbExcelAccessLockTimeout"), 10) || 3000;
     }
     this.saveConfig();
   },
 
   renderConfigForm() {
     const mode = this.config.mode;
-    ["LOCAL", "SQLITE", "ORACLE", "EXCEL_ACCESS"].forEach(m => {
+    ["LOCAL", "SQLITE", "ORACLE"].forEach(m => {
       const btn = document.getElementById(`btnDbMode_${m}`);
       if (btn) btn.className = m === mode ? "btn btn-primary btn-sm" : "btn btn-secondary btn-sm";
       const panel = document.getElementById(`panelDbMode_${m}`);
@@ -391,10 +295,6 @@ CREATE TABLE TB_WBS_VOC (
     setVal("dbOracleUser", this.config.oracle.user);
     setVal("dbOraclePassword", this.config.oracle.password);
     setVal("dbOraclePrefix", this.config.oracle.tablePrefix);
-    setVal("dbExcelAccessSubType", this.config.excelAccess.subType);
-    setVal("dbExcelAccessPath", this.config.excelAccess.filePath);
-    setVal("dbExcelAccessDriver", this.config.excelAccess.odbcDriver);
-    setVal("dbExcelAccessLockTimeout", this.config.excelAccess.lockTimeoutMs);
 
     const ddlBox = document.getElementById("dbDdlPreviewBox");
     if (ddlBox) {
@@ -418,7 +318,6 @@ CREATE TABLE TB_WBS_VOC (
     let target = "";
     if (m === "SQLITE") target = `SQLite 3 (<code>${escapeHtml(this.config.sqlite.filePath)}</code>)`;
     if (m === "ORACLE") target = `Oracle DB (<code>${escapeHtml(this.config.oracle.host)}:${this.config.oracle.port}/${escapeHtml(this.config.oracle.serviceOrSid)}</code>)`;
-    if (m === "EXCEL_ACCESS") target = `${this.config.excelAccess.subType === "ACCESS_ODBC" ? "MS Access (.accdb)" : "MS Excel (.xlsx)"} (<code>${escapeHtml(this.config.excelAccess.filePath)}</code>)`;
     return `<b>현재 모드:</b> ${target} | ${statusBadge} | ${saveModeBadge} | 최근 동기화: <b>${escapeHtml(this.config.lastSyncTime)}</b>`;
   },
 
@@ -426,7 +325,7 @@ CREATE TABLE TB_WBS_VOC (
     const badge = document.getElementById("headerDbStatusBadge");
     if (badge) {
       const m = this.config.mode;
-      const names = { LOCAL: "LocalStorage", SQLITE: "SQLite", ORACLE: "Oracle", EXCEL_ACCESS: this.config.excelAccess.subType === "ACCESS_ODBC" ? "Access" : "Excel DB" };
+      const names = { LOCAL: "LocalStorage", SQLITE: "SQLite", ORACLE: "Oracle" };
       const label = names[m] || m;
       if (m === "LOCAL") {
         badge.className = "status-badge-chip chip-ready";

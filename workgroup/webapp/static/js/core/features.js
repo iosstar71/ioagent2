@@ -6,8 +6,8 @@
 //  - 사용: Features.on("chat") / Features.lockMode() / Features.lockHours()
 // =============================================================================
 var Features = {
-  DEFAULTS: { chat: false, server_heartbeat: false, db_oracle: false, db_excel_access: false, local_file_sync: false },
-  LABELS: { chat: "실시간 채팅", server_heartbeat: "서버 연결 감시", db_oracle: "Oracle DB", db_excel_access: "Excel/Access DB", local_file_sync: "로컬 파일 직접 동기화" },
+  DEFAULTS: { chat: false, server_heartbeat: false, db_oracle: false, local_file_sync: false },
+  LABELS: { chat: "실시간 채팅", server_heartbeat: "서버 연결 감시", db_oracle: "Oracle DB", local_file_sync: "로컬 파일 직접 동기화" },
   cfg() { return typeof APP_CONFIG !== "undefined" ? APP_CONFIG : {}; },
   on(name) {
     const f = this.cfg().features;
