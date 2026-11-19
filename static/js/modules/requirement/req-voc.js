@@ -38,13 +38,13 @@ function renderReqMasterTable() {
     const tr = document.createElement("tr");
     tr.setAttribute("data-rec-idx", idx);  // 오른쪽 상세 패널 (RecordPanel)
     tr.innerHTML = `
-      <td><input type="text" value="${escapeHtml(row.id)}" style="width:98px; font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "id", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
+      <td><input class="u-bold" type="text" value="${escapeHtml(row.id)}" style="width:98px;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "id", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
       <td>
         <select style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "system", "$value", "renderReqMasterTable", "renderPhaseMatrix", "renderDashboard", "persistChanges")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "name", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
+      <td><input class="u-w100" type="text" value="${escapeHtml(row.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "name", "$value", "renderPhaseMatrix", "persistChanges")}"></td>
       <td>
         <select data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "type", "$value", "persistChanges")}">
           <option value="기능" ${row.type === "기능" ? "selected" : ""}>기능</option>
@@ -71,8 +71,8 @@ function renderReqMasterTable() {
           <option value="검토중" ${row.accept === "검토중" ? "selected" : ""}>검토중</option>
         </select>
       </td>
-      <td style="text-align:center;"><b>${taskCount}</b>개</td>
-      <td style="text-align:right;"><b>${avgProg}%</b></td>
+      <td class="u-tc"><b>${taskCount}</b>개</td>
+      <td class="u-tr"><b>${avgProg}%</b></td>
       <td>
         <select class="status-tag ${tagClass}" data-change="UiH.set" data-change-args="${UiEvents.args("reqMasterData", idx, "status", "$value", "renderReqMasterTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">
           <option value="대기" ${row.status === "대기" ? "selected" : ""}>대기</option>
@@ -178,7 +178,7 @@ function renderVocTable() {
           <option value="하" ${row.priority === "하" ? "selected" : ""}>하</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.title)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "title", "$value", "renderDashboard", "persistChanges")}"></td>
+      <td><input class="u-w100" type="text" value="${escapeHtml(row.title)}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "title", "$value", "renderDashboard", "persistChanges")}"></td>
       <td><input type="text" value="${escapeHtml(row.requester || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "requester", "$value", "persistChanges")}"></td>
       <td>
         <div class="date-input-wrap">
@@ -202,7 +202,7 @@ function renderVocTable() {
           <option value="삭제" ${row.status === "삭제" ? "selected" : ""}>삭제</option>
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.action || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "action", "$value", "persistChanges")}"></td>
+      <td><input class="u-w100" type="text" value="${escapeHtml(row.action || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("vocData", idx, "action", "$value", "persistChanges")}"></td>
       <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("vocData", idx, "renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);

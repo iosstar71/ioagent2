@@ -204,7 +204,7 @@ var ProcessLib = {
       return `<div class="step-card pl-card">
         <div class="pl-card-head">
           <div><strong>${escapeHtml(t.name)}</strong> <code>${escapeHtml(t.code)}</code></div>
-          <div style="display:flex; gap:6px;">
+          <div class="u-flex u-gap-6">
             <button class="btn btn-secondary btn-sm" data-click="ProcessLib.openEdit" data-click-args="${UiEvents.args(kind, idx)}">✏️ 편집</button>
             <button class="btn btn-danger btn-sm" data-click="ProcessLib.remove" data-click-args="${UiEvents.args(kind, idx)}">삭제</button>
           </div>

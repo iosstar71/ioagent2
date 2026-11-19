@@ -82,7 +82,7 @@ function renderWbsTable() {
 
     // 하위 레벨이 접혀 있는지 표시 뱃지
     const hasHiddenChildren = !isLeaf && row.level === maxLvl;
-    const foldBadge = hasHiddenChildren ? `<span style="font-size:var(--fs-2xs, 10px); color:var(--accent); font-weight:bold; margin-right:3px;" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
+    const foldBadge = hasHiddenChildren ? `<span class="u-bold u-mr-3" style="font-size:var(--fs-2xs, 10px); color:var(--accent);" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
 
     tr.innerHTML = `
       <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
@@ -93,7 +93,7 @@ function renderWbsTable() {
         </div>
       </td>
       <td>
-        <select style="width:86px; padding:2px 3px; font-size:var(--fs-xs, 11px);" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
+        <select class="u-fs-xs" style="width:86px; padding:2px 3px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
@@ -104,7 +104,7 @@ function renderWbsTable() {
           <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:180px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
-      <td style="text-align:center;"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
+      <td class="u-tc"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
       <td class="col-fold"><input type="number" min="0" step="0.1" value="${row.weight === undefined || row.weight === null ? "" : row.weight}" style="width:52px; padding:2px 3px;"${wWarn.has(row) ? ` class="weight-warn" title="${escapeAttr(wWarn.get(row))}"` : ` title="가중치 (서브시스템 100 기준, 상위 = 하위 합, 소수점 1자리)"`} data-change="WbsWeight.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td class="col-fold"><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
@@ -146,8 +146,8 @@ function renderWbsTable() {
         </div>
       </td>
 
-      <td><input type="number" value="${row.pProg}" readonly style="width:44px; padding:2px 3px; text-align:right;"></td>
-      <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:44px; padding:2px 3px; text-align:right;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
+      <td><input class="u-tr" type="number" value="${row.pProg}" readonly style="width:44px; padding:2px 3px;"></td>
+      <td><input class="u-tr" type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
       <td class="col-fold"><input type="text" class="wbs-owner" list="wbsOwnerList" maxlength="40" value="${escapeHtml(row.owner || "")}" title="${isLeaf ? "담당자 (목록에서 고르거나 직접 입력, 1명)" : "담당자 — 상위 Task 에 지정하면 하위 Task 에도 자동 지정"}" data-change="WbsOwner.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td class="col-fold"><input type="text" value="${escapeHtml(row.output || "")}" style="width:106px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>

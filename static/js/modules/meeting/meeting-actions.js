@@ -102,7 +102,7 @@ Object.assign(MeetingManager, {
     tbody.innerHTML = "";
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:24px; color:var(--text-muted);">ℹ️ 조회 조건에 부합하는 Action Item이 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td class="u-tc u-p-24 u-c-muted" colspan="11">ℹ️ 조회 조건에 부합하는 Action Item이 없습니다.</td></tr>`;
       return;
     }
 

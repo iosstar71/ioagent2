@@ -80,7 +80,7 @@ var DataAdmin = {
         <td><b>${a.label}</b></td>
         <td class="mt-desc">${escapeHtml(a.what)}</td>
         <td class="mt-desc">${escapeHtml(a.keep)}</td>
-        <td style="text-align:center; white-space:nowrap;">${why
+        <td class="u-tc u-nowrap">${why
           ? `<span class="mt-lock">🔒 ${escapeHtml(why)}</span>`
           : `<button class="btn btn-sm" data-btn="${k === "tasks" ? "warn" : "danger"}" data-click="DataAdmin.run" data-click-args="${UiEvents.args(k)}">실행</button>`}</td>
       </tr>`;

@@ -205,8 +205,8 @@ var ProjectManager = {
         <td><b>${escapeHtml(p.name || p.id)}</b>${cur ? ' <span class="status-tag tag-progress">현재</span>' : ""}</td>
         <td>${p.status === "ARCHIVED" ? '<span class="status-tag tag-ready" title="작업자 선택 화면의 프로젝트 목록에 나오지 않고, 관리자 외에는 읽기 전용입니다. [다시 사용]으로 되돌립니다.">사용 중지</span>' : '<span class="status-tag tag-completed">사용 중</span>'}</td>
         <td>${I18N.tf("멤버 {n}명", { n: this.memberCount(p) })}</td>
-        <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(p.createdAt || "-")}</td>
-        <td style="display:flex; gap:4px; flex-wrap:wrap;">
+        <td class="u-fs-xs">${escapeHtml(p.createdAt || "-")}</td>
+        <td class="u-flex u-gap-4 u-wrap">
           ${cur ? "" : btn("열기", "switchTo", "nav", [p.id])}
           ${manage ? btn("이름 변경", "rename", "neutral", [p.id]) : ""}
           ${this.isAdmin() && p.id !== ProjectContext.DEFAULT ? btn(p.status === "ARCHIVED" ? "다시 사용" : "사용 중지", "toggleArchive", "warn", [p.id]) : ""}
@@ -432,14 +432,14 @@ var UserCopy = {
           <button class="btn btn-sm" data-btn="cancel" data-click="UserCopy.close">닫기</button>
         </div>
         <div class="pm-hint">고른 멤버의 역할·담당 서브시스템·부서를 지금 프로젝트로 복사합니다. 계정(멤버 ID·암호)은 같으므로 같은 암호로 이 프로젝트에 작업할 수 있습니다. 이미 이 프로젝트에 있는 멤버는 건너뜁니다.</div>
-        <label class="pm-check" style="gap:8px;">복사할 프로젝트 <select id="ucSource" data-change="UserCopy.load"></select></label>
+        <label class="pm-check u-gap-8">복사할 프로젝트 <select id="ucSource" data-change="UserCopy.load"></select></label>
         <div class="table-container" style="max-height:320px;">
           <table class="matrix-table pm-table">
             <thead><tr><th style="width:36px;"><input type="checkbox" id="ucAll" data-change="UserCopy.toggleAll" aria-label="모두 선택"></th><th>멤버 ID</th><th>이름</th><th>역할</th><th>담당</th><th>부서</th><th style="width:100px;">이 프로젝트</th></tr></thead>
             <tbody id="ucBody"></tbody>
           </table>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div class="u-flex u-jc-between u-ai-center u-gap-8">
           <span id="ucSummary" class="pm-role-tag"></span>
           <button class="btn btn-sm" data-btn="add" data-click="UserCopy.copy">📥 선택한 멤버 복사</button>
         </div>
@@ -480,7 +480,7 @@ var UserCopy = {
       return `<tr><td><input type="checkbox" class="uc-pick" value="${escapeAttr(m.empNo)}" ${has ? "disabled" : "checked"} aria-label="${escapeAttr(m.empNo)} 선택"></td>
         <td><code>${escapeHtml(m.empNo)}</code></td><td>${escapeHtml(m.name || "")}</td><td>${escapeHtml(AuthManager.roleLabel(AuthManager.normalizeRole(m.role)))}</td>
         <td>${escapeHtml(m.subsystem || "ALL")}</td><td>${escapeHtml(m.dept || "")}</td><td>${has ? '<span class="status-tag tag-completed">이미 있음</span>' : '<span class="status-tag tag-ready">복사 대상</span>'}</td></tr>`;
-    }).join("") : `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">이 프로젝트에 멤버가 없습니다.</td></tr>`;
+    }).join("") : `<tr><td class="u-tc u-p-14 u-c-muted" colspan="7">이 프로젝트에 멤버가 없습니다.</td></tr>`;
     const all = document.getElementById("ucAll");
     if (all) all.checked = true;
     document.getElementById("ucSummary").textContent = `멤버 ${members.length}명 · 이미 있음 ${members.filter(m => here.has(String(m.empNo).toLowerCase())).length}명`;

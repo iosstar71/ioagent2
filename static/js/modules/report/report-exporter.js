@@ -206,7 +206,7 @@ const BackupHistoryManager = {
       if (where) where.textContent = `이 브라우저에 최근 12개${admin ? " · 모든 프로젝트" : " · 지금 프로젝트"}`;
     }
     if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">아직 만든 스냅샷이 없습니다. (올리기 · 복원 · 초기화 직전에 자동으로 만들어지고, [+ 지금 스냅샷 만들기]로 직접 만들 수 있습니다)</td></tr>`;
+      tbody.innerHTML = `<tr><td class="u-tc u-c-muted u-p-14" colspan="6">아직 만든 스냅샷이 없습니다. (올리기 · 복원 · 초기화 직전에 자동으로 만들어지고, [+ 지금 스냅샷 만들기]로 직접 만들 수 있습니다)</td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map(({ s, idx, server }) => {
@@ -218,12 +218,12 @@ const BackupHistoryManager = {
       const dl = server ? `data-click="BackupHistoryManager.downloadServer" data-click-args="${UiEvents.args(s.projectId, s.id)}"` : `data-click="BackupHistoryManager.downloadSnapshotByIndex" data-click-args="${UiEvents.args(idx)}"`;
       const rs = server ? `data-click="BackupHistoryManager.restoreServer" data-click-args="${UiEvents.args(s.projectId, s.id)}"` : `data-click="BackupHistoryManager.restoreSnapshotByIndex" data-click-args="${UiEvents.args(idx)}"`;
       return `<tr>
-        <td style="font-weight:bold; color:var(--primary);">${escapeHtml(s.createdAt || "")}</td>
+        <td class="u-bold u-c-primary">${escapeHtml(s.createdAt || "")}</td>
         <td><span class="status-badge-chip chip-progress">${escapeHtml(s.actionType || "")}</span></td>
         <td><b>${escapeHtml(s.projectName || s.projectId || "(이전 버전)")}</b>${s.targetSubsystem && s.targetSubsystem !== "ALL" ? " · " + escapeHtml(s.targetSubsystem) : ""}</td>
-        <td style="font-family:monospace; font-size:var(--fs-xs, 11px);">${escapeHtml(s.filename || "")}</td>
-        <td style="font-size:var(--fs-xs, 11px);">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건${extra}</td>
-        <td style="text-align:center; white-space:nowrap;">
+        <td class="u-fs-xs" style="font-family:monospace;">${escapeHtml(s.filename || "")}</td>
+        <td class="u-fs-xs">WBS ${s.wbsCount}건 · 산출물 ${s.delivCount}건 · REQ ${s.reqCount}건 · VOC ${s.vocCount}건${extra}</td>
+        <td class="u-tc u-nowrap">
           <button class="btn btn-primary btn-sm" ${dl}>📥 JSON 다운로드</button>
           <button class="btn btn-warning btn-sm" ${other ? "disabled title=\"다른 프로젝트의 스냅샷입니다. 그 프로젝트로 들어가서 복원하세요.\"" : ""} ${rs}>⏪ 이 시점으로 복원</button>
         </td>

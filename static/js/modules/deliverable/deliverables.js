@@ -41,7 +41,7 @@ function renderDeliverablesTable() {
           ${["요구사항정의단계", "분석설계단계", "구현단계", "통합테스트단계", "시험검증단계", "이행단계", "안정화단계", "이행안정화단계", "구축단계"].map(p => `<option value="${p}" ${row.phase === p ? "selected" : ""}>${p}</option>`).join("")}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(row.name)}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "name", "$value", "renderDashboard", "persistChanges")}"></td>
+      <td><input class="u-w100" type="text" value="${escapeHtml(row.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "name", "$value", "renderDashboard", "persistChanges")}"></td>
       <td>
         <div class="date-input-wrap">
           <input type="date" value="${row.pDate || ""}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "pDate", "$value", "renderDeliverablesTable", "persistChanges")}">
@@ -63,8 +63,8 @@ function renderDeliverablesTable() {
         </select>
       </td>
       <td><input type="text" value="${escapeHtml(row.manager || "")}" style="width:80px;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "manager", "$value", "persistChanges")}"></td>
-      <td style="text-align:center;">${typeof AttachManager !== "undefined" ? AttachManager.cellHtml(idx, row) : ""}</td>
-      <td><input type="text" value="${escapeHtml(row.remarks || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "remarks", "$value", "persistChanges")}"></td>
+      <td class="u-tc">${typeof AttachManager !== "undefined" ? AttachManager.cellHtml(idx, row) : ""}</td>
+      <td><input class="u-w100" type="text" value="${escapeHtml(row.remarks || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("deliverablesData", idx, "remarks", "$value", "persistChanges")}"></td>
       <td><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("deliverablesData", idx, "renderDeliverablesTable", "renderDashboard", "renderPhaseMatrix", "persistChanges")}">×</button></td>
     `;
     tbody.appendChild(tr);

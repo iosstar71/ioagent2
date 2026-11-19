@@ -5,6 +5,7 @@ Counts, per screen and in total:
   - hard-coded hex colours inside those inline styles
   - !important in static/css/style.css
   - hard-coded hex colours in JS modules (static/js/modules/<module>, static/js/common, static/js/core)
+  - inline style="..." written inside JS (screen pieces built in code), per module
 
 Usage:
   python tools/check_ui_debt.py           check against tools/ui_debt.json (fail if any count went up;
@@ -75,13 +76,27 @@ def js_counts():
     return out
 
 
+def js_inline_counts():
+    out = {}
+    js = WEB / "static" / "js"
+    for f in sorted(js.rglob("*.js")):
+        if f.name in SKIP_JS:
+            continue
+        rel = f.relative_to(js).parts
+        key = "js/" + ("modules/" + rel[1] if rel[0] == "modules" else rel[0])
+        text = re.sub(r"/\*.*?\*/", "", f.read_text(encoding="utf-8"), flags=re.S)
+        out[key] = out.get(key, 0) + text.count('style="')
+    return out
+
+
 def current():
-    cur = {"css_important": css_counts()["important"], "html": html_counts(), "js_hex": js_counts()}
+    cur = {"css_important": css_counts()["important"], "html": html_counts(), "js_hex": js_counts(), "js_inline": js_inline_counts()}
     cur["total"] = {
         "css_important": cur["css_important"],
         "html_inline": sum(v["inline"] for v in cur["html"].values()),
         "html_inline_hex": sum(v["inline_hex"] for v in cur["html"].values()),
         "js_hex": sum(cur["js_hex"].values()),
+        "js_inline": sum(cur["js_inline"].values()),
     }
     return cur
 
@@ -96,15 +111,15 @@ def flat(d, prefix=""):
 
 def report(cur):
     t = cur["total"]
-    print(f"[UI debt] !important={t['css_important']}  inline styles={t['html_inline']} (hex {t['html_inline_hex']})  js hex colours={t['js_hex']}")
+    print(f"[UI debt] !important={t['css_important']}  inline styles={t['html_inline']} (hex {t['html_inline_hex']})  js hex colours={t['js_hex']}  js inline styles={t['js_inline']}")
     rows = sorted(cur["html"].items(), key=lambda x: -x[1]["inline"])
     print("  screen               inline  hex")
     for name, v in rows:
         print(f"  {name:<20} {v['inline']:>6} {v['inline_hex']:>4}")
-    print("  js module            hex")
-    for name, v in sorted(cur["js_hex"].items(), key=lambda x: -x[1]):
-        if v:
-            print(f"  {name:<20} {v:>4}")
+    print("  js module            hex  inline")
+    for name in sorted(cur["js_hex"], key=lambda n: -(cur["js_hex"][n] + cur["js_inline"].get(n, 0))):
+        if cur["js_hex"][name] or cur["js_inline"].get(name):
+            print(f"  {name:<20} {cur['js_hex'][name]:>4} {cur['js_inline'].get(name, 0):>6}")
 
 
 def main():
@@ -131,7 +146,7 @@ def main():
         for k, old, new in better:
             print(f"   - {k}: {old} -> {new} (lower, baseline updated)")
     t = cur["total"]
-    print(f"[OK] UI style debt not increased (!important {t['css_important']}, inline {t['html_inline']}, js hex {t['js_hex']})")
+    print(f"[OK] UI style debt not increased (!important {t['css_important']}, inline {t['html_inline']}, js hex {t['js_hex']}, js inline {t['js_inline']})")
     return 0
 
 

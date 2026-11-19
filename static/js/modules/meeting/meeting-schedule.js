@@ -158,8 +158,8 @@ Object.assign(MeetingManager, {
                data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(mtg.id))}" data-click-stop="1" 
                title="[${mtg.system}] ${escapeHtml(mtg.title)} (${mtg.startTime}~${mtg.endTime})">
             <span class="cal-sys-tag" style="background:${sysColor}; color:#ffffff !important; padding:1px 4px; border-radius:3px; font-size:calc(8.5px * var(--fs-scale, 1)); font-weight:800; flex-shrink:0;">${escapeHtml(mtg.system)}</span>
-            <span class="cal-time" style="font-size:calc(9.5px * var(--fs-scale, 1)); font-weight:700; color:var(--text-sub, var(--text-sub)) !important; flex-shrink:0;">${escapeHtml(mtg.startTime || "")}</span>
-            <span class="cal-title" style="font-size:var(--fs-xs, 11px); font-weight:700; color:var(--text-main, var(--text-main)) !important; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtml(mtg.title)}</span>
+            <span class="cal-time u-bold u-noshrink" style="font-size:calc(9.5px * var(--fs-scale, 1)); color:var(--text-sub, var(--text-sub)) !important;">${escapeHtml(mtg.startTime || "")}</span>
+            <span class="cal-title u-fs-xs u-bold u-nowrap u-flex1" style="color:var(--text-main, var(--text-main)) !important; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(mtg.title)}</span>
           </div>
         `;
       });
@@ -239,7 +239,7 @@ Object.assign(MeetingManager, {
     if (badge) badge.textContent = `${filtered.length}건`;
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-muted);">ℹ️ 등록된 회의 일정이 없습니다. 새 회의를 등록해주세요.</td></tr>`;
+      tbody.innerHTML = `<tr><td class="u-tc u-p-24 u-c-muted" colspan="9">ℹ️ 등록된 회의 일정이 없습니다. 새 회의를 등록해주세요.</td></tr>`;
       return;
     }
 
@@ -252,28 +252,28 @@ Object.assign(MeetingManager, {
       const actDone = (m.actionItems || []).filter(a => a.status === "완료").length;
 
       tr.innerHTML = `
-        <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-align:center;">
+        <td class="u-tc">${idx + 1}</td>
+        <td class="u-tc">
           <span class="badge" style="background:${sysColor}; color:white; font-size:var(--fs-xs, 11px); padding:2px 6px;">${escapeHtml(m.system)}</span>
         </td>
         <td>
-          <a href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="font-weight:bold; color:var(--tint-info-text); text-decoration:none;">
+          <a class="u-bold u-c-info" href="#" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="text-decoration:none;">
             ${escapeHtml(m.title)}
           </a>
         </td>
-        <td style="text-align:center; font-weight:bold;">${m.date}</td>
-        <td style="text-align:center;">${m.startTime} ~ ${m.endTime}</td>
+        <td class="u-tc u-bold">${m.date}</td>
+        <td class="u-tc">${m.startTime} ~ ${m.endTime}</td>
         <td>${escapeHtml(m.location || "-")}</td>
-        <td style="text-align:center;">${escapeHtml(m.host || "-")}</td>
-        <td style="text-align:center;">
+        <td class="u-tc">${escapeHtml(m.host || "-")}</td>
+        <td class="u-tc">
           <span style="font-size:var(--fs-xs, 11px); font-weight:bold; color:${stColor}; background:${m.status === "완료" ? "var(--tint-ok)" : "var(--tint-info)"}; padding:2px 8px; border-radius:12px; border:1px solid ${stColor};">
             ${m.status}
           </span>
         </td>
-        <td style="text-align:center; white-space:nowrap;">
+        <td class="u-tc u-nowrap">
           <button class="btn btn-primary btn-xs" data-click="MeetingManager.openMinutesForMeeting" data-click-args="${UiEvents.args(String(m.id))}" title="회의록 작성 및 안건/ActionItem 편집">📝 회의록</button>
           <button class="btn btn-outline btn-xs" data-click="MeetingManager.openEditMeetingModal" data-click-args="${UiEvents.args(String(m.id))}" title="회의 일정 기본정보 수정">✏️ 수정</button>
-          <button class="btn btn-outline btn-xs" data-click="MeetingManager.deleteMeeting" data-click-args="${UiEvents.args(String(m.id))}" style="color:var(--danger);" title="회의 삭제">🗑️ 삭제</button>
+          <button class="btn btn-outline btn-xs u-c-danger" data-click="MeetingManager.deleteMeeting" data-click-args="${UiEvents.args(String(m.id))}" title="회의 삭제">🗑️ 삭제</button>
         </td>
       `;
       tbody.appendChild(tr);

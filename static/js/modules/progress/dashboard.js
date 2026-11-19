@@ -149,7 +149,7 @@ function renderDashboard() {
   let sDone = 0, sIng = 0, sRdy = 0;
 
   if (activeSystems.length === 0) {
-    dashDelivTbody.innerHTML = `<tr><td colspan="${activeRounds.length + 5}" style="text-align:center; padding:20px; color:var(--text-muted);">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
+    dashDelivTbody.innerHTML = `<tr><td class="u-tc u-p-20 u-c-muted" colspan="${activeRounds.length + 5}">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const dAll = validDelivs.filter(d => d.system === sys);
@@ -191,7 +191,7 @@ function renderDashboard() {
       <td><b>${sDone}</b></td>
       <td><b>${sIng}</b></td>
       <td><b>${sRdy}</b></td>
-      <td style="font-weight:bold; color:var(--tint-info-text)">${totRateVal}%</td>
+      <td class="u-bold u-c-info">${totRateVal}%</td>
     `;
     dashDelivTbody.appendChild(totalRow);
   }
@@ -208,7 +208,7 @@ function renderDashboard() {
 
   let vTotSum = 0, vCmpSum = 0, vExcSum = 0, vPrgSum = 0, vRdySum = 0;
   if (activeSystems.length === 0) {
-    dashVocTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
+    dashVocTbody.innerHTML = `<tr><td class="u-tc u-p-20 u-c-muted" colspan="7">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
   } else {
     activeSystems.forEach(sys => {
       const vAll = scopeVocs.filter(v => v.system === sys);
@@ -224,7 +224,7 @@ function renderDashboard() {
         <tr>
           <td><strong>${escapeHtml(sys)}</strong></td>
           <td><b>${vAll.length}건</b></td>
-          <td><b style="color:var(--success);">${vCmp}건</b></td>
+          <td><b class="u-c-success">${vCmp}건</b></td>
           <td>${vExc}건</td>
           <td>${vPrg}건</td>
           <td>${vRdy}건</td>
@@ -236,11 +236,11 @@ function renderDashboard() {
       <tr class="matrix-total-row">
         <td><strong>[선택 합계]</strong></td>
         <td><b>${vTotSum}건</b></td>
-        <td><b style="color:var(--success);">${vCmpSum}건</b></td>
+        <td><b class="u-c-success">${vCmpSum}건</b></td>
         <td><b>${vExcSum}건</b></td>
         <td><b>${vPrgSum}건</b></td>
         <td><b>${vRdySum}건</b></td>
-        <td><b style="color:var(--success);">${scopeVocRate}%</b></td>
+        <td><b class="u-c-success">${scopeVocRate}%</b></td>
       </tr>
     `;
   }

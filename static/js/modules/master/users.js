@@ -27,10 +27,10 @@ function renderProjectUsersTable() {
       const roleOpts = roles.map(r => `<option value="${r}" ${role === r ? "selected" : ""}>${AuthManager.ROLE_DESCS[r]}</option>`).join("");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="text" value="${escapeHtml(u.empNo)}" style="width:105px; font-weight:bold;" ${u._new ? "" : "readonly title='저장된 멤버 ID은 바꿀 수 없습니다.'"} data-change="setProjectUserEmpNo" data-change-args="${UiEvents.args(idx, "$trim")}"></td>
+        <td><input class="u-bold" type="text" value="${escapeHtml(u.empNo)}" style="width:105px;" ${u._new ? "" : "readonly title='저장된 멤버 ID은 바꿀 수 없습니다.'"} data-change="setProjectUserEmpNo" data-change-args="${UiEvents.args(idx, "$trim")}"></td>
         <td><input type="text" value="${escapeHtml(u.name || "")}" style="width:100px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "name", "$trim", "persistChanges")}"></td>
         <td>
-          <select style="width:250px; font-weight:bold;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='관리자 계정은 모든 프로젝트에서 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
+          <select class="u-bold" style="width:250px;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "role", "$value")}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='관리자 계정은 모든 프로젝트에서 관리자 권한을 유지합니다.'" : ""}>${roleOpts}</select>
           ${asg.admin ? `<div class="pm-role-tag own">모든 프로젝트 공통</div>` : ""}
         </td>
         <td>
@@ -39,7 +39,7 @@ function renderProjectUsersTable() {
             ${getSubsystemOptionsHtml(asg.subsystem)}
           </select>
         </td>
-        <td><input type="text" value="${escapeHtml(asg.dept || "")}" style="width:100%;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "dept", "$value")}"></td>
+        <td><input class="u-w100" type="text" value="${escapeHtml(asg.dept || "")}" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "dept", "$value")}"></td>
         <td>
           <select style="width:90px;" data-change="UiH.set" data-change-args="${UiEvents.args("projectUsers", idx, "lang", "$value", "persistChanges")}">
             <option value="ko" ${(u.lang || "ko") === "ko" ? "selected" : ""}>한국어</option>
@@ -47,8 +47,8 @@ function renderProjectUsersTable() {
           </select>
         </td>
         <td>
-          <div style="display:flex; gap:4px; align-items:center;">
-            <input type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px; font-size:var(--fs-xs, 11px);">
+          <div class="u-flex u-gap-4 u-ai-center">
+            <input class="u-fs-xs" type="password" id="userNewPwd_${idx}" placeholder="새 비번 입력" autocomplete="off" style="width:105px;">
             <button class="btn btn-sm" data-btn="save" data-click="updateProjectUserPassword" data-click-args="${UiEvents.args(idx)}">변경</button>
             <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
@@ -160,7 +160,7 @@ var MilestoneManager = {
     const list = this.list();
     const rep = projectConfig.reportDate || "";
     if (!list.length) {
-      body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:14px; color:var(--text-muted);">등록된 마일스톤이 없습니다. [➕ 마일스톤 추가]로 등록하세요.</td></tr>`;
+      body.innerHTML = `<tr><td class="u-tc u-p-14 u-c-muted" colspan="6">등록된 마일스톤이 없습니다. [➕ 마일스톤 추가]로 등록하세요.</td></tr>`;
       return;
     }
     const subs = getAllSubsystemNames();
@@ -173,11 +173,11 @@ var MilestoneManager = {
         const passed = m.date && m.date <= rep;
         return `<tr>
           <td><select style="width:150px;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "scope", "$value")}">${opts}</select></td>
-          <td><input type="text" value="${escapeHtml(m.name || "")}" style="width:100%; font-weight:bold;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
+          <td><input class="u-w100 u-bold" type="text" value="${escapeHtml(m.name || "")}" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "name", "$value")}"></td>
           <td><input type="date" value="${escapeHtml(m.date || "")}" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "date", "$value")}"></td>
-          <td><input type="text" value="${escapeHtml(m.desc || "")}" style="width:100%;" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "desc", "$value")}"></td>
-          <td style="text-align:center;">${passed ? '<span class="status-tag tag-completed">경과</span>' : '<span class="status-tag tag-ready">예정</span>'}</td>
-          <td style="text-align:center;"><button class="btn btn-sm" data-btn="danger" data-click="MilestoneManager.remove" data-click-args="${UiEvents.args(idx)}">×</button></td>
+          <td><input class="u-w100" type="text" value="${escapeHtml(m.desc || "")}" data-change="MilestoneManager.update" data-change-args="${UiEvents.args(idx, "desc", "$value")}"></td>
+          <td class="u-tc">${passed ? '<span class="status-tag tag-completed">경과</span>' : '<span class="status-tag tag-ready">예정</span>'}</td>
+          <td class="u-tc"><button class="btn btn-sm" data-btn="danger" data-click="MilestoneManager.remove" data-click-args="${UiEvents.args(idx)}">×</button></td>
         </tr>`;
       }).join("");
   },
@@ -244,7 +244,7 @@ var ProgressBasisManager = {
     if (!sel || !st) return;
     const pending = sel.value !== this.current();
     st.innerHTML = pending
-      ? `<span style="color:var(--chart-warn-text); font-weight:bold;">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
+      ? `<span class="u-bold" style="color:var(--chart-warn-text);">⚠️ 변경 대기: [적용]을 눌러야 진척률이 다시 계산됩니다.</span>`
       : `현재 적용: <b>${this.LABELS[this.current()]}</b>`;
   },
   apply() {

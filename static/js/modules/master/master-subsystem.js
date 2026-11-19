@@ -49,7 +49,7 @@ function renderDomainChips() {
     chip.style.fontSize = "var(--fs-xs, 11px)";
     chip.innerHTML = `
       <b>${escapeHtml(d)}</b>
-      <button type="button" style="background:none;border:none;color:var(--chart-bad-text);cursor:pointer;font-weight:bold;font-size:var(--fs-sm, 12px);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="도메인 삭제">×</button>
+      <button class="u-pointer u-bold u-fs-sm" type="button" style="background:none; border:none; color:var(--chart-bad-text);" data-click="deleteDomain" data-click-args="${UiEvents.args(idx)}" title="도메인 삭제">×</button>
     `;
     container.appendChild(chip);
   });
@@ -274,12 +274,12 @@ function renderSubsystemsMetaTable() {
 
     tr.innerHTML = `
       <td>
-        <select style="width:125px;font-weight:bold;color:var(--primary);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "domain", "$value", "rebuildAll")}">
+        <select class="u-bold u-c-primary" style="width:125px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "domain", "$value", "rebuildAll")}">
           ${domainOptionsHtml}
         </select>
       </td>
-      <td><input type="text" value="${escapeHtml(sub.code || sub.name)}" style="width:85px;font-weight:bold;color:var(--primary);" title="ID 채번 접두 코드" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "code", "$trim", "rebuildAll")}"></td>
-      <td><input type="text" value="${escapeHtml(sub.name)}" style="width:120px;font-weight:bold;" data-change="updateSubsystemName" data-change-args="${UiEvents.args(idx, "$value")}"></td>
+      <td><input class="u-bold u-c-primary" type="text" value="${escapeHtml(sub.code || sub.name)}" style="width:85px;" title="ID 채번 접두 코드" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "code", "$trim", "rebuildAll")}"></td>
+      <td><input class="u-bold" type="text" value="${escapeHtml(sub.name)}" style="width:120px;" data-change="updateSubsystemName" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td>
         <select class="ss-sel-type" data-change="SdlcBoard.setType" data-change-args="${UiEvents.args(idx, "$value")}">
           <option value="SDLC" ${sub.type !== "REQ" ? "selected" : ""}>SDLC형</option>
@@ -294,9 +294,9 @@ function renderSubsystemsMetaTable() {
       </td>
       <td><input type="number" value="${sub.weight}" style="width:65px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "weight", "$num", "syncSubsystemWeights", "rebuildAll")}"></td>
       <td><input type="text" value="${escapeHtml(sub.pm || "")}" style="width:85px;" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "pm", "$value", "persistChanges")}"></td>
-      <td><input type="text" value="${escapeHtml(sub.desc || "")}" style="width:100%; font-size:var(--fs-xs, 11px);" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "desc", "$value", "persistChanges")}"></td>
-      <td style="text-align:center;"><b>${taskCount}</b>개</td>
-      <td style="text-align:right;"><b style="color:var(--success);">${aProg}%</b></td>
+      <td><input class="u-w100 u-fs-xs" type="text" value="${escapeHtml(sub.desc || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("subsystemsMeta", idx, "desc", "$value", "persistChanges")}"></td>
+      <td class="u-tc"><b>${taskCount}</b>개</td>
+      <td class="u-tr"><b class="u-c-success">${aProg}%</b></td>
       <td><button class="btn btn-danger btn-sm" data-click="deleteSubsystemMeta" data-click-args="${UiEvents.args(idx)}">×</button></td>
     `;
     tbody.appendChild(tr);
@@ -370,16 +370,16 @@ function renderStandardDeliverablesMetaTable() {
     if (thead) {
       thead.innerHTML = `
         <tr>
-          <th style="width: 45px; text-align:center;">No</th>
+          <th class="u-tc" style="width: 45px;">No</th>
           <th style="width: 140px;">표준 Phase</th>
           <th>필수 표준 산출물 명칭</th>
-          <th style="width: 75px; text-align:center;">1차${maxR < 1 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">2차${maxR < 2 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">3차${maxR < 3 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
-          <th style="width: 75px; text-align:center;">4차${maxR < 4 ? '<br><span style="font-size:calc(9px * var(--fs-scale, 1));color:var(--text-muted);">(미운영)</span>' : ''}</th>
+          <th class="u-tc" style="width: 75px;">1차${maxR < 1 ? '<br><span class="u-c-muted" style="font-size:calc(9px * var(--fs-scale, 1));">(미운영)</span>' : ''}</th>
+          <th class="u-tc" style="width: 75px;">2차${maxR < 2 ? '<br><span class="u-c-muted" style="font-size:calc(9px * var(--fs-scale, 1));">(미운영)</span>' : ''}</th>
+          <th class="u-tc" style="width: 75px;">3차${maxR < 3 ? '<br><span class="u-c-muted" style="font-size:calc(9px * var(--fs-scale, 1));">(미운영)</span>' : ''}</th>
+          <th class="u-tc" style="width: 75px;">4차${maxR < 4 ? '<br><span class="u-c-muted" style="font-size:calc(9px * var(--fs-scale, 1));">(미운영)</span>' : ''}</th>
           <th style="width: 125px;">기준일자</th>
           <th style="width: 140px;">비고</th>
-          <th style="width: 50px; text-align:center;">삭제</th>
+          <th class="u-tc" style="width: 50px;">삭제</th>
         </tr>
       `;
     }
@@ -407,8 +407,8 @@ function renderStandardDeliverablesMetaTable() {
       const isEnabled = rNum <= maxR;
       if (!isEnabled) {
         return `
-          <td style="text-align:center; opacity:0.38; background:var(--bg-main); cursor:not-allowed;">
-            <label style="display:inline-flex; align-items:center; gap:4px; font-weight:bold; font-size:var(--fs-xs, 11px); color:var(--text-muted); cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
+          <td class="u-tc u-bg-main" style="opacity:0.38; cursor:not-allowed;">
+            <label class="u-iflex u-ai-center u-gap-4 u-bold u-fs-xs u-c-muted" style="cursor:not-allowed;" title="프로젝트 기본정보에서 ${maxR}차까지만 운영되도록 설정되어 선택이 비활성화되었습니다.">
               <input type="checkbox" disabled style="cursor:not-allowed;">
               <span style="font-size:var(--fs-2xs, 10px);">${rNum}차</span>
             </label>
@@ -416,7 +416,7 @@ function renderStandardDeliverablesMetaTable() {
         `;
       }
       return `
-        <td style="text-align:center;">
+        <td class="u-tc">
           <label style="display:inline-flex; align-items:center; gap:4px; cursor:pointer; font-weight:bold; font-size:var(--fs-xs, 11px); color:${colorHex};" title="${rNum}차 필수 제출 대상 여부">
             <input type="checkbox" ${item[key] ? "checked" : ""} data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, key, "$checked", "persistChanges")}">
             ${rNum}차
@@ -426,14 +426,14 @@ function renderStandardDeliverablesMetaTable() {
     };
 
     tr.innerHTML = `
-      <td style="text-align:center;"><b>${no + 1}</b></td>
+      <td class="u-tc"><b>${no + 1}</b></td>
       <td>
         <select style="width:130px;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "phase", "$value", "renderStandardDeliverablesMetaTable", "persistChanges")}">
           ${phaseSelectHtml}
         </select>
       </td>
       <td>
-        <input type="text" value="${escapeHtml(item.name)}" style="width:100%; font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "name", "$value", "persistChanges")}">
+        <input class="u-w100 u-bold" type="text" value="${escapeHtml(item.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "name", "$value", "persistChanges")}">
       </td>
       ${buildRoundCell(1, "#3730a3")}
       ${buildRoundCell(2, "#92400e")}
@@ -443,9 +443,9 @@ function renderStandardDeliverablesMetaTable() {
         <input type="date" value="${item.defaultDate || projectConfig.reportDate}" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "defaultDate", "$value", "persistChanges")}">
       </td>
       <td>
-        <input type="text" value="${escapeHtml(item.remarks || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "remarks", "$value", "persistChanges")}">
+        <input class="u-w100" type="text" value="${escapeHtml(item.remarks || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("standardDeliverablesMeta", idx, "remarks", "$value", "persistChanges")}">
       </td>
-      <td style="text-align:center;">
+      <td class="u-tc">
         <button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("standardDeliverablesMeta", idx, "renderStandardDeliverablesMetaTable", "persistChanges")}">×</button>
       </td>
     `;

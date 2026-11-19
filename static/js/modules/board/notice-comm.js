@@ -300,11 +300,11 @@ var NoticeCommManager = {
     channels.forEach((c, idx) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="text-align:center;"><b>${idx + 1}</b></td>
-        <td><strong style="color:var(--text-main);"># ${escapeHtml(c)}</strong></td>
-        <td style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-muted);">${c === "전체" ? "전사 공통 기본 채널 (고정)" : "프로젝트 커스텀 소통 채널"}</td>
-        <td style="text-align:center;">
-          ${c === "전체" ? '<span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:bold;">고정</span>' : `<button class="btn btn-danger btn-sm" data-click="NoticeCommManager.deleteChannel" data-click-args="${UiEvents.args(String(c))}">삭제</button>`}
+        <td class="u-tc"><b>${idx + 1}</b></td>
+        <td><strong class="u-c-main"># ${escapeHtml(c)}</strong></td>
+        <td class="u-fs-115 u-c-muted">${c === "전체" ? "전사 공통 기본 채널 (고정)" : "프로젝트 커스텀 소통 채널"}</td>
+        <td class="u-tc">
+          ${c === "전체" ? '<span class="u-fs-xs u-c-muted u-bold">고정</span>' : `<button class="btn btn-danger btn-sm" data-click="NoticeCommManager.deleteChannel" data-click-args="${UiEvents.args(String(c))}">삭제</button>`}
         </td>
       `;
       tbody.appendChild(tr);
@@ -379,7 +379,7 @@ var NoticeCommManager = {
     listEl.innerHTML = "";
 
     if (!Array.isArray(noticesData) || noticesData.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); font-size:var(--fs-base, 13px);">등록된 공지이 없습니다. 상단 [➕ 신규 공지 등록] 버튼을 눌러 등록하세요.</div>';
+      listEl.innerHTML = '<div class="u-tc u-c-muted u-fs-base" style="padding:40px;">등록된 공지이 없습니다. 상단 [➕ 신규 공지 등록] 버튼을 눌러 등록하세요.</div>';
       return;
     }
 
@@ -398,7 +398,7 @@ var NoticeCommManager = {
     });
 
     if (sorted.length === 0) {
-      listEl.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:var(--fs-base, 13px);">검색 조건에 일치하는 공지이 없습니다.</div>';
+      listEl.innerHTML = '<div class="u-tc u-c-muted u-fs-base" style="padding:30px;">검색 조건에 일치하는 공지이 없습니다.</div>';
       return;
     }
 
@@ -418,27 +418,27 @@ var NoticeCommManager = {
 
       const canManage = this.hasNoticePermission(item);
       const actionButtons = canManage ? `
-        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'}" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.togglePinNotice" data-click-args="${UiEvents.args(String(item.id))}">
+        <button class="btn btn-sm ${item.isPinned ? 'btn-secondary' : 'btn-primary'} u-fs-xs" style="padding:3px 8px;" data-click="NoticeCommManager.togglePinNotice" data-click-args="${UiEvents.args(String(item.id))}">
           ${item.isPinned ? '📌 고정해제' : '📌 상단고정'}
         </button>
-        <button class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.openEditNoticeModal" data-click-args="${UiEvents.args(String(item.id))}">✏️ 수정</button>
-        <button class="btn btn-danger btn-sm" style="padding:3px 8px; font-size:var(--fs-xs, 11px);" data-click="NoticeCommManager.deleteNotice" data-click-args="${UiEvents.args(String(item.id))}">🗑️ 삭제</button>
-      ` : '<span style="font-size:calc(10.5px * var(--fs-scale, 1)); color:var(--text-muted); padding:2px 6px; background:var(--bg-main); border-radius:4px;">🔒 조회전용</span>';
+        <button class="btn btn-secondary btn-sm u-fs-xs" style="padding:3px 8px;" data-click="NoticeCommManager.openEditNoticeModal" data-click-args="${UiEvents.args(String(item.id))}">✏️ 수정</button>
+        <button class="btn btn-danger btn-sm u-fs-xs" style="padding:3px 8px;" data-click="NoticeCommManager.deleteNotice" data-click-args="${UiEvents.args(String(item.id))}">🗑️ 삭제</button>
+      ` : '<span class="u-c-muted u-bg-main u-r-4" style="font-size:calc(10.5px * var(--fs-scale, 1)); padding:2px 6px;">🔒 조회전용</span>';
 
       card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div class="u-flex u-jc-between u-ai-start u-mb-8">
+          <div class="u-flex u-ai-center u-gap-8 u-wrap">
             ${item.isPinned ? '<span style="font-size:calc(15px * var(--fs-scale, 1));" title="상단 고정 공지">📌</span>' : ''}
             ${priorityBadge}
-            <strong style="font-size:var(--fs-md, 14px); color:var(--text-main);">${escapeHtml(item.title)}</strong>
+            <strong class="u-c-main" style="font-size:var(--fs-md, 14px);">${escapeHtml(item.title)}</strong>
           </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
+          <div class="u-flex u-ai-center u-gap-6">
+            <span class="u-fs-xs u-c-muted">작성자: <b>${escapeHtml(item.author)}</b> (${escapeHtml(item.date)})</span>
             ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("notice", String(item.id), item) : ""}
             ${actionButtons}
           </div>
         </div>
-        <div style="font-size:var(--fs-base, 13px); line-height:1.7; color:var(--text-sub); white-space:pre-wrap; background:rgba(0,0,0,0.02); padding:10px 14px; border-radius:6px; border:1px solid rgba(0,0,0,0.05);">${escapeHtml(item.content)}</div>
+        <div class="u-fs-base u-c-sub u-r-6" style="line-height:1.7; white-space:pre-wrap; background:rgba(0,0,0,0.02); padding:10px 14px; border:1px solid rgba(0,0,0,0.05);">${escapeHtml(item.content)}</div>
       `;
       listEl.appendChild(card);
     });
@@ -451,7 +451,7 @@ var NoticeCommManager = {
     container.innerHTML = "";
 
     if (!Array.isArray(communicationsData) || communicationsData.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);">작성된 소통 글이 없습니다. 상단에서 첫 번째 업무 게시판를 게시해보세요.</div>';
+      container.innerHTML = '<div class="u-tc u-c-muted" style="padding:40px;">작성된 소통 글이 없습니다. 상단에서 첫 번째 업무 게시판를 게시해보세요.</div>';
       return;
     }
 
@@ -472,10 +472,10 @@ var NoticeCommManager = {
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center; padding:45px 20px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:8px; margin:10px 0;">
-          <div style="font-size:var(--fs-2xl, 24px); margin-bottom:6px;">💬</div>
-          <div style="font-size:var(--fs-md, 14px); font-weight:bold; color:var(--primary); margin-bottom:4px;">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-muted); margin-bottom:12px;">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
+        <div class="u-tc u-bg-main u-r-8" style="padding:45px 20px; border:1px dashed var(--border-color); margin:10px 0;">
+          <div class="u-mb-6" style="font-size:var(--fs-2xl, 24px);">💬</div>
+          <div class="u-bold u-c-primary u-mb-4" style="font-size:var(--fs-md, 14px);">[# ${escapeHtml(this.activeChannel)}] 채널에 등록된 소통 안건이 없습니다.</div>
+          <div class="u-fs-115 u-c-muted u-mb-12">상단 작성 영역에서 글을 작성하거나, 전체 채널로 전환하세요.</div>
           <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.setChannel" data-click-args='["전체"]'>🌐 전체 채널 보기</button>
         </div>
       `;
@@ -500,15 +500,15 @@ var NoticeCommManager = {
 
       let repliesHtml = "";
       if (Array.isArray(post.replies) && post.replies.length > 0) {
-        repliesHtml = '<div style="margin-top:12px; padding-left:14px; border-left:3px solid var(--primary); display:flex; flex-direction:column; gap:8px;">';
+        repliesHtml = '<div class="u-mt-12 u-flex u-col u-gap-8" style="padding-left:14px; border-left:3px solid var(--primary);">';
         post.replies.forEach(rep => {
           repliesHtml += `
-            <div style="background:var(--tint-info); padding:10px 12px; border-radius:6px; font-size:var(--fs-sm, 12px); border:1px solid var(--tint-info);">
-              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                <span style="font-weight:bold; color:var(--tint-info-text);">💬 ${escapeHtml(rep.author)} (${escapeHtml(rep.role || "")})</span>
-                <span style="color:var(--text-muted); font-size:calc(10.5px * var(--fs-scale, 1));">${escapeHtml(rep.date || "")}</span>
+            <div class="u-r-6 u-fs-sm" style="background:var(--tint-info); padding:10px 12px; border:1px solid var(--tint-info);">
+              <div class="u-flex u-jc-between u-mb-4">
+                <span class="u-bold u-c-info">💬 ${escapeHtml(rep.author)} (${escapeHtml(rep.role || "")})</span>
+                <span class="u-c-muted" style="font-size:calc(10.5px * var(--fs-scale, 1));">${escapeHtml(rep.date || "")}</span>
               </div>
-              <div style="color:var(--text-sub); white-space:pre-wrap; line-height:1.5;">${escapeHtml(rep.content)}</div>
+              <div class="u-c-sub" style="white-space:pre-wrap; line-height:1.5;">${escapeHtml(rep.content)}</div>
             </div>
           `;
         });
@@ -523,26 +523,26 @@ var NoticeCommManager = {
 
       const displayTitle = post.title || (post.taskId ? `[Task #${post.taskId}] ${post.content.slice(0, 30)}...` : (post.content.length > 30 ? post.content.slice(0, 30) + "..." : post.content));
       card.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <div style="display:flex; align-items:center; gap:8px;">
+        <div class="u-flex u-jc-between u-ai-center u-mb-8">
+          <div class="u-flex u-ai-center u-gap-8">
             <span class="badge" style="background:var(--primary); color:#fff; font-size:var(--fs-2xs, 10px);">#${escapeHtml(post.channel || "전체")}</span>
             ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:var(--fs-2xs, 10px);">Task #WBS-${escapeHtml(post.taskId)}</span>` : ""}
-            <strong style="color:var(--text-main); font-size:calc(13.5px * var(--fs-scale, 1));">${escapeHtml(post.author)}</strong>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">(${escapeHtml(post.role || "")})</span>
+            <strong class="u-c-main" style="font-size:calc(13.5px * var(--fs-scale, 1));">${escapeHtml(post.author)}</strong>
+            <span class="u-fs-xs u-c-muted">(${escapeHtml(post.role || "")})</span>
           </div>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml(post.date)}</span>
+          <div class="u-flex u-ai-center u-gap-6">
+            <span class="u-fs-xs u-c-muted">${escapeHtml(post.date)}</span>
             ${typeof AttachManager !== "undefined" ? AttachManager.btnHtml("post", String(post.id), post) : ""}
             ${postActionButtons}
           </div>
         </div>
-        <div style="font-size:var(--fs-md, 14px); font-weight:bold; color:var(--primary, var(--tint-info-text)); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+        <div class="u-bold u-mb-6 u-flex u-ai-center u-gap-6" style="font-size:var(--fs-md, 14px); color:var(--primary, var(--tint-info-text));">
           <span>📌</span> <span>${escapeHtml(displayTitle)}</span>
         </div>
-        <div style="font-size:var(--fs-base, 13px); line-height:1.6; color:var(--text-main); margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(post.content)}</div>
+        <div class="u-fs-base u-c-main u-mb-8" style="line-height:1.6; white-space:pre-wrap;">${escapeHtml(post.content)}</div>
         ${repliesHtml}
-        <div style="margin-top:12px; display:flex; gap:8px;">
-          <input type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="flex:1; padding:6px 12px; font-size:var(--fs-sm, 12px); border:1px solid var(--border-color); border-radius:4px;" data-keydown="NoticeCommManager.addReply" data-keydown-args="${UiEvents.args(String(post.id))}" data-keydown-key="Enter">
+        <div class="u-mt-12 u-flex u-gap-8">
+          <input class="u-flex1 u-fs-sm u-bd u-r-4" type="text" id="replyInput_${post.id}" placeholder="스레드 답글 입력 후 Enter 또는 클릭..." style="padding:6px 12px;" data-keydown="NoticeCommManager.addReply" data-keydown-args="${UiEvents.args(String(post.id))}" data-keydown-key="Enter">
           <button class="btn btn-secondary btn-sm" data-click="NoticeCommManager.addReply" data-click-args="${UiEvents.args(String(post.id))}">💬 답글</button>
         </div>
       `;
@@ -584,10 +584,10 @@ var NoticeCommManager = {
 
       colDiv.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid ${col.border};">
-          <strong style="font-size:calc(13.5px * var(--fs-scale, 1)); color:var(--text-main);">${col.title}</strong>
+          <strong class="u-c-main" style="font-size:calc(13.5px * var(--fs-scale, 1));">${col.title}</strong>
           <span class="badge" style="background:${col.badge}; color:#fff; font-size:var(--fs-2xs, 10px);">${colPosts.length}건</span>
         </div>
-        <div id="kanbanCol_${col.id}" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <div class="u-col u-gap-10" id="kanbanCol_${col.id}" style="display:flex;"></div>
       `;
 
       const listContainer = colDiv.querySelector(`#kanbanCol_${col.id}`);
@@ -600,22 +600,22 @@ var NoticeCommManager = {
         itemCard.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
         const cardTitle = post.title || (post.taskId ? `[Task #${post.taskId}] ${post.content.slice(0, 25)}...` : (post.content.length > 25 ? post.content.slice(0, 25) + "..." : post.content));
         itemCard.innerHTML = `
-          <div style="border-bottom:1px solid var(--bg-main); padding-bottom:6px; margin-bottom:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+          <div class="u-mb-8" style="border-bottom:1px solid var(--bg-main); padding-bottom:6px;">
+            <div class="u-flex u-jc-between u-ai-center u-mb-4">
+              <div class="u-flex u-ai-center u-gap-4 u-wrap">
                 <span class="badge" style="background:var(--primary); color:#fff; font-size:calc(9.5px * var(--fs-scale, 1)); padding:2px 6px;">#${escapeHtml(post.channel || "전체")}</span>
                 ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9px * var(--fs-scale, 1)); padding:2px 6px;">Task #${escapeHtml(post.taskId)}</span>` : ""}
               </div>
-              <span style="font-size:calc(10.5px * var(--fs-scale, 1)); color:var(--text-muted);">${escapeHtml((post.date || "").split(" ")[0])}</span>
+              <span class="u-c-muted" style="font-size:calc(10.5px * var(--fs-scale, 1));">${escapeHtml((post.date || "").split(" ")[0])}</span>
             </div>
             <div class="kanban-card-title" style="font-size:calc(13.5px * var(--fs-scale, 1)); font-weight:800; color:var(--primary, var(--tint-info-text)); line-height:1.45; word-break:keep-all;">
               📌 ${escapeHtml(cardTitle)}
             </div>
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-sub); margin-bottom:10px; line-height:1.55; max-height:60px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml(post.content)}</div>
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:var(--fs-xs, 11px); color:var(--text-muted); border-top:1px dashed var(--border-color); padding-top:6px;">
-            <span style="font-weight:600;">👤 ${escapeHtml(post.author)}</span>
-            <select data-change="NoticeCommManager.updatePostStatus" data-change-args="${UiEvents.args(String(post.id), "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 6px; border-radius:4px; border:1px solid var(--border-color); font-weight:bold; background:var(--bg-card); color:var(--text-main);">
+          <div class="u-fs-115 u-c-sub u-mb-10" style="line-height:1.55; max-height:60px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;">${escapeHtml(post.content)}</div>
+          <div class="u-flex u-jc-between u-ai-center u-fs-xs u-c-muted" style="border-top:1px dashed var(--border-color); padding-top:6px;">
+            <span class="u-semibold">👤 ${escapeHtml(post.author)}</span>
+            <select class="u-fs-xs u-r-4 u-bd u-bold u-bg-card u-c-main" data-change="NoticeCommManager.updatePostStatus" data-change-args="${UiEvents.args(String(post.id), "$value")}" style="padding:2px 6px;">
               <option value="OPEN" ${col.id==='OPEN'?'selected':''}>논의중</option>
               <option value="PROGRESS" ${col.id==='PROGRESS'?'selected':''}>조치중</option>
               <option value="RESOLVED" ${col.id==='RESOLVED'?'selected':''}>해결완료</option>
@@ -644,11 +644,11 @@ var NoticeCommManager = {
     summaryBox.style.borderRadius = "8px";
     summaryBox.style.padding = "14px 18px";
     summaryBox.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:var(--fs-md, 14px); font-weight:bold; color:var(--primary);">⏱️ 프로젝트 일일 스탠드업 &amp; 블로커 현황판</span>
-        <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">기준일자: ${escapeHtml(projectConfig.reportDate || "2026-06-30")}</span>
+      <div class="u-flex u-jc-between u-ai-center u-mb-6">
+        <span class="u-bold u-c-primary" style="font-size:var(--fs-md, 14px);">⏱️ 프로젝트 일일 스탠드업 &amp; 블로커 현황판</span>
+        <span class="u-fs-xs u-c-muted">기준일자: ${escapeHtml(projectConfig.reportDate || "2026-06-30")}</span>
       </div>
-      <div style="display:flex; gap:16px; font-size:var(--fs-sm, 12px); color:var(--border-color);">
+      <div class="u-flex u-gap-16 u-fs-sm" style="color:var(--border-color);">
         <span>• 등록된 소통 안건: <b>${communicationsData.length}건</b></span>
         <span>• 긴급 공지: <b>${noticesData.filter(n=>n.priority==='긴급').length}건</b></span>
         <span>• WBS 연계 이슈: <b>${communicationsData.filter(c=>c.taskId).length}건</b></span>
@@ -666,19 +666,19 @@ var NoticeCommManager = {
       item.style.gap = "12px";
       item.style.alignItems = "flex-start";
       item.innerHTML = `
-        <div style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:var(--fs-sm, 12px); font-weight:bold; flex-shrink:0;">
+        <div class="u-flex u-ai-center u-jc-center u-fs-sm u-bold u-noshrink" style="width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff;">
           ${pIdx + 1}
         </div>
-        <div style="flex:1; background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <div class="u-flex1 u-bg-card u-bd u-r-6" style="padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          <div class="u-flex u-jc-between u-mb-4">
             <div>
-              <strong style="color:var(--primary); font-size:var(--fs-base, 13px);">${escapeHtml(post.author)}</strong>
-              <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-left:4px;">(${escapeHtml(post.role || "")})</span>
-              ${post.taskId ? `<span class="badge" style="background:#7c3aed; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:6px;">#WBS-${escapeHtml(post.taskId)}</span>` : ""}
+              <strong class="u-c-primary u-fs-base">${escapeHtml(post.author)}</strong>
+              <span class="u-fs-xs u-c-muted u-ml-4">(${escapeHtml(post.role || "")})</span>
+              ${post.taskId ? `<span class="badge u-ml-6" style="background:#7c3aed; color:#fff; font-size:calc(9.5px * var(--fs-scale, 1));">#WBS-${escapeHtml(post.taskId)}</span>` : ""}
             </div>
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml(post.date)}</span>
+            <span class="u-fs-xs u-c-muted">${escapeHtml(post.date)}</span>
           </div>
-          <div style="font-size:calc(12.5px * var(--fs-scale, 1)); line-height:1.6; color:var(--text-sub);">${escapeHtml(post.content)}</div>
+          <div class="u-c-sub" style="font-size:calc(12.5px * var(--fs-scale, 1)); line-height:1.6;">${escapeHtml(post.content)}</div>
         </div>
       `;
       standupWrap.appendChild(item);

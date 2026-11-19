@@ -26,7 +26,7 @@ const GanttRenderer = {
         const mEnd = new Date(y, m, 0);
         cols.push({
           width: colW, days: mEnd.getDate(),
-          html: `<span class="gh-main" style="font-size:calc(11.5px * var(--fs-scale, 1));">${m}월</span><span class="gh-sub">${y}년</span>`,
+          html: `<span class="gh-main u-fs-115">${m}월</span><span class="gh-sub">${y}년</span>`,
           title: `${y}년 ${m}월 (${this._iso(cur)} ~ ${this._iso(mEnd)})`
         });
         cur.setMonth(cur.getMonth() + 1);
@@ -50,7 +50,7 @@ const GanttRenderer = {
         const iso = this._iso(cur);
         cols.push({
           width: colW, days: 7,
-          html: `<span class="gh-main" style="font-size:var(--fs-xs, 11px);">${w}주차</span><span class="gh-sub">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
+          html: `<span class="gh-main u-fs-xs">${w}주차</span><span class="gh-sub">${String(cur.getMonth() + 1).padStart(2, "0")}/${String(cur.getDate()).padStart(2, "0")}(${WBSEngine.getDayOfWeekText(iso)})</span>`,
           title: `${w}주차: ${iso} ~ ${this._iso(end)}`
         });
         cur.setDate(cur.getDate() + 7);
@@ -73,7 +73,7 @@ const GanttRenderer = {
       cols.push({
         width: dayW, days: 1,
         cls: `${dow === 0 || dow === 6 ? "weekend" : ""} ${isHoliday ? "holiday" : ""}`,
-        html: `<span>${d.getDate()}</span><span style="font-size:calc(8px * var(--fs-scale, 1));display:block;line-height:8px;">${dn}</span>`,
+        html: `<span>${d.getDate()}</span><span class="u-block" style="font-size:calc(8px * var(--fs-scale, 1)); line-height:8px;">${dn}</span>`,
         title: `${iso} (${dn}) ${isHoliday ? "(휴일)" : ""}`
       });
     }
@@ -196,7 +196,7 @@ const GanttRenderer = {
     if (integrated.length && sysFilter === "ALL") {
       tree.appendChild(this._treeRow(
         `<span class="lvl-badge" style="background:#7c3aed; color:#fff;">MS</span>
-         <span style="font-weight:bold; color:#7c3aed;">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
+         <span class="u-bold" style="color:#7c3aed;">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
       tree.lastChild.classList.add("gantt-ms-row"); // 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
       const row = this._chartRow(tl);
       row.classList.add("gantt-ms-row");
@@ -207,7 +207,7 @@ const GanttRenderer = {
     filtered.forEach(task => {
       tree.appendChild(this._treeRow(`
         <span class="lvl-badge lvl-${task.level}">L${task.level}</span>
-        <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-right:4px;">[${escapeHtml(task.id)}]</span>
+        <span class="u-fs-xs u-c-muted u-mr-4">[${escapeHtml(task.id)}]</span>
         <span style="font-weight:${task.level <= 2 ? "bold" : "normal"}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</span>`, task.level));
 
       const row = this._chartRow(tl);

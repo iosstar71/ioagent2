@@ -1174,10 +1174,10 @@ var SyncUI = {
         modal.className = "modal-overlay";
         modal.style.cssText = "display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:10050; align-items:center; justify-content:center;";
         modal.innerHTML = `
-          <div class="modal-content" style="max-width:520px; width:92%; background:var(--bg-card,#fff); border-radius:10px; padding:20px; box-shadow:0 12px 32px rgba(0,0,0,0.25);">
-            <h3 id="syncAskTitle" style="margin-bottom:10px; font-size:var(--fs-lg, 16px);"></h3>
-            <div id="syncAskMsg" style="white-space:pre-line; font-size:var(--fs-base, 13px); line-height:1.6; margin-bottom:16px; color:var(--text-main);"></div>
-            <div id="syncAskBtns" style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;"></div>
+          <div class="modal-content u-r-10 u-p-20" style="max-width:520px; width:92%; background:var(--bg-card,#fff); box-shadow:0 12px 32px rgba(0,0,0,0.25);">
+            <h3 class="u-mb-10" id="syncAskTitle" style="font-size:var(--fs-lg, 16px);"></h3>
+            <div class="u-fs-base u-mb-16 u-c-main" id="syncAskMsg" style="white-space:pre-line; line-height:1.6;"></div>
+            <div class="u-gap-8 u-jc-end u-wrap" id="syncAskBtns" style="display:flex;"></div>
           </div>`;
         document.body.appendChild(modal);
       }

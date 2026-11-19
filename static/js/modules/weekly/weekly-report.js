@@ -302,10 +302,10 @@ var WeeklyReportManager = {
       <td>${escapeHtml(weekLabel)}</td>
       <td>${sc.scope === "ALL" ? "📊 " : sc.scope === "DOMAIN" ? "🏢 " : "🔧 "}${escapeHtml(this.scopeLabel(sc.scope, sc.value))}${mine ? " ⭐" : ""}</td>
       <td>${escapeHtml(r ? (r.author || "-") : "-")}</td>
-      <td style="text-align:center;">${status}</td>
-      <td style="text-align:center;">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
-      <td style="font-size:var(--fs-xs, 11px);">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
-      <td style="text-align:center;"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" data-click="WeeklyReportManager.openUnit" data-click-args="${arg}" data-click-stop="1" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
+      <td class="u-tc">${status}</td>
+      <td class="u-tc">${r ? `${(r.currentWeekTasks || []).length} / ${(r.nextWeekTasks || []).length}` : "-"}</td>
+      <td class="u-fs-xs">${escapeHtml(r ? (r.updatedAt || "-") : "-")}</td>
+      <td class="u-tc"><button class="btn btn-xs" data-btn="${r ? "nav" : "add"}" data-click="WeeklyReportManager.openUnit" data-click-args="${arg}" data-click-stop="1" title="${r ? "저장된 보고서 보기" : "이 단위의 주간보고를 생성합니다 (WBS 기준 자동 편성)"}">${r ? "보기" : "📝 생성"}</button></td>
     </tr>`;
   },
 
@@ -322,7 +322,7 @@ var WeeklyReportManager = {
       if (summary) summary.textContent = `저장된 보고서 ${list.length}건`;
       body.innerHTML = list.length
         ? list.map(r => { const sc = this.reportScope(r); return this._listRow(r.weekLabel || ("W" + r.weekNo), r.weekNo, sc, r, isCurRow(r.weekNo, sc), sc.scope === "SYS" && sc.value === own); }).join("")
-        : `<tr><td colspan="7" style="text-align:center; padding:14px; color:var(--text-muted);">저장된 주간보고가 없습니다.</td></tr>`;
+        : `<tr><td class="u-tc u-p-14 u-c-muted" colspan="7">저장된 주간보고가 없습니다.</td></tr>`;
       return;
     }
     const weeks = this.getAllWeeks();
@@ -599,8 +599,8 @@ var WeeklyReportManager = {
     const saved = (weeklyReportsData || []).some(r => r.id === rep.id);
     const dirty = this._canon(rep) !== this._draftBase;
     el.innerHTML = `📝 <b>${escapeHtml(rep.weekLabel)}</b> · 작성 단위: <b>${escapeHtml(this.scopeLabel(this.scope, this.scopeValue))}</b>
-      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span style="color:var(--chart-warn-text); font-weight:bold;">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
-      ${writable ? "" : ` · <span style="color:var(--chart-bad-text); font-weight:bold;">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
+      · 상태: <b>${saved ? "저장됨" : "신규 (미저장)"}</b>${dirty ? ' · <span class="u-bold" style="color:var(--chart-warn-text);">● 변경 내용 있음 (작성 완료를 눌러 저장)</span>' : ""}
+      ${writable ? "" : ` · <span class="u-bold" style="color:var(--chart-bad-text);">🔒 조회 전용 (담당 서브시스템 ${escapeHtml(Permission.ownSubsystem())} 보고서만 저장 가능)</span>`}
       ${rep.snapshot ? `<span class="wr-basis snap" title="지표·요구사항·VOC·회의·Action Item 은 작성 완료 시점 자료로 표시·다운로드 합니다.">📌 작성 완료 시점 자료 (${escapeHtml(rep.snapshot.takenAt)})</span>`
         : `<span class="wr-basis live" title="작성 완료하면 그 시점의 자료가 보고서와 함께 저장됩니다.">⏱ 현재 자료 기준</span>`}
       <div class="wr-docno">문서 번호 <code>${escapeHtml(WeeklyExport.docNo(rep))}</code></div>`;
@@ -617,20 +617,20 @@ var WeeklyReportManager = {
     const id = escapeHtml(t.id);
     const k = `'${kind}', '${id}'`;
     const sysCell = t.manual
-      ? `<select style="font-size:var(--fs-xs, 11px); width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
-      : `<span class="badge" style="background:var(--bg-main); color:var(--text-sub);">${escapeHtml(t.system)}</span>`;
+      ? `<select class="u-fs-xs" style="width:96px;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "system", "$value")}">${this.scopeSystems(this.scope, this.scopeValue).map(sy => `<option value="${escapeHtml(sy)}" ${sy === t.system ? "selected" : ""}>${escapeHtml(sy)}</option>`).join("")}</select>`
+      : `<span class="badge u-bg-main u-c-sub">${escapeHtml(t.system)}</span>`;
     const nameCell = t.manual
-      ? `<input type="text" class="wr-manual-name" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" style="width:100%; font-size:var(--fs-xs, 11px); font-weight:bold;" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
+      ? `<input type="text" class="wr-manual-name u-w100 u-fs-xs u-bold" maxlength="200" value="${escapeHtml(t.name || "")}" placeholder="보고 항목명 입력" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "name", "$value")}">`
       : escapeHtml(t.name);
     const sched = t.manual
       ? `<input type="date" value="${escapeHtml(t.pEnd || "")}" style="font-size:var(--fs-2xs, 10px); width:120px;" title="목표일 (선택)" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "pEnd", "$value")}">`
-      : `<span style="font-size:var(--fs-2xs, 10px); color:var(--text-sub); white-space:nowrap; background:var(--bg-main); padding:2px 5px; border-radius:3px; border:1px solid var(--border-color);">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
+      : `<span class="u-c-sub u-nowrap u-bg-main u-r-3 u-bd" style="font-size:var(--fs-2xs, 10px); padding:2px 5px;">📅 ${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</span>`;
     const statusOpts = (kind === "cur" ? ["완료", "진행중", "지연", "계획"] : ["계획", "진행중"])
       .map(v => `<option value="${v}" ${t.status === v ? "selected" : ""}>${v}</option>`).join("");
     const detail = `<textarea class="wr-detail" rows="2" maxlength="1000" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "detail", "$value")}">${escapeHtml(t.detail || "")}</textarea>`;
     // 담당자: WBS 과업은 WBS 담당자(보고서에 함께 저장), 직접 입력 항목은 입력
     const ownerCell = t.manual
-      ? `<input type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" style="width:100%; font-size:var(--fs-xs, 11px);" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
+      ? `<input class="u-w100 u-fs-xs" type="text" maxlength="40" list="wbsOwnerList" value="${escapeHtml(t.owner || "")}" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "owner", "$value")}">`
       : `<span class="wr-owner">${escapeHtml(t.owner || "-")}</span>`;
     const remove = `<button class="btn btn-xs" data-btn="danger" title="이 항목을 보고서에서 제외" data-click="WeeklyReportManager.removeItem" data-click-args="${UiEvents.args(k)}">✕</button>`;
     const wbsCell = t.manual ? `<span class="wr-manual-tag">직접입력</span>` : `<strong>${escapeHtml(t.wbsId)}</strong>`;
@@ -639,14 +639,14 @@ var WeeklyReportManager = {
     const schedCell = t.manual ? sched : `<div class="wr-sched">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}${kind === "cur" && done ? `<br><b>완료 ${escapeHtml(done)}</b>` : ""}</div>`;
     const idCell = `${wbsCell}${t.manual ? "" : `<span class="wr-lvl">${lvl}</span>`}`;
     tr.innerHTML = kind === "cur" ? `
-      <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
+      <td>${sysCell}</td><td>${idCell}</td><td class="u-tl">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td><td><strong>${t.manual ? "-" : (t.aProg ?? 0) + "%"}</strong></td>
-      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px;">${statusOpts}</select></td>
-      <td>${detail}</td><td style="text-align:center;">${remove}</td>` : `
-      <td>${sysCell}</td><td>${idCell}</td><td style="text-align:left;">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
+      <td><select class="u-fs-xs" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="padding:2px 4px;">${statusOpts}</select></td>
+      <td>${detail}</td><td class="u-tc">${remove}</td>` : `
+      <td>${sysCell}</td><td>${idCell}</td><td class="u-tl">${nameCell}</td><td>${ownerCell}</td><td>${schedCell}</td>
       <td>${t.manual ? "-" : (t.pProg ?? 0) + "%"}</td>
-      <td><select data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="font-size:var(--fs-xs, 11px); padding:2px 4px;">${statusOpts}</select></td>
-      <td>${detail}</td><td style="text-align:center;">${remove}</td>`;
+      <td><select class="u-fs-xs" data-change="WeeklyReportManager.updateItem" data-change-args="${UiEvents.args(k, "status", "$value")}" style="padding:2px 4px;">${statusOpts}</select></td>
+      <td>${detail}</td><td class="u-tc">${remove}</td>`;
     if (t.manual) tr.style.background = "rgba(254,243,199,0.35)";
     return tr;
   },
@@ -683,7 +683,7 @@ var WeeklyReportManager = {
       curTbody.innerHTML = "";
       const tasks = (rep.currentWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        curTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
+        curTbody.innerHTML = `<tr><td class="u-tc u-c-muted u-p-20" colspan="10">ℹ️ 금주 실적 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
         tasks.forEach(t => curTbody.appendChild(this._taskRow("cur", t)));
       }
@@ -694,7 +694,7 @@ var WeeklyReportManager = {
       nxtTbody.innerHTML = "";
       const tasks = (rep.nextWeekTasks || []).filter(t => filterSys === "ALL" || t.system === filterSys);
       if (tasks.length === 0) {
-        nxtTbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">ℹ️ 차주 계획 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
+        nxtTbody.innerHTML = `<tr><td class="u-tc u-c-muted u-p-20" colspan="9">ℹ️ 차주 계획 항목이 없습니다. [➕ WBS Task 추가] 또는 [➕ 직접 입력 항목 추가]로 등록하세요.</td></tr>`;
       } else {
         tasks.forEach(t => nxtTbody.appendChild(this._taskRow("nxt", t)));
       }
@@ -708,20 +708,20 @@ var WeeklyReportManager = {
         curMtgsBody.innerHTML = "";
         const filteredMtgs = curMtgs.filter(m => m.system === "ALL" || inScope(m.system));
         if (filteredMtgs.length === 0) {
-          curMtgsBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">ℹ️ 금주 진행된 회의 일정이 없습니다.</td></tr>`;
+          curMtgsBody.innerHTML = `<tr><td class="u-tc u-p-16 u-c-muted" colspan="6">ℹ️ 금주 진행된 회의 일정이 없습니다.</td></tr>`;
         } else {
           filteredMtgs.forEach((m, mIdx) => {
             const tr = document.createElement("tr");
             const decs = (m.agendas || []).map(a => `${a.title}: ${a.decision || "합의"}`).join("<br>");
             tr.innerHTML = `
-              <td style="text-align:center;">${mIdx + 1}</td>
-              <td style="text-align:center;">
+              <td class="u-tc">${mIdx + 1}</td>
+              <td class="u-tc">
                 <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(m.system)}</span>
               </td>
               <td><strong>${escapeHtml(m.title)}</strong></td>
-              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
-              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:var(--fs-xs, 11px); color:var(--text-main);">${decs || escapeHtml(m.summary || "정상 완료")}</td>
+              <td class="u-tc u-fs-xs">${m.date} (${m.startTime}~${m.endTime})</td>
+              <td class="u-tc u-fs-xs">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
+              <td class="u-fs-xs u-c-main">${decs || escapeHtml(m.summary || "정상 완료")}</td>
             `;
             curMtgsBody.appendChild(tr);
           });
@@ -734,20 +734,20 @@ var WeeklyReportManager = {
         nxtMtgsBody.innerHTML = "";
         const filteredNxt = nxtMtgs.filter(m => m.system === "ALL" || inScope(m.system));
         if (filteredNxt.length === 0) {
-          nxtMtgsBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">ℹ️ 차주 예정된 회의 일정이 없습니다.</td></tr>`;
+          nxtMtgsBody.innerHTML = `<tr><td class="u-tc u-p-16 u-c-muted" colspan="6">ℹ️ 차주 예정된 회의 일정이 없습니다.</td></tr>`;
         } else {
           filteredNxt.forEach((m, mIdx) => {
             const tr = document.createElement("tr");
             const agds = (m.agendas || []).map(a => a.title).join(", ");
             tr.innerHTML = `
-              <td style="text-align:center;">${mIdx + 1}</td>
-              <td style="text-align:center;">
+              <td class="u-tc">${mIdx + 1}</td>
+              <td class="u-tc">
                 <span class="badge" style="background:${MeetingManager.getSubsystemColor(m.system)}; color:white; font-size:var(--fs-2xs, 10px);">${escapeHtml(m.system)}</span>
               </td>
               <td><strong>${escapeHtml(m.title)}</strong></td>
-              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${m.date} (${m.startTime}~${m.endTime})</td>
-              <td style="text-align:center; font-size:var(--fs-xs, 11px);">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
-              <td style="font-size:var(--fs-xs, 11px); color:var(--text-sub);">${escapeHtml(agds || m.summary || "공정 협의")}</td>
+              <td class="u-tc u-fs-xs">${m.date} (${m.startTime}~${m.endTime})</td>
+              <td class="u-tc u-fs-xs">${escapeHtml(m.host || "-")} / ${escapeHtml(m.location || "-")}</td>
+              <td class="u-fs-xs u-c-sub">${escapeHtml(agds || m.summary || "공정 협의")}</td>
             `;
             nxtMtgsBody.appendChild(tr);
           });
@@ -898,7 +898,7 @@ var WeeklyReportManager = {
 
     if (!Array.isArray(weeklyReportsData) || weeklyReportsData.length === 0) {
       listEl.innerHTML = `
-        <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:var(--fs-sm, 12px);">
+        <div class="u-p-20 u-tc u-c-muted u-fs-sm">
           ℹ️ 저장된 이전 주간보고서 이력이 없습니다.<br>
           현재 주간보고서를 저장(💾 주간보고 저장)하시면 이력으로 보관됩니다.
         </div>
@@ -922,18 +922,18 @@ var WeeklyReportManager = {
       item.style.background = isSel ? "var(--tint-info)" : "#ffffff";
       item.style.transition = "all 0.15s ease";
       item.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div class="u-flex u-jc-between u-ai-center u-mb-4">
           <strong style="font-size:calc(12.5px * var(--fs-scale, 1)); color:${isSel ? "var(--tint-info-text)" : "var(--text-main)"};">📅 ${escapeHtml(r.weekLabel)}</strong>
-          <span class="badge" style="background:var(--tint-info); color:var(--tint-info-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(r.reportDate || "")}</span>
+          <span class="badge u-c-info" style="background:var(--tint-info); font-size:var(--fs-2xs, 10px);">${escapeHtml(r.reportDate || "")}</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); margin-bottom:4px;">
+        <div class="u-fs-xs u-c-muted u-mb-4">
           👤 작성: ${escapeHtml(r.author || "PM")} | 갱신: ${escapeHtml(r.updatedAt ? r.updatedAt.substring(0, 10) : "-")}
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+        <div class="u-fs-xs u-c-sub" style="line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
           ${escapeHtml(r.currentWeekSummary || "(요약 없음)")}
         </div>
-        <div style="margin-top:6px; display:flex; justify-content:flex-end;">
-          <button class="btn btn-outline btn-xs" style="color:var(--primary); border-color:var(--border-color); background:var(--bg-card); font-size:calc(10.5px * var(--fs-scale, 1));" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
+        <div class="u-mt-6 u-flex u-jc-end">
+          <button class="btn btn-outline btn-xs u-c-primary u-bg-card" style="border-color:var(--border-color); font-size:calc(10.5px * var(--fs-scale, 1));" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(idx)}" data-click-stop="1" title="이 보고서 내용을 즉시 이번주로 복사">
             📋 바로 복사
           </button>
         </div>
@@ -956,7 +956,7 @@ var WeeklyReportManager = {
     if (!prevEl) return;
     if (!r) {
       prevEl.innerHTML = `
-        <div style="padding:40px; text-align:center; color:var(--text-muted);">
+        <div class="u-tc u-c-muted" style="padding:40px;">
           선택된 이전 보고서가 없습니다.
         </div>
       `;
@@ -967,43 +967,43 @@ var WeeklyReportManager = {
     const nCount = Array.isArray(r.nextWeekTasks) ? r.nextWeekTasks.length : 0;
 
     prevEl.innerHTML = `
-      <div style="background:var(--bg-main); border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h4 style="margin:0; font-size:var(--fs-md, 14px); color:var(--primary);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
-          <span class="badge" style="background:var(--tint-info); color:var(--tint-info-text); font-size:var(--fs-xs, 11px);">Task: 금주 ${cCount}건 / 차주 ${nCount}건</span>
+      <div class="u-bg-main u-bd u-r-8 u-p-12 u-mb-12">
+        <div class="u-flex u-jc-between u-ai-center u-mb-8">
+          <h4 class="u-m0 u-c-primary" style="font-size:var(--fs-md, 14px);">📋 [${escapeHtml(r.weekLabel)}] 보고서 상세 미리보기</h4>
+          <span class="badge u-c-info u-fs-xs" style="background:var(--tint-info);">Task: 금주 ${cCount}건 / 차주 ${nCount}건</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); display:flex; gap:16px;">
+        <div class="u-fs-xs u-c-sub u-flex u-gap-16">
           <span><b>작성자:</b> ${escapeHtml(r.author || "PM")}</span>
           <span><b>기준일자:</b> ${escapeHtml(r.reportDate || "-")}</span>
           <span><b>금주기간:</b> ${escapeHtml(r.startDate || "")} ~ ${escapeHtml(r.endDate || "")}</span>
         </div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--tint-info-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+      <div class="u-flex u-col u-gap-10">
+        <div class="u-bg-card u-bd u-r-6 u-p-10">
+          <div class="u-bold u-fs-115 u-c-info u-mb-4 u-flex u-ai-center u-gap-6">
             <span>🎯</span> 【금주 중점 추진 실적 총괄 요약】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
+          <div class="u-fs-115 u-c-main" style="white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.currentWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
-        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--tint-info-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <div class="u-bg-card u-bd u-r-6 u-p-10">
+          <div class="u-bold u-fs-115 u-c-info u-mb-4 u-flex u-ai-center u-gap-6">
             <span>🚀</span> 【차주 중점 추진 목표 및 계획 요약】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
+          <div class="u-fs-115 u-c-main" style="white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.nextWeekSummary || "(작성된 요약 없음)")}</div>
         </div>
 
-        <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:6px; padding:10px;">
-          <div style="font-weight:bold; font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--chart-warn-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+        <div class="u-bg-card u-bd u-r-6 u-p-10">
+          <div class="u-bold u-fs-115 u-mb-4 u-flex u-ai-center u-gap-6" style="color:var(--chart-warn-text);">
             <span>⚠️</span> 【주요 현안 및 지원 요청사항】
           </div>
-          <div style="font-size:calc(11.5px * var(--fs-scale, 1)); color:var(--text-main); white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
+          <div class="u-fs-115 u-c-main" style="white-space:pre-wrap; line-height:1.5;">${escapeHtml(r.issuesNotes || "(현안 및 특이사항 없음)")}</div>
         </div>
       </div>
 
-      <div style="margin-top:14px; text-align:center;">
-        <button class="btn btn-primary btn-sm" style="padding:6px 16px; font-weight:bold;" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(this.selectedHistoryIdx)}">
+      <div class="u-mt-14 u-tc">
+        <button class="btn btn-primary btn-sm u-bold" style="padding:6px 16px;" data-click="WeeklyReportManager.copyHistoryToCurrent" data-click-args="${UiEvents.args(this.selectedHistoryIdx)}">
           📋 위 [${escapeHtml(r.weekLabel)}] 보고서 내용을 이번 주로 복사 적용하기
         </button>
       </div>

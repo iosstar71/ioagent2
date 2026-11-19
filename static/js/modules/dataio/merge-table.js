@@ -78,10 +78,10 @@ var MergeTable = {
       const p = this.canUpload(it.k, scope);
       const checked = first ? it.unit === "sys" : keep[it.k];
       return `<tr>
-        <td style="text-align:center;"><input type="checkbox" class="mt-chk" value="${it.k}" ${checked ? "checked" : ""}></td>
+        <td class="u-tc"><input type="checkbox" class="mt-chk" value="${it.k}" ${checked ? "checked" : ""}></td>
         <td><b>${it.icon} ${escapeHtml(it.label)}</b><div class="mt-desc">${escapeHtml(it.desc)}</div></td>
         <td>${it.unit === "sys" ? `<span class="status-badge-chip chip-progress">${escapeHtml(scopeLbl)}</span>` : `<span class="status-badge-chip chip-ready">프로젝트 전체</span>`}</td>
-        <td style="text-align:right;"><b id="cntBadge_${it.k}">${it.k === "config" ? "-" : this.count(it.k, scope)}</b></td>
+        <td class="u-tr"><b id="cntBadge_${it.k}">${it.k === "config" ? "-" : this.count(it.k, scope)}</b></td>
         <td>${p.ok ? `<span class="mt-ok">✅ 가능</span>` : `<span class="mt-lock" title="${escapeAttr(p.why)}">🔒 ${escapeHtml(p.why)}</span>`}</td>
       </tr>`;
     };
@@ -266,11 +266,11 @@ var MergeTable = {
     document.getElementById("mpTitle").textContent = `${opts.title || "📤 업로드"} — 미리 보기`;
     document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
     document.getElementById("mpBody").innerHTML = plan.map((p, i) => `<tr class="${p.ok ? "" : "mp-off"}">
-        <td style="text-align:center;"><input type="checkbox" class="mp-chk" data-i="${i}" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
+        <td class="u-tc"><input type="checkbox" class="mp-chk" data-i="${i}" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
         <td><b>${escapeHtml(p.label)}</b></td>
-        <td style="text-align:right;">${p.fileRows}</td>
-        <td style="text-align:right;"><b class="mp-apply">${p.rows.length}</b></td>
-        <td style="text-align:right;">${p.ignored ? `<span class="mp-ign" title="${escapeAttr(p.why)}">${p.ignored}</span>` : "0"}${p.why ? `<div class="mt-desc">${escapeHtml(p.why)}</div>` : ""}</td>
+        <td class="u-tr">${p.fileRows}</td>
+        <td class="u-tr"><b class="mp-apply">${p.rows.length}</b></td>
+        <td class="u-tr">${p.ignored ? `<span class="mp-ign" title="${escapeAttr(p.why)}">${p.ignored}</span>` : "0"}${p.why ? `<div class="mt-desc">${escapeHtml(p.why)}</div>` : ""}</td>
         <td class="mt-desc">${escapeHtml(p.how)}</td>
       </tr>`).join("");
     const auto = typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.autoDownload && BackupHistoryManager.autoDownload();

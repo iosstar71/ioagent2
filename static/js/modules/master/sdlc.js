@@ -225,13 +225,13 @@ function renderEditSdlcPhasesTable() {
   _editingSdlcPhasesTemp.forEach((p, pIdx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td style="text-align:center;"><b>${pIdx + 1}</b></td>
-      <td><input type="text"${ro} value="${escapeHtml(p.name)}" style="width:100%;font-weight:bold;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
-      <td><input type="number" min="0" max="100" step="1" value="${p.weight}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
-      <td class="col-date"><input type="date" value="${escapeHtml(p.pStart || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pStart", "$value")}"></td>
-      <td class="col-date"><input type="date" value="${escapeHtml(p.pEnd || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pEnd", "$value")}"></td>
-      <td><input type="text"${ro} value="${escapeHtml(p.output || "")}" style="width:100%;" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
-      <td><input type="text"${ro} value="${escapeHtml((p.keywords || []).join(", "))}" style="width:100%; font-size:var(--fs-xs, 11px);" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
+      <td class="u-tc"><b>${pIdx + 1}</b></td>
+      <td><input class="u-w100 u-bold" type="text"${ro} value="${escapeHtml(p.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "name", "$trim")}"></td>
+      <td><input class="u-w100" type="number" min="0" max="100" step="1" value="${p.weight}" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "weight", "$num")}"></td>
+      <td class="col-date"><input class="u-w100" type="date" value="${escapeHtml(p.pStart || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pStart", "$value")}"></td>
+      <td class="col-date"><input class="u-w100" type="date" value="${escapeHtml(p.pEnd || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "pEnd", "$value")}"></td>
+      <td><input class="u-w100" type="text"${ro} value="${escapeHtml(p.output || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "output", "$trim")}"></td>
+      <td><input class="u-w100 u-fs-xs" type="text"${ro} value="${escapeHtml((p.keywords || []).join(", "))}" placeholder="Task명 매칭 키워드" data-change="UiH.set" data-change-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "keywords", "$split")}"></td>
       <td class="col-del"><button class="btn btn-danger btn-sm" data-click="UiH.removeAt" data-click-args="${UiEvents.args("_editingSdlcPhasesTemp", pIdx, "renderEditSdlcPhasesTable")}">×</button></td>
     `;
     tbody.appendChild(tr);

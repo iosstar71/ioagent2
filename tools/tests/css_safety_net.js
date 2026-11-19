@@ -159,6 +159,7 @@ async function setCss(page, css) { await page.evaluate(c => { document.getElemen
 async function snapshot(page, only, props, themes, wait, sels) {
   return page.evaluate(async ([themes, only, props, wait, sels]) => {
     const res = {};
+    await new Promise(r => setTimeout(r, 1500));   // 첫 화면의 늦게 붙는 아이콘 · 배지가 다 붙을 때까지
     for (let si = 0; si < window.__STATES.length; si++) {
       if (only && !only.includes(si)) continue;
       const st = window.__STATES[si];

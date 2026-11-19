@@ -106,15 +106,15 @@ function renderPhaseMatrix() {
       <td>${sReqs.length}건</td>
       <td>${rPrg}건</td>
       <td><strong>${rCmp}건</strong></td>
-      <td style="font-weight:bold; color:var(--tint-ok-text);">${rRate}%</td>
+      <td class="u-bold" style="color:var(--tint-ok-text);">${rRate}%</td>
       <td>${sVocs.length}건</td>
       <td style="color:var(--chart-warn-text);">${vWait}건</td>
-      <td style="color:var(--primary);">${vProg}건</td>
+      <td class="u-c-primary">${vProg}건</td>
       <td><strong>${vDone}건</strong></td>
-      <td style="font-weight:bold; color:var(--tint-warn-text);">${vRate}%</td>
+      <td class="u-bold" style="color:var(--tint-warn-text);">${vRate}%</td>
       ${roundTds}
       <td>${dIng}건</td>
-      <td style="font-weight:bold; color:var(--tint-info-text);">${dRate}%</td>
+      <td class="u-bold u-c-info">${dRate}%</td>
     `;
     intTbody.appendChild(tr);
   });
@@ -143,12 +143,12 @@ function renderPhaseMatrix() {
     <td style="color:var(--tint-ok-text);"><b>${totRRate}%</b></td>
     <td><b>${sumVocTot}건</b></td>
     <td style="color:var(--chart-warn-text);"><b>${sumVocWait}건</b></td>
-    <td style="color:var(--primary);"><b>${sumVocProg}건</b></td>
+    <td class="u-c-primary"><b>${sumVocProg}건</b></td>
     <td><b>${sumVocDone}건</b></td>
     <td style="color:var(--tint-warn-text);"><b>${totVRate}%</b></td>
     ${sumRoundTds}
     <td><b>${sumDIng}건</b></td>
-    <td style="color:var(--tint-info-text);"><b>${totDRate}%</b></td>
+    <td class="u-c-info"><b>${totDRate}%</b></td>
   `;
   intTbody.appendChild(sumRow);
 
@@ -168,7 +168,7 @@ function renderPhaseMatrix() {
   let sdlcTablesHtml = "";
   if (mappedSdlcSpecs.length === 0) {
     sdlcTablesHtml = `
-      <div style="text-align:center; color:var(--text-muted); padding:20px; background:var(--bg-main); border:1px dashed var(--border-color); border-radius:6px;">
+      <div class="u-tc u-c-muted u-p-20 u-bg-main u-r-6" style="border:1px dashed var(--border-color);">
         ℹ️ 현재 조회 조건에 매핑된 SDLC 폭포수형 서브시스템이 없습니다. (개선과제형 REQ 또는 다른 서브시스템을 조회하세요)
       </div>
     `;
@@ -253,7 +253,7 @@ function renderPhaseMatrix() {
         const totP = Math.round(totalStats[ph.key].p / totW);
         const totA = Math.round(totalStats[ph.key].a / totW);
         const totRate = Metrics.achv(totP, totA);
-        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td style="color:var(--chart-warn-text);font-weight:bold;">${totRate}%</td>`;
+        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td class="u-bold" style="color:var(--chart-warn-text);">${totRate}%</td>`;
       });
       const allW = totalStats.all.w || 1;
       const allP = Math.round(totalStats.all.p / allW);
@@ -266,14 +266,14 @@ function renderPhaseMatrix() {
           ${sumPhTds}
           <td class="col-total sdlc-sum">${allP}%</td>
           <td class="col-total sdlc-sum"><strong>${allA}%</strong></td>
-          <td class="col-total sdlc-sum" style="color:var(--primary);font-weight:bold;">${allRate}%</td>
+          <td class="col-total sdlc-sum u-c-primary u-bold">${allRate}%</td>
         </tr>
       `;
 
       sdlcTablesHtml += `
-        <div style="margin-bottom:16px;">
+        <div class="u-mb-16">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "var(--border-color)" : "#ddd6fe"};">
-            <span style="font-weight:bold; font-size:var(--fs-sm, 12px); color:var(--primary);">
+            <span class="u-bold u-fs-sm u-c-primary">
               📂 <span>SDLC 유형:</span> <span>${escapeHtml(spec.name)}</span> (<span>${escapeHtml(spec.desc || "")}</span>) — <span>${I18N.tf("소속 서브시스템 {n}개", { n: groupSystems.length })}</span>
             </span>
           </div>
@@ -309,7 +309,7 @@ function renderPhaseMatrix() {
   });
 
   if (reqSystems.length === 0) {
-    enhTbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:15px;">조회 조건에 해당하는 개선타입(REQ) 서브시스템이 없습니다.</td></tr>`;
+    enhTbody.innerHTML = `<tr><td class="u-tc u-c-muted u-p-15" colspan="9">조회 조건에 해당하는 개선타입(REQ) 서브시스템이 없습니다.</td></tr>`;
   } else {
     reqSystems.forEach(sys => {
       const domain = WBSEngine.getSubsystemDomain(sys);
@@ -335,11 +335,11 @@ function renderPhaseMatrix() {
           <td><strong>${escapeHtml(sys)}</strong></td>
           <td><span class="lvl-badge lvl-3">${escapeHtml(req.id)}</span></td>
           <td>${escapeHtml(req.name)}</td>
-          <td style="text-align:center;"><b>${taskCount}</b>개</td>
-          <td style="text-align:right;">${pAvg}%</td>
-          <td style="text-align:right;"><strong>${aAvg}%</strong></td>
-          ${rateNA ? `<td class="rate-na" style="text-align:right;">-</td>` : `<td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`}
-          <td style="text-align:center;"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
+          <td class="u-tc"><b>${taskCount}</b>개</td>
+          <td class="u-tr">${pAvg}%</td>
+          <td class="u-tr"><strong>${aAvg}%</strong></td>
+          ${rateNA ? `<td class="rate-na u-tr">-</td>` : `<td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`}
+          <td class="u-tc"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
         `;
         enhTbody.appendChild(row);
       });
@@ -374,18 +374,18 @@ function renderSubsystemCards(systems) {
     card.innerHTML = `
       <div class="card-title">
         <span>
-          <span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px); margin-right:4px;">${escapeHtml(domain)}</span>
+          <span class="badge u-mr-4" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span>
           <b>${escapeHtml(sys)}</b>
-          <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted); font-weight:normal;">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
+          <span class="u-fs-xs u-c-muted u-normal">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
         </span>
         ${pVal <= 0 && aVal <= 0 ? `<span class="status-tag tag-ready">달성률 -</span>` : `<span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>`}
       </div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:var(--fs-sm, 12px);">
+      <div class="u-flex u-jc-between u-mb-6 u-fs-sm">
         <span>계획 진척률: <b>${pVal}%</b></span>
         <span>실행 Task: <b>${leafTasks.length}개</b></span>
-        <span>실적 진척률: <b style="color:var(--success); font-size:var(--fs-md, 14px);">${aVal}%</b></span>
+        <span>실적 진척률: <b class="u-c-success" style="font-size:var(--fs-md, 14px);">${aVal}%</b></span>
       </div>
-      <div style="background:var(--track); height:8px; border-radius:4px; overflow:hidden;">
+      <div class="u-r-4" style="background:var(--track); height:8px; overflow:hidden;">
         <div style="background:var(--success); width:${Math.min(100, aVal)}%; height:100%;"></div>
       </div>
     `;

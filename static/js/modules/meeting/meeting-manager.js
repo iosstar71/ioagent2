@@ -185,7 +185,7 @@ var MeetingManager = {
     } else {
       const container = document.getElementById("minutesEditorContainer");
       if (container) {
-        container.innerHTML = `<div class="card" style="padding:30px; text-align:center; color:var(--text-muted); font-size:var(--fs-sm, 12px);">ℹ️ 선택된 조회 조건(서브시스템 및 월)에 해당하는 등록된 회의가 없습니다.</div>`;
+        container.innerHTML = `<div class="card u-tc u-c-muted u-fs-sm" style="padding:30px;">ℹ️ 선택된 조회 조건(서브시스템 및 월)에 해당하는 등록된 회의가 없습니다.</div>`;
       }
     }
   },
@@ -264,7 +264,7 @@ var MeetingManager = {
     } else {
       const container = document.getElementById("minutesEditorContainer");
       if (container) {
-        container.innerHTML = `<div class="card" style="padding:30px; text-align:center; color:var(--text-muted); font-size:var(--fs-sm, 12px);">ℹ️ 선택된 서브시스템에 등록된 회의가 없습니다. '새 회의 일정 등록'을 통해 일정을 추가하세요.</div>`;
+        container.innerHTML = `<div class="card u-tc u-c-muted u-fs-sm" style="padding:30px;">ℹ️ 선택된 서브시스템에 등록된 회의가 없습니다. '새 회의 일정 등록'을 통해 일정을 추가하세요.</div>`;
       }
     }
   },

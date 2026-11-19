@@ -327,11 +327,11 @@ var AuthManager = {
     this._setText("lockModalTitle", title || "🔐 멤버 선택");
     this._setText("lockModalDesc",
       (desc || "멤버 ID과 암호를 입력하여 멤버를 선택하세요.") +
-      `<br><span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">* 초기 암호: <b>1234</b></span>`, true);
+      `<br><span class="u-fs-xs u-c-muted">* 초기 암호: <b>1234</b></span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
-      const notice = typeof ModeGuard !== "undefined" && ModeGuard.loginNotice ? `<div style="margin-top:4px;">${ModeGuard.loginNotice}</div>` : "";
+      const notice = typeof ModeGuard !== "undefined" && ModeGuard.loginNotice ? `<div class="u-mt-4">${ModeGuard.loginNotice}</div>` : "";
       info.innerHTML = (server
         ? `🗄️ 서버 (${escapeHtml(DbConnector.getApiBase())}) — 멤버를 고른 뒤 [💾 저장]으로 저장합니다.`
         : "💻 Standalone — 자료는 이 PC 브라우저에만 저장됩니다. PM 과는 마스터 파일 · 내 작업 파일로 주고받습니다.") + notice;
@@ -378,7 +378,7 @@ var AuthManager = {
     this._setText("lockModalTitle", `${meta.name} 권한 인증`);
     this._setText("lockModalDesc",
       `<b>[${meta.name}]</b> 메뉴는 <b>${meta.reqRoleLabel}</b> 권한이 필요합니다.<br>` +
-      `<span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
+      `<span class="u-fs-xs u-c-muted">권한이 있는 계정으로 인증하면 해당 계정으로 전환됩니다.</span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) info.style.display = "none";
     // 권한 인증은 지금 프로젝트에서 — 프로젝트 줄은 보이되 바꿀 수 없음

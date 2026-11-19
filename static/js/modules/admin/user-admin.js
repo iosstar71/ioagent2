@@ -133,13 +133,13 @@ var UserAdmin = {
         <td>${escapeHtml(u.name || "")}</td>
         <td>${escapeHtml(u.dept || "")}</td>
         <td>${chips}</td>
-        <td style="text-align:center;">${u.pwdDefault ? '<span class="status-tag tag-ready">초기(1234)</span>' : '<span class="status-tag tag-completed">변경함</span>'}</td>
-        <td style="white-space:nowrap; text-align:center;">
+        <td class="u-tc">${u.pwdDefault ? '<span class="status-tag tag-ready">초기(1234)</span>' : '<span class="status-tag tag-completed">변경함</span>'}</td>
+        <td class="u-nowrap u-tc">
           <button class="btn btn-secondary btn-sm" data-click="UserAdmin.openEdit" data-click-args="${UiEvents.args(u.empNo)}">편집</button>
           <button class="btn btn-danger btn-sm" data-click="UserAdmin.remove" data-click-args="${UiEvents.args(u.empNo)}">삭제</button>
         </td>
       </tr>`;
-    }).join("") || `<tr><td colspan="6" style="text-align:center; padding:18px; color:var(--text-muted);">조건에 맞는 멤버가 없습니다.</td></tr>`;
+    }).join("") || `<tr><td class="u-tc u-p-18 u-c-muted" colspan="6">조건에 맞는 멤버가 없습니다.</td></tr>`;
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("uaPane"));
   },
 
@@ -165,7 +165,7 @@ var UserAdmin = {
       const subs = ["ALL"].concat(p.subsystems || []);
       if (a && a.subsystem && !subs.includes(a.subsystem)) subs.push(a.subsystem);
       return `<tr data-pid="${escapeAttr(p.id)}">
-        <td style="text-align:center;"><input type="checkbox" class="ua-join" ${a ? "checked" : ""} data-change="UserAdmin.syncEditRows"></td>
+        <td class="u-tc"><input type="checkbox" class="ua-join" ${a ? "checked" : ""} data-change="UserAdmin.syncEditRows"></td>
         <td>${escapeHtml(p.name)}${p.status === "ARCHIVED" ? ' <span class="status-tag tag-ready">사용 중지</span>' : ""}</td>
         <td><select class="ua-role">${this.ROLES.map(r => `<option value="${r}" ${(a ? a.role : "MEMBER") === r ? "selected" : ""}>${escapeHtml(this.roleLabel(r))}</option>`).join("")}</select></td>
         <td><select class="ua-sub">${subs.map(s => `<option value="${escapeAttr(s)}" ${(a ? a.subsystem || "ALL" : "ALL") === s ? "selected" : ""}>${s === "ALL" ? "전체 (ALL)" : escapeHtml(s)}</option>`).join("")}</select></td>

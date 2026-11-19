@@ -22,6 +22,7 @@
   | [보고] 메뉴 서브탭 | `modules/weekly/weekly-export.js` (`ReportTabs`) |
   | 화면이 그대로인지 확인 | `node tools/tests/css_safety_net.js --save <f.json>` → 고친 뒤 `--check <f.json>` (6개 테마 × 모든 화면 · 대화상자의 실제 스타일 비교). CSS 만 바꿨으면 `--compare <예전 css>` |
   | 공통 꾸밈 클래스(`u-flex` `u-bold` `u-gap-8` …) | `style.css` 맨 끝 블록 — 인라인 `style=""` 대신 씀. 없는 것은 같은 꼴로 더함 |
+  | 다시 적용될 일 없는 CSS 선언 지우기 | `python tools/css_dedupe.py` (같은 선택자가 뒤에서 같은 속성을 다시 정하면 앞의 것을 지움 — 화면 그대로) |
   | 화면 그리기 표(탭을 열 때 · 자료가 바뀔 때) | `common/tabs-theme.js` (`ScreenRender.MAP`) — 자료가 바뀌면 보이는 화면만 다시 그림(`MasterSyncEngine.syncAll`) |
   | 테마 색 · 차트 색 토큰 | `style.css` 끝부분: `[data-theme="..."]` 블록, `--chart-*`, `--tint-*` |
   | 선 아이콘(이모지 → SVG) | `static/js/common/icons.js` (`Icons.MAP`) |

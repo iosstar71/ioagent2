@@ -325,25 +325,25 @@ var HomeScreenManager = {
         tile.title = `${sys} (${pmName}) 상세 공정 WBS 화면으로 이동`;
 
         tile.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-weight:800; font-size:var(--fs-base, 13px); color:var(--text-main);">${escapeHtml(sys)}</div>
-            <div style="font-size:var(--fs-xs, 11px); font-weight:700; display:flex; align-items:center; gap:3px;">
+          <div class="u-flex u-jc-between u-ai-center u-mb-8">
+            <div class="u-fs-base u-c-main" style="font-weight:800;">${escapeHtml(sys)}</div>
+            <div class="u-fs-xs u-bold u-flex u-ai-center u-gap-3">
               <span>${lightIcon}</span>
               <span style="color:${rateColor};">${lightText}</span>
             </div>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
-            <span style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">달성률</span>
+          <div class="u-flex u-jc-between u-mb-6" style="align-items:baseline;">
+            <span class="u-fs-xs u-c-muted">달성률</span>
             <span style="font-size:calc(20px * var(--fs-scale, 1)); font-weight:900; color:${rateColor};">${pProg <= 0 && aProg <= 0 ? "-" : rate + "%"}</span>
           </div>
-          <div style="width:100%; background:var(--track); height:6px; border-radius:3px; overflow:hidden; margin-bottom:8px;">
+          <div class="u-w100 u-r-3 u-mb-8" style="background:var(--track); height:6px; overflow:hidden;">
             <div style="width:${Math.min(100, aProg)}%; background:${cardBorder}; height:100%;"></div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-size:var(--fs-xs, 11px); color:var(--text-sub); border-top:1px dashed var(--track); padding-top:6px;">
+          <div class="u-flex u-jc-between u-fs-xs u-c-sub" style="border-top:1px dashed var(--track); padding-top:6px;">
             <span>계획 <b>${pProg}%</b> / 실적 <b>${aProg}%</b></span>
             <span>${sysDelays > 0 ? `<b style="color:var(--chart-bad);">지연 ${sysDelays}</b>` : '<span style="color:var(--chart-good-text);">지연 0</span>'}</span>
           </div>
-          <div style="font-size:var(--fs-2xs, 10px); color:var(--text-muted); margin-top:4px; display:flex; justify-content:space-between;">
+          <div class="u-c-muted u-mt-4 u-flex u-jc-between" style="font-size:var(--fs-2xs, 10px);">
             <span>PM: ${escapeHtml(pmName)} · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span></span>
             <span class="badge" style="font-size:calc(9px * var(--fs-scale, 1)); padding:1px 4px;">${sysType}</span>
           </div>
@@ -430,7 +430,7 @@ var HomeScreenManager = {
     if (badge) badge.textContent = `${uncompleted.length}건 진행중`;
 
     if (uncompleted.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted); font-size:var(--fs-sm, 12px);">🎉 모든 Task가 100% 완료되었거나 필터 조건에 해당하는 미완료 Task가 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td class="u-tc u-p-24 u-c-muted u-fs-sm" colspan="7">🎉 모든 Task가 100% 완료되었거나 필터 조건에 해당하는 미완료 Task가 없습니다.</td></tr>`;
       return;
     }
 
@@ -442,19 +442,19 @@ var HomeScreenManager = {
       tr.innerHTML = `
         <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(t.system)}</span></td>
         <td><strong>${escapeHtml(t.id)}</strong></td>
-        <td style="text-align:left; font-weight:600; color:var(--text-main);">${escapeHtml(t.name)}</td>
-        <td style="font-size:var(--fs-xs, 11px); color:var(--text-muted);">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
+        <td class="u-tl u-semibold u-c-main">${escapeHtml(t.name)}</td>
+        <td class="u-fs-xs u-c-muted">${escapeHtml(t.pStart || "-")} ~ ${escapeHtml(t.pEnd || "-")}</td>
         <td>
-          <div style="display:flex; align-items:center; gap:6px;">
-            <div style="flex:1; background:var(--track); height:6px; border-radius:3px; overflow:hidden;">
+          <div class="u-flex u-ai-center u-gap-6">
+            <div class="u-flex1 u-r-3" style="background:var(--track); height:6px; overflow:hidden;">
               <div style="width:${t.aProg || 0}%; background:var(--primary); height:100%;"></div>
             </div>
-            <span style="font-size:var(--fs-xs, 11px); font-weight:700; color:var(--primary); width:30px; text-align:right;">${t.aProg || 0}%</span>
+            <span class="u-fs-xs u-bold u-c-primary u-tr" style="width:30px;">${t.aProg || 0}%</span>
           </div>
         </td>
         <td>${stTag}</td>
-        <td style="text-align:center;">
-          <button class="btn btn-success btn-xs" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-weight:700; font-size:var(--fs-2xs, 10px);" title="이 Task의 실적을 즉시 100% 완료 상태로 반영">
+        <td class="u-tc">
+          <button class="btn btn-success btn-xs u-bold" data-click="HomeScreenManager.markTaskComplete" data-click-args="${UiEvents.args(String(t.id))}" style="padding:2px 8px; font-size:var(--fs-2xs, 10px);" title="이 Task의 실적을 즉시 100% 완료 상태로 반영">
             ✓ 100% 완료
           </button>
         </td>
@@ -521,7 +521,7 @@ var HomeScreenManager = {
       : ((typeof projectNoticesData !== "undefined" && Array.isArray(projectNoticesData)) ? projectNoticesData : []);
 
     if (notices.length === 0) {
-      listEl.innerHTML = `<div style="font-size:var(--fs-xs, 11px); color:var(--text-muted); padding:12px; text-align:center;">등록된 공지이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
+      listEl.innerHTML = `<div class="u-fs-xs u-c-muted u-p-12 u-tc">등록된 공지이 없습니다. 상단 [공지 전체보기] 버튼을 눌러 등록하세요.</div>`;
       return;
     }
     notices.slice(0, 4).forEach(n => {
@@ -542,11 +542,11 @@ var HomeScreenManager = {
         }
       };
       item.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:calc(11.5px * var(--fs-scale, 1));">
-          <strong style="color:var(--primary);">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
-          <span style="font-size:var(--fs-2xs, 10px); color:var(--text-muted);">${escapeHtml(n.date || "")}</span>
+        <div class="u-flex u-jc-between u-ai-center u-fs-115">
+          <strong class="u-c-primary">${n.isPinned ? "📌 " : ""}${escapeHtml(n.title)}</strong>
+          <span class="u-c-muted" style="font-size:var(--fs-2xs, 10px);">${escapeHtml(n.date || "")}</span>
         </div>
-        <div style="font-size:var(--fs-xs, 11px); color:var(--text-sub); margin-top:3px; line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
+        <div class="u-fs-xs u-c-sub u-mt-3" style="line-height:1.4;">${escapeHtml((n.content || "").substring(0, 55))}${n.content && n.content.length > 55 ? "..." : ""}</div>
       `;
       listEl.appendChild(item);
     });
@@ -563,7 +563,7 @@ var HomeScreenManager = {
       : ((typeof teamChatMessages !== "undefined" && Array.isArray(teamChatMessages)) ? teamChatMessages : []);
 
     if (comms.length === 0) {
-      stream.innerHTML = `<div style="color:var(--text-muted); font-size:var(--fs-xs, 11px); text-align:center; padding:16px;">등록된 게시판 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
+      stream.innerHTML = `<div class="u-c-muted u-fs-xs u-tc u-p-16">등록된 게시판 메시지가 없습니다. 하단 입력창에서 메시지를 작성해보세요.</div>`;
       return;
     }
 
@@ -593,7 +593,7 @@ var HomeScreenManager = {
       const text = m.content || m.text || "";
       const time = m.createdAt ? m.createdAt.substring(5, 16) : (m.time || "");
 
-      p.innerHTML = `<span style="font-weight:700; color:var(--primary);">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span style="color:var(--text-sub);">${escapeHtml(text)}</span> <span style="color:var(--text-muted); font-size:calc(9.5px * var(--fs-scale, 1)); margin-left:4px;">(${escapeHtml(time)})</span>`;
+      p.innerHTML = `<span class="u-bold u-c-primary">${escapeHtml(channel)}${escapeHtml(sender)}:</span> <span class="u-c-sub">${escapeHtml(text)}</span> <span class="u-c-muted u-ml-4" style="font-size:calc(9.5px * var(--fs-scale, 1));">(${escapeHtml(time)})</span>`;
       stream.appendChild(p);
     });
     stream.scrollTop = stream.scrollHeight;
