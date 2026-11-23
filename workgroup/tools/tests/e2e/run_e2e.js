@@ -527,7 +527,7 @@ async function localMain() {
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
   const neoMode = await page.evaluate(() => ({ mode: UiMode.current, sw: typeof UiMode.canSwitch === "function" && UiMode.canSwitch(), cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
-  check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 6 && fontOk, JSON.stringify({ neoMode, fontOk }));
+  check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 7 && fontOk, JSON.stringify({ neoMode, fontOk }));
   if (await page.evaluate(() => typeof NeoTodo !== "undefined")) {
     await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
     const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: NeoTodo.collect(null).delayed.length }));
@@ -541,7 +541,7 @@ async function localMain() {
     const after = await page.evaluate(id => ({ delayed: NeoTodo.collect(null).delayed.length, style: HomeScreenManager.userStyle(), tab: document.querySelector(".tab-pane.active").id,
       listed: !!Array.prototype.find.call(document.querySelectorAll("#homeTodoContainer .todo-auto-group:first-of-type .todo-auto-main, #homeTodoContainer .todo-auto-main"), b => b.textContent.indexOf(id) !== -1),
       badge: (document.querySelector('.g-nav-top [data-tab="tab-wbs"] .neo-badge') || document.querySelector('.g-group[data-group="sc"] .g-group-count:not([hidden])') || {}).textContent || "" }), target.id);
-    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 6 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
+    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 7 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
     const item = await page.$(`#homeTodoContainer .todo-auto-main[data-click-args*='"${target.id}"']`);
     await item.click(); await page.waitForTimeout(900);
     const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: NeoDetail.isOpen(), id: NeoDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
