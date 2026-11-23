@@ -25,7 +25,7 @@
 - **WBS 상태 버튼(2026-11 결정)**: 지연 등을 고르면 해당 Task + **레벨 보기에서 고른 레벨까지의 상위 Task 를 묶음 머리**로 함께 표시, 머리마다 "지연 n건"
 - **선행 Task(1.5)**: 최대 3개, 경고만(일정 자동 밀기 · 크리티컬 패스 · Gantt 연결선 없음). 일정 겹침 = 선행 계획 종료 ≥ 이 Task 계획 시작. 순환(A→B→A)은 상세 패널에서 거부 (엑셀 업로드는 그대로 받음 — 경고만이라 계산이 돌지 않음)
 - **Workgroup 아래 고정 줄([변경 취소] · [모두 저장]) 없앰(1.5)** — 위쪽 줄과 같은 기능
-- **1.5 를 Workgroup 으로 배포하기 전에 Workgroup E2E 한 번 필요** (다운로드 제한 · 감사 로그 · 아래 줄 삭제는 Workgroup 화면). 요청하시면 조립 폴더에서 실행
+- **Workgroup 시험은 1.6 완성 때 한 번에** (2026-11 결정): 1.5 · 1.5.1 · 1.6 을 함께 — 조립 폴더에서 서버 API 시험 + Workgroup E2E. 1.5 에서 서버 API 시험만 한 것: 다운로드 제한 화면(버튼 비활성 · 멤버 메뉴 표시 · 멤버 정보 [다운로드] 칸), 감사 로그 화면, 화면 파일 내려받기 허가, 아래 저장 줄 삭제. Workgroup 배포본도 그때 만듦
 - **다운로드 제한 · 감사 로그는 Workgroup 만**. 다운로드 제한은 멤버별(프로젝트별), 감사 로그 열람 Admin · PM, 보관 1년, 감사 로그 화면은 프로젝트 설정 > 감사 로그 (PM 이 Admin 메뉴를 못 보므로)
 - **테스트 결함 현황(1.5.1 결정, B안)**: 기준일까지 통합테스트 단계로 접수된 VOC 가 있을 때만 보이고 건수도 기준일까지 (`Metrics.hasTestStage/defectStats(list, refDate)`)
 - **기준선 "재설정" = 지우고 새로 시작** (`Baseline.clear`, [🗑️ 기준선 지우기]). 다시 확정(이력 남김)도 그대로 있음. Gantt 위쪽 줄에서 둘 다 가능
@@ -46,7 +46,7 @@
 - 외부 평가 의견(2026-11): 강점 = 입력이 적고 자동 계산 — 새 기능도 **선택 입력 · 자동 계산** 위주로
 
 ## 시험 · 배포 빠른 참조
-- **작업이 끝나면 Standalone 배포 zip 을 만들어 보냄**: `python tools/make_release.py <폴더>` (pprjmgmt/ 폴더판) 와 `--root` (index.html 이 zip 맨 위 — 회사 배포 플랫폼은 루트의 index 로 염, 2026-11 결정). 화면은 상대 경로라 어느 주소에서도 동작
+- **작업이 끝나면 Standalone 배포 zip 을 만들어 보냄**: `python tools/make_release.py <폴더>` (pprjmgmt/ 폴더판만 — pprjmgmt 폴더도 배포 플랫폼에서 동작, 2026-11 결정). `--root`(index.html 이 zip 맨 위)는 요청할 때만
 - `python tools/build_index.py` (partials → index.html) · `python tools/check_ui_debt.py` · `node tools/tests/unit/run_unit.js`
 - Standalone: `node tools/tests/e2e/run_e2e.js` · 배포 `python tools/make_release.py <폴더>`
 - Workgroup: `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 `python tools/app_config.py`, `python tools/tests/test_server_api.py`, `node tools/tests/e2e/run_e2e.js`(~20분), `python tools/make_release.py <폴더>`
