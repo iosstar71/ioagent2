@@ -28,7 +28,7 @@ var SyncManager = {
     "tab-mywork": null,
     "tab-home": null,
     "tab-dashboard": ["wbsData", "deliverablesData", "reqMasterData", "vocData"],
-    "tab-matrix": ["wbsData", "reqMasterData"],
+    "tab-matrix": ["wbsData", "deliverablesData", "reqMasterData", "vocData"],   // Phase 진척에 산출물 · VOC 구역도 있음
     "tab-gantt": ["wbsData"],
     "tab-wbs": ["wbsData"],
     "tab-req": ["reqMasterData"],
