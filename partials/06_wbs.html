@@ -49,12 +49,13 @@
         </div>
         <div class="filter-item">
           <label class="u-bold">🚦 상태 조회 (최하위 Task):</label>
-          <select id="wbsStatusFilter" class="neo-std-only" data-change="renderWbsTable" title="상태를 선택하면 레벨 접기와 관계없이 최하위 Task만 표시합니다.">
+          <select id="wbsStatusFilter" class="neo-std-only" data-change="renderWbsTable" title="상태를 고르면 그 상태의 최하위 Task 와, 레벨 보기에서 고른 레벨까지의 상위 Task 를 묶음 머리로 함께 표시합니다.">
             <option value="ALL">전체 (계층 표시)</option>
             <option value="지연">🔴 지연 Task만</option>
             <option value="진행중">🔵 진행중 Task만</option>
             <option value="대기">⚪ 대기 Task만</option>
             <option value="완료">🟢 완료 Task만</option>
+            <option value="선행 지연">⛓ 선행 지연 Task만</option>
           </select>
           <span class="status-badge-chip chip-delayed neo-std-only u-pointer" data-click="UiH.setValueRun" data-click-args='["wbsStatusFilter", "지연", "renderWbsTable"]' title="지연 최하위 Task 조회">지연 <b id="wbsDelayedCount">0</b>건</span>
           <!-- [Neo 2.1] 상태 칩 필터 (최하위 Task 상태별 건수, 누르면 해당 상태만 표시) -->

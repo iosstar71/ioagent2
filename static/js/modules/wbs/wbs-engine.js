@@ -431,7 +431,56 @@ const WBSEngine = {
       if (old && old !== it.id) idMap.set(old, it.id);
     });
     this.lastIdMap = idMap.size ? idMap : null;
+    // 선행 Task 는 같은 자료 안의 ID 를 가리키므로 다시 매긴 번호를 따라감 (모르는 ID 는 그대로)
+    const byOld = new Map();
+    prevIds.forEach((old, it) => { if (old) byOld.set(String(old), it); });
+    data.forEach(it => {
+      if (!it.pred) return;
+      const ids = this.predIds(it).map(p => (byOld.has(p) ? String(byOld.get(p).id) : p)).filter(p => p && p !== String(it.id));
+      it.pred = ids.join(", ");
+    });
   },
+
+  // ---- 선행 Task (경고만 — 일정을 밀거나 크리티컬 패스를 계산하지 않음) ----
+  PRED_MAX: 3,
+  // "1.2.3, 2.1" → ["1.2.3", "2.1"] (중복 제거, 최대 3개)
+  predIds(task) {
+    const out = [];
+    String((task && task.pred) || "").split(/[,;\s]+/).map(x => x.trim()).filter(Boolean).forEach(x => { if (out.indexOf(x) === -1) out.push(x); });
+    return out.slice(0, this.PRED_MAX);
+  },
+  // 선행 Task 마다 경고 이유: delayed = 선행이 지연, overlap = 선행 계획 종료가 이 Task 계획 시작과 같거나 뒤,
+  //   started = 이 Task 를 실제 시작했는데 선행이 미완료. 이 Task 가 끝났으면(실적 100) 경고 없음
+  //   byId: ID → Task (없으면 data 로 만듦), missing = 자료에 없는 ID
+  predCheck(task, data, reportDateStr, byId) {
+    const map = byId || new Map((data || []).map(t => [String(t.id), t]));
+    const done = (parseFloat(task && task.aProg) || 0) >= 100;
+    const list = this.predIds(task).map(id => {
+      const p = map.get(id);
+      if (!p || p === task) return { id, missing: true, reasons: [] };
+      const reasons = [];
+      if (!done) {
+        const pDone = (parseFloat(p.aProg) || 0) >= 100;
+        if (!pDone && this.getTaskStatus(p, reportDateStr).code === "delayed") reasons.push("delayed");
+        if (p.pEnd && task.pStart && p.pEnd >= task.pStart) reasons.push("overlap");
+        if (!pDone && task.aStart && (!reportDateStr || task.aStart <= reportDateStr)) reasons.push("started");
+      }
+      return { id, task: p, reasons };
+    });
+    return { list, warn: list.some(x => x.reasons.length > 0) };
+  },
+  // 경고가 있는 Task → predCheck 결과
+  predWarnings(data, reportDateStr) {
+    const byId = new Map((data || []).map(t => [String(t.id), t]));
+    const out = new Map();
+    (data || []).forEach(t => {
+      if (!t || !t.pred) return;
+      const r = this.predCheck(t, data, reportDateStr, byId);
+      if (r.warn) out.set(t, r);
+    });
+    return out;
+  },
+  PRED_REASON: { delayed: "선행 지연", overlap: "일정 겹침", started: "선행 미완료 상태에서 시작" },
 
   markLeafNodes(data) {
     for (let i = 0; i < data.length; i++) {

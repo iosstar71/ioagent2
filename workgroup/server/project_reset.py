@@ -15,6 +15,7 @@ import json
 from .common import AuthError, dkey, now_str
 from .files import FileStore
 from .logger import write_server_log
+from . import audit
 from .settings import DATA_DIR, DB_LOCK
 from .store import Store
 
@@ -70,7 +71,10 @@ def api_clear_tasks(h, req):
         p = Store.get_project(ids[0])
         if p and p["status"] == "ARCHIVED":
             raise AuthError("사용 중지(보관)된 프로젝트는 관리자만 초기화할 수 있습니다.", 403)
-    h._send_json(200, {"ok": True, "results": [clear_tasks(pid, user["empNo"]) for pid in ids]})
+    results = [clear_tasks(pid, user["empNo"]) for pid in ids]
+    for pid in ids:
+        audit.by(h, user, "RESET", pid, "Task · 요구사항 · VOC · 산출물 등 업무 자료 초기화 (초기화 전 자동 백업)", pid)
+    h._send_json(200, {"ok": True, "results": results})
 
 
 ROUTES = {"/api/projects/clear-tasks": api_clear_tasks}

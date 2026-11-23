@@ -12,6 +12,7 @@
 import shutil
 import urllib.parse
 
+from . import audit
 from .common import AuthError
 from .files import FileStore, manager_only
 from .settings import FILE_MAX_BYTES
@@ -51,6 +52,7 @@ def download(h):
         if f["deletedAt"]:
             manager_only(user)
         path = FileStore.open_path(f)
+        audit.guard_download(h, user, "첨부 파일", f["name"])
     except AuthError as ae:
         h._send_json(ae.status, {"ok": False, "message": str(ae), "authRequired": ae.status == 401, "code": ae.code})
         return

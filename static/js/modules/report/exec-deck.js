@@ -318,6 +318,12 @@ var ExecDeck = {
       const del = (c.data.delayed || []).slice(0, 12);
       els.push(T(0.45, 1.15, 7.3, 0.35, [p(`지연 Task ${c.m.cntDel || 0}건${del.length < (c.m.cntDel || 0) ? ` (상위 ${del.length}건)` : ""}`, 13, { bold: true, color: "B91C1C" })]));
       const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.bVar ? ` · 기준선 ${t.bVar > 0 ? "+" : ""}${t.bVar}일` : ""}${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 Task 없음", 12, { color: "15803D" })];
+      // 선행 지연 영향 Task (예전 작성 완료본에는 없음)
+      const ph = (c.data.predHit || []).slice(0, 8);
+      if (ph.length) {
+        dl.push(p(`⛓ 선행 지연 영향 Task ${(c.data.predHit || []).length}건`, 12, { bold: true, color: "B45309" }));
+        ph.forEach(t => dl.push(p(`[${t.system}] ${t.id} ${t.name} — ${t.why}`, 10, { bullet: true })));
+      }
       els.push(T(0.45, 1.55, 7.3, 5.4, this.fit(dl, 7.3, 5.4)));
       const ms = (c.data.milestones || []).slice(0, 10);
       els.push(T(8.1, 1.15, 4.8, 0.35, [p("주요 마일스톤", 13, { bold: true, color: C })]));

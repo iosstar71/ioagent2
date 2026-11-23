@@ -26,6 +26,7 @@ import zipfile
 from . import settings
 from .common import AuthError, now_str
 from .logger import write_server_log
+from . import audit
 from .settings import APP_CONFIG, DATA_DIR, DB_LOCK, UPLOAD_DIR
 from .store import Store
 
@@ -241,6 +242,7 @@ def api_create(h, req):
 def api_restore(h, req):
     u = _admin(h, req)
     before = restore(str(req.get("name") or ""), u["empNo"])
+    audit.by(h, u, "RESTORE", str(req.get("name") or ""), f"복원 전 자동 백업: {before}", "")
     h._send_json(200, {"ok": True, "before": before, "backups": list_backups()})
 
 
@@ -262,10 +264,11 @@ def api_settings(h, req):
 def download(h):
     q = urllib.parse.parse_qs(urllib.parse.urlparse(h.path).query)
     try:
-        _admin(h)
+        u = _admin(h)
         path = _path((q.get("name") or [""])[0])
         if not path.exists():
             raise AuthError("백업 파일을 찾을 수 없습니다.", 404)
+        audit.guard_download(h, u, "시스템 백업", path.name)
     except AuthError as ae:
         h._send_json(ae.status, {"ok": False, "message": str(ae), "authRequired": ae.status == 401})
         return

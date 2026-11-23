@@ -24,6 +24,7 @@ import time
 
 from .common import AuthError, now_str
 from .logger import write_server_log
+from . import audit
 from .permission import can_write
 from .settings import APP_CONFIG, DB_LOCK, app_features, load_app_config, BASE_DIR
 
@@ -251,6 +252,8 @@ def _release(h, req, action):
     res = _run(go)
     if res["released"]:
         write_server_log(f"[LOCK] {action} {pid} {res['released']} by {info['empNo']}{' reason=' + memo if force else ''}")
+        if force:
+            audit.by(h, info, "LOCK", ", ".join(res["released"]), f"사유: {memo}")
     h._send_json(200, dict(ok=True, **res))
 
 

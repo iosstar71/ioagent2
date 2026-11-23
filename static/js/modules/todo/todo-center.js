@@ -59,6 +59,7 @@ var TodoCenter = {
     const g = [
       { key: "delay", icon: "🔴", title: "지연 Task", items: c.delayed.map(x => ({ k: `WBS:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: `${x.t.system || ""} · 계획 ${x.t.pProg}% / 실적 ${x.t.aProg}%`, due: x.t.pEnd, tag: `-${Math.round(x.gap)}%p` })) },
       { key: "soon", icon: "⏰", title: `${NeoTodo.DUE_DAYS}일 안 마감`, items: c.dueSoon.map(t => ({ k: `WBS:${t.id}`, type: "WBS", id: t.id, title: `${t.id} ${t.name || ""}`, sub: `${t.system || ""} · 실적 ${t.aProg}%`, due: t.pEnd })) },
+      { key: "pred", icon: "⛓", title: "선행 지연 영향", items: c.predHit.map(x => ({ k: `PRED:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: WbsStatusView.tip(x.r).replace(/\n/g, " · "), due: x.t.pStart, tag: "⛓" })) },
       { key: "voc", icon: "📣", title: "미조치 VOC", items: c.vocs.map(v => ({ k: `VOC:${v.id}`, type: "VOC", id: v.id, title: `${v.id} ${v.title || ""}`, sub: `${v.system || ""} · ${v.priority || ""} · ${v.status || ""}`, due: v.targetDate })) },
       { key: "deliv", icon: "📑", title: "확인할 산출물", items: c.delivs.map(d => ({ k: `DLV:${d.id}`, type: "DLV", id: d.name, title: d.name || "", sub: `${d.system || ""} · ${d.round || ""} · ${d.status || ""}`, due: d.pDate })) },
       { key: "act", icon: "⚡", title: "미완료 Action Item", items: c.actions.map(a => ({ k: `ACT:${a._mtg}:${a.id || a.title}`, type: "MTG", id: a._mtg, title: a.title || "", sub: `${a.assignee || ""} · ${a.system || ""}`, due: a.targetDate })) }

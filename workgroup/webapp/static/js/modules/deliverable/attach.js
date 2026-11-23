@@ -304,7 +304,7 @@ var AttachManager = {
         showToast("⚠️ " + (j.message || "다운로드하지 못했습니다."));
         return;
       }
-      ExcelSync._triggerDownload(await res.blob(), f.name);
+      ExcelSync._triggerDownload(await res.blob(), f.name, { logged: true });   // 서버가 허가 · 기록함
     } catch (err) {
       showToast("⚠️ 다운로드 오류: " + (err.message || "서버 연결 실패"));
     }

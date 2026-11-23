@@ -27,7 +27,7 @@ from .settings import (
 from .common import AuthError, MANAGER_ROLES, SecurityError, now_str
 from .security import verify_pwd
 from .permission import can_access_project, effective_user, is_sys_admin, membership
-from . import backup, file_api, locks, project_reset, snapshots, user_admin
+from . import audit, backup, file_api, locks, project_reset, snapshots, user_admin
 from .files import FileStore
 from .logger import write_server_log
 from .store import Store
@@ -230,7 +230,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         LoginThrottle.check(emp)
         row = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == emp.lower()), None)
         if not row or not verify_pwd(row.get("pwdHash"), pwd_hash):
-            LoginThrottle.fail(emp)
+            if LoginThrottle.fail(emp):
+                audit.write("LOGIN_FAIL", emp, audit.ip_of(self), "", emp, "5회 연속 실패 — 60초 잠금")
             write_server_log(f"[AUTH] Login failed: {emp} ({self.address_string()})")
             raise AuthError("멤버 ID 또는 암호가 일치하지 않습니다.", 401)
         # [v3.0.0] 멤버 선택할 프로젝트: 관리자는 선택하지 않아도 됨, 그 밖에는 참여 중인 프로젝트를 반드시 선택
@@ -328,6 +329,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
             raise AuthError("멤버 ID을 입력하세요.", 400)
         LoginThrottle.check(emp)
         Store.self_reset_password(emp)
+        audit.write("PASSWORD", emp, audit.ip_of(self), "", emp, "멤버 선택 화면에서 기본 암호(1234)로 초기화")
         write_server_log(f"[AUTH] Password reset to default (login screen, no auth): {emp}")
         self._send_json(200, {"ok": True, "message": "암호를 1234로 초기화했습니다."})
 
@@ -363,6 +365,8 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         pid = info["projectId"]
         result = Store.save(info, changes, bool(req.get("force")), pid,
                             guard=lambda cur: locks.save_guard(cur, info, pid, changes, bool(req.get("lockBypass"))))
+        for kind, target, detail in result.pop("audit", []):
+            audit.by(self, info, kind, target, detail, pid)
         if result.get("locked"):
             lk = locks._run(lambda cur: locks.listing(cur, pid, False))
             self._send_json(423, dict(result, locks=lk, message="다른 사람이 체크아웃했거나 체크아웃하지 않은 서브시스템이 있어 저장하지 않았습니다."))
@@ -452,6 +456,7 @@ class WbsHttpHandler(SimpleHTTPRequestHandler):
         **backup.ROUTES,
         **snapshots.ROUTES,
         **locks.ROUTES,
+        **audit.ROUTES,
         "/api/projects/list": api_projects_list,
         "/api/projects/create": api_projects_create,
         "/api/projects/update": api_projects_update,

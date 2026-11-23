@@ -740,6 +740,20 @@ input[readonly], select[disabled] { background: rgba(0,0,0,0.06); color: var(--t
 .chip-delayed { background: var(--st-bad-bg); color: var(--st-bad-fg); border-color: transparent; }
 .chip-ready { background: var(--st-neutral-bg); color: var(--text-sub); border-color: transparent; }
 .chip-hold { background: var(--st-warn-bg); color: var(--st-warn-fg); border-color: transparent; }
+.chip-pred { background: var(--st-warn-bg); color: var(--st-warn-fg); border-color: transparent; }
+/* 선행 Task 표시 (작업명 앞) — 경고면 주황 */
+.wbs-pred { display: inline-flex; align-items: center; margin-right: 3px; color: var(--text-muted); cursor: help; }
+.wbs-pred.warn { color: var(--warning); }
+/* 상태 조회에서 함께 보이는 상위 Task (묶음 머리) */
+tr.wbs-group-head td { opacity: 0.72; }
+.gantt-pred-dot { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--warning); border: 1px solid var(--bg-card); z-index: 3; cursor: help; }
+.neo-pred-ins { display: flex; gap: 6px; margin-bottom: 6px; }
+.neo-pred-in { flex: 1 1 0; width: 0; min-width: 0; }
+.neo-pred-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 3px 0; font-size: var(--fs-sm, 12px); }
+.neo-pred-line.warn code { color: var(--warning); }
+.neo-pred-name { flex: 1 1 120px; min-width: 0; }
+.neo-pred-why { padding: 1px 6px; border-radius: 8px; background: var(--st-warn-bg); color: var(--st-warn-fg); font-weight: 700; }
+tr.wbs-group-head input, tr.wbs-group-head select { font-style: italic; }
 .chip-del { background: var(--bg-main); color: var(--text-muted); border-color: var(--border-color); text-decoration: line-through; }
 .chip-moved { background: var(--chip-bg); color: var(--text-sub); border-color: var(--border-color); font-weight: bold; }
 .chip-error { background: #fef2f2; color: #b91c1c; border-color: #f87171; font-weight: bold; }
@@ -1409,7 +1423,7 @@ header.g-header > .g-brand { flex: 0 0 auto; }
 .neo-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 14px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-sub); font: inherit; font-size: var(--fs-sm, 12px); font-weight: 700; cursor: pointer; }
 .neo-chip b { font-weight: 800; }
 .neo-chip.active { outline: 2px solid var(--primary, #1e3a8a); outline-offset: 1px; }
-.neo-chip:not(.chip-delayed):not(.chip-progress):not(.chip-ready):not(.chip-completed):not(.chip-hold):not(.chip-del).active { background: var(--primary, #1e3a8a); color: #fff; border-color: var(--primary, #1e3a8a); }
+.neo-chip:not(.chip-delayed):not(.chip-progress):not(.chip-ready):not(.chip-completed):not(.chip-hold):not(.chip-del):not(.chip-pred).active { background: var(--primary, #1e3a8a); color: #fff; border-color: var(--primary, #1e3a8a); }
 
 /* WBS ID 버튼 · 선택 행 */
 .wbs-id-link { border: 0; background: transparent; padding: 2px 4px; border-radius: 4px; font: inherit; font-weight: 800; color: var(--primary, #1e3a8a); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
@@ -2098,6 +2112,8 @@ svg.iostar-ico.ico-ok, svg.iostar-dot.ico-ok { color: var(--success, #2E6F5E); }
 svg.iostar-ico.ico-warn, svg.iostar-dot.ico-warn { color: var(--warning, #9A6B2F); }
 svg.iostar-ico.ico-danger, svg.iostar-dot.ico-danger { color: var(--danger, #A64B4B); }
 svg.iostar-ico.ico-info, svg.iostar-dot.ico-info { color: var(--primary, #335C81); }
+/* 색을 채운 버튼 안의 상태 아이콘(✅ 등)은 버튼 글자색을 따름 — 파랑 · 초록 바탕에 초록 아이콘이 묻히지 않게 (예: 체크인) */
+:is(.btn-primary, .btn-success, .btn-danger, .btn-warning, .btn[data-btn="save"], .btn[data-btn="add"], .btn[data-btn="danger"], .btn[data-btn="warn"], .btn[data-btn$="-down"]) svg.iostar-ico:is(.ico-ok, .ico-warn, .ico-danger, .ico-info) { color: currentColor; }
 svg.iostar-ico.ico-star { color: #C9A227; }
 svg.iostar-dot.ico-muted { color: var(--text-muted, #94A3B8); }
 svg.iostar-dot { fill: currentColor; stroke: none; }

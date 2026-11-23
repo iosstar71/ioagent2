@@ -11,6 +11,7 @@ import re
 
 from .common import AuthError, now_str
 from .logger import write_server_log
+from . import audit
 from .permission import is_sys_admin, normalize_role
 from .settings import DB_LOCK, DEFAULT_PROJECT
 from .store import Store
@@ -77,6 +78,12 @@ def save_user(admin, req):
         if row is None:
             row = {"empNo": emp, "pwdHash": "", "lang": "ko"}  # 새 계정: 초기 암호 1234, 첫 멤버 선택 때 변경
             users.append(row)
+        # 다운로드 제한은 그 프로젝트의 PM 이 멤버 화면에서 정함 — 이 화면이 보내지 않으면 그대로 둠
+        old_roles = row.get("projectRoles") if isinstance(row.get("projectRoles"), dict) else {}
+        src = req.get("projectRoles") if isinstance(req.get("projectRoles"), dict) else {}
+        for k, v in roles.items():
+            if "noDownload" not in (src.get(k) or {}) and (old_roles.get(k) or {}).get("noDownload") and v["role"] != "PM":
+                v["noDownload"] = True
         row.update({"name": name, "dept": str(req.get("dept") or "")[:100], "projectRoles": roles})
         if req.get("lang") in ("ko", "en"):
             row["lang"] = req["lang"]
@@ -144,13 +151,21 @@ def api_list(h, req):
 
 def api_save(h, req):
     admin = h._require_user(roles={"SYS_ADMIN"}, req=req)
+    before = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == str(req.get("empNo") or "").strip().lower()), None)
     save_user(admin, req)
+    after = next((u for u in Store.get_users() if str(u.get("empNo", "")).lower() == str(req.get("empNo") or "").strip().lower()), None)
+    for pid in sorted(set(((before or {}).get("projectRoles") or {})) | set(((after or {}).get("projectRoles") or {}))):
+        for kind, target, detail in audit.diff_events("projectUsers", [before] if before else [], [after] if after else [], pid):
+            audit.by(h, admin, kind, target, detail, pid)
+    if before is None or bool(before.get("role") == "SYS_ADMIN") != bool(req.get("sysAdmin")):
+        audit.by(h, admin, "PERMISSION" if before else "MEMBER", str(req.get("empNo") or ""), ("새 계정" if before is None else "") + (" · 관리자" if req.get("sysAdmin") else ""), "")
     h._send_json(200, dict(list_all(), ok=True))
 
 
 def api_delete(h, req):
     admin = h._require_user(roles={"SYS_ADMIN"}, req=req)
     delete_user(admin, req.get("empNo"))
+    audit.by(h, admin, "MEMBER", str(req.get("empNo") or ""), "계정 삭제", "")
     h._send_json(200, dict(list_all(), ok=True))
 
 

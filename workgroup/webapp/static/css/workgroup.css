@@ -139,3 +139,9 @@
 .attach-empty { text-align: center; color: var(--text-muted, #64748b); padding: 22px 8px !important; }
 [data-theme="dark"] .attach-readonly { color: #fcd34d; }
 [data-theme="dark"] .wr-manual-tag { background: rgba(245,158,11,0.2); color: #fcd34d; }
+
+/* 다운로드 제한 · 감사 로그 (core/download-guard.js) */
+.dl-limit-note { color: var(--danger); font-weight: 700; }
+.dl-limit-sel.on { color: var(--danger); font-weight: 700; }
+.audit-table td { white-space: nowrap; font-size: var(--fs-sm, 12px); }
+.audit-table td.audit-detail { white-space: normal; min-width: 240px; }

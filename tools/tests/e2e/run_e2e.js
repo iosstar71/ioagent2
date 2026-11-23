@@ -93,7 +93,7 @@ async function main() {
     { let out = "", ok = true; try { out = execFileSync("node", [path.join(ROOT, "tools", "tests", "unit", "run_unit.js")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
       check("Calculation unit tests pass (Metrics · WBSEngine · Migrate · templates)", ok, out.trim().split("\n").slice(-3).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.4.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.5.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -113,7 +113,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Standalone v1.4.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.5.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -578,6 +578,114 @@ async function main() {
     check("English UI is available on the member selection screen", /Choose member/.test(enT.title) && /Start/.test(enT.btn), JSON.stringify(enT));
     const enIco = await en.evaluate(() => { const b = [...document.querySelectorAll(".login-2col button, .login-2col a")].filter(x => x.offsetParent && x.querySelector("svg.iostar-ico")); return b.map(x => x.textContent.trim()).join(" | "); });
     check("English text still applies next to the line icons (emoji-free lookup)", enIco && !/[가-힣]/.test(enIco), enIco);
+    // ---------------------------------------------------------------------------------------------
+    // 샘플 프로젝트로 시험 — 1.5 부터 화면 시험은 [🧪 샘플 프로젝트 추가] 로 만든 자료를 씀 (담긴 경우: tools/tests/sample_coverage.js)
+    // ---------------------------------------------------------------------------------------------
+    console.log("\n[Sample project: the shared test data set]");
+    const sx = await newPage();
+    await sx.goto(web.url); await sx.waitForTimeout(1500);
+    const SPW = {};
+    await pickWorker(sx, "admin", SPW);
+    await sx.evaluate(() => SampleProject.add()); await sx.waitForTimeout(300); await sx.click("#confirmDialogOkBtn"); await sx.waitForTimeout(1200);
+    const spid = await sx.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); return p && p.id; });
+    await sx.evaluate(pid => ProjectManager.switchTo(pid), spid);
+    await sx.waitForTimeout(2500);
+    if (await sx.evaluate(() => document.getElementById("securityLockOverlay").style.display !== "none").catch(() => false)) await pickWorker(sx, "admin", SPW, spid);
+    await waitApp(sx);
+    const s0 = await sx.evaluate(() => ({ pid: ProjectContext.current, wbs: wbsData.length, l5: wbsData.filter(t => t.level === 5).length, pred: wbsData.filter(t => t.pred).length, bl: (projectConfig.baselines || []).length }));
+    check("Sample project opens as its own project (L5 Tasks, predecessors, baseline)", s0.pid === spid && s0.wbs > 100 && s0.l5 === 2 && s0.pred === 6 && s0.bl === 1, JSON.stringify(s0));
+    // 모든 화면 · 보고 서브탭을 샘플 자료로 열어 봄
+    for (const t of ["tab-mywork", "tab-home", "tab-dashboard", "tab-matrix", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
+      await sx.evaluate(t => { try { GShell.go(t); } catch (e) {} }, t); await sx.waitForTimeout(200);
+    }
+    check("Every screen opens on the sample project without page errors", sx.errors.length === 0, sx.errors.slice(0, 3).join(" | "));
+
+    console.log("\n[Predecessor warnings (v1.5)]");
+    await sx.evaluate(() => { GShell.go("tab-wbs"); NeoChips.set("ALL"); document.getElementById("wbsMaxLevelFilter").value = "5"; renderWbsTable(); }); await sx.waitForTimeout(300);
+    const pwv = await sx.evaluate(() => {
+      const icons = [...document.querySelectorAll("#wbsTableBody .wbs-pred")];
+      const chip = [...document.querySelectorAll("#neoStatusChips .neo-chip")].find(b => /선행/.test(b.textContent));
+      const tip = (document.querySelector('#wbsTableBody tr[data-wbs-id="2.3.2.1"] .wbs-pred') || {}).title || "";
+      return { icons: icons.length, warn: icons.filter(i => i.classList.contains("warn")).length, chip: chip ? chip.textContent.replace(/\s+/g, " ").trim() : "", tip };
+    });
+    check("WBS table: ⛓ before Tasks with predecessors (orange when warned, tooltip names the predecessor); status button '선행 지연 4'",
+      pwv.icons === 6 && pwv.warn === 4 && /선행 지연 4/.test(pwv.chip) && /선행 2\.2\.2\.2 선행 지연 \(계획 종료 04\/30\)/.test(pwv.tip), JSON.stringify(pwv));
+    const grp = await sx.evaluate(() => {
+      const rows = () => [...document.querySelectorAll("#wbsTableBody tr")].map(r => ({ id: r.dataset.wbsId, head: r.classList.contains("wbs-group-head"), lvl: wbsData.find(t => t.id === r.dataset.wbsId).level }));
+      NeoChips.set("선행 지연");
+      const a = rows();
+      document.getElementById("wbsMaxLevelFilter").value = "2"; renderWbsTable();
+      const b = rows();
+      NeoChips.set("지연");
+      const c = rows();
+      document.getElementById("wbsMaxLevelFilter").value = "5"; NeoChips.set("ALL");
+      return { aMatch: a.filter(x => !x.head).map(x => x.id).join(), aHeads: a.filter(x => x.head).length, bHeadMax: Math.max(...b.filter(x => x.head).map(x => x.lvl)), bMatch: b.filter(x => !x.head).length,
+        cLeaf: c.filter(x => !x.head).length, cDelayed: wbsData.filter(t => t.isLeaf && t.status === "지연").length, cHeadMax: Math.max(...c.filter(x => x.head).map(x => x.lvl)), firstIsHead: c[0] && c[0].head };
+    });
+    check("Status buttons show the matching Tasks with their upper Tasks as group heads, down to the chosen level",
+      grp.aMatch === "2.3.2.1,3.3.1.3,3.3.2.2,4.3.1.1" && grp.aHeads >= 6 && grp.bHeadMax === 2 && grp.bMatch === 4 && grp.cLeaf === grp.cDelayed && grp.cHeadMax <= 2 && grp.firstIsHead, JSON.stringify(grp));
+    const pd = await sx.evaluate(async () => {
+      const idx = wbsData.findIndex(t => t.id === "2.4.1.1");
+      NeoDetail.open(idx); await new Promise(r => setTimeout(r, 150));
+      const ins = [...document.querySelectorAll("#neoDetail .neo-pred-in")].map(i => i.value);
+      const lines = [...document.querySelectorAll("#neoDetail .neo-pred-line")].length;
+      NeoDetail.open(wbsData.findIndex(t => t.id === "2.3.2.1")); await new Promise(r => setTimeout(r, 150));
+      const warnLine = (document.querySelector("#neoDetail .neo-pred-line.warn") || {}).textContent || "";
+      NeoDetail.setPred(1, "2.3"); await new Promise(r => setTimeout(r, 150));          // 자기 상위 Task → 거부
+      const afterBad = wbsData.find(t => t.id === "2.3.2.1").pred;
+      NeoDetail.setPred(1, "2.3.1.1"); await new Promise(r => setTimeout(r, 150));
+      const afterOk = wbsData.find(t => t.id === "2.3.2.1").pred;
+      NeoDetail.setPred(1, ""); await new Promise(r => setTimeout(r, 150));
+      const cleared = wbsData.find(t => t.id === "2.3.2.1").pred;
+      NeoDetail.close();
+      return { ins, lines, warnLine: warnLine.replace(/\s+/g, " ").trim(), afterBad, afterOk, cleared };
+    });
+    check("Detail panel: 3 predecessor inputs with name · status · plan end; own upper Task refused; set and clear",
+      pd.ins.join() === "2.3.1.3,2.3.2.1,2.3.2.2" && pd.lines === 3 && /2\.2\.2\.2.*지연.*선행 지연/.test(pd.warnLine) && pd.afterBad === "2.2.2.2" && pd.afterOk === "2.2.2.2, 2.3.1.1" && pd.cleared === "2.2.2.2", JSON.stringify(pd));
+    const rn = await sx.evaluate(() => {
+      const name = id => (wbsData.find(t => t.id === id) || {}).name;
+      const target = name("2.2.2.2");
+      addSiblingTask(wbsData.findIndex(t => t.id === "2.2.2.1"));        // 2.2.2.2 앞에 Task 가 생겨 번호가 밀림
+      const moved = wbsData.find(t => t.name === "ERP 생산계획 연계 개발").pred;
+      const follows = name(moved) === target;
+      deleteWbsRow(wbsData.findIndex(t => t.name === target));            // 선행 Task 를 지우면 선행 지정도 빠짐
+      const afterDel = wbsData.find(t => t.name === "ERP 생산계획 연계 개발").pred || "";
+      return { moved, follows, afterDel };
+    });
+    check("Predecessors follow renumbered WBS IDs, and a deleted predecessor is removed", rn.moved === "2.2.2.3" && rn.follows && rn.afterDel === "", JSON.stringify(rn));
+    await sx.reload(); await sx.waitForTimeout(1500);   // 위 편집은 저장하지 않았으므로 다시 열면 저장된 샘플 그대로
+    if (await sx.evaluate(() => document.getElementById("securityLockOverlay").style.display !== "none").catch(() => false)) await pickWorker(sx, "admin", SPW, spid);
+    await waitApp(sx);
+    const vw = await sx.evaluate(async () => {
+      GShell.go("tab-gantt"); await new Promise(r => setTimeout(r, 400));
+      const dots = document.querySelectorAll("#ganttRowsContainer .gantt-pred-dot").length;
+      const c = NeoTodo.collect(null, false);
+      const g = TodoCenter.autoGroups().groups.find(x => x.key === "pred");
+      const rep = WeeklyExport.takeSnapshot({ startDate: projectConfig.reportDate, endDate: projectConfig.reportDate, nextStartDate: projectConfig.reportDate, nextEndDate: projectConfig.reportDate });
+      return { dots, hit: c.predHit.length, grp: g ? g.items.length : -1, snap: (rep.predHit || []).map(x => x.id).join() };
+    });
+    check("Gantt orange dot, check list '선행 지연 영향', weekly report snapshot list the same 4 Tasks",
+      vw.dots === 4 && vw.hit === 4 && vw.grp === 4 && vw.snap.split(",").length === 4, JSON.stringify(vw));
+    const xlp = await sx.evaluate(() => {
+      const raw = { id: "9.1", level: "2", system: "MES", name: "x", pred: "1.2, 1.3;1.4 1.5" };
+      return { norm: ExcelSync._normalizeRowData("wbs", raw, 0).pred, col: ExcelSync.TAB_SCHEMAS.wbs.some(c => c.key === "pred" && c.label === "선행 Task") };
+    });
+    const wbsX = await grab(sx, 'DataIO.download("wbs")');
+    check("Excel WBS has a '선행 Task' column; upload reads up to 3 predecessors", !!wbsX && xlp.col && xlp.norm === "1.2, 1.3, 1.4", JSON.stringify({ xlp, file: wbsX && wbsX.name }));
+    const ci = await sx.evaluate(() => {
+      const out = {};
+      const box = document.createElement("div"); box.innerHTML = '<button class="btn btn-sm" data-btn="save">✅ 체크인</button>'; document.body.appendChild(box);
+      for (const th of ["urban-slate", "brown", "navy", "dark", "electric"]) {
+        changeTheme(th); Icons.apply(box);
+        const b = box.querySelector("button"), svg = b.querySelector("svg");
+        out[th] = svg ? getComputedStyle(svg).color === getComputedStyle(b).color : "no-svg";
+      }
+      changeTheme("urban-slate"); box.remove();
+      return out;
+    });
+    check("Check-in button: the ✅ icon takes the button text colour in every theme (no green on blue)", Object.values(ci).every(v => v === true), JSON.stringify(ci));
+    check("Sample project tests ran without page errors", sx.errors.length === 0 && sx.external.length === 0, sx.errors.concat(sx.external).slice(0, 3).join(" | "));
+
     // Workgroup(서버 판)에서 내려받은 프로젝트 백업(JSON)을 새 프로젝트로 올림 (같은 자료 형식)
     const wgJson = fs.readFileSync(path.join(ROOT, "tools", "tests", "fixtures", "workgroup_project_backup.json"), "utf8");
     const wg = await pm.evaluate(async (txt) => {

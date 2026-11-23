@@ -88,6 +88,7 @@ const ExcelSync = {
       { key: "aProg", label: "실적(%)", width: 11 },
       { key: "owner", label: "담당자", width: 14 },
       { key: "output", label: "산출물 / 조치계획", width: 24 },
+      { key: "pred", label: "선행 Task", width: 16 },
       { key: "bStart", label: "기준선 시작일", width: 16 },
       { key: "bEnd", label: "기준선 종료일", width: 16 }
     ],
@@ -182,7 +183,8 @@ const ExcelSync = {
       pProg: ["계획(%)", "계획진척율", "계획진척률", "계획", "pprog"],
       aProg: ["실적(%)", "실적진척율", "실적진척률", "실적", "aprog"],
       owner: ["담당자", "담당", "owner", "assignee"],
-      output: ["산출물 / 조치계획", "산출물/조치계획", "산출물", "조치계획", " 비고", "output"]
+      output: ["산출물 / 조치계획", "산출물/조치계획", "산출물", "조치계획", " 비고", "output"],
+      pred: ["선행 task", "선행task", "선행", "선행 작업", "predecessor", "pred"]
     },
     deliverables: {
       round: ["제출차수", "제출 차수", "차수", "round"],

@@ -204,6 +204,8 @@ const GanttRenderer = {
       rows.appendChild(row);
     }
 
+    // 선행 Task 경고: 막대 왼쪽 끝에 주황 점 (연결선은 그리지 않음)
+    const predWarn = WBSEngine.predWarnings(wbsData, projectConfig.reportDate);
     filtered.forEach(task => {
       tree.appendChild(this._treeRow(`
         <span class="lvl-badge lvl-${task.level}">L${task.level}</span>
@@ -226,6 +228,13 @@ const GanttRenderer = {
           row.appendChild(ms);
         } else {
           row.appendChild(this._progressBar(task, left, width, st));
+        }
+        if (predWarn.has(task)) {
+          const dot = document.createElement("div");
+          dot.className = "gantt-pred-dot";
+          dot.style.left = `${Math.max(0, left - 5)}px`;
+          dot.title = "⛓ " + WbsStatusView.tip(predWarn.get(task));
+          row.appendChild(dot);
         }
         // 기준선: 계획 막대 아래 얇은 선 (기준선 확정 뒤에만 — modules/wbs/baseline.js)
         if (task.bStart && task.bEnd) {

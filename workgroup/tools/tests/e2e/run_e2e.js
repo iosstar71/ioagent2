@@ -204,7 +204,7 @@ async function localMain() {
     const t = wbsData.find(x => x.isLeaf && x.pProg >= 10 && x.pProg < 100);
     if (t) { t.aProg = t.pProg - 5; rebuildAll(); }
     document.getElementById("wbsStatusFilter").value = "지연"; renderWbsTable();
-    const rows = document.querySelectorAll("#wbsTableBody tr").length;
+    const rows = document.querySelectorAll("#wbsTableBody tr:not(.wbs-group-head)").length;   // 상위 Task 는 묶음 머리로 함께 보임
     const leaf = wbsData.filter(x => x.isLeaf && x.status === "지연").length;
     document.getElementById("wbsStatusFilter").value = "ALL"; renderWbsTable();
     return { rows, leaf, stored: t ? t.status : "-" };

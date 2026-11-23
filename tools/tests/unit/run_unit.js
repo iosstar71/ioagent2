@@ -110,6 +110,32 @@ function eq(name, got, want) {
   eq("calculatePlanProgress: mid / before / after / no dates", t.map(x => x.pProg), [50, 0, 100, 0]);
 }
 
+// ---- WBSEngine: 선행 Task 경고 ----
+{
+  const { WBSEngine: E } = load({ projectConfig: { delayGap: 5 } });
+  const rep = "2027-03-10";
+  const d = [
+    { id: "1.1", isLeaf: true, pStart: "2027-03-01", pEnd: "2027-03-05", pProg: 100, aProg: 60 },                       // 지연 (계획 종료 지남)
+    { id: "1.2", isLeaf: true, pStart: "2027-03-01", pEnd: "2027-03-20", pProg: 40, aProg: 40 },                         // 정상 진행
+    { id: "1.3", isLeaf: true, pStart: "2027-03-01", pEnd: "2027-03-04", pProg: 100, aProg: 100, aEnd: "2027-03-04" },  // 완료
+    { id: "2.1", isLeaf: true, pred: "1.1", pStart: "2027-03-15", pEnd: "2027-03-30", pProg: 0, aProg: 0 },               // delayed
+    { id: "2.2", isLeaf: true, pred: "1.2", pStart: "2027-03-15", pEnd: "2027-03-30", pProg: 0, aProg: 0 },               // overlap (1.2 ends 3/20)
+    { id: "2.3", isLeaf: true, pred: "1.2", pStart: "2027-03-21", pEnd: "2027-03-30", aStart: "2027-03-09", pProg: 0, aProg: 10 }, // started
+    { id: "2.4", isLeaf: true, pred: "1.3", pStart: "2027-03-05", pEnd: "2027-03-30", pProg: 10, aProg: 10 },              // no warning
+    { id: "2.5", isLeaf: true, pred: "1.1, 1.1;1.2 1.3 9.9", pStart: "2027-03-15", pEnd: "2027-03-30", pProg: 0, aProg: 100 } // done → none
+  ];
+  const reasons = id => E.predCheck(d.find(t => t.id === id), d, rep).list.map(x => x.id + ":" + (x.missing ? "missing" : x.reasons.join("+")));
+  eq("predIds: split, unique, max 3", E.predIds(d[7]), ["1.1", "1.2", "1.3"]);
+  eq("predCheck: delayed / overlap / started / ok", [reasons("2.1"), reasons("2.2"), reasons("2.3"), reasons("2.4")],
+    [["1.1:delayed"], ["1.2:overlap"], ["1.2:started"], ["1.3:"]]);
+  eq("predCheck: a finished Task has no warning; unknown ID is missing", [reasons("2.5"), E.predCheck({ pred: "9.9" }, d, rep).list[0].missing], [["1.1:", "1.2:", "1.3:"], true]);
+  eq("predWarnings: only Tasks with a warning", [...E.predWarnings(d, rep).keys()].map(t => t.id), ["2.1", "2.2", "2.3"]);
+  const r = [{ id: "1", level: 1, system: "A" }, { id: "1.1", level: 2, system: "A" }, { id: "1.2", level: 2, system: "A", pred: "1.1" }, { id: "1.3", level: 2, system: "A", pred: "1.2, 7.7" }];
+  r.splice(1, 0, { id: "", level: 2, system: "A" });
+  E.sortAndAutoNumber(r);
+  eq("sortAndAutoNumber: predecessors follow renumbered IDs (unknown kept)", r.map(t => t.pred || ""), ["", "", "", "1.2", "1.3, 7.7"]);
+}
+
 // ---- Migrate ----
 {
   const { Migrate } = load();
@@ -157,6 +183,9 @@ function eq(name, got, want) {
   eq("template translates in English", I.t(I.tf("가중치 {n}%", { n: 30 })), "weight 30%");
   eq("count patterns", [I.t("전체 저장 (2)"), I.t("단계 4개")], ["Save all (2)", "4 phases"]);
 }
+
+// ---- 샘플 프로젝트가 담은 경우 (tools/tests/sample_coverage.js) ----
+require(path.join(__dirname, "..", "sample_coverage.js")).run(load, eq);
 
 console.log(`Unit: ${pass} / ${pass + fail} passed`);
 process.exit(fail ? 1 : 0);

@@ -208,6 +208,47 @@ class ServerApiTest(unittest.TestCase):
             last, _ = self.login("pm_throttle_check", "wrong")
         self.assertEqual(last, 429)
 
+    # ---------------------------------------------------------------- 다운로드 제한 · 감사 로그
+    def test_23_download_limit_and_audit_log(self):
+        data, revs = self.load(["projectUsers"])
+        row = next(u for u in data["projectUsers"] if u["empNo"] == "lead_park")
+        row["projectRoles"]["DEFAULT"]["noDownload"] = True
+        s, _ = self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_park": row}, "base": {"lead_park": revs["projectUsers"]["lead_park"]["rev"]}}}}, self.admin)
+        self.assertEqual(s, 200)
+        token = self.ready("lead_park")
+        s, d = self.call("/api/auth/me", {}, token)
+        self.assertTrue(d["user"]["noDownload"])
+        s, d = self.call("/api/audit/download", {"kind": "excel", "target": "WBS"}, token)
+        self.assertEqual((s, d.get("code")), (403, "DOWNLOAD_BLOCKED"))
+        s, _ = self.call("/api/audit/download", {"kind": "ppt", "target": "종합보고서"}, self.admin)
+        self.assertEqual(s, 200)
+        s, _ = self.call("/api/audit/list", {}, token)
+        self.assertEqual(s, 403)   # Admin · PM 만
+        s, _ = self.call("/api/audit/event", {"kind": "DELETE"}, self.admin)
+        self.assertEqual(s, 400)   # 화면은 Merge 반영만 알릴 수 있음
+        # 행이 사라진 저장 → 서버가 비교해서 '자료 삭제' 로 남김
+        vd, vr = self.load(["vocData"])
+        part = vd["vocData"][0]["system"]
+        rows = [x for x in vd["vocData"] if x["system"] == part]
+        gone = rows.pop()["id"]
+        s, _ = self.call("/api/db/save", {"changes": {"vocData": {"parts": {part: rows}, "base": {part: vr["vocData"][part]["rev"]}}}}, self.admin)
+        self.assertEqual(s, 200)
+        s, d = self.call("/api/audit/list", {}, self.admin)
+        self.assertEqual(s, 200)
+        kinds = {r["kind"] for r in d["rows"]}
+        self.assertTrue({"PERMISSION", "DOWNLOAD_BLOCKED", "DOWNLOAD", "DELETE", "LOGIN_FAIL"} <= kinds, kinds)
+        dele = next(r for r in d["rows"] if r["kind"] == "DELETE")
+        self.assertIn(gone, dele["detail"])
+        self.assertTrue(dele["ip"] and dele["emp"] == "admin")
+        s, d = self.call("/api/audit/list", {"kind": "DOWNLOAD_BLOCKED", "emp": "lead_park"}, self.admin)
+        self.assertEqual([r["target"] for r in d["rows"]], ["엑셀"])
+        # 감사 로그는 자료 DB 와 다른 파일 (백업 복원 · 초기화로 지워지지 않음)
+        self.assertTrue((self.tmp / "data" / "audit_log.db").exists())
+        data, revs = self.load(["projectUsers"])
+        row = next(u for u in data["projectUsers"] if u["empNo"] == "lead_park")
+        row["projectRoles"]["DEFAULT"].pop("noDownload", None)
+        self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_park": row}, "base": {"lead_park": revs["projectUsers"]["lead_park"]["rev"]}}}}, self.admin)
+
     # ---------------------------------------------------------------- 보안 (v1.0.10)
     def test_23_default_password_must_change(self):
         s, d = self.login("pmo_kim", self.pwd.get("pmo_kim", "1234"))

@@ -406,8 +406,11 @@ var ProjectManager = {
       u.role = "SYS_ADMIN";
     } else {
       const cur = this.userAssignment(u);
-      const next = { role: cur.role, subsystem: cur.subsystem, dept: cur.dept || "" };
+      const next = Object.assign({}, ProjectContext.member(u) || {}, { role: cur.role, subsystem: cur.subsystem, dept: cur.dept || "" });
       next[field] = value;
+      // 다운로드 제한 (Workgroup): PM 은 제한하지 않음
+      if (field === "noDownload") next.noDownload = !!value;
+      if (!next.noDownload || next.role === "PM") delete next.noDownload;
       u.projectRoles = Object.assign({}, u.projectRoles, { [pid]: next });
     }
     renderProjectUsersTable();

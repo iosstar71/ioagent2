@@ -206,7 +206,8 @@ var AuthManager = {
       projectId: eff.projectId || ProjectContext.current,
       subsystem: eff.subsystem || "ALL",
       dept: eff.dept || "",
-      lang: eff.lang || "ko"
+      lang: eff.lang || "ko",
+      noDownload: !!eff.noDownload   // [Workgroup] 다운로드 제한 (서버가 정함)
     };
   },
 

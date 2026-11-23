@@ -966,12 +966,13 @@
         </div>
         <div class="filter-item">
           <label class="u-bold">🚦 상태 조회 (최하위 Task):</label>
-          <select id="wbsStatusFilter" class="neo-std-only" data-change="renderWbsTable" title="상태를 선택하면 레벨 접기와 관계없이 최하위 Task만 표시합니다.">
+          <select id="wbsStatusFilter" class="neo-std-only" data-change="renderWbsTable" title="상태를 고르면 그 상태의 최하위 Task 와, 레벨 보기에서 고른 레벨까지의 상위 Task 를 묶음 머리로 함께 표시합니다.">
             <option value="ALL">전체 (계층 표시)</option>
             <option value="지연">🔴 지연 Task만</option>
             <option value="진행중">🔵 진행중 Task만</option>
             <option value="대기">⚪ 대기 Task만</option>
             <option value="완료">🟢 완료 Task만</option>
+            <option value="선행 지연">⛓ 선행 지연 Task만</option>
           </select>
           <span class="status-badge-chip chip-delayed neo-std-only u-pointer" data-click="UiH.setValueRun" data-click-args='["wbsStatusFilter", "지연", "renderWbsTable"]' title="지연 최하위 Task 조회">지연 <b id="wbsDelayedCount">0</b>건</span>
           <!-- [Neo 2.1] 상태 칩 필터 (최하위 Task 상태별 건수, 누르면 해당 상태만 표시) -->
@@ -2127,6 +2128,9 @@
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="audit" data-click="MasterSubTabs.show" data-click-args='["audit"]'>🧾 감사 로그</button>
+</template>
         <button class="master-subtab-btn master-subtab-link" data-click="ReportTabs.open" data-click-args='["settings"]' title="보고서 설정은 [보고] 메뉴로 옮겼습니다">📊 보고서 설정 →</button>
       </div>
 
@@ -2439,6 +2443,9 @@
       <!-- 프로젝트별 설정: 화면·테마 / 게시판 채널 (보고서 설정은 [보고] 메뉴) (SharedPanes 가 화면을 옮겨 옴) -->
       <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
+<template data-edition="workgroup">
+      <div class="master-subpane" data-group="master" id="masterSub-audit" data-subpane="audit"></div>
+</template>
       <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
       
 
@@ -2506,6 +2513,9 @@
                 <th>소속 부서 / 담당 역할</th>
                 <th style="width: 100px;">언어</th>
                 <th style="width: 260px;">암호 변경 / 초기화</th>
+<template data-edition="workgroup">
+                <th style="width: 80px;" title="엑셀 · 워드 · PPT · 백업 · 첨부 내려받기 (PM 이상이 정함)">다운로드</th>
+</template>
                 <th style="width: 55px;">삭제</th>
               </tr>
             </thead>
@@ -3489,6 +3499,7 @@
   <script src="static/js/core/data-admin.js"></script>
 <template data-edition="workgroup">
   <script src="static/js/core/lock-manager.js"></script>
+  <script src="static/js/core/download-guard.js"></script>
 </template>
   <script src="static/js/modules/admin/user-admin.js"></script>
   <script src="static/js/common/legal-text.js"></script>

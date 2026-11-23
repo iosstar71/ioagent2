@@ -120,7 +120,10 @@ var NeoTodo = {
     }));
     actions.sort((a, b) => (a.targetDate || "9999").localeCompare(b.targetDate || "9999"));
     const undecided = vocs.filter(v => Metrics.judgeOf(v) === "미판정");   // 미조치 VOC 중 아직 판정하지 않은 것
-    return { delayed, dueSoon, vocs, undecided, delivs, actions };
+    // 선행 지연 영향: 내(조회 범위) Task 의 선행 Task 가 늦거나 일정이 겹침
+    const pw = WBSEngine.predWarnings(wbsData || [], rep);
+    const predHit = [...pw.entries()].filter(([t]) => this._inScope(systems, t.system, t.owner)).map(([t, r]) => ({ t, r }));
+    return { delayed, dueSoon, vocs, undecided, delivs, actions, predHit };
   },
 
   // 메뉴 배지용 건수 (대시보드 필터와 무관하게 전체 기준)
@@ -143,7 +146,7 @@ var NeoTodo = {
     const box = document.getElementById("neoTodoCard");
     if (!box) return;
     const c = this.collect(this._systems);
-    const parts = [["🔴", "지연 Task", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["🏷️", "판정 대기 VOC", c.undecided.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
+    const parts = [["🔴", "지연 Task", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["🏷️", "판정 대기 VOC", c.undecided.length], ["⛓", "선행 지연 영향", c.predHit.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
     const total = parts.reduce((a, p) => a + p[2], 0);
     const mineOpen = typeof TodoCenter !== "undefined" ? TodoCenter.stats().open : 0;
     box.innerHTML = `
@@ -254,6 +257,43 @@ var NeoDetail = {
     if (after.indexOf("rebuildAll") === -1 && typeof renderWbsTable === "function") renderWbsTable();
     this.render();
   },
+  // 선행 Task 칸 i (0~2): WBS ID 목록에서 고름. 자기 자신 · 자기 상위/하위 Task 는 받지 않음
+  setPred(i, value) {
+    const idx = this.idx();
+    if (idx === -1) return;
+    const row = wbsData[idx];
+    const ids = WBSEngine.predIds(row);
+    const v = String(value || "").trim();
+    if (v) {
+      const p = wbsData.find(t => String(t.id) === v);
+      const rel = p && (p === row || String(p.id).startsWith(row.id + ".") || String(row.id).startsWith(p.id + "."));
+      if (!p || rel) { showToast(p ? "⚠️ 자기 자신이나 상위 · 하위 Task 는 선행으로 지정할 수 없습니다." : I18N.tf("⚠️ WBS ID [{id}] 를 찾을 수 없습니다.", { id: v })); return this.render(); }
+    }
+    ids[i] = v;
+    const next = ids.filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, WBSEngine.PRED_MAX).join(", ");
+    if (!UiH.set("wbsData", idx, "pred", next, "persistChanges")) return this.render();
+    if (typeof renderWbsTable === "function") renderWbsTable();
+    this.render();
+  },
+  // 선행 Task 칸 3개 + 고른 선행의 이름 · 상태 · 계획 종료 한 줄씩
+  _predHtml(row) {
+    const chk = WBSEngine.predCheck(row, wbsData, NeoUtil.rep());
+    const ids = WBSEngine.predIds(row);
+    const inputs = [0, 1, 2].map(i => `<input type="text" class="neo-pred-in" list="neoPredList" value="${escapeAttr(ids[i] || "")}" placeholder="${i === 0 ? "WBS ID" : ""}" data-change="NeoDetail.setPred" data-change-args="${UiEvents.args(i, "$value")}">`).join("");
+    const opts = wbsData.filter(t => t !== row).map(t => `<option value="${escapeAttr(t.id)}">${escapeHtml(t.name || "")}</option>`).join("");
+    const lines = chk.list.map(x => {
+      if (x.missing) return `<div class="neo-pred-line warn"><code>${escapeHtml(x.id)}</code> <span>${I18N.t("찾을 수 없는 Task")}</span></div>`;
+      const st = NeoUtil.status(x.task);
+      const why = x.reasons.map(r => `<span class="neo-pred-why">${WBSEngine.PRED_REASON[r]}</span>`).join("");
+      return `<div class="neo-pred-line${x.reasons.length ? " warn" : ""}"><code>${escapeHtml(x.id)}</code> <span class="neo-pred-name">${escapeHtml(x.task.name || "")}</span>
+        <span class="status-tag ${st.cssClass}">${st.label}</span> <span class="neo-muted">${I18N.tf("계획 종료 {d}", { d: x.task.pEnd || "-" })}</span>${why}</div>`;
+    }).join("");
+    return `<div class="neo-detail-sec">
+          <div class="neo-detail-sec-title">⛓ 선행 Task <span class="neo-muted">(${I18N.tf("최대 {n}개 · 선택", { n: WBSEngine.PRED_MAX })})</span></div>
+          <div class="neo-pred-ins">${inputs}</div><datalist id="neoPredList">${opts}</datalist>
+          ${lines || '<div class="neo-muted">먼저 끝나야 하는 Task 가 있으면 지정합니다. 늦어지면 경고만 표시합니다.</div>'}
+        </div>`;
+  },
   run(fnName) {
     const idx = this.idx();
     if (idx === -1) return;
@@ -330,6 +370,7 @@ var NeoDetail = {
           ${field("산출물", "output", "text")}
         </div>
         ${BaselineUI.taskHtml(row)}
+        ${this._predHtml(row)}
         ${leaf ? "" : '<div class="neo-note">상위 Task 의 일정·진척률은 하위 Task 에서 자동으로 합산됩니다.</div>'}
         <div class="neo-detail-actions">
           <button type="button" class="btn btn-sm" data-btn="warn" data-click="NeoDetail.run" data-click-args="${UiEvents.args("fillRowActualFromPlan")}" ${leaf ? "" : "disabled"}>⚡ 계획을 실적에 반영</button>
@@ -438,7 +479,7 @@ var NeoBadges = {
 // 4. WBS 상태 칩 필터
 // -----------------------------------------------------------------------------
 var NeoChips = {
-  LIST: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["대기", "대기", "chip-ready"], ["완료", "완료", "chip-completed"]],
+  LIST: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["진행중", "진행중", "chip-progress"], ["대기", "대기", "chip-ready"], ["완료", "완료", "chip-completed"], ["선행 지연", "⛓ 선행 지연", "chip-pred"]],
   set(v) {
     const sel = document.getElementById("wbsStatusFilter");
     if (!sel) return;
@@ -454,6 +495,8 @@ var NeoChips = {
     const leaves = wbsData.filter(t => t.isLeaf && (dF === "ALL" || WBSEngine.getSubsystemDomain(t.system) === dF) && (sF === "ALL" || t.system === sF));
     const cnt = { ALL: leaves.length };
     leaves.forEach(t => { const l = NeoUtil.status(t).label; cnt[l] = (cnt[l] || 0) + 1; });
+    const pw = WBSEngine.predWarnings(wbsData, NeoUtil.rep());
+    cnt[WbsStatusView.PRED] = [...pw.keys()].filter(t => (dF === "ALL" || WBSEngine.getSubsystemDomain(t.system) === dF) && (sF === "ALL" || t.system === sF)).length;
     box.innerHTML = this.LIST.map(([v, label, cls]) =>
       `<button type="button" class="neo-chip ${cls}${cur === v ? " active" : ""}" data-click="NeoChips.set" data-click-args="${UiEvents.args(v)}" aria-pressed="${cur === v ? "true" : "false"}">${label} <b>${cnt[v] || 0}</b></button>`).join("");
     if (typeof I18N !== "undefined") I18N.translateTree(box);

@@ -18,7 +18,9 @@ function renderWbsTable() {
   const maxLvl = lvlFilterEl ? parseInt(lvlFilterEl.value, 10) || 5 : 5;
   const stFilterEl = document.getElementById("wbsStatusFilter");
   const stFilter = stFilterEl ? stFilterEl.value : "ALL";
-  const leafOnly = stFilter !== "ALL";
+  // 상태 조회: 해당 상태의 최하위 Task(선행 지연은 경고가 있는 Task) + 고른 레벨까지의 상위 Task 를 묶음 머리로
+  const predWarn = WBSEngine.predWarnings(wbsData, projectConfig.reportDate);
+  const view = WbsStatusView.rows(wbsData, stFilter, maxLvl, predWarn);
   // 단계별 조회: 조회 범위 서브시스템들의 단계 목록 → 고른 단계에 해당하는 Task 와 그 상위 Task
   const scopeSystems = (subsystemsMeta || []).map(m => m.name).filter(n => (sysFilter === "ALL" || n === sysFilter) && (dFilter === "ALL" || WBSEngine.getSubsystemDomain(n) === dFilter));
   const phase = WbsPhase.fill(scopeSystems);
@@ -57,12 +59,13 @@ function renderWbsTable() {
     if (sysFilter !== "ALL" && row.system !== sysFilter) return;
     if (phaseSet && !phaseSet.has(row)) return;
     // 상태 조회는 최하위 Task(Leaf) 기준 — 레벨 접기와 무관하게 해당 상태의 최하위 과업만 표시
-    if (leafOnly) {
-      if (!row.isLeaf || row.status !== stFilter) return;
+    if (view) {
+      if (!view.match.has(row) && !view.heads.has(row)) return;
     } else if ((row.level || 1) > maxLvl) return;
 
     const tr = document.createElement("tr");
     tr.className = `wbs-row-lvl-${row.level}`;
+    if (view && view.heads.has(row)) tr.classList.add("wbs-group-head");
     tr.setAttribute("data-wbs-id", row.id);
 
     const status = WBSEngine.getTaskStatus(row, projectConfig.reportDate);
@@ -81,7 +84,7 @@ function renderWbsTable() {
     const aEndDay = WBSEngine.getDayOfWeekText(row.aEnd);
 
     // 하위 레벨이 접혀 있는지 표시 뱃지
-    const hasHiddenChildren = !isLeaf && row.level === maxLvl;
+    const hasHiddenChildren = !view && !isLeaf && row.level === maxLvl;
     const foldBadge = hasHiddenChildren ? `<span class="u-bold u-mr-3" style="font-size:var(--fs-2xs, 10px); color:var(--accent);" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
 
     tr.innerHTML = `
@@ -101,6 +104,7 @@ function renderWbsTable() {
         <div style="padding-left: ${indent}px; display:flex; align-items:center;">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
+          ${WbsStatusView.predIcon(row, predWarn)}
           <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:180px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
@@ -181,6 +185,39 @@ function renderWbsTable() {
     }
   }
 }
+
+// 상태 조회 · 선행 Task 표시
+var WbsStatusView = {
+  PRED: "선행 지연",
+  // 상태를 고르면 { match: 해당 Task, heads: 그 상위 Task 중 고른 레벨까지 } — 전체면 null
+  rows(data, st, maxLvl, predWarn) {
+    if (!st || st === "ALL") return null;
+    const match = new Set((data || []).filter(t => st === this.PRED ? predWarn.has(t) : (t.isLeaf && t.status === st)));
+    const heads = new Set();
+    (data || []).forEach((t, i) => {
+      if (!match.has(t)) return;
+      let lv = t.level || 1;
+      for (let j = i - 1; j >= 0 && lv > 1; j--) {
+        const u = data[j], ul = u.level || 1;
+        if ((u.system || "").trim() !== (t.system || "").trim()) break;
+        if (ul < lv) { if (ul <= maxLvl && !match.has(u)) heads.add(u); lv = ul; }
+      }
+    });
+    return { match, heads };
+  },
+  // 작업명 앞 ⛓: 선행 Task 가 있으면 표시, 경고면 주황 + 말풍선
+  predIcon(row, predWarn) {
+    if (!row.pred) return "";
+    const w = predWarn.get(row);
+    const tip = w ? this.tip(w) : I18N.tf("선행 Task {ids}", { ids: WBSEngine.predIds(row).join(", ") });
+    return `<span class="wbs-pred${w ? " warn" : ""}" title="${escapeAttr(tip)}">⛓</span>`;
+  },
+  // "선행 1.2.3 지연 (계획 종료 6/10)" 줄들
+  tip(w) {
+    return w.list.filter(x => x.reasons.length).map(x => I18N.tf("선행 {id} {why} (계획 종료 {end})",
+      { id: x.id, why: x.reasons.map(r => WBSEngine.PRED_REASON[r]).join(" · "), end: x.task.pEnd ? x.task.pEnd.slice(5).replace("-", "/") : "-" })).join("\n");
+  }
+};
 
 // 단계별 조회 (📶) — 서브시스템의 SDLC 단계(개선 타입은 개선 공정 단계)로 걸러 봄
 var WbsPhase = {
@@ -453,6 +490,9 @@ function deleteWbsRow(idx) {
   const row = wbsData[idx];
   if (!row) return;
   wbsData.splice(idx, 1);
+  // 지운 Task 를 선행으로 둔 Task 에서 뺌 (다시 매긴 번호와 섞이지 않게)
+  const gone = String(row.id);
+  wbsData.forEach(t => { if (t.pred) t.pred = WBSEngine.predIds(t).filter(p => p !== gone).join(", "); });
   rebuildAll();
 }
 

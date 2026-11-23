@@ -311,6 +311,7 @@ var MergeTable = {
       const done = this.apply(picks, plan.json);
       if (typeof plan.onDone === "function") plan.onDone(done);
       showToast(`✅ [업로드 반영 완료] ${done.join(", ")} · 스냅샷: ${backup}`);
+      if (typeof AuditLogPane !== "undefined") AuditLogPane.event("MERGE", `${plan.scope} · ${done.join(", ")}`, `스냅샷 ${backup}`);
     } catch (err) {
       showToast("⚠️ 업로드 반영 오류: " + err.message);
     }

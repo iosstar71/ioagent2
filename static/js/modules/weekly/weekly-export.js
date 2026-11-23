@@ -123,6 +123,9 @@ var WeeklyExport = {
       // 경영 보고 장표용: 지연 과업 · 마일스톤
       delayed: (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, projectConfig.reportDate).code === "delayed")
         .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "", bVar: Baseline.varOf(t, projectConfig) })),
+      // 선행 지연 영향 Task (선행 Task 가 늦거나 일정이 겹침)
+      predHit: [...WBSEngine.predWarnings(wbsData || [], projectConfig.reportDate).entries()].slice(0, 40)
+        .map(([t, r]) => ({ id: t.id, system: t.system, name: t.name, owner: t.owner || "", why: WbsStatusView.tip(r).replace(/\n/g, " · ") })),
       // 기준선 대비 (기준선을 확정한 뒤에만 has: true)
       baseline: Baseline.summary(wbsData, projectConfig),
       milestones: (projectConfig.milestones || []).filter(x => x && x.date && x.name && x.date >= WBSEngine.addDays(rep.startDate, -7))
@@ -170,6 +173,9 @@ var WeeklyExport = {
         [11, 13, 15, 12, 8, 8, 8, 8, 9, 8],
         subRows.map(r => [r[0], r[1], r[2], r[3], `${r[4]}%`, String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
         r => `[${r[1]}] 가중치 ${r[4]} · 계획 ${r[6]} · 실적 ${r[7]} · 달성률 ${r[8]} · 지연 ${r[9]} (${r[0]}, PM ${r[3]})`)]
+        .concat(Array.isArray(d.predHit) ? [T("선행 지연 영향 Task", ["서브시스템", "WBS ID", "Task명", "담당자", "선행 Task"], [11, 10, 30, 10, 45],
+          d.predHit.filter(x => inScope(x.system)).map(x => [x.system, x.id, x.name, x.owner, x.why]),
+          r => `[${r[0]}] ${r[1]} ${r[2]}${r[3] ? ` (담당 ${r[3]})` : ""} — ${r[4]}`, "선행 지연 영향 Task 없음")] : [])
     };
     // 2·3. 금주 실적 / 차주 계획
     const taskRow = (t, cur) => cur

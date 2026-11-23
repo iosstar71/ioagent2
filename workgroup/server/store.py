@@ -29,6 +29,7 @@ from .permission import (
     split_parts,
 )
 from .logger import write_server_log
+from .audit import diff_events as audit_diff
 
 
 # ---------------------------------------------------------------------------
@@ -428,9 +429,11 @@ class Store:
                     return {"ok": False, "conflict": True, "conflicts": conflicts}
 
                 out_data, out_revs = {}, {}
+                events = []
                 for key, ok_parts in accepted.items():
                     value, revs = current[key]
                     merged = clamp_progress(key, merge_parts(key, value, ok_parts))
+                    events += audit_diff(key, value, merged, pid)
                     for p in ok_parts:
                         revs[p] = {"rev": int((revs.get(p) or {}).get("rev", 0)) + 1, "by": who, "at": now_str()}
                     cls._write_dataset(cur, dkey(pid, key), merged, revs, who)
@@ -439,7 +442,7 @@ class Store:
                         cur.execute("UPDATE TB_PROJECT SET PROJECT_NAME = ? WHERE PROJECT_ID = ?", (str(merged["projectName"])[:100], pid))
                 cls._write_mirror(cur, accepted.keys(), pid)
                 conn.commit()
-                return {"ok": True, "data": out_data, "revs": out_revs, "blocked": blocked,
+                return {"ok": True, "data": out_data, "revs": out_revs, "blocked": blocked, "audit": events,
                         "message": f"저장 완료 ({', '.join(out_data.keys()) or '변경 없음'})"}
             finally:
                 conn.close()
@@ -453,6 +456,8 @@ class Store:
                     role = normalize_role(v.get("role"))
                     out[str(k)] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(v.get("subsystem") or "ALL")[:50],
                                    "dept": str(v.get("dept") or "")[:100]}
+                    if v.get("noDownload") and out[str(k)]["role"] != "PM":
+                        out[str(k)]["noDownload"] = True   # 다운로드 제한 (프로젝트별)
         return out
 
     @staticmethod

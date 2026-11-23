@@ -42,6 +42,8 @@ def effective_user(base, project, row=None):
         out["subsystem"] = str(a.get("subsystem") or "ALL")
         if a.get("dept"):
             out["dept"] = a.get("dept")
+        # 다운로드 제한은 PM 이 아닌 멤버에게만 (server/audit.py)
+        out["noDownload"] = bool(a.get("noDownload")) and out["role"] != "PM"
     else:
         out["role"], out["subsystem"] = "MEMBER", ""
     return out

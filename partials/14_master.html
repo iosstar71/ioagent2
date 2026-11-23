@@ -20,6 +20,9 @@
         <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
         <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
         <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="audit" data-click="MasterSubTabs.show" data-click-args='["audit"]'>🧾 감사 로그</button>
+</template>
         <button class="master-subtab-btn master-subtab-link" data-click="ReportTabs.open" data-click-args='["settings"]' title="보고서 설정은 [보고] 메뉴로 옮겼습니다">📊 보고서 설정 →</button>
       </div>
 
@@ -332,6 +335,9 @@
       <!-- 프로젝트별 설정: 화면·테마 / 게시판 채널 (보고서 설정은 [보고] 메뉴) (SharedPanes 가 화면을 옮겨 옴) -->
       <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
       <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
+<template data-edition="workgroup">
+      <div class="master-subpane" data-group="master" id="masterSub-audit" data-subpane="audit"></div>
+</template>
       <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
       
 
@@ -399,6 +405,9 @@
                 <th>소속 부서 / 담당 역할</th>
                 <th style="width: 100px;">언어</th>
                 <th style="width: 260px;">암호 변경 / 초기화</th>
+<template data-edition="workgroup">
+                <th style="width: 80px;" title="엑셀 · 워드 · PPT · 백업 · 첨부 내려받기 (PM 이상이 정함)">다운로드</th>
+</template>
                 <th style="width: 55px;">삭제</th>
               </tr>
             </thead>

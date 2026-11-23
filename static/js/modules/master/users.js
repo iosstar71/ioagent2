@@ -53,6 +53,7 @@ function renderProjectUsersTable() {
             <button class="btn btn-sm" data-btn="warn" data-click="resetProjectUserPassword" data-click-args="${UiEvents.args(idx)}" title="암호를 초기값(1234)으로 초기화합니다.">🔄 초기화</button>
           </div>
         </td>
+        ${typeof DownloadGuard !== "undefined" ? DownloadGuard.cellHtml(idx, u) : ""}
         <td><button class="btn btn-danger btn-sm" data-click="deleteProjectUser" data-click-args="${UiEvents.args(idx)}" ${isAdminAccount || (asg.admin && !amAdmin) ? "disabled title='기본 관리자(admin)와 관리자 계정은 관리자만 삭제할 수 있습니다.'" : "title='이 프로젝트에서 빼기 (다른 프로젝트 참여는 유지)'"}>×</button></td>
       `;
       tbody.appendChild(tr);
@@ -120,6 +121,7 @@ var SubTabs = {
       if (name === "backup" && typeof ProjectData !== "undefined") ProjectData.renderMasterPane();
     }
     if (group === "config" && name === "db") DbConnector.renderConfigForm();
+    if (group === "master" && name === "audit" && typeof AuditLogPane !== "undefined") AuditLogPane.load();
     if (group === "config" && name === "project" && typeof ProjectManager !== "undefined") ProjectManager.renderPanels();
     if (group === "merge" && name === "backup" && typeof BackupPane !== "undefined") BackupPane.render();
     if (group === "merge" && name === "locks" && typeof LockManager === "object") { LockManager.renderBoard(); LockManager.refresh(true); }

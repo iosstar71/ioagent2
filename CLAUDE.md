@@ -43,6 +43,9 @@
 | VOC 판정 · 단계 · 결함 집계 · 범위 알림 | `Metrics` (`VOC_JUDGE` `VOC_STAGES` `defectStats` …), 목록 · 등록 `modules/requirement/req-voc.js` (`ListTable` `VocRules`), 현황 그리기 `modules/progress/voc-board.js` |
 | 기준선 | 계산 `modules/wbs/baseline.js` (`Baseline`), 화면 `baseline-ui.js` (`BaselineUI`) |
 | ID 규칙(접두사 · 다음 번호) | `modules/master/project-config.js` (`IdRules.KINDS`) |
+| 선행 Task 경고 · 상태 버튼 묶음 머리 | 계산 `WBSEngine.predCheck` · `predWarnings`, 표 `wbs-table.js` (`WbsStatusView`), 패널 `NeoDetail._predHtml` |
+| 샘플 프로젝트(시험 기준 자료) | 만들기 `tools/build_sample.js` → `core/sample-snapshot.js`, 담긴 경우 `tools/tests/sample_coverage.js` |
+| [Workgroup] 다운로드 제한 · 감사 로그 | 서버 `workgroup/server/audit.py`, 화면 `workgroup/webapp/static/js/core/download-guard.js` |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
 - **시험은 필요한 만큼만**: 작은 수정 → `node --check <파일>` + `python tools/check_ui_debt.py`; 계산 수정 → `node tools/tests/unit/run_unit.js`(1초); 화면 동작 변경 → E2E 1회.
   E2E 는 끝에 한 번 돌린다(Standalone ~3분, Workgroup ~20분 — Workgroup 은 백그라운드로).

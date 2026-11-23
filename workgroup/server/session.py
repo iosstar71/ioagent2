@@ -86,6 +86,7 @@ class LoginThrottle:
             cnt, _ = cls._fails.get(emp.lower(), (0, 0))
             cnt += 1
             cls._fails[emp.lower()] = (0, time.time() + 60) if cnt >= 5 else (cnt, 0)
+            return cnt >= 5   # 이번 실패로 잠김 (감사 로그에 남김)
 
     @classmethod
     def ok(cls, emp):
@@ -95,5 +96,6 @@ class LoginThrottle:
 
 def public_user(info):
     out = {k: info.get(k) for k in ("empNo", "name", "role", "subsystem", "dept", "lang", "projectId", "baseRole")}
+    out["noDownload"] = bool(info.get("noDownload"))
     out["mustChangePassword"] = bool(info.get("mustChange"))
     return out

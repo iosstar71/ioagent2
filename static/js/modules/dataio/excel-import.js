@@ -182,7 +182,8 @@ Object.assign(ExcelSync, {
         pProg: isNaN(pProgNum) ? 0 : Math.min(100, Math.max(0, pProgNum)),
         aProg: isNaN(aProgNum) ? 0 : Math.min(100, Math.max(0, aProgNum)),
         owner: String(raw.owner || "").split(/[,;/|]/)[0].trim().slice(0, 40),
-        output: String(raw.output || "").trim()
+        output: String(raw.output || "").trim(),
+        pred: WBSEngine.predIds({ pred: raw.pred }).join(", ")
       };
     }
 

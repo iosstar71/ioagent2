@@ -64,8 +64,8 @@
 |---|---|
 | `subsystemsMeta` | `domain` `code`(ID 접두) `name` `type`(SDLC·REQ) `sdlcCode` `weight`(서브시스템 가중치) `pm` `desc` |
 | `standardDeliverablesMeta` | `phase` `name` `round1~4`(차수별 필수) `defaultDate` `remarks` |
-| `projectUsers` | `empNo` `name` `role`(SYS_ADMIN·PM·LEAD·MEMBER) `subsystem` `dept` `pwdHash` `pwdTemp`(처음 암호 — 바꿔야 함) `lang` |
-| `wbsData` | `id` `level`(1~5) `system` `name` `weight` `reqId` `pStart` `pEnd` `aStart` `aEnd` `pProg` `aProg` `owner` `output` `isLeaf` `status` `bHist`(Leaf 만, `{ 기준선 번호: [계획 시작, 계획 종료] }`) — `pProg` · `status` · `bStart` · `bEnd`(비교 기준선) 는 계산값 |
+| `projectUsers` | `empNo` `name` `role`(SYS_ADMIN·PM·LEAD·MEMBER) `subsystem` `dept` `pwdHash` `pwdTemp`(처음 암호 — 바꿔야 함) `lang` `projectRoles`(`{ 프로젝트ID: { role, subsystem, dept, noDownload } }` — `noDownload` = 다운로드 제한, Workgroup 만) |
+| `wbsData` | `id` `level`(1~5) `system` `name` `weight` `reqId` `pStart` `pEnd` `aStart` `aEnd` `pProg` `aProg` `owner` `output` `isLeaf` `status` `pred`(선행 Task WBS ID, 쉼표로 최대 3개 — 경고만, `WBSEngine.predCheck`) `bHist`(Leaf 만, `{ 기준선 번호: [계획 시작, 계획 종료] }`) — `pProg` · `status` · `bStart` · `bEnd`(비교 기준선) 는 계산값 |
 | `deliverablesData` | `id` `round`(N차) `system` `phase` `name` `pDate` `aDate` `status`(작성전·작성중·검토요청·보완완료) `manager` `remarks` |
 | `reqMasterData` | `id` `system` `name` `type` `priority` `accept` `status`(대기·진행·완료·보류·삭제) `origin`("추가" = VOC 에서 등록, 없으면 초기) `srcVoc` `addedDate` |
 | `vocData` | `id` `vocType`(판정: 미판정·결함·개선 요청·설명 종결·이슈) `stage`(요건분석/설계·구현/단위테스트·통합테스트·안정화, 접수일로 자동) `stageManual` `severity`(치명·높음·보통·낮음, 결함일 때) `system` `priority` `title` `requester` `reqDate` `targetDate` `status`(대기·진행·완료·보류·요구 반영·삭제) `closedDate` `reqLink` `action` — 목록 · 기준은 `Metrics` |
@@ -89,3 +89,9 @@
 | 메뉴 위치 · 첫 화면 예전 값 | `common/layout.js`, `modules/home/home.js` |
 | 엑셀 · 워드 색 예전 이름, 엑셀 시트 · 열 예전 이름 | `modules/dataio/excel-sync.js` |
 | 참여 정보 없는 예전 멤버 행 | `core/data-store.js` ProjectContext.migrateLocalUsers |
+
+## 5. 서버 기록 (Workgroup)
+
+| 파일 · 표 | 내용 |
+|---|---|
+| `data/audit_log.db` · `TB_AUDIT_LOG` | 감사 로그 `LOGGED_AT` `EMP_NO` `IP` `PROJECT_ID` `KIND`(DELETE · RESET · RESTORE · MERGE · LOCK · DOWNLOAD · DOWNLOAD_BLOCKED · LOGIN_FAIL · PASSWORD · PERMISSION · MEMBER · BASELINE) `TARGET` `DETAIL` — 자료 DB 와 따로 둠, 보관 `app.ini [audit] keep_days` (`server/audit.py`) |
