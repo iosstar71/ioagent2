@@ -1,5 +1,5 @@
 {
- "css_important": 376,
+ "css_important": 359,
  "html": {
   "modals": {
    "inline": 94,
@@ -85,7 +85,7 @@
   "js/modules/weekly": 22
  },
  "total": {
-  "css_important": 376,
+  "css_important": 359,
   "html_inline": 437,
   "html_inline_hex": 139,
   "js_hex": 100,
