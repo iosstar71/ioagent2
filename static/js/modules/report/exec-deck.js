@@ -155,6 +155,7 @@ var ExecDeck = {
       });
       els.push(T(0.45, 5.0, 12.4, 1.8, [
         p(`· 기준일 ${c.data.reportDate || "-"} 현재 전체 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} (달성률 ${c.m.achieveRate || 0}%)`, 13),
+        ...(c.data.baseline && c.data.baseline.has ? [p(`· ${BaselineUI.sumText(c.data.baseline)}`, 13, { color: c.data.baseline.endVar > 0 ? "B91C1C" : "1F2937" })] : []),
         p(`· 지연 Task ${c.m.cntDel || 0}건, 주간보고 작성 완료 ${c.done.length}개 서브시스템${c.missing.length ? ` (미작성: ${c.missing.join(", ")})` : ""}`, 13)
       ]));
       slides.push({ name: "종합 진척 현황", els });
@@ -316,7 +317,7 @@ var ExecDeck = {
       const els = head("지연 Task · 주요 마일스톤");
       const del = (c.data.delayed || []).slice(0, 12);
       els.push(T(0.45, 1.15, 7.3, 0.35, [p(`지연 Task ${c.m.cntDel || 0}건${del.length < (c.m.cntDel || 0) ? ` (상위 ${del.length}건)` : ""}`, 13, { bold: true, color: "B91C1C" })]));
-      const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 Task 없음", 12, { color: "15803D" })];
+      const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.bVar ? ` · 기준선 ${t.bVar > 0 ? "+" : ""}${t.bVar}일` : ""}${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 Task 없음", 12, { color: "15803D" })];
       els.push(T(0.45, 1.55, 7.3, 5.4, this.fit(dl, 7.3, 5.4)));
       const ms = (c.data.milestones || []).slice(0, 10);
       els.push(T(8.1, 1.15, 4.8, 0.35, [p("주요 마일스톤", 13, { bold: true, color: C })]));

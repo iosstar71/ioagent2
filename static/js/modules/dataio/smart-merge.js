@@ -528,10 +528,10 @@ const SmartMergeCenter = {
 
         this._applyCollabPayload(data, targetScope);
         if (targetScope === "ALL" && isPrivileged) {
-          if (data.projectConfig) projectConfig = Object.assign({}, projectConfig, data.projectConfig);
+          if (data.projectConfig) projectConfig = Object.assign({}, projectConfig, Baseline.keepConfig(projectConfig, data.projectConfig));
           if (Array.isArray(data.standardDeliverablesMeta)) standardDeliverablesMeta = data.standardDeliverablesMeta;
           if (Array.isArray(data.subsystemsMeta) && data.subsystemsMeta.length > 0) subsystemsMeta = data.subsystemsMeta;
-          if (Array.isArray(data.wbsData)) wbsData = data.wbsData;
+          if (Array.isArray(data.wbsData)) { Baseline.carry(wbsData, data.wbsData); wbsData = data.wbsData; }
           if (Array.isArray(data.deliverablesData)) deliverablesData = data.deliverablesData;
           if (Array.isArray(data.reqMasterData)) reqMasterData = data.reqMasterData;
           if (Array.isArray(data.vocData)) vocData = data.vocData;

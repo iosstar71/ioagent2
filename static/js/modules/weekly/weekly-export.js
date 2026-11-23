@@ -122,7 +122,9 @@ var WeeklyExport = {
       sdlc: this._sdlc(),
       // 경영 보고 장표용: 지연 과업 · 마일스톤
       delayed: (wbsData || []).filter(t => t.isLeaf && WBSEngine.getTaskStatus(t, projectConfig.reportDate).code === "delayed")
-        .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "" })),
+        .slice(0, 40).map(t => ({ id: t.id, system: t.system, name: t.name, pProg: t.pProg, aProg: t.aProg, owner: t.owner || "", bVar: Baseline.varOf(t, projectConfig) })),
+      // 기준선 대비 (기준선을 확정한 뒤에만 has: true)
+      baseline: Baseline.summary(wbsData, projectConfig),
       milestones: (projectConfig.milestones || []).filter(x => x && x.date && x.name && x.date >= WBSEngine.addDays(rep.startDate, -7))
         .sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 12).map(x => ({ date: x.date, name: x.name, scope: x.scope || "ALL" }))
     };
@@ -163,8 +165,7 @@ var WeeklyExport = {
         ["금주 기간", `${rep.startDate || ""} ~ ${rep.endDate || ""}`], ["차주 기간", `${rep.nextStartDate || ""} ~ ${rep.nextEndDate || ""}`],
         ["보고 범위", scopeLabel], ["공정 기준일", d.reportDate || ""],
         ["종합 계획", pct(m.totalPlan)], ["종합 실적", pct(m.totalActual)], ["계산 방식", "서브시스템별 진척률 × 서브시스템 가중치"],
-        ["달성률", `${m.achieveRate || rate(m.totalPlan, m.totalActual)}%`], ["지연 Task", `${m.cntDel || 0}건`]
-      ],
+        ["달성률", `${m.achieveRate || rate(m.totalPlan, m.totalActual)}%`], ["지연 Task", `${m.cntDel || 0}건`]].concat(d.baseline && d.baseline.has ? [["기준선 대비", BaselineUI.sumText(d.baseline)]] : []),
       tables: [T("서브시스템별 공정 진척", ["도메인", "서브시스템", "SDLC 유형", "담당 PM", "가중치", "Task 수", "계획", "실적", "달성률", "지연"],
         [11, 13, 15, 12, 8, 8, 8, 8, 9, 8],
         subRows.map(r => [r[0], r[1], r[2], r[3], `${r[4]}%`, String(r[5]), pct(r[6]), pct(r[7]), pct(r[8]), `${r[9]}건`]),
