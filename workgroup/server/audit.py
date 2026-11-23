@@ -31,6 +31,7 @@ KINDS = {
     "PERMISSION": "권한 · 다운로드 제한 변경",
     "MEMBER": "멤버 추가 · 삭제",
     "BASELINE": "기준선 확정",
+    "AI": "AI 초안 (자료를 Claude API 로 보냄)",
 }
 _LOCK = threading.Lock()
 _last_purge = [0.0]

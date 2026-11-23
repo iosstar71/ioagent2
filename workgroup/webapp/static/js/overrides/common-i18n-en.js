@@ -57,3 +57,12 @@ Object.assign(I18N_EN.exact, {
   "서브시스템 주간보고 (전체 범위면 통합 보고서 포함)": "Subsystem weekly reports (integrated report when scope is All)",
   "서브시스템 회의 (+ 통합 회의)": "Subsystem meetings (+ integrated)"
 });
+Object.assign(I18N_EN.exact, {
+  "🤖 AI 초안": "🤖 AI draft",
+  "이번 주 Task · 지연 · 회의 자료로 Claude(AI)가 총괄 요약 세 칸의 초안을 씁니다. 저장 전에 확인 · 고치세요.": "Claude (AI) drafts the three summary boxes from this week's tasks, delays and meetings. Check and edit before saving.",
+  "총괄 요약 세 칸을 AI 초안으로 바꿉니다. 지금 쓴 내용은 사라집니다. 계속할까요?": "Replace the three summary boxes with an AI draft? What you have written will be lost.",
+  "🤖 AI 초안을 만드는 중입니다… (30초 정도)": "🤖 Writing the AI draft… (about 30 seconds)",
+  "AI 초안을 받지 못했습니다.": "Could not get the AI draft.",
+  "🤖 AI 초안을 채웠습니다 — 사실과 다른 곳이 없는지 확인 · 고친 뒤 [작성 완료]로 저장하세요.": "🤖 AI draft filled in — check it for mistakes, edit, then save with [Complete].",
+  "주간보고 AI 초안": "Weekly report AI draft"
+});
