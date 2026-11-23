@@ -110,7 +110,7 @@ function renderWbsTable() {
           <input type="text" class="wbs-in-name" value="${escapeHtml(row.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
-      <td class="u-tc"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
+      <td class="u-tc"><span class="status-tag ${status.cssClass}">${status.label}</span>${predWarn.has(row) ? `<span class="status-tag tag-pred" title="${escapeAttr(WbsStatusView.tip(predWarn.get(row)))}">⛓ 선행 지연</span>` : ""}</td>
       <td class="col-fold"><input type="number" min="0" step="0.1" value="${row.weight === undefined || row.weight === null ? "" : row.weight}" ${wWarn.has(row) ? ` class="wbs-in-w weight-warn" title="${escapeAttr(wWarn.get(row))}"` : ` class="wbs-in-w" title="가중치 (서브시스템 100 기준, 상위 = 하위 합, 소수점 1자리)"`} data-change="WbsWeight.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
       <td class="col-fold"><input type="text" class="wbs-in-req" value="${escapeHtml(row.reqId || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
