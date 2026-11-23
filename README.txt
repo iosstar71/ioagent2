@@ -10,6 +10,7 @@ PM Hub — IOSTAR-PM Standalone v1.0.0
 
 ■ 배포 파일
   IOSTAR-PM-Standalone_v1.0.0.zip → 풀면 pprjmgmt/ 폴더 하나 (폴더 이름 = 웹 주소 /pprjmgmt)
+  IOSTAR-PM-Standalone_v1.0.0_root.zip → 풀면 index.html 이 맨 위 (배포 플랫폼이 루트 폴더의 index.html 로 여는 경우 — 내용은 같음)
     index.html   시작 파일          static/   화면 파일 (js · css · 글꼴)
     shared/      PM 이 넣는 최신 마스터 파일 자리 (latest.json)
     legal/       오픈소스 고지       README.txt  이 문서
