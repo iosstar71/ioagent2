@@ -51,11 +51,11 @@
 
       <!-- 공정 상태 요약 칩 바 ([Neo 2.1] 누르면 WBS 에서 해당 상태 최하위 Task 조회) -->
       <div class="status-summary-bar neo-click-chips">
-        <span class="status-badge-chip chip-total" data-click="NeoTodo.openWbsStatus" data-click-args='["ALL"]' title="WBS 에서 보기">공정 전체: <b id="stat-count-total">0</b></span>
-        <span class="status-badge-chip chip-completed" data-click="NeoTodo.openWbsStatus" data-click-args='["완료"]' title="WBS 에서 보기">완료: <b id="stat-count-completed">0</b></span>
-        <span class="status-badge-chip chip-progress" data-click="NeoTodo.openWbsStatus" data-click-args='["진행중"]' title="WBS 에서 보기">진행중: <b id="stat-count-progress">0</b></span>
-        <span class="status-badge-chip chip-delayed" data-click="NeoTodo.openWbsStatus" data-click-args='["지연"]' title="WBS 에서 보기">지연: <b id="stat-count-delayed">0</b></span>
-        <span class="status-badge-chip chip-ready" data-click="NeoTodo.openWbsStatus" data-click-args='["대기"]' title="WBS 에서 보기">대기: <b id="stat-count-ready">0</b></span>
+        <span class="status-badge-chip chip-total" data-click="CheckList.openWbsStatus" data-click-args='["ALL"]' title="WBS 에서 보기">공정 전체: <b id="stat-count-total">0</b></span>
+        <span class="status-badge-chip chip-completed" data-click="CheckList.openWbsStatus" data-click-args='["완료"]' title="WBS 에서 보기">완료: <b id="stat-count-completed">0</b></span>
+        <span class="status-badge-chip chip-progress" data-click="CheckList.openWbsStatus" data-click-args='["진행중"]' title="WBS 에서 보기">진행중: <b id="stat-count-progress">0</b></span>
+        <span class="status-badge-chip chip-delayed" data-click="CheckList.openWbsStatus" data-click-args='["지연"]' title="WBS 에서 보기">지연: <b id="stat-count-delayed">0</b></span>
+        <span class="status-badge-chip chip-ready" data-click="CheckList.openWbsStatus" data-click-args='["대기"]' title="WBS 에서 보기">대기: <b id="stat-count-ready">0</b></span>
         <span class="status-badge-chip chip-error" id="stat-chip-error" style="display:none;">⚠️ 기간이탈 오류: <b id="stat-count-error">0</b></span>
       </div>
 

@@ -120,7 +120,7 @@ var GShell = {
       ${groups.map(g => `<div class="g-side-group${curGroup && curGroup.key === g.key ? " cur" : ""}"><div class="g-side-title"><span>${g.icon || ""}</span>${escapeHtml(g.label)}</div>${g.tabs.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>`).join("")}
       ${this.ADMIN_TABS.some(t => this.allowed(t)) ? `<div class="g-side-group${this.ADMIN_TABS.indexOf(cur) !== -1 ? " cur" : ""}"><div class="g-side-title"><span>⚙️</span>관리</div>${this.ADMIN_TABS.filter(t => this.allowed(t)).map(t => btn(t, "g-side-item")).join("")}</div>` : ""}`;
     nav.innerHTML = `<div class="g-nav-top">${top}</div><div class="g-nav-side">${side}</div>`;
-    if (typeof NeoBadges !== "undefined") NeoBadges.apply(nav); // [Neo 2.1] 메뉴 건수 배지 · 왼쪽 메뉴 접기
+    if (typeof MenuBadges !== "undefined") MenuBadges.apply(nav); // [Neo 2.1] 메뉴 건수 배지 · 왼쪽 메뉴 접기
     if (typeof I18N !== "undefined") I18N.translateTree(nav);
   },
 
@@ -187,7 +187,6 @@ var GShell = {
     set("headerLayoutSelector", document.body.getAttribute("data-layout"));
     set("gDensitySelect", document.body.getAttribute("data-density") === "compact" ? "compact" : "standard");
     set("gLangSelect", typeof I18N !== "undefined" ? I18N.lang : "ko");
-    if (typeof UiMode !== "undefined") UiMode.syncSelects();
     if (typeof UiScale !== "undefined") UiScale.sync();
   },
 

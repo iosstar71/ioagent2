@@ -1736,6 +1736,34 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 
 /* WBS: 요일 다시 표시(작게) · 담당자·산출물 접기 · 칸 폭 넉넉하게 */
 #wbsTable .date-input-wrap { display: flex; align-items: center; gap: 2px; }
+/* WBS 표 머리 칸 너비 · 필터 (예전 인라인 스타일과 같은 값) */
+#wbsPhaseFilter { min-width: 150px; }
+#tab-wbs .wbs-scroll { max-height: 620px; }
+#wbsTable th.wbs-th-min250 { min-width: 250px; }
+#wbsTable th.wbs-th-w100 { width: 100px; }
+#wbsTable th.wbs-th-w112 { width: 112px; }
+#wbsTable th.wbs-th-w116 { width: 116px; }
+#wbsTable th.wbs-th-w136 { width: 136px; }
+#wbsTable th.wbs-th-w48 { width: 48px; }
+#wbsTable th.wbs-th-w50 { width: 50px; }
+#wbsTable th.wbs-th-w54 { width: 54px; }
+#wbsTable th.wbs-th-w56 { width: 56px; }
+#wbsTable th.wbs-th-w80 { width: 80px; }
+#wbsTable th.wbs-th-w92 { width: 92px; }
+/* WBS 행 입력 칸 (예전 인라인 스타일과 같은 값) */
+#wbsTable .wbs-fold-badge { font-size: var(--fs-2xs, 10px); color: var(--accent); }
+#wbsTable .wbs-in-sys { width: 86px; padding: 2px 3px; }
+#wbsTable .wbs-name-cell { display: flex; align-items: center; }
+#wbsTable .wbs-ind-1 { padding-left: 0; }
+#wbsTable .wbs-ind-2 { padding-left: 12px; }
+#wbsTable .wbs-ind-3 { padding-left: 24px; }
+#wbsTable .wbs-ind-4 { padding-left: 36px; }
+#wbsTable .wbs-ind-5 { padding-left: 48px; }
+#wbsTable .wbs-in-name { flex: 1 1 0; width: 0; min-width: 180px; }
+#wbsTable .wbs-in-w { width: 52px; padding: 2px 3px; }
+#wbsTable .wbs-in-req { width: 74px; padding: 2px 3px; }
+#wbsTable .wbs-in-pct { width: 44px; padding: 2px 3px; }
+#wbsTable .wbs-in-out { width: 106px; padding: 2px 3px; }
 #wbsTable .wbs-dow { font-size: var(--fs-2xs, 10px); font-weight: 700; color: var(--text-muted); min-width: 11px; text-align: center; }
 #wbsTable .wbs-dow.day-sat { color: #2563eb !important; }
 #wbsTable .wbs-dow.day-sun { color: #dc2626 !important; }
@@ -2806,6 +2834,12 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .bl-sum { font-size: var(--fs-sm, 12px); font-weight: bold; color: var(--text-main); }
 .bl-hist { margin-top: 10px; }
 .bl-task { margin: 6px 0; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+/* Gantt 목록 · 머리글 (예전 인라인 스타일과 같은 값) */
+.gantt-day-dn { font-size: calc(8px * var(--fs-scale, 1)); line-height: 8px; }
+.gantt-tree .lvl-badge.gantt-ms-badge { background: #7c3aed; color: #fff; }
+.gantt-tree .gantt-ms-title { color: #7c3aed; }
+.gantt-tree-name { font-weight: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gantt-tree-name.strong { font-weight: bold; }
 .gantt-bline { position: absolute; top: 24px; height: 5px; border-radius: 2px; background: var(--text-muted); opacity: 0.45; }
 .gantt-bslip { position: absolute; top: 24px; height: 5px; border-radius: 2px; background: var(--danger); overflow: visible; }
 .gantt-bslip span { position: absolute; left: 100%; top: -5px; margin-left: 3px; font-size: var(--fs-2xs, 10px); font-weight: 800; color: var(--danger); white-space: nowrap; }

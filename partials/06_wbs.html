@@ -23,7 +23,7 @@
       <div class="filter-toolbar">
         <div class="filter-item">
           <label class="u-bold">📶 단계별 조회:</label>
-          <select class="u-bold" id="wbsPhaseFilter" data-change="renderWbsTable" style="min-width:150px;" title="SDLC · 개선 공정 단계로 걸러 봅니다 (단계에 해당하는 Task 와 그 상위 Task 표시)">
+          <select class="u-bold" id="wbsPhaseFilter" data-change="renderWbsTable" title="SDLC · 개선 공정 단계로 걸러 봅니다 (단계에 해당하는 Task 와 그 상위 Task 표시)">
             <option value="ALL">전체 단계</option>
           </select>
         </div>
@@ -67,7 +67,7 @@
             <span id="wbsDateErrChip" class="wbs-err-chip" style="display:none;" title="시작일이 종료일보다 늦거나 프로젝트 기간을 벗어난 Task"></span>
           </span>
         </div>
-        <div class="u-flex u-gap-6 u-wrap" style="margin-left: auto;">
+        <div class="u-flex u-gap-6 u-wrap u-ml-auto">
           <button type="button" class="btn btn-sm wbs-fold-btn" id="btnWbsFold" data-click="WbsFold.toggle" title="가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다">◀ 가중치·REQ·담당자·산출물 접기</button>
           <button class="btn btn-secondary btn-sm" data-click="WbsWeight.runFix" title="경고가 난 묶음만 하위 가중치를 계획 기간(일수) 비율로 다시 나눕니다 (서브시스템 100 기준, 소수점 1자리). 지금 조회한 서브시스템만 대상">⚖️ 가중치 맞추기</button>
           <button class="btn btn-secondary btn-sm" data-click="autoAdjustWbsHolidays" title="계획시작일/종료일이 주말 또는 공휴일인 경우 가장 가까운 평일(영업일)로 자동 보정합니다.">
@@ -79,26 +79,26 @@
         </div>
       </div>
 
-      <div class="table-container" style="max-height: 620px;">
+      <div class="table-container wbs-scroll">
         <table id="wbsTable">
           <thead>
             <tr>
-              <th style="width: 56px;">ID</th>
-              <th style="width: 50px;" title="◀ 상위 레벨로 / ▶ 하위 레벨로">레벨</th>
-              <th style="width: 92px;">서브시스템</th>
-              <th style="min-width: 250px;">Task명 (Task Name)</th>
-              <th style="width: 54px;" title="완료 / 지연 / 진행중 / 대기 (지연 기준: 프로젝트 설정 > 판정 기준)">상태</th>
-              <th class="col-fold" style="width: 50px;">가중치</th>
-              <th class="col-fold" style="width: 80px;">REQ ID</th>
-              <th style="width: 112px;">계획시작</th>
-              <th style="width: 112px;">계획종료</th>
-              <th style="width: 112px;">실제 시작</th>
-              <th style="width: 112px;">실제 종료</th>
-              <th style="width: 48px;">계획%</th>
-              <th style="width: 48px;">실적%</th>
-              <th class="col-fold" style="width: 100px;" title="목록에서 고르거나 직접 입력 (1명). 상위 Task 에 지정하면 하위 Task 에도 자동 지정">담당자</th>
-              <th class="col-fold" style="width: 116px;">산출물/조치</th>
-              <th style="width: 136px;" title="⚡ 계획을 실적에 반영 · ↳ 하위 추가 · ＋ 동위 추가 · ▲▼ 순서 · × 삭제">실적·추가·순서·삭제</th>
+              <th class="wbs-th-w56">ID</th>
+              <th class="wbs-th-w50" title="◀ 상위 레벨로 / ▶ 하위 레벨로">레벨</th>
+              <th class="wbs-th-w92">서브시스템</th>
+              <th class="wbs-th-min250">Task명 (Task Name)</th>
+              <th class="wbs-th-w54" title="완료 / 지연 / 진행중 / 대기 (지연 기준: 프로젝트 설정 > 판정 기준)">상태</th>
+              <th class="wbs-th-w50 col-fold">가중치</th>
+              <th class="wbs-th-w80 col-fold">REQ ID</th>
+              <th class="wbs-th-w112">계획시작</th>
+              <th class="wbs-th-w112">계획종료</th>
+              <th class="wbs-th-w112">실제 시작</th>
+              <th class="wbs-th-w112">실제 종료</th>
+              <th class="wbs-th-w48">계획%</th>
+              <th class="wbs-th-w48">실적%</th>
+              <th class="wbs-th-w100 col-fold" title="목록에서 고르거나 직접 입력 (1명). 상위 Task 에 지정하면 하위 Task 에도 자동 지정">담당자</th>
+              <th class="wbs-th-w116 col-fold">산출물/조치</th>
+              <th class="wbs-th-w136" title="⚡ 계획을 실적에 반영 · ↳ 하위 추가 · ＋ 동위 추가 · ▲▼ 순서 · × 삭제">실적·추가·순서·삭제</th>
             </tr>
           </thead>
           <tbody id="wbsTableBody"></tbody>

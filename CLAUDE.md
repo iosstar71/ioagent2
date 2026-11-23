@@ -20,7 +20,7 @@
   | 엑셀 파일 형식 · 업로드 · 회의록 워드 | `modules/dataio/excel-format.js` · `excel-import.js` · `docx-builder.js` (모두 `ExcelSync` 에 붙음) |
   | 회의(일정 · 회의록 · Action Item · 다운로드) | `modules/meeting/meeting-manager.js`(상태 · 편집본) + `meeting-schedule` · `meeting-minutes` · `meeting-actions` · `meeting-export.js` |
   | 종합보고서(PPT) 구성 · 디자인 | `modules/report/exec-deck.js` (`SECTIONS` · `PRESETS` · `DESIGNS`, `_head` · `_cover`, 설정 화면 `DeckSettings`) |
-  | 오른쪽 상세 패널이 시작하는 자리 | `common/neo.js` (`PanelDock` — 화면 머리글 아래, `--panel-top`) |
+  | 오른쪽 상세 패널이 시작하는 자리 · 화면 틀(왼쪽 메뉴 접기 · 머리줄 · 글자 크기 · 고정 머리글) | `common/page-layout.js` (`PanelDock` — 화면 머리글 아래 `--panel-top`, `SideMenu` `PageHead` `UiScale` `StickyTop`) |
   | [보고] 메뉴 서브탭 | `modules/weekly/weekly-export.js` (`ReportTabs`) |
   | 화면이 그대로인지 확인 | `node tools/tests/css_safety_net.js --save <f.json>` → 고친 뒤 `--check <f.json>` (6개 테마 × 모든 화면 · 대화상자의 실제 스타일 비교). CSS 만 바꿨으면 `--compare <예전 css>` |
   | 공통 꾸밈 클래스(`u-flex` `u-bold` `u-gap-8` …) | `style.css` 맨 끝 블록 — 인라인 `style=""` 대신 씀. 없는 것은 같은 꼴로 더함 |
@@ -29,8 +29,10 @@
   | 테마 색 · 차트 색 토큰 | `style.css` 끝부분: `[data-theme="..."]` 블록, `--chart-*`, `--tint-*` |
   | 선 아이콘(이모지 → SVG) | `static/js/common/icons.js` (`Icons.MAP`) |
   | 메뉴 묶음 · 첫 화면 | `static/js/common/g-shell.js` (`GROUPS`), `modules/home/home.js` (`LANDING`) |
-  | WBS 표 · 오른쪽 상세 패널 | `modules/wbs/wbs-table.js`, `common/neo.js` (`NeoDetail`) |
-  | 체크할 일 집계 | `common/neo.js` (`NeoTodo.collect`) |
+  | WBS 표 · 오른쪽 상세 패널 | `modules/wbs/wbs-table.js` (`WbsFold` 포함), `modules/wbs/wbs-detail.js` (`WbsDetail`) |
+  | 상태 버튼(칩) | `common/status-chips.js` (`WbsStatusChips` · `StatusChips`) |
+  | 날짜 도움 함수(기준일 · 남은 날) | `common/day-util.js` (`DayUtil`) |
+  | 체크할 일 집계 · 메뉴 건수 배지 | `modules/todo/check-list.js` (`CheckList.collect` · `MenuBadges`) |
   | 차트(S-curve · 불릿) | `modules/progress/dashboard-chart.js`, `common/charts.js` (`ChartTheme`) |
   | 영어 화면 | `common/i18n.js` + 사전 `i18n-en.js` (`exact` 에 한국어 원문 → 영어 추가) |
   | 저장 · 상태 표시 | `core/data-store.js` (`SyncManager` · `SyncUI`) — 자료 묶음 · 파티션 · 권한은 `core/data-registry.js`, 프로젝트 · 저장소(Local · Server)는 `core/data-backends.js` |
@@ -43,7 +45,7 @@
 | VOC 판정 · 단계 · 결함 집계 · 범위 알림 | `Metrics` (`VOC_JUDGE` `VOC_STAGES` `defectStats` …), 목록 · 등록 `modules/requirement/req-voc.js` (`ListTable` `VocRules`), 현황 그리기 `modules/progress/voc-board.js` |
 | 기준선 | 계산 `modules/wbs/baseline.js` (`Baseline`), 화면 `baseline-ui.js` (`BaselineUI`) |
 | ID 규칙(접두사 · 다음 번호) | `modules/master/project-config.js` (`IdRules.KINDS`) |
-| 선행 Task 경고 · 상태 버튼 묶음 머리 | 계산 `WBSEngine.predCheck` · `predWarnings`, 표 `wbs-table.js` (`WbsStatusView`), 패널 `NeoDetail._predHtml` |
+| 선행 Task 경고 · 상태 버튼 묶음 머리 | 계산 `WBSEngine.predCheck` · `predWarnings`, 표 `wbs-table.js` (`WbsStatusView`), 패널 `WbsDetail._predHtml` |
 | 샘플 프로젝트(시험 기준 자료) | 만들기 `tools/build_sample.js` → `core/sample-snapshot.js`, 담긴 경우 `tools/tests/sample_coverage.js` |
 | [Workgroup] 다운로드 제한 · 감사 로그 | 서버 `workgroup/server/audit.py`, 화면 `workgroup/webapp/static/js/core/download-guard.js` |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
@@ -72,7 +74,7 @@
 - **단위 시험 더하기**: 그 화면의 계산 · 판정 로직을 엔진(`Metrics` 등)으로 옮기며 `tools/tests/unit/run_unit.js` 에 항목을 더한다
 - **조용히 넘기는 오류**: 자료 저장 · 불러오기 쪽 `catch (e) {}` 는 콘솔에 남긴다 (화면 설정값 읽기 · 쓰기는 그대로)
 - **자료형 검사 넓히기**: 그 파일에 `jsconfig.json` 검사를 켠다 (순서: 저장 `data-*` → 주간보고 → WBS 표). 고친 뒤 `npx -p typescript@5.6.3 tsc -p jsconfig.json` 오류 0
-- **큰 파일 나누기**: 800줄이 넘는 파일(파일 Merge `smart-merge.js` · 공통 화면 `neo.js` · 게시판 `notice-comm.js` 등)은 그 화면을 고칠 때 기능별 파일로(같은 객체에 `Object.assign` 으로 붙임)
+- **큰 파일 나누기**: 800줄이 넘는 파일(파일 Merge `smart-merge.js` · 게시판 `notice-comm.js` 등)은 그 화면을 고칠 때 기능별 파일로(같은 객체에 `Object.assign` 으로 붙임)
 - **전역 이름 줄이기**: 위 항목들을 하며 자연히 줄인다 (한꺼번에 바꾸지 않음)
 - **보류 — 사용자가 요청할 때만**: Workgroup 덮어쓰기(`overrides/`)를 어댑터(저장 · 로그인 · 백업 인터페이스)로 옮기는 일
 

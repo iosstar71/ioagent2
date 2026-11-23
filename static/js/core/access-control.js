@@ -484,7 +484,6 @@ var AuthManager = {
       if (opts.lang) this._rememberUserLang(next.empNo, opts.lang);
     }
     // 작업자별 화면 방식(Standard / Neo): 지금 화면과 다르면 그 방식으로 다시 불러옴
-    if (typeof UiMode !== "undefined" && UiMode.afterLogin(this.findUser(next.empNo) || next)) return;
 
     await AppBoot.afterLogin();
 

@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
@@ -13,6 +16,10 @@
     "static/js/modules/wbs/metrics.js",
     "static/js/modules/wbs/wbs-weight.js",
     "static/js/modules/wbs/wbs-engine.js",
-    "static/js/core/migrate.js"
+    "static/js/core/migrate.js",
+    "static/js/modules/wbs/baseline.js",
+    "static/js/common/day-util.js",
+    "static/js/modules/wbs/wbs-detail.js",
+    "static/js/modules/wbs/wbs-table.js"
   ]
 }

@@ -17,19 +17,17 @@ var TodoCenter = {
 
   // ---- 데이터 ----
   me() {
-    const u = typeof AuthManager !== "undefined" ? AuthManager.getCurrentUser() : null;
+    const u = AuthManager.getCurrentUser();
     return String((u && u.empNo) || "").toLowerCase();
   },
   rows() { const me = this.me(); return (todosData || []).filter(r => r && String(r.owner || "").toLowerCase() === me); },
   todos() { return this.rows().filter(r => (r.kind || "todo") === "todo"); },
   hides() { return this.rows().filter(r => r.kind === "hide"); },
-  rep() { return NeoUtil.rep(); },
+  rep() { return DayUtil.rep(); },
   newId(prefix) { return `${prefix}-${this.me()}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`; },
 
   async save() {
-    if (typeof SyncManager !== "undefined") {
-      try { await SyncManager.save(["todosData"], { notify: false }); } catch (e) {}
-    } else if (typeof persistChanges === "function") persistChanges();
+    try { await SyncManager.save(["todosData"], { notify: false }); } catch (e) { console.warn("todo save failed", e); }
     this.render();
     this.updateCounts();
   },
@@ -40,7 +38,7 @@ var TodoCenter = {
       const v = AppStore.getItem(this.KEY_MINE + this.me());
       if (v === "1" || v === "0") return v === "1";
     } catch (e) {}
-    return !!NeoTodo.ownSystem();
+    return !!CheckList.ownSystem();
   },
   toggleMine() {
     try { AppStore.setItem(this.KEY_MINE + this.me(), this.mine() ? "0" : "1"); } catch (e) {}
@@ -55,10 +53,10 @@ var TodoCenter = {
 
   // ---- 확인할 일 (자동) ----
   autoGroups() {
-    const c = NeoTodo.collect(null, this.mine());
+    const c = CheckList.collect(null, this.mine());
     const g = [
       { key: "delay", icon: "🔴", title: "지연 Task", items: c.delayed.map(x => ({ k: `WBS:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: `${x.t.system || ""} · 계획 ${x.t.pProg}% / 실적 ${x.t.aProg}%`, due: x.t.pEnd, tag: `-${Math.round(x.gap)}%p` })) },
-      { key: "soon", icon: "⏰", title: `${NeoTodo.DUE_DAYS}일 안 마감`, items: c.dueSoon.map(t => ({ k: `WBS:${t.id}`, type: "WBS", id: t.id, title: `${t.id} ${t.name || ""}`, sub: `${t.system || ""} · 실적 ${t.aProg}%`, due: t.pEnd })) },
+      { key: "soon", icon: "⏰", title: `${CheckList.DUE_DAYS}일 안 마감`, items: c.dueSoon.map(t => ({ k: `WBS:${t.id}`, type: "WBS", id: t.id, title: `${t.id} ${t.name || ""}`, sub: `${t.system || ""} · 실적 ${t.aProg}%`, due: t.pEnd })) },
       { key: "pred", icon: "⛓", title: "선행 지연 영향", items: c.predHit.map(x => ({ k: `PRED:${x.t.id}`, type: "WBS", id: x.t.id, title: `${x.t.id} ${x.t.name || ""}`, sub: WbsStatusView.tip(x.r).replace(/\n/g, " · "), due: x.t.pStart, tag: "⛓" })) },
       { key: "voc", icon: "📣", title: "미조치 VOC", items: c.vocs.map(v => ({ k: `VOC:${v.id}`, type: "VOC", id: v.id, title: `${v.id} ${v.title || ""}`, sub: `${v.system || ""} · ${v.priority || ""} · ${v.status || ""}`, due: v.targetDate })) },
       { key: "deliv", icon: "📑", title: "확인할 산출물", items: c.delivs.map(d => ({ k: `DLV:${d.id}`, type: "DLV", id: d.name, title: d.name || "", sub: `${d.system || ""} · ${d.round || ""} · ${d.status || ""}`, due: d.pDate })) },
@@ -75,11 +73,11 @@ var TodoCenter = {
     return list.slice().sort((a, b) => (a.done - b.done) || String(a.due || "9999").localeCompare(String(b.due || "9999")) || ((pr[a.priority] ?? 1) - (pr[b.priority] ?? 1)) || String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
   },
   stats() {
-    const today = this.rep(), soon = NeoUtil.addDays(today, NeoTodo.DUE_DAYS);
+    const today = this.rep(), soon = DayUtil.addDays(today, CheckList.DUE_DAYS);
     const open = this.todos().filter(t => !t.done);
     let wk = null;
     try { wk = WBSEngine.getWeekRange(today, projectConfig.weekStartDay); } catch (e) {}
-    const wkStart = wk ? (wk.start || wk.startDate || wk[0]) : NeoUtil.addDays(today, -6);
+    const wkStart = wk ? (wk.start || wk.startDate || wk[0]) : DayUtil.addDays(today, -6);
     return {
       open: open.length,
       late: open.filter(t => t.due && t.due < today).length,
@@ -169,7 +167,7 @@ var TodoCenter = {
     this.save();
   },
   hide(key) {
-    todosData.push({ id: this.newId("TH"), owner: this.me(), kind: "hide", key, until: NeoUtil.addDays(this.rep(), 7), createdAt: new Date().toISOString().slice(0, 19).replace("T", " ") });
+    todosData.push({ id: this.newId("TH"), owner: this.me(), kind: "hide", key, until: DayUtil.addDays(this.rep(), 7), createdAt: new Date().toISOString().slice(0, 19).replace("T", " ") });
     this.save();
   },
   unhideAll() {
@@ -180,7 +178,7 @@ var TodoCenter = {
 
   openLink(type, id) {
     if (type === "WBS") {
-      if (typeof UiMode !== "undefined" && UiMode.isNeo()) return NeoTodo.openTask(id);
+      return CheckList.openTask(id);
       return GShell.reveal("tab-wbs", id);
     }
     if (type === "VOC") return GShell.reveal("tab-voc", id);
@@ -206,8 +204,8 @@ var TodoCenter = {
   // ---- 화면 ----
   due(iso) {
     if (!iso) return '<span class="todo-due none">마감 없음</span>';
-    const n = NeoUtil.daysLeft(iso);
-    return `<span class="todo-due${n < 0 ? " late" : n === 0 ? " today" : n <= 2 ? " near" : ""}" title="${escapeAttr(iso)}">${NeoUtil.dueText(iso)}</span>`;
+    const n = DayUtil.daysLeft(iso);
+    return `<span class="todo-due${n < 0 ? " late" : n === 0 ? " today" : n <= 2 ? " near" : ""}" title="${escapeAttr(iso)}">${DayUtil.dueText(iso)}</span>`;
   },
   render() {
     const box = document.getElementById("homeTodoContainer");
@@ -218,7 +216,7 @@ var TodoCenter = {
     const all = this.sorted(this.todos());
     const list = this.filter === "done" ? all.filter(t => t.done) : this.filter === "all" ? all : all.filter(t => !t.done);
     const A = (...a) => UiEvents.args(...a);
-    const own = NeoTodo.ownSystem();
+    const own = CheckList.ownSystem();
     const priOpts = cur => Object.keys(this.PRI).map(k => `<option value="${k}" ${k === cur ? "selected" : ""}>${this.PRI[k]}</option>`).join("");
     const row = t => {
       if (this._editing === t.id) {
@@ -251,7 +249,7 @@ var TodoCenter = {
         <div class="todo-tiles">
           ${tile("기한 지남", s.late, s.late ? "late" : "")}
           ${tile("오늘 마감", s.today, s.today ? "today" : "")}
-          ${tile(`${NeoTodo.DUE_DAYS}일 안 마감`, s.soon, "")}
+          ${tile(`${CheckList.DUE_DAYS}일 안 마감`, s.soon, "")}
           ${tile("남은 할 일", s.open, "")}
           ${tile("이번 주 완료", s.doneWeek, "ok")}
           ${tile("체크할 일 (자동)", autoTotal, autoTotal ? "auto" : "")}
@@ -284,7 +282,7 @@ var TodoCenter = {
               <h3>🔔 체크할 일 <small>(자동)</small></h3>
               <label class="todo-mine"><input type="checkbox" data-change="TodoCenter.toggleMine" ${this.mine() ? "checked" : ""}> 내 담당만${own ? ` (${escapeHtml(own)})` : ""}</label>
             </div>
-            <div class="todo-auto-hint">기준일 ${escapeHtml(this.rep())} · 마감 ${NeoTodo.DUE_DAYS}일 이내 · 원본 데이터가 처리되면 자동으로 사라집니다.
+            <div class="todo-auto-hint">기준일 ${escapeHtml(this.rep())} · 마감 ${CheckList.DUE_DAYS}일 이내 · 원본 데이터가 처리되면 자동으로 사라집니다.
               ${auto.hidden ? `<span> · 숨긴 항목 ${auto.hidden}건</span> <button type="button" class="todo-linkbtn" data-click="TodoCenter.unhideAll">다시 보기</button>` : ""}</div>
             ${auto.groups.map(g => `
               <div class="todo-auto-group">
@@ -301,7 +299,7 @@ var TodoCenter = {
           </section>
         </div>
       </div>`;
-    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
-    if (typeof I18N !== "undefined") I18N.translateTree(box);
+    ButtonStandard.apply(box);
+    I18N.translateTree(box);
   }
 };

@@ -22,7 +22,7 @@ function renderDashboard() {
     return true;
   });
   // [Neo 2.1] 확인할 일 (대시보드 조회 범위 기준)
-  if (typeof NeoTodo !== "undefined") { try { NeoTodo.render(activeSystems); } catch (e) { console.error(e); } }
+  if (typeof CheckList !== "undefined") { try { CheckList.render(activeSystems); } catch (e) { console.error(e); } }
 
   // KPI 계산 (선택 서브시스템에 맞춰 동적 집계)
   const scopeTasks = (selDomain === "ALL" && selSubsys === "ALL")

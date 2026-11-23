@@ -124,7 +124,7 @@ var RecordPanel = {
     const row = s && this._find(kind, idx);
     if (!row) return;
     if (this.isOpen() && this._ref === row) return this.close();   // 같은 행을 다시 누르면 닫기
-    if (typeof NeoDetail !== "undefined" && NeoDetail.isOpen()) NeoDetail.close();
+    if (typeof WbsDetail !== "undefined" && WbsDetail.isOpen()) WbsDetail.close();
     this._kind = kind; this._ref = row;
     this.render();
   },

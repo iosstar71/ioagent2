@@ -82,7 +82,6 @@ var ScreenRender = {
       SubTabs.restore("config", "screen");
       if (typeof ProjectData !== "undefined") ProjectData.renderConfigTarget();
       document.querySelectorAll(".lbl-current-project-name").forEach(el => { el.textContent = (ProjectContext.info() || {}).name || projectConfig.projectName || ProjectContext.current; });
-      if (typeof UiMode !== "undefined") UiMode.syncSelects();
     }
   },
   // 표가 큰 화면은 자료가 바뀌었을 때만 열 때 다시 그림 (스크롤 위치 유지). 나머지는 열 때마다 그림

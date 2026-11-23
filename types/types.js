@@ -6,7 +6,7 @@
 /**
  * @typedef {Object} WbsTask
  * @property {string} [id]             WBS ID (예: "1.1.2")
- * @property {number} [level]          계층 레벨 (1~4)
+ * @property {number} [level]          계층 레벨 (1~5)
  * @property {string} [system]         서브시스템명
  * @property {string} [name]           과업(Task)명
  * @property {number|string} [weight]  가중치 (소수점 1자리)
@@ -18,7 +18,11 @@
  * @property {number|string} [pProg]   계획 진척률 (0~100)
  * @property {number|string} [aProg]   실적 진척률 (0~100)
  * @property {string} [owner]          담당자명
- * @property {string} [note]           비고 / 산출물 메모
+ * @property {string} [output]         산출물 / 조치계획
+ * @property {string} [pred]           선행 Task WBS ID (쉼표로 최대 3개)
+ * @property {Object<string, string[]>} [bHist] 기준선 번호 → [계획 시작, 계획 종료]
+ * @property {string} [bStart]         비교 기준선 시작 (계산값)
+ * @property {string} [bEnd]           비교 기준선 종료 (계산값)
  * @property {boolean} [isLeaf]        최하위(Leaf) 노드 여부
  * @property {string} [status]         계산된 상태 ("완료" | "진행중" | "지연" | "대기" 등)
  */
@@ -38,14 +42,19 @@
  * @typedef {Object} VocItem
  * @property {string} [id]
  * @property {string} [system]
- * @property {string} [category]       "VOC" | "버그" | "이슈"
+ * @property {string} [vocType]        판정: 미판정 · 결함 · 개선 요청 · 설명 종결 · 이슈
+ * @property {string} [stage]          단계: 요건분석/설계 · 구현/단위테스트 · 통합테스트 · 안정화
+ * @property {boolean} [stageManual]   단계를 직접 정함
+ * @property {string} [severity]       심각도 (결함일 때)
  * @property {string} [priority]
  * @property {string} [title]
  * @property {string} [requester]
  * @property {string} [reqDate]
  * @property {string} [targetDate]
- * @property {string} [status]         "대기" | "진행" | "완료" | "제외" | "보류" | "삭제"
- * @property {string} [actionNote]
+ * @property {string} [status]         "대기" | "진행" | "완료" | "보류" | "요구 반영" | "삭제"
+ * @property {string} [closedDate]
+ * @property {string} [reqLink]        추가 요구사항(CR) ID
+ * @property {string} [action]
  */
 
 /**

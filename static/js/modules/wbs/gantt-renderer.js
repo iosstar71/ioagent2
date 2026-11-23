@@ -73,7 +73,7 @@ const GanttRenderer = {
       cols.push({
         width: dayW, days: 1,
         cls: `${dow === 0 || dow === 6 ? "weekend" : ""} ${isHoliday ? "holiday" : ""}`,
-        html: `<span>${d.getDate()}</span><span class="u-block" style="font-size:calc(8px * var(--fs-scale, 1)); line-height:8px;">${dn}</span>`,
+        html: `<span>${d.getDate()}</span><span class="u-block gantt-day-dn">${dn}</span>`,
         title: `${iso} (${dn}) ${isHoliday ? "(휴일)" : ""}`
       });
     }
@@ -204,8 +204,8 @@ const GanttRenderer = {
 
     if (integrated.length && sysFilter === "ALL") {
       tree.appendChild(this._treeRow(
-        `<span class="lvl-badge" style="background:#7c3aed; color:#fff;">MS</span>
-         <span class="u-bold" style="color:#7c3aed;">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
+        `<span class="lvl-badge gantt-ms-badge">MS</span>
+         <span class="u-bold gantt-ms-title">🏁 프로젝트 종합 마일스톤 (${integrated.length})</span>`, 1, ""));
       tree.lastChild.classList.add("gantt-ms-row"); // 아래로 스크롤해도 마일스톤 행은 머리글 아래에 고정
       const row = this._chartRow(tl);
       row.classList.add("gantt-ms-row");
@@ -219,7 +219,7 @@ const GanttRenderer = {
       tree.appendChild(this._treeRow(`
         <span class="lvl-badge lvl-${task.level}">L${task.level}</span>
         <span class="u-fs-xs u-c-muted u-mr-4">[${escapeHtml(task.id)}]</span>
-        <span style="font-weight:${task.level <= 2 ? "bold" : "normal"}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</span>`, task.level));
+        <span class="gantt-tree-name${task.level <= 2 ? " strong" : ""}" title="${escapeHtml(task.name)}">${escapeHtml(task.name)}</span>`, task.level));
 
       const row = this._chartRow(tl);
       if (task.pStart) {

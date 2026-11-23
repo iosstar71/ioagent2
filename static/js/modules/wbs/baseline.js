@@ -76,7 +76,7 @@ var Baseline = {
       const hs = new Set((cfg.holidays || []).map(h => h.date));
       return sign * WBSEngine.countBusinessDays(lo, hi, hs);   // [lo, hi) 의 영업일 수
     }
-    return sign * Math.round((new Date(hi + "T00:00:00") - new Date(lo + "T00:00:00")) / 86400000);
+    return sign * Math.round((new Date(hi + "T00:00:00").getTime() - new Date(lo + "T00:00:00").getTime()) / 86400000);
   },
   // Task 하나의 종료 차이 (기준선 없으면 null)
   varOf(t, cfg) { return t && t.bEnd && t.pEnd ? this.diffDays(t.pEnd, t.bEnd, cfg) : null; },

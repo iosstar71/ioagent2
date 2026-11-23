@@ -54,7 +54,7 @@ var Metrics = {
     const nameOnly = String(phase.name || "").toLowerCase();
     // 이름에서 먼저 찾고, 없으면 키워드까지
     for (const src of [nameOnly, text]) {
-      for (const [stage, words] of this.STAGE_WORDS) if (words.some(w => src.indexOf(w) !== -1)) return stage;
+      for (const [stage, words] of this.STAGE_WORDS) if (/** @type {string[]} */ (words).some(w => src.indexOf(w) !== -1)) return /** @type {string} */ (stage);
     }
     return "";
   },

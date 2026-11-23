@@ -526,44 +526,44 @@ async function localMain() {
   // [v3.0.0] 화면은 Neo 하나 — 화면 방식 선택 없음
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
-  const neoMode = await page.evaluate(() => ({ mode: UiMode.current, sw: typeof UiMode.canSwitch === "function" && UiMode.canSwitch(), cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
+  const neoMode = await page.evaluate(() => ({ mode: "neo", sw: false, cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
   check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 7 && fontOk, JSON.stringify({ neoMode, fontOk }));
-  if (await page.evaluate(() => typeof NeoTodo !== "undefined")) {
+  if (await page.evaluate(() => typeof CheckList !== "undefined")) {
     await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
-    const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: NeoTodo.collect(null).delayed.length }));
+    const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: CheckList.collect(null).delayed.length }));
     // 진행 중 최하위 과업 하나를 지연으로 만들기 (실적 = 계획 - 20)
-    const target = await page.evaluate(() => { const t = wbsData.find(x => x.isLeaf && x.pProg >= 30 && x.aProg < 100 && NeoUtil.status(x).code !== "delayed"); const o = t.aProg; t.aProg = t.pProg - 20; rebuildAll(); return { id: t.id, orig: o }; });
+    const target = await page.evaluate(() => { const t = wbsData.find(x => x.isLeaf && x.pProg >= 30 && x.aProg < 100 && DayUtil.status(x).code !== "delayed"); const o = t.aProg; t.aProg = t.pProg - 20; rebuildAll(); return { id: t.id, orig: o }; });
     await page.waitForTimeout(700);
     await page.evaluate(() => GShell.go("tab-dashboard")); await page.waitForTimeout(500);
     const dashLine = await page.evaluate(() => (document.querySelector("#neoTodoCard .neo-todo-chip") || {}).textContent || "");
     // 대시보드 → [홈의 내 할 일에서 보기] → 내 할 일 홈의 확인할 일(자동) 지연 과업
     await page.click('#neoTodoCard [data-click="TodoCenter.openHome"]'); await page.waitForTimeout(600);
-    const after = await page.evaluate(id => ({ delayed: NeoTodo.collect(null).delayed.length, style: HomeScreenManager.userStyle(), tab: document.querySelector(".tab-pane.active").id,
+    const after = await page.evaluate(id => ({ delayed: CheckList.collect(null).delayed.length, style: HomeScreenManager.userStyle(), tab: document.querySelector(".tab-pane.active").id,
       listed: !!Array.prototype.find.call(document.querySelectorAll("#homeTodoContainer .todo-auto-group:first-of-type .todo-auto-main, #homeTodoContainer .todo-auto-main"), b => b.textContent.indexOf(id) !== -1),
       badge: (document.querySelector('.g-nav-top [data-tab="tab-wbs"] .neo-badge') || document.querySelector('.g-group[data-group="sc"] .g-group-count:not([hidden])') || {}).textContent || "" }), target.id);
     check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 7 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
     const item = await page.$(`#homeTodoContainer .todo-auto-main[data-click-args*='"${target.id}"']`);
     await item.click(); await page.waitForTimeout(900);
-    const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: NeoDetail.isOpen(), id: NeoDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
+    const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: WbsDetail.isOpen(), id: WbsDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
     check("Neo: auto to-do item opens WBS with the right-side detail panel (row highlighted)", det.tab === "tab-wbs" && det.open && det.sel && !!det.id, JSON.stringify(det));
     await page.fill('#neoDetail input[data-change-args*="aProg"]', String(target.orig)); await page.keyboard.press("Tab"); await page.waitForTimeout(900);
-    const edited = await page.evaluate(id => { const t = wbsData.find(x => x.id === id); const tr = document.querySelector(`#wbsTableBody tr[data-wbs-id="${id}"]`); return { a: t.aProg, still: NeoDetail.isOpen(), cell: tr ? Array.prototype.some.call(tr.querySelectorAll("input"), i => i.value === String(t.aProg)) : null }; }, det.id);
+    const edited = await page.evaluate(id => { const t = wbsData.find(x => x.id === id); const tr = document.querySelector(`#wbsTableBody tr[data-wbs-id="${id}"]`); return { a: t.aProg, still: WbsDetail.isOpen(), cell: tr ? Array.prototype.some.call(tr.querySelectorAll("input"), i => i.value === String(t.aProg)) : null }; }, det.id);
     check("Neo: editing in the detail panel updates WBS data and table", Number(edited.a) === Number(target.orig) && edited.still && edited.cell !== false, JSON.stringify(edited));
     await page.keyboard.press("Escape"); await page.waitForTimeout(200);
     await page.click('#neoStatusChips .neo-chip[data-click-args*="완료"]'); await page.waitForTimeout(500);
     const chips = await page.evaluate(() => { const rows = [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]")]; const act = document.querySelector("#neoStatusChips .neo-chip.active");
-      return { n: rows.length, allDone: rows.every(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).status === "완료"), active: act && act.getAttribute("data-click-args"), cnt: act && Number(act.querySelector("b").textContent), closed: !NeoDetail.isOpen() }; });
+      return { n: rows.length, allDone: rows.every(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).status === "완료"), active: act && act.getAttribute("data-click-args"), cnt: act && Number(act.querySelector("b").textContent), closed: !WbsDetail.isOpen() }; });
     check("Neo: status chip filter shows only that status (count matches); Esc closes panel", chips.n > 0 && chips.allDone && chips.n === chips.cnt && /완료/.test(chips.active) && chips.closed, JSON.stringify(chips));
     await page.click('#neoStatusChips .neo-chip[data-click-args*="ALL"]'); await page.waitForTimeout(300);
     await page.evaluate(() => GShell.go("tab-dashboard")); await page.waitForTimeout(400);
     await page.click('.neo-click-chips .chip-progress'); await page.waitForTimeout(600);
     const dchip = await page.evaluate(() => [document.querySelector(".tab-pane.active").id, document.getElementById("wbsStatusFilter").value]);
-    await page.evaluate(() => NeoDetail.open(wbsData.findIndex(t => t.isLeaf))); await page.evaluate(() => GShell.go("tab-voc")); await page.waitForTimeout(300);
-    const leave = await page.evaluate(() => NeoDetail.isOpen());
+    await page.evaluate(() => WbsDetail.open(wbsData.findIndex(t => t.isLeaf))); await page.evaluate(() => GShell.go("tab-voc")); await page.waitForTimeout(300);
+    const leave = await page.evaluate(() => WbsDetail.isOpen());
     await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(300);
     check("Neo: detail panel closes when leaving the WBS screen", leave === false, String(leave));
     check("Neo: dashboard status chip opens WBS filtered by that status", dchip[0] === "tab-wbs" && dchip[1] === "진행중", JSON.stringify(dchip));
-    await page.evaluate(() => NeoChips.set("ALL"));
+    await page.evaluate(() => WbsStatusChips.set("ALL"));
     await page.evaluate(() => LayoutManager.setLayout("sidebar-left", false)); await page.waitForTimeout(300);
     await page.click("#neoSideToggle"); await page.waitForTimeout(300);
     const side = await page.evaluate(() => ({ w: Math.round(document.getElementById("gNav").getBoundingClientRect().width), title: document.querySelector(".g-side-item").title }));
@@ -585,7 +585,7 @@ async function localMain() {
   }
 
   // [Neo 2.2] WBS 템플릿 (등록된 서브시스템만 · 추가/교체) · 화면 머리줄 · 내려받기 메뉴 · 주간보고 2단 화면
-  if (await page.evaluate(() => typeof NeoPage !== "undefined")) {
+  if (await page.evaluate(() => typeof PageHead !== "undefined")) {
     await page.setViewportSize({ width: 1500, height: 950 });
     await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(400);
     await page.click('#tab-wbs [data-click="WbsTemplate.open"]'); await page.waitForTimeout(400);
@@ -974,7 +974,7 @@ async function serverScenarios() {
       r.openBtns = document.querySelectorAll("#wbsTableBody .wbs-open-btn").length; r.rows = document.querySelectorAll("#wbsTableBody tr").length;
       const tr = document.querySelectorAll("#wbsTableBody tr")[1]; const td = tr && tr.querySelector("td:nth-child(6)");
       if (td) td.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      await new Promise(r => setTimeout(r, 300)); r.panel = NeoDetail.isOpen(); NeoDetail.close();
+      await new Promise(r => setTimeout(r, 300)); r.panel = WbsDetail.isOpen(); WbsDetail.close();
       return r; });
     check("UX: version in the member menu, save status dot, class-based Summary header, My Work greeting, WBS open button + row click",
       /v\d/.test(ux.ver) && ux.verHidden && ux.dotW <= 34 && ux.heroInline === 0 && ux.hello && ux.openBtns > 0 && ux.openBtns === ux.rows && ux.panel, JSON.stringify(ux));

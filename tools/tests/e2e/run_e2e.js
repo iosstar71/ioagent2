@@ -307,16 +307,16 @@ async function main() {
     check("[⚖️ 가중치 오류 보정] splits only the flagged groups by planned days (a1/a2 50/50, a11 10d / a12 20d → 16.7/33.3); no warnings left",
       c3.a1 === 50 && c3.a2 === 50 && c3.a11 === 16.7 && c3.a12 === 33.3 && c3.warn === 0 && !c3.chip, JSON.stringify(c3));
     check("Project total = each subsystem's progress × subsystem weight (A 70 : B 30)", c3.tot === Math.round(c3.A * 0.7 + c3.B * 0.3), JSON.stringify(c3));
-    await wc.evaluate(() => { NeoDetail.open(wbsData.findIndex(t => t.name === "a12")); NeoDetail.run("addChildTask"); }); await wc.waitForTimeout(400);
-    const p1 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name }));
-    await wc.evaluate(() => NeoDetail.level(-1)); await wc.waitForTimeout(400);
-    const p2 = await wc.evaluate(() => ({ lv: NeoDetail.row().level, name: NeoDetail.row().name, max: Math.max(...wbsData.map(t => t.level)) }));
+    await wc.evaluate(() => { WbsDetail.open(wbsData.findIndex(t => t.name === "a12")); WbsDetail.run("addChildTask"); }); await wc.waitForTimeout(400);
+    const p1 = await wc.evaluate(() => ({ lv: WbsDetail.row().level, name: WbsDetail.row().name }));
+    await wc.evaluate(() => WbsDetail.level(-1)); await wc.waitForTimeout(400);
+    const p2 = await wc.evaluate(() => ({ lv: WbsDetail.row().level, name: WbsDetail.row().name, max: Math.max(...wbsData.map(t => t.level)) }));
     check("Detail panel: [+ 하위] opens the new child, and [◀ 레벨 올리기] moves it back up (follows the Task after renumbering)",
       p1.lv === 4 && /하위 Task/.test(p1.name) && p2.lv === 3 && p2.name === p1.name && p2.max <= 5, JSON.stringify({ p1, p2 }));
     // 실적 일괄 반영 규칙 · 일정 역전 색 · 단계별 조회 · 판정 기준
     console.log("\n[Actual apply rules, stage filter, judgement rules]");
     await wc.evaluate(() => {
-      NeoDetail.close();
+      WbsDetail.close();
       projectConfig.reportDate = "2026-11-18"; projectConfig.weekStartDay = 1;   // 기준 주차 11-16(월) ~ 11-22
       subsystemsMeta = [{ domain: "기본분야", code: "A", name: "A", type: "SDLC", sdlcCode: "SDLC_WATERFALL", weight: 100, pm: "" }];
       wbsData = [{ level: 1, system: "A", name: "A 구축", weight: 100 },
@@ -360,7 +360,7 @@ async function main() {
       projectConfig.delayGap = 2; r.gap3b = st(50, 47, "2026-12-01"); delete projectConfig.delayGap;
       const W = (t) => WeeklyReportManager.isTaskInWeek(Object.assign({ isLeaf: true }, t), "2026-11-16", "2026-11-22");
       r.wk = [W({ pStart: "2026-11-20", pEnd: "2026-11-30" }), W({ pStart: "2026-10-01", pEnd: "2026-12-31", aStart: "2026-10-01" }), W({ pStart: "2026-12-01", pEnd: "2026-12-05" }), W({ pStart: "2026-10-01", pEnd: "2026-10-05", aEnd: "2026-10-05", aProg: 100 })].join();
-      r.due = NeoTodo.DUE_DAYS; projectConfig.dueDays = 14; r.due2 = NeoTodo.DUE_DAYS; delete projectConfig.dueDays;
+      r.due = CheckList.DUE_DAYS; projectConfig.dueDays = 14; r.due2 = CheckList.DUE_DAYS; delete projectConfig.dueDays;
       return r;
     });
     const od = await wc.evaluate(() => {
@@ -432,7 +432,7 @@ async function main() {
       const tr = document.querySelectorAll("#wbsTableBody tr")[2]; const td = tr && tr.querySelector("td:nth-child(6)");
       if (td) td.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await new Promise(r => setTimeout(r, 300));
-      r.panel = NeoDetail.isOpen() && tr.classList.contains("neo-sel"); NeoDetail.close();
+      r.panel = WbsDetail.isOpen() && tr.classList.contains("neo-sel"); WbsDetail.close();
       return r;
     });
     check("UX: version in the member menu (not the header), save status is a dot with a tooltip, Summary header uses classes, My Work greeting, WBS open button + row click opens the detail panel",
@@ -602,7 +602,7 @@ async function main() {
     check("Every screen opens on the sample project without page errors", sx.errors.length === 0, sx.errors.slice(0, 3).join(" | "));
 
     console.log("\n[Predecessor warnings (v1.5)]");
-    await sx.evaluate(() => { GShell.go("tab-wbs"); NeoChips.set("ALL"); document.getElementById("wbsMaxLevelFilter").value = "5"; renderWbsTable(); }); await sx.waitForTimeout(300);
+    await sx.evaluate(() => { GShell.go("tab-wbs"); WbsStatusChips.set("ALL"); document.getElementById("wbsMaxLevelFilter").value = "5"; renderWbsTable(); }); await sx.waitForTimeout(300);
     const pwv = await sx.evaluate(() => {
       const icons = [...document.querySelectorAll("#wbsTableBody .wbs-pred")];
       const chip = [...document.querySelectorAll("#neoStatusChips .neo-chip")].find(b => /선행/.test(b.textContent));
@@ -613,14 +613,14 @@ async function main() {
       pwv.icons === 6 && pwv.warn === 4 && /선행 지연 4/.test(pwv.chip) && /선행 2\.2\.2\.2 선행 지연 \(계획 종료 04\/30\)/.test(pwv.tip), JSON.stringify(pwv));
     const grp = await sx.evaluate(() => {
       const rows = () => [...document.querySelectorAll("#wbsTableBody tr")].map(r => ({ id: r.dataset.wbsId, head: r.classList.contains("wbs-group-head"), lvl: wbsData.find(t => t.id === r.dataset.wbsId).level }));
-      NeoChips.set("선행 지연");
+      WbsStatusChips.set("선행 지연");
       const a = rows();
       document.getElementById("wbsMaxLevelFilter").value = "2"; renderWbsTable();
       const b = rows();
       const cnt = (document.querySelector('#wbsTableBody tr[data-wbs-id="3"] .wbs-head-cnt') || {}).textContent || "";
-      NeoChips.set("지연");
+      WbsStatusChips.set("지연");
       const c = rows();
-      document.getElementById("wbsMaxLevelFilter").value = "5"; NeoChips.set("ALL");
+      document.getElementById("wbsMaxLevelFilter").value = "5"; WbsStatusChips.set("ALL");
       return { aMatch: a.filter(x => !x.head).map(x => x.id).join(), aHeads: a.filter(x => x.head).length, bHeadMax: Math.max(...b.filter(x => x.head).map(x => x.lvl)), bMatch: b.filter(x => !x.head).length,
         cLeaf: c.filter(x => !x.head).length, cDelayed: wbsData.filter(t => t.isLeaf && t.status === "지연").length, cHeadMax: Math.max(...c.filter(x => x.head).map(x => x.lvl)), firstIsHead: c[0] && c[0].head, cnt };
     });
@@ -628,20 +628,20 @@ async function main() {
       grp.aMatch === "2.3.2.1,3.3.1.3,3.3.2.2,4.3.1.1" && grp.aHeads >= 6 && grp.bHeadMax === 2 && grp.bMatch === 4 && grp.cLeaf === grp.cDelayed && grp.cHeadMax <= 2 && grp.firstIsHead && grp.cnt === "선행 지연 2건", JSON.stringify(grp));
     const pd = await sx.evaluate(async () => {
       const idx = wbsData.findIndex(t => t.id === "2.4.1.1");
-      NeoDetail.open(idx); await new Promise(r => setTimeout(r, 150));
+      WbsDetail.open(idx); await new Promise(r => setTimeout(r, 150));
       const ins = [...document.querySelectorAll("#neoDetail .neo-pred-in")].map(i => i.value);
       const lines = [...document.querySelectorAll("#neoDetail .neo-pred-line")].length;
-      NeoDetail.open(wbsData.findIndex(t => t.id === "2.3.2.1")); await new Promise(r => setTimeout(r, 150));
+      WbsDetail.open(wbsData.findIndex(t => t.id === "2.3.2.1")); await new Promise(r => setTimeout(r, 150));
       const warnLine = (document.querySelector("#neoDetail .neo-pred-line.warn") || {}).textContent || "";
-      NeoDetail.setPred(1, "2.3"); await new Promise(r => setTimeout(r, 150));          // 자기 상위 Task → 거부
+      WbsDetail.setPred(1, "2.3"); await new Promise(r => setTimeout(r, 150));          // 자기 상위 Task → 거부
       const afterBad = wbsData.find(t => t.id === "2.3.2.1").pred;
-      NeoDetail.setPred(1, "2.3.1.1"); await new Promise(r => setTimeout(r, 150));
+      WbsDetail.setPred(1, "2.3.1.1"); await new Promise(r => setTimeout(r, 150));
       const afterOk = wbsData.find(t => t.id === "2.3.2.1").pred;
-      NeoDetail.setPred(1, ""); await new Promise(r => setTimeout(r, 150));
-      NeoDetail.setPred(1, "2.4.1.1"); await new Promise(r => setTimeout(r, 150));   // 2.4.1.1 의 선행이 2.3.2.1 → 순환이라 거부
+      WbsDetail.setPred(1, ""); await new Promise(r => setTimeout(r, 150));
+      WbsDetail.setPred(1, "2.4.1.1"); await new Promise(r => setTimeout(r, 150));   // 2.4.1.1 의 선행이 2.3.2.1 → 순환이라 거부
       const loop = wbsData.find(t => t.id === "2.3.2.1").pred;
       const cleared = wbsData.find(t => t.id === "2.3.2.1").pred;
-      NeoDetail.close();
+      WbsDetail.close();
       return { ins, lines, warnLine: warnLine.replace(/\s+/g, " ").trim(), afterBad, afterOk, cleared, loop };
     });
     check("Detail panel: 3 predecessor inputs with name · status · plan end; own upper Task and loops (A→B→A) refused; set and clear",
@@ -663,7 +663,7 @@ async function main() {
     const vw = await sx.evaluate(async () => {
       GShell.go("tab-gantt"); await new Promise(r => setTimeout(r, 400));
       const dots = document.querySelectorAll("#ganttRowsContainer .gantt-pred-dot").length;
-      const c = NeoTodo.collect(null, false);
+      const c = CheckList.collect(null, false);
       const g = TodoCenter.autoGroups().groups.find(x => x.key === "pred");
       const rep = WeeklyExport.takeSnapshot({ startDate: projectConfig.reportDate, endDate: projectConfig.reportDate, nextStartDate: projectConfig.reportDate, nextEndDate: projectConfig.reportDate });
       return { dots, hit: c.predHit.length, grp: g ? g.items.length : -1, snap: (rep.predHit || []).map(x => x.id).join() };

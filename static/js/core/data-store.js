@@ -564,7 +564,7 @@ var SyncUI = {
     const sbox = document.getElementById("storageStatusBox");
     if (sbox) { sbox.toggleAttribute("data-dirty", all > 0); if (mode) sbox.title = mode.innerText; }
     // [Workgroup] 메뉴 배지는 자료가 바뀔 때만 갱신 (예전 2초 주기 갱신 없앰)
-    if (typeof NeoBadges !== "undefined" && typeof UiMode !== "undefined" && UiMode.isNeo() && document.getElementById("gNav")) NeoBadges.refresh();
+    if (document.getElementById("gNav")) MenuBadges.refresh();
     if (typeof LockManager === "object") LockManager.renderBadge();   // Workgroup 체크아웃 (브라우저에도 LockManager 함수가 있어 object 로 확인)
   },
 

@@ -26,7 +26,7 @@ var BaselineUI = {
       ${l.length ? `<table class="m-table bl-hist"><thead><tr><th>No</th><th>확정일</th><th>확정한 사람</th><th>사유</th><th>비교</th></tr></thead><tbody>
         ${l.map(b => `<tr><td class="u-tc">${b.no}</td><td>${escapeHtml(b.date || "")}</td><td>${escapeHtml(b.by || "")}</td><td>${escapeHtml(b.reason || "")}</td>
           <td class="u-tc">${cur && cur.no === b.no ? "✔" : ""}</td></tr>`).join("")}</tbody></table>` : ""}`;
-    if (typeof I18N !== "undefined") I18N.translateTree(box);
+    I18N.translateTree(box);
   },
   sumText(s) {
     const v = s.endVar > 0 ? `+${s.endVar}` : String(s.endVar);
@@ -64,8 +64,8 @@ var BaselineUI = {
       <span class="gl-sum">${s.has ? escapeHtml(this.sumText(s)) : I18N.t("기준선 없음")}</span>
       ${ed ? `<button type="button" class="btn btn-sm" data-btn="save" data-click="BaselineUI.confirm">📐 ${l.length ? I18N.t("기준선 다시 확정") : I18N.t("기준선 확정")}</button>` : ""}
       ${ed && l.length ? `<button type="button" class="btn btn-sm" data-btn="danger" data-click="BaselineUI.clear">🗑️ ${I18N.t("기준선 지우기")}</button>` : ""}`;
-    if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(box);
-    if (typeof I18N !== "undefined") I18N.translateTree(box);
+    ButtonStandard.apply(box);
+    I18N.translateTree(box);
   },
   setCompare(v) {
     projectConfig.baselineCompare = v === "last" ? "last" : "first";

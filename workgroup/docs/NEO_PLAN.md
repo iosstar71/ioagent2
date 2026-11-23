@@ -18,12 +18,12 @@
 ## 현재 상태
 - v2.0.0: 분기만 완료 (화면·기능은 Standard v1.0.1 과 같음)
 - v2.1.0: 완료 — 확인할 일 · WBS 상세 패널 · 메뉴 건수 배지 · 상태 칩 필터 · 왼쪽 메뉴 접기 · 어두운 화면 정리
-  - Neo 전용 코드: `js/neo.js`, `css/style.css` 끝의 `[Neo 2.1]` 영역
-  - 공통 파일에 넣은 연결 지점(Standard 에서 cherry-pick 할 때 충돌 주의): `renderDashboard`(NeoTodo.render),
-    `renderWbsTable`(행 data-wbs-id · ID 버튼 · NeoChips/NeoDetail), `GShell.renderNav`(NeoBadges.apply)
+  - Neo 전용 코드: `static/js/` 의 화면 파일(예전 `neo.js` → 1.6 에서 기능별 파일로 나눔), `css/style.css` 끝의 `[Neo 2.1]` 영역
+  - 공통 파일에 넣은 연결 지점(Standard 에서 cherry-pick 할 때 충돌 주의): `renderDashboard`(CheckList.render),
+    `renderWbsTable`(행 data-wbs-id · ID 버튼 · WbsStatusChips/WbsDetail), `GShell.renderNav`(MenuBadges.apply)
 - v2.2.0: 완료 — WBS 템플릿 추가 개선(등록 서브시스템만 · 추가/교체 · 미리 보기 · 프로젝트 기간 자동 일정),
   화면 머리줄 통일, 내려받기/올리기 메뉴, 주간보고 2단 화면
-  - Neo 전용 코드: `js/neo.js` 의 `NeoPage`, CSS `[Neo 2.2]` 영역 / 화면 제목·설명은 `index.html` 에서 직접 변경
+  - Neo 전용 코드: `static/js/common/page-layout.js` 의 `PageHead`, CSS `[Neo 2.2]` 영역 / 화면 제목·설명은 `index.html` 에서 직접 변경
   - 공통 코드 변경(Standard 반영 시 함께 가져갈 것): `js/app.js` 의 `WbsTemplate`(이전 `appendSubsystemTemplate` 대체),
-    `index.html` 의 `#templateModal`, `AppBoot.initUi` 의 `NeoPage.init()` 호출
+    `index.html` 의 `#templateModal`, `AppBoot.initUi` 의 `PageHead.init()` 호출
 - v2.3.0: Standard 와 통합 — 화면 방식(Standard/Neo) 선택, Electric 테마(기본)·Navy·Graphite, Pretendard 글꼴 (docs/EDITIONS.md)

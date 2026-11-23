@@ -2,22 +2,24 @@
 // -------------------------------------------------------------
 // [요건 5] WBS 테이블 렌더링 (서브시스템 필터, 레벨단위 접기, 리스트 선택, 개별 실적반영, 컴팩트 너비)
 // -------------------------------------------------------------
+// 화면의 선택 상자 값 (없으면 기본값)
+function wbsVal(id, def) {
+  const el = /** @type {HTMLSelectElement} */ (document.getElementById(id));
+  return el && el.value ? el.value : def;
+}
+
 function renderWbsTable() {
   const tbody = document.getElementById("wbsTableBody");
   if (!tbody) return;
   tbody.innerHTML = "";
-  if (typeof WbsOwner !== "undefined") WbsOwner.fillList();
-  if (typeof WbsFold !== "undefined") WbsFold.apply();
+  WbsOwner.fillList();
+  WbsFold.apply();
   let outOfRangeCount = 0;
 
-  const sysFilterEl = document.getElementById("wbsSubsystemFilter");
-  const lvlFilterEl = document.getElementById("wbsMaxLevelFilter");
-  const dFilterEl = document.getElementById("wbsDomainFilter");
-  const dFilter = dFilterEl ? dFilterEl.value : "ALL";
-  const sysFilter = sysFilterEl ? sysFilterEl.value : "ALL";
-  const maxLvl = lvlFilterEl ? parseInt(lvlFilterEl.value, 10) || 5 : 5;
-  const stFilterEl = document.getElementById("wbsStatusFilter");
-  const stFilter = stFilterEl ? stFilterEl.value : "ALL";
+  const dFilter = wbsVal("wbsDomainFilter", "ALL");
+  const sysFilter = wbsVal("wbsSubsystemFilter", "ALL");
+  const maxLvl = parseInt(wbsVal("wbsMaxLevelFilter", "5"), 10) || 5;
+  const stFilter = wbsVal("wbsStatusFilter", "ALL");
   // 상태 조회: 해당 상태의 최하위 Task(선행 지연은 경고가 있는 Task) + 고른 레벨까지의 상위 Task 를 묶음 머리로
   const predWarn = WBSEngine.predWarnings(wbsData, projectConfig.reportDate);
   const view = WbsStatusView.rows(wbsData, stFilter, maxLvl, predWarn);
@@ -27,22 +29,22 @@ function renderWbsTable() {
   const phaseSet = phase !== "ALL" ? WbsPhase.matchSet(wbsData, phase) : null;
   const delayCnt = wbsData.filter(t => t.isLeaf && t.status === "지연" && (sysFilter === "ALL" || t.system === sysFilter)).length;
   const dc = document.getElementById("wbsDelayedCount");
-  if (dc) dc.textContent = delayCnt;
+  if (dc) dc.textContent = String(delayCnt);
   // 가중치 경고 (하위 합 ≠ 상위) — 자료에서 매번 계산하므로 고칠 때까지 계속 표시
-  const wWarn = typeof WbsWeight !== "undefined" ? WbsWeight.warnMap(wbsData) : new Map();
+  const wWarn = WbsWeight.warnMap(wbsData);
   // 오류 건수 (조회 범위): 가중치 · 휴일 · 날짜(역전 · 기간 이탈) — 알림 대신 단추 앞에 건수로
   const inScopeSys = s => (sysFilter === "ALL" || s === sysFilter) && (dFilter === "ALL" || WBSEngine.getSubsystemDomain(s) === dFilter);
-  if (typeof WbsWeight !== "undefined") WbsWeight.renderBadge(inScopeSys);
+  WbsWeight.renderBadge(inScopeSys);
   const errRows = wbsData.filter(t => t.isLeaf && inScopeSys(String(t.system || "").trim()));
   const hol = errRows.filter(t => WBSEngine.isHoliday(t.pStart, projectConfig.holidays) || WBSEngine.isHoliday(t.pEnd, projectConfig.holidays)).length;
   const out = (d) => WBSEngine.isDateOutOfRange(d, projectConfig.projectStartDate, projectConfig.projectEndDate);
   const dte = errRows.filter(t => isDateReversed(t.pStart, t.pEnd) || isDateReversed(t.aStart, t.aEnd) || out(t.pStart) || out(t.pEnd) || out(t.aStart) || out(t.aEnd)).length;
-  [["wbsHolidayErrChip", hol, "휴일"], ["wbsDateErrChip", dte, "날짜"]].forEach(([id, n, lbl]) => {
+  /** @type {Array<[string, number, string]>} */ ([["wbsHolidayErrChip", hol, "휴일"], ["wbsDateErrChip", dte, "날짜"]]).forEach(([id, n, lbl]) => {
     const el = document.getElementById(id);
     if (el) { el.style.display = n ? "inline-flex" : "none"; el.textContent = `${lbl} ${n}건`; }
   });
   const grp = document.getElementById("wbsErrGroup");
-  if (grp) grp.style.display = [...grp.querySelectorAll(".wbs-err-chip")].some(c => c.style.display !== "none") ? "inline-flex" : "none";
+  if (grp) grp.style.display = Array.from(grp.querySelectorAll(".wbs-err-chip")).some(c => /** @type {HTMLElement} */ (c).style.display !== "none") ? "inline-flex" : "none";
 
   wbsData.forEach((row, idx) => {
     const pStartOutOfRange = WBSEngine.isDateOutOfRange(row.pStart, projectConfig.projectStartDate, projectConfig.projectEndDate);
@@ -71,7 +73,6 @@ function renderWbsTable() {
     const status = WBSEngine.getTaskStatus(row, projectConfig.reportDate);
     tr.classList.add(`task-state-${status.code}`);
 
-    const indent = (row.level - 1) * 12;
     const pRev = isDateReversed(row.pStart, row.pEnd), aRev = isDateReversed(row.aStart, row.aEnd);
     const isLeaf = row.isLeaf;
 
@@ -85,10 +86,10 @@ function renderWbsTable() {
 
     // 하위 레벨이 접혀 있는지 표시 뱃지
     const hasHiddenChildren = !view && !isLeaf && row.level === maxLvl;
-    const foldBadge = hasHiddenChildren ? `<span class="u-bold u-mr-3" style="font-size:var(--fs-2xs, 10px); color:var(--accent);" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
+    const foldBadge = hasHiddenChildren ? `<span class="u-bold u-mr-3 wbs-fold-badge" title="하위 레벨이 접혀 있습니다.">[+하위접힘]</span>` : "";
 
     tr.innerHTML = `
-      <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
+      <td><button type="button" class="wbs-id-link" title="상세 보기 (오른쪽 패널)" data-click="WbsDetail.open" data-click-args="${UiEvents.args(idx)}">${escapeHtml(row.id)}</button></td>
       <td>
         <div class="wbs-lvl-ctrl">
           <button class="btn-xs" title="상위 레벨로 올리기 (L${row.level} → L${Math.max(2, row.level - 1)})" data-click="changeTaskLevel" data-click-args="${UiEvents.args(idx, -1)}" ${row.level <= 2 ? "disabled" : ""}>◀</button>
@@ -96,22 +97,22 @@ function renderWbsTable() {
         </div>
       </td>
       <td>
-        <select class="u-fs-xs" style="width:86px; padding:2px 3px;" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
+        <select class="u-fs-xs wbs-in-sys" data-change="changeTaskSystem" data-change-args="${UiEvents.args(idx, "$value")}">
           ${getSubsystemOptionsHtml(row.system)}
         </select>
       </td>
       <td>
-        <div style="padding-left: ${indent}px; display:flex; align-items:center;">
+        <div class="wbs-name-cell wbs-ind-${row.level}">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
           ${view && view.heads.has(row) ? `<span class="wbs-head-cnt">${escapeHtml(I18N.tf("{st} {n}건", { st: view.label, n: view.heads.get(row) }))}</span>` : ""}
           ${WbsStatusView.predIcon(row, predWarn)}
-          <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:180px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
+          <input type="text" class="wbs-in-name" value="${escapeHtml(row.name)}" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
       </td>
       <td class="u-tc"><span class="status-tag ${status.cssClass}">${status.label}</span></td>
-      <td class="col-fold"><input type="number" min="0" step="0.1" value="${row.weight === undefined || row.weight === null ? "" : row.weight}" style="width:52px; padding:2px 3px;"${wWarn.has(row) ? ` class="weight-warn" title="${escapeAttr(wWarn.get(row))}"` : ` title="가중치 (서브시스템 100 기준, 상위 = 하위 합, 소수점 1자리)"`} data-change="WbsWeight.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
-      <td class="col-fold"><input type="text" value="${escapeHtml(row.reqId || "")}" style="width:74px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
+      <td class="col-fold"><input type="number" min="0" step="0.1" value="${row.weight === undefined || row.weight === null ? "" : row.weight}" ${wWarn.has(row) ? ` class="wbs-in-w weight-warn" title="${escapeAttr(wWarn.get(row))}"` : ` class="wbs-in-w" title="가중치 (서브시스템 100 기준, 상위 = 하위 합, 소수점 1자리)"`} data-change="WbsWeight.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
+      <td class="col-fold"><input type="text" class="wbs-in-req" value="${escapeHtml(row.reqId || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "reqId", "$value", "renderPhaseMatrix", "renderReqMasterTable", "persistChanges")}"></td>
 
       <td>
         <div class="date-input-wrap">
@@ -151,13 +152,13 @@ function renderWbsTable() {
         </div>
       </td>
 
-      <td><input class="u-tr" type="number" value="${row.pProg}" readonly style="width:44px; padding:2px 3px;"></td>
-      <td><input class="u-tr" type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} style="width:44px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
+      <td><input class="u-tr wbs-in-pct" type="number" value="${row.pProg}" readonly></td>
+      <td><input type="number" min="0" max="100" step="1" value="${row.aProg}" ${isLeaf ? "" : "readonly"} class="u-tr wbs-in-pct" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "aProg", "$num", "rebuildAll")}"></td>
       <td class="col-fold"><input type="text" class="wbs-owner" list="wbsOwnerList" maxlength="40" value="${escapeHtml(row.owner || "")}" title="${isLeaf ? "담당자 (목록에서 고르거나 직접 입력, 1명)" : "담당자 — 상위 Task 에 지정하면 하위 Task 에도 자동 지정"}" data-change="WbsOwner.set" data-change-args="${UiEvents.args(idx, "$value")}"></td>
-      <td class="col-fold"><input type="text" value="${escapeHtml(row.output || "")}" style="width:106px; padding:2px 3px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
+      <td class="col-fold"><input type="text" class="wbs-in-out" value="${escapeHtml(row.output || "")}" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "output", "$value", "persistChanges")}"></td>
       <td>
         <div class="wbs-action-group">
-          <button type="button" class="btn-xs wbs-open-btn" title="상세 열기 (오른쪽 패널) — 행의 빈 곳을 눌러도 열림" data-click="NeoDetail.open" data-click-args="${UiEvents.args(idx)}"><svg class="iostar-ico ico-solo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg></button>
+          <button type="button" class="btn-xs wbs-open-btn" title="상세 열기 (오른쪽 패널) — 행의 빈 곳을 눌러도 열림" data-click="WbsDetail.open" data-click-args="${UiEvents.args(idx)}"><svg class="iostar-ico ico-solo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg></button>
           <button class="btn-xs wbs-fill-btn" title="이 Task만 계획일정/진척률(${row.pProg}%)을 실적에 즉시 반영" data-click="fillRowActualFromPlan" data-click-args="${UiEvents.args(idx)}" ${!isLeaf ? "disabled" : ""}>⚡</button>
           <button class="btn-xs btn-xs-child" title="하위 레벨(L${Math.min(5, row.level + 1)}) 자식 Task 추가" data-click="addChildTask" data-click-args="${UiEvents.args(idx)}" ${row.level >= 5 ? "disabled" : ""}>↳</button>
           <button class="btn-xs btn-xs-sibling" title="동일 레벨(L${row.level === 1 ? 2 : row.level}) 동위 Task 추가" data-click="addSiblingTask" data-click-args="${UiEvents.args(idx)}">＋</button>
@@ -171,16 +172,16 @@ function renderWbsTable() {
   });
 
   // [Neo 2.1] 상태 칩 필터 건수 · 상세 패널 선택 행 표시
-  if (typeof UiMode !== "undefined" && UiMode.isNeo()) { NeoChips.render(); NeoDetail.afterTable(); }
+  WbsStatusChips.render(); WbsDetail.afterTable();
 
   const errChip = document.getElementById("stat-chip-error");
   const errCount = document.getElementById("stat-count-error");
   const kpiErr = document.getElementById("kpi-out-of-range-count");
-  if (kpiErr) kpiErr.innerText = outOfRangeCount;
+  if (kpiErr) kpiErr.innerText = String(outOfRangeCount);
   if (errChip && errCount) {
     if (outOfRangeCount > 0) {
       errChip.style.display = "inline-flex";
-      errCount.innerText = outOfRangeCount;
+      errCount.innerText = String(outOfRangeCount);
     } else {
       errChip.style.display = "none";
     }
@@ -230,7 +231,7 @@ var WbsPhase = {
     return out;
   },
   fill(systems) {
-    const sel = document.getElementById("wbsPhaseFilter");
+    const sel = /** @type {HTMLSelectElement} */ (document.getElementById("wbsPhaseFilter"));
     if (!sel) return "ALL";
     const keep = sel.value || "ALL";
     const names = this.names(systems);
@@ -310,20 +311,20 @@ var WbsOwner = {
       else if (cur !== c.value) kept++;
     }
     renderWbsTable();
-    if (typeof persistChanges === "function") persistChanges();
+    persistChanges();
     if (end > idx + 1) {
       showToast(c.value
         ? `👤 하위 Task ${changed}건에 담당자 [${c.value}]를 자동 지정했습니다.${kept ? ` (다른 담당자가 지정된 ${kept}건은 그대로)` : ""}`
         : `👤 담당자를 지웠습니다. 같은 담당자였던 하위 Task ${changed}건도 지웠습니다.`);
     }
-    if (typeof NeoDetail !== "undefined" && NeoDetail.isOpen && NeoDetail.isOpen()) NeoDetail.render();
+    if (WbsDetail.isOpen && WbsDetail.isOpen()) WbsDetail.render();
   },
   // 담당자 목록: 이 프로젝트 작업자 이름 + WBS 에 이미 입력된 이름
   options() {
     const names = new Map();
     (projectUsers || []).forEach(u => {
       if (!u || !u.name) return;
-      if (typeof ProjectContext !== "undefined" && ProjectContext.member && !ProjectContext.isAdminUser(u) && !ProjectContext.member(u)) return;
+      if (ProjectContext.member && !ProjectContext.isAdminUser(u) && !ProjectContext.member(u)) return;
       names.set(u.name, `${u.empNo}${u.dept ? " · " + u.dept : ""}`);
     });
     (wbsData || []).forEach(t => { if (t.owner && !names.has(t.owner)) names.set(t.owner, "직접 입력"); });
@@ -498,8 +499,8 @@ function deleteWbsRow(idx) {
 }
 
 function addNewRow() {
-  const sysFilterEl = document.getElementById("wbsSubsystemFilter");
-  const defaultSys = (sysFilterEl && sysFilterEl.value !== "ALL") ? sysFilterEl.value : (subsystemsMeta[0] ? subsystemsMeta[0].name : "PMO");
+  const sf = wbsVal("wbsSubsystemFilter", "ALL");
+  const defaultSys = sf !== "ALL" ? sf : (subsystemsMeta[0] ? subsystemsMeta[0].name : "PMO");
   const validStart = WBSEngine.getNextWorkingDay(projectConfig.projectStartDate, projectConfig.holidays, projectConfig.projectEndDate);
   const validEnd = WBSEngine.getNextWorkingDay(projectConfig.projectEndDate, projectConfig.holidays, projectConfig.projectEndDate);
 
@@ -525,8 +526,7 @@ function addNewRow() {
 
 // [요건 5 신규] WBS 계획일자 휴일 자동보정 기능
 function autoAdjustWbsHolidays() {
-  const sysFilterEl = document.getElementById("wbsSubsystemFilter");
-  const sysFilter = sysFilterEl ? sysFilterEl.value : "ALL";
+  const sysFilter = wbsVal("wbsSubsystemFilter", "ALL");
   let adjustedCount = 0;
 
   wbsData.forEach(task => {
@@ -579,19 +579,18 @@ function fillRowActualFromPlan(idx) {
   if (!task || !task.isLeaf) return;
   applyPlanToActual(task);
   rebuildAll();
-  showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${task.aProg >= 100 ? ` (실제 종료일 ${task.aEnd})` : ""}`);
+  showToast(`[${task.id} ${task.name}] 계획 진척률(${task.pProg}%)을 실적에 반영했습니다.${Number(task.aProg) >= 100 ? ` (실제 종료일 ${task.aEnd})` : ""}`);
 }
 
 // [실적 일괄 반영] 서브시스템(또는 전체)에서 계획 진척률이 0 보다 큰 최하위 Task 를 모두 반영 (규칙은 applyPlanToActual)
 function fillActualFromPlan() {
   const repDateStr = projectConfig.reportDate;
-  const sysFilterEl = document.getElementById("wbsSubsystemFilter");
-  const sysFilter = sysFilterEl ? sysFilterEl.value : "ALL";
+  const sysFilter = wbsVal("wbsSubsystemFilter", "ALL");
   let updatedCount = 0;
   wbsData.forEach(task => {
     if (!task.isLeaf) return;
     if (sysFilter !== "ALL" && task.system !== sysFilter) return;
-    if (!((parseFloat(task.pProg) || 0) > 0)) return;
+    if (!((parseFloat(String(task.pProg)) || 0) > 0)) return;
     const before = [task.aProg, task.aStart, task.aEnd].join("|");
     applyPlanToActual(task);
     if ([task.aProg, task.aStart, task.aEnd].join("|") !== before) updatedCount++;
@@ -600,3 +599,34 @@ function fillActualFromPlan() {
   const scopeLabel = sysFilter === "ALL" ? "전체 서브시스템" : `[${sysFilter}]`;
   showToast(`${scopeLabel} Task ${updatedCount}건의 실적을 반영했습니다 (기준일 ${repDateStr} 주차 기준).`);
 }
+
+// -----------------------------------------------------------------------------
+// WBS 담당자 · 산출물 칸 접기 (가중치 · REQ ID 도 함께) — 접으면 표 전체가 한 화면에 들어오고, 펼치면 가로 스크롤
+//  작업자별 기억, 처음에는 화면 폭이 1600px 보다 좁으면 접힌 상태
+// -----------------------------------------------------------------------------
+var WbsFold = {
+  KEY: "IOSTAR_WBS_FOLD_",
+  _key() { const u = (AuthManager.currentUser) || {}; return this.KEY + (u.empNo || "_"); },
+  isFolded() {
+    let v = null;
+    try { v = AppStore.getItem(this._key()); } catch (e) {}
+    return v === null ? window.innerWidth < 1600 : v === "1";
+  },
+  toggle() {
+    const next = !this.isFolded();
+    try { AppStore.setItem(this._key(), next ? "1" : "0"); } catch (e) {}
+    this.apply();
+  },
+  apply() {
+    const t = document.getElementById("wbsTable");
+    const on = this.isFolded();
+    if (t) t.classList.toggle("wbs-fold", on);
+    const b = document.getElementById("btnWbsFold");
+    if (b) {
+      b.textContent = on ? "▶ 가중치·REQ·담당자·산출물 펼치기" : "◀ 가중치·REQ·담당자·산출물 접기";
+      b.title = on ? "접어 둔 가중치 · REQ ID · 담당자 · 산출물 칸을 다시 보여 줍니다 (표가 넓어지면 가로 스크롤)" : "가중치 · REQ ID · 담당자 · 산출물 칸을 접어 표 전체를 한 화면에 봅니다";
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      I18N.translateTree(b.parentNode);
+    }
+  }
+};

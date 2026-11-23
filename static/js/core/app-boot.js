@@ -186,7 +186,7 @@ var AppBoot = {
     HomeScreenManager.init();
     rebuildAll();
     if (typeof GShell !== "undefined") GShell.init(); // [Standard] 2단 메뉴·머리글 (G v1.0.0 에서 시작)
-    if (typeof NeoPage !== "undefined") NeoPage.init(); // [Neo 2.2] 화면 머리줄 통일 · 내려받기/올리기 메뉴
+    if (typeof PageHead !== "undefined") PageHead.init(); // [Neo 2.2] 화면 머리줄 통일 · 내려받기/올리기 메뉴
     this.uiReady = true;
   }
 };
