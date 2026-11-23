@@ -57,7 +57,8 @@ var ReqPhaseManager = {
         const others = projectConfig.reqSdlcPhases.reduce((a, x, j) => a + (j === idx ? 0 : (parseFloat(x.weight) || 0)), 0);
         if (others + val > 100) { showToast(`⚠️ 단계 가중치 합계가 100 을 넘을 수 없습니다 (이 단계는 ${100 - others} 까지).`, "warning"); return this.renderTable(); }
       }
-      projectConfig.reqSdlcPhases[idx][field] = val;
+      if (val === "" && field === "vocStage") delete projectConfig.reqSdlcPhases[idx][field];
+      else projectConfig.reqSdlcPhases[idx][field] = val;
       this.renderTable();
       if (typeof MasterSyncEngine !== "undefined") {
         MasterSyncEngine.syncAll(false, "req-phase-update");

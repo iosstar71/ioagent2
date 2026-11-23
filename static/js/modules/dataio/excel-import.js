@@ -247,7 +247,10 @@ Object.assign(ExcelSync, {
         type: String(raw.type || "기능").trim(),
         priority: String(raw.priority || "중").trim(),
         accept: String(raw.accept || "수용").trim(),
-        status: status
+        status: status,
+        origin: /추가|added/i.test(String(raw.origin || "")) ? "추가" : "",
+        srcVoc: String(raw.srcVoc || "").trim(),
+        addedDate: this.normalizeDate(raw.addedDate)
       };
     }
 
@@ -260,9 +263,11 @@ Object.assign(ExcelSync, {
       if (status === "진행중") status = "진행";
       if (status === "접수" || status === "대기(접수)" || status === "착수전" || status === "착수전(접수)") status = "대기";
 
-      return {
+      const voc = {
         id: id || `VOC-${String(index + 1).padStart(2, "0")}`,
-        vocType: ["VOC", "버그", "이슈"].indexOf(String(raw.vocType || "").trim()) !== -1 ? String(raw.vocType).trim() : (/bug|버그|결함/i.test(String(raw.vocType || "")) ? "버그" : (/issue|이슈/i.test(String(raw.vocType || "")) ? "이슈" : "VOC")),
+        vocType: Metrics.judgeOf({ vocType: raw.vocType }),
+        stage: Metrics.VOC_STAGES.indexOf(String(raw.stage || "").trim()) !== -1 ? String(raw.stage).trim() : "",
+        severity: Metrics.VOC_SEVERITY.indexOf(String(raw.severity || "").trim()) !== -1 ? String(raw.severity).trim() : "",
         system: String(raw.system || "서브시스템A").trim(),
         priority: String(raw.priority || "중").trim(),
         title: title || id,
@@ -270,8 +275,12 @@ Object.assign(ExcelSync, {
         reqDate: this.normalizeDate(raw.reqDate),
         targetDate: this.normalizeDate(raw.targetDate),
         status: status,
-        action: String(raw.action || "").trim()
+        action: String(raw.action || "").trim(),
+        closedDate: this.normalizeDate(raw.closedDate),
+        reqLink: String(raw.reqLink || "").trim()
       };
+      Migrate.data({ vocData: [voc] });   // 예전 구분 · 상태 값 → 판정
+      return voc;
     }
 
     return null;
@@ -427,6 +436,7 @@ Object.assign(ExcelSync, {
       }
 
       if (subWbs.length > 0) {
+        Baseline.carry(wbsData, subWbs);   // 엑셀에는 기준선이 없음 — 같은 Task 의 기준선을 이어 받음
         wbsData = wbsData.filter(d => (d.system || "").trim() !== targetSys);
         wbsData.push(...subWbs);
       }
@@ -572,7 +582,7 @@ Object.assign(ExcelSync, {
         SmartMergeCenter._mergeUsersList(userRows.map((r, i) => this._normalizeRowData("users", r, i)).filter(Boolean));
       }
       if (bucket.subsystems.length > 0) subsystemsMeta = bucket.subsystems;
-      if (bucket.wbs.length > 0) wbsData = bucket.wbs;
+      if (bucket.wbs.length > 0) { Baseline.carry(wbsData, bucket.wbs); wbsData = bucket.wbs; }   // 엑셀에는 기준선이 없음
       if (bucket.deliverables.length > 0) deliverablesData = bucket.deliverables;
       if (bucket.req.length > 0) reqMasterData = bucket.req;
       if (bucket.voc.length > 0) vocData = bucket.voc;

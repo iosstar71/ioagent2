@@ -13,7 +13,7 @@ var MergeTable = {
     { k: "wbs", unit: "sys", icon: "📋", label: "WBS 공정표", desc: "계층 공정 · 가중치 · 계획/실적 일정 · 진척률" },
     { k: "req", unit: "sys", icon: "📌", label: "요구사항(REQ)", desc: "과제 · 추가 요구사항, 유형 · 상태" },
     { k: "deliverables", unit: "sys", icon: "📑", label: "산출물", desc: "차수별 산출물 계획/실적 · 검수 상태" },
-    { k: "voc", unit: "sys", icon: "📣", label: "VOC / 이슈", desc: "현업 요청 · 우선순위 · 목표일 · 조치" },
+    { k: "voc", unit: "sys", icon: "📣", label: "VOC · 결함", desc: "현업 요청 · 결함 · 판정 · 목표일 · 조치" },
     { k: "weekly", unit: "sys", icon: "📝", label: "주간보고", desc: "서브시스템 주간보고 (전체 범위면 종합 보고서 포함)" },
     { k: "meetings", unit: "sys", icon: "📅", label: "회의록 · Action Item", desc: "서브시스템 회의 (+ 종합 회의)" },
     { k: "notices", unit: "prj", icon: "📢", label: "공지", desc: "프로젝트 공지" },
@@ -327,7 +327,7 @@ var MergeTable = {
         if (Array.isArray(c.__std)) standardDeliverablesMeta = c.__std;
         delete c.__std;
         delete c.uiTheme;
-        projectConfig = Object.assign({}, projectConfig, c);
+        projectConfig = Object.assign({}, projectConfig, Baseline.keepConfig(projectConfig, c));
       } else SmartMergeCenter.applyConfigRows(cfg.rows);
       done.push("프로젝트 설정");
     }

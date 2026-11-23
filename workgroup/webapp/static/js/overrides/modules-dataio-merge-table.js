@@ -2,19 +2,6 @@
 // 공통 쪽을 고칠 때 이 파일의 같은 이름도 함께 확인한다 (docs/EDITIONS.md)
 
 Object.assign(MergeTable, {
-  ITEMS: [
-    { k: "wbs", unit: "sys", icon: "📋", label: "WBS 공정표", desc: "계층 공정 · 가중치 · 계획/실적 일정 · 진척률" },
-    { k: "req", unit: "sys", icon: "📌", label: "요구사항(REQ)", desc: "과제 · 추가 요구사항, 유형 · 상태" },
-    { k: "deliverables", unit: "sys", icon: "📑", label: "산출물", desc: "차수별 산출물 계획/실적 · 검수 상태" },
-    { k: "voc", unit: "sys", icon: "📣", label: "VOC / 이슈", desc: "현업 요청 · 우선순위 · 목표일 · 조치" },
-    { k: "weekly", unit: "sys", icon: "📝", label: "주간보고", desc: "서브시스템 주간보고 (전체 범위면 종합 보고서 포함)" },
-    { k: "meetings", unit: "sys", icon: "📅", label: "회의록 · Action Item", desc: "서브시스템 회의 (+ 종합 회의)" },
-    { k: "notices", unit: "prj", icon: "📢", label: "공지", desc: "프로젝트 공지" },
-    { k: "comms", unit: "prj", icon: "💬", label: "게시판", desc: "채널별 게시글 (채팅 제외)" },
-    { k: "config", unit: "prj", icon: "🗂️", label: "프로젝트 설정", desc: "기본정보 · 도메인 · SDLC · 공휴일 · 표준 산출물" },
-    { k: "subsystems", unit: "prj", icon: "🏢", label: "서브시스템 프로젝트 설정", desc: "도메인 · 코드/명 · SDLC 모델 · 가중치 · 담당" },
-    { k: "users", unit: "prj", icon: "👥", label: "멤버(참여자)", desc: "멤버 ID · 이름 · 이 프로젝트의 역할 · 담당 · 부서" }
-  ],
   _lockOn() { return typeof LockManager !== "undefined" && LockManager.active(); },
   download(format) {
     const keys = this.selected();

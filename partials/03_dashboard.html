@@ -64,7 +64,7 @@
         <div class="card u-mb-0">
           <div class="card-title">
             <span>🎯 요구사항(REQ) 상태별 종합 통계</span>
-            <span class="u-fs-xs u-c-muted">전체: <b id="req-stat-total">0</b>건 | 완료율: <b class="u-c-primary" id="req-stat-rate">0.0%</b></span>
+            <span class="u-fs-xs u-c-muted">전체: <b id="req-stat-total">0</b>건 (<span id="req-stat-split"></span>) | 완료율: <b class="u-c-primary" id="req-stat-rate">0.0%</b></span>
           </div>
           <div class="status-summary-bar u-mb-0">
             <span class="status-badge-chip chip-ready">대기: <b id="req-stat-ready">0</b></span>
@@ -77,18 +77,17 @@
 
         <div class="card u-mb-0">
           <div class="card-title">
-            <span>💬 추가 VOC / 이슈 처리 통계 및 달성률</span>
-            <span class="u-fs-xs u-c-muted">전체: <b id="voc-stat-total">0</b>건 | VOC 달성률: <b class="u-c-success u-fs-base" id="voc-stat-achieve">0.0%</b></span>
+            <span>💬 VOC · 결함 판정 현황</span>
+            <span class="u-fs-xs u-c-muted">접수: <b id="voc-stat-total">0</b>건 | 처리율: <b class="u-c-success u-fs-base" id="voc-stat-achieve">0%</b></span>
           </div>
-          <div class="status-summary-bar u-mb-0">
-            <span class="status-badge-chip chip-ready">대기(접수): <b id="voc-stat-ready">0</b></span>
-            <span class="status-badge-chip chip-progress">진행: <b id="voc-stat-progress">0</b></span>
-            <span class="status-badge-chip chip-completed">완료: <b id="voc-stat-completed">0</b></span>
-            <span class="status-badge-chip chip-excluded">제외: <b id="voc-stat-excluded">0</b></span>
-            <span class="status-badge-chip chip-hold">보류: <b id="voc-stat-hold">0</b></span>
-            <span class="status-badge-chip chip-del">삭제: <b id="voc-stat-deleted">0</b></span>
-          </div>
+          <div class="status-summary-bar u-mb-0" id="vocJudgeChips"></div>
         </div>
+      </div>
+
+      <!-- 테스트 결함 현황: 통합테스트 단계 접수가 있을 때만 (voc-board.js) -->
+      <div class="card u-mb-12" id="dashDefectCard" hidden>
+        <div class="card-title"><span>🐞 테스트 결함 현황 (통합테스트 · 판정 결함)</span></div>
+        <div id="dashDefectBody"></div>
       </div>
 
       <!-- 대시보드 4대 영역 통합 조회 필터 (서브시스템 공정 현황 상단 배치) -->
@@ -181,25 +180,27 @@
 
         <div class="card u-mb-0">
           <div class="card-title">
-            <span>💬 서브시스템별 VOC / 이슈 처리 현황 통계</span>
-            <span class="u-fs-xs u-c-muted">미해결: <b id="dash-voc-open">0</b>건 / 완료·제외: <b id="dash-voc-done">0</b>건</span>
+            <span>💬 서브시스템별 VOC · 결함 처리 현황</span>
+            <span class="u-fs-xs u-c-muted">미결: <b id="dash-voc-open">0</b>건 / 처리: <b id="dash-voc-done">0</b>건</span>
           </div>
-          <div class="table-container" style="max-height: 240px;">
+          <div class="table-container dash-voc-wrap">
             <table id="dashVocTable" class="matrix-table">
               <thead>
                 <tr>
                   <th>서브시스템</th>
-                  <th>전체(유효)</th>
-                  <th>완료</th>
-                  <th>제외</th>
-                  <th>진행중</th>
-                  <th>대기/보류</th>
-                  <th>달성률(%)</th>
+                  <th>접수</th>
+                  <th>처리</th>
+                  <th>미결</th>
+                  <th>판정 대기</th>
+                  <th>결함</th>
+                  <th>개선 요청</th>
+                  <th>처리율</th>
                 </tr>
               </thead>
               <tbody></tbody>
             </table>
           </div>
+          <div class="dash-voc-stage" id="dashVocStageBox"></div>
         </div>
       </div>
     </div>

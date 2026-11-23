@@ -111,8 +111,9 @@ var WeeklyExport = {
       projectStartDate: projectConfig.projectStartDate || "",
       projectEndDate: projectConfig.projectEndDate || "",
       metrics: this._metrics(),
-      reqs: (reqMasterData || []).filter(r => r.status !== "삭제").map(r => ({ id: r.id, system: r.system, name: r.name, status: r.status || "", priority: r.priority || "" })),
-      vocs: (vocData || []).filter(v => v.status !== "삭제").map(v => ({ id: v.id, system: v.system, priority: v.priority || "", title: v.title || "", requester: v.requester || "", reqDate: v.reqDate || "", targetDate: v.targetDate || "", status: v.status || "", action: v.action || "" })),
+      reqs: (reqMasterData || []).filter(r => r.status !== "삭제").map(r => ({ id: r.id, system: r.system, name: r.name, status: r.status || "", priority: r.priority || "", origin: r.origin || "" })),
+      vocs: (vocData || []).filter(v => v.status !== "삭제").map(v => ({ id: v.id, system: v.system, priority: v.priority || "", title: v.title || "", requester: v.requester || "", reqDate: v.reqDate || "", targetDate: v.targetDate || "", status: v.status || "", action: v.action || "",
+        vocType: Metrics.judgeOf(v), stage: v.stage || "", severity: v.severity || "", closedDate: v.closedDate || "", reqLink: v.reqLink || "" })),
       meetingsCur: this._meetings(rep.startDate, rep.endDate),
       meetingsNext: this._meetings(rep.nextStartDate, rep.nextEndDate),
       actions: this._actionsOfWeek(rep.startDate, rep.endDate),
@@ -194,20 +195,28 @@ var WeeklyExport = {
     // 4. 이슈 · 요구사항 · VOC
     const reqBySys = {};
     (d.reqs || []).filter(r => inScope(r.system) && r.status !== "삭제").forEach(r => {   // 삭제 건은 완료율에서 뺌
-      const o = reqBySys[r.system] = reqBySys[r.system] || { tot: 0, done: 0, prog: 0, hold: 0 };
-      o.tot++; if (r.status === "완료") o.done++; else if (r.status === "진행") o.prog++; else if (r.status === "보류") o.hold++;
+      const o = reqBySys[r.system] = reqBySys[r.system] || { tot: 0, add: 0, done: 0, prog: 0, hold: 0 };
+      o.tot++; if (r.origin === "추가") o.add++;
+      if (r.status === "완료") o.done++; else if (r.status === "진행") o.prog++; else if (r.status === "보류") o.hold++;
     });
-    const openVocs = Metrics.vocOpen((d.vocs || []).filter(v => inScope(v.system)));
+    const scopeVocs = (d.vocs || []).filter(v => inScope(v.system));
+    const openVocs = Metrics.vocOpen(scopeVocs);
+    const judged = scopeVocs.some(v => "vocType" in v);   // 예전 보고서 스냅샷에는 판정이 없음
+    const df = Metrics.defectStats(scopeVocs, rep.endDate);
+    const newV = scopeVocs.filter(v => v.reqDate && v.reqDate >= rep.startDate && v.reqDate <= rep.endDate);
+    const nvs = Metrics.vocStats(newV);
+    const vocTexts = judged ? [["VOC · 결함", I18N.tf("금주 신규 {n}건 (결함 {a} · 개선 요청 {b} · 판정 대기 {c}) · 미결 {m}건", { n: newV.length, a: nvs.byJudge["결함"], b: nvs.byJudge["개선 요청"], c: nvs.undecided, m: openVocs.length })
+      + (Metrics.hasTestStage(scopeVocs) ? " / " + I18N.tf("테스트 결함 {t}건 중 미결 {o}건 (치명 · 높음 {k})", { t: df.total, o: df.open, k: df.critOpen }) : "")]] : [];
     const s4 = {
       title: "4. 이슈 · 요구사항 · VOC",
-      texts: [["주요 현안 및 지원 요청", rep.issuesNotes || "특이사항 없음"]],
+      texts: [["주요 현안 및 지원 요청", rep.issuesNotes || "특이사항 없음"]].concat(vocTexts),
       tables: [
-        T("서브시스템별 요구사항 진척", ["서브시스템", "전체", "진행", "완료", "보류", "완료율"], [16, 10, 10, 10, 10, 10],
-          Object.keys(reqBySys).map(s => { const o = reqBySys[s]; return [s, `${o.tot}건`, `${o.prog}건`, `${o.done}건`, `${o.hold}건`, `${Metrics.pct(o.done, o.tot)}%`]; }),
-          r => `[${r[0]}] 요구사항 ${r[1]} 중 완료 ${r[3]} (완료율 ${r[5]}), 진행 ${r[2]}, 보류 ${r[4]}`, "요구사항 없음"),
-        T("미완료 VOC · 이슈", ["VOC ID", "서브시스템", "우선순위", "제목", "요청자", "목표일", "상태", "조치 내용"], [10, 11, 8, 32, 10, 11, 8, 36],
-          openVocs.map(v => [v.id, v.system, v.priority, v.title, v.requester, v.targetDate, v.status, v.action]),
-          r => `[${r[1]}] ${r[0]} ${r[3]} (${r[2]}, 목표 ${r[5] || "-"}, ${r[6]})${r[7] ? ` — ${r[7]}` : ""}`, "미완료 VOC 없음")
+        T("서브시스템별 요구사항 진척", ["서브시스템", "전체", "추가", "진행", "완료", "보류", "완료율"], [16, 10, 10, 10, 10, 10, 10],
+          Object.keys(reqBySys).map(s => { const o = reqBySys[s]; return [s, `${o.tot}건`, `${o.add}건`, `${o.prog}건`, `${o.done}건`, `${o.hold}건`, `${Metrics.pct(o.done, o.tot)}%`]; }),
+          r => `[${r[0]}] 요구사항 ${r[1]} (추가 ${r[2]}) 중 완료 ${r[4]} (완료율 ${r[6]}), 진행 ${r[3]}, 보류 ${r[5]}`, "요구사항 없음"),
+        T("미완료 VOC · 결함", ["VOC ID", "서브시스템", "단계", "판정", "우선순위", "제목", "요청자", "목표일", "상태", "조치 내용"], [10, 11, 11, 9, 8, 30, 10, 11, 8, 32],
+          openVocs.map(v => [v.id, v.system, v.stage || "", judged ? Metrics.judgeOf(v) : "", v.priority, v.title, v.requester, v.targetDate, v.status, v.action]),
+          r => `[${r[1]}] ${r[0]} ${r[5]} (${[r[3], r[4]].filter(Boolean).join(", ")}, 목표 ${r[7] || "-"}, ${r[8]})${r[9] ? ` — ${r[9]}` : ""}`, "미완료 VOC 없음")
       ]
     };
     // 5. 회의 · Action Item

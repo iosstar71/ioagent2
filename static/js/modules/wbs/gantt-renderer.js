@@ -227,6 +227,16 @@ const GanttRenderer = {
         } else {
           row.appendChild(this._progressBar(task, left, width, st));
         }
+        // 기준선: 계획 막대 아래 얇은 선 (기준선 확정 뒤에만 — modules/wbs/baseline.js)
+        if (task.bStart && task.bEnd) {
+          const bl = document.createElement("div"), bx = Math.max(0, this._x(tl, task.bStart));
+          const v = Baseline.varOf(task, projectConfig);
+          bl.className = "gantt-bline" + (v > 0 ? " late" : "");
+          bl.style.left = `${bx}px`;
+          bl.style.width = `${Math.max(4, this._x(tl, task.bEnd) + Math.round(tl.pxPerDay) - bx - 2)}px`;
+          bl.title = `기준선 ${task.bStart} ~ ${task.bEnd}${v ? ` (${v > 0 ? "+" : ""}${v}일)` : ""}`;
+          row.appendChild(bl);
+        }
       }
       // 서브시스템 마일스톤은 해당 서브시스템 L1 행에 표시
       if (task.level === 1 && bySystem.has(task.system)) {

@@ -17,7 +17,7 @@
 // =============================================================================
 var Migrate = {
   // 지금 자료 모양의 번호. 자료 모양을 바꾸면 1 올리고 PROJECT_STEPS 에 단계를 더한다
-  VERSION: 2,
+  VERSION: 3,
 
   DATA_STEPS: [
     {
@@ -29,6 +29,20 @@ var Migrate = {
         if (Array.isArray(data.deliverablesData)) data.deliverablesData.forEach(d => {
           st(d);
           if (d && typeof d.round === "string") d.round = d.round.replace(/^(\d)회차$/, "$1차");
+        });
+      }
+    },
+    {
+      id: "voc-judge",
+      desc: "VOC 구분 → 판정 (VOC→미판정, 버그→결함), 상태 '제외' → 완료 + 설명 종결, 끝난 VOC 의 종료일(없으면 목표일)",
+      run(data) {
+        if (!Array.isArray(data.vocData)) return;
+        data.vocData.forEach(v => {
+          if (!v) return;
+          const j = Metrics.judgeOf(v);
+          v.vocType = j;
+          if (v.status === "제외") { v.status = "완료"; if (j === "미판정") v.vocType = "설명 종결"; }
+          if (Metrics.VOC_DONE.indexOf(v.status) !== -1 && !v.closedDate && v.targetDate) v.closedDate = v.targetDate;
         });
       }
     }
@@ -48,6 +62,20 @@ var Migrate = {
         const before = JSON.stringify(projectConfig.activeSdlcCodes || null);
         SdlcBoard.syncActive(true);
         return JSON.stringify(projectConfig.activeSdlcCodes || null) !== before;
+      }
+    },
+    {
+      id: "voc-stage",
+      desc: "단계가 빈 VOC 에 접수일 · 서브시스템 Phase 일정으로 단계 채움 (접수 때 정한 단계는 바꾸지 않음)",
+      run: () => {
+        if (typeof vocData === "undefined" || !Array.isArray(vocData)) return false;
+        let n = 0;
+        vocData.forEach(v => {
+          if (!v || v.stage || v.stageManual || !v.reqDate) return;
+          const st = WBSEngine.vocStageFor(v.system, v.reqDate);
+          if (st) { v.stage = st; n++; }
+        });
+        return n > 0;
       }
     },
     {

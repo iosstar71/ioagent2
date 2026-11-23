@@ -87,7 +87,9 @@ const ExcelSync = {
       { key: "pProg", label: "계획(%)", width: 11 },
       { key: "aProg", label: "실적(%)", width: 11 },
       { key: "owner", label: "담당자", width: 14 },
-      { key: "output", label: "산출물 / 조치계획", width: 24 }
+      { key: "output", label: "산출물 / 조치계획", width: 24 },
+      { key: "bStart", label: "기준선 시작일", width: 16 },
+      { key: "bEnd", label: "기준선 종료일", width: 16 }
     ],
     deliverables: [
       { key: "round", label: "제출 차수", width: 12 },
@@ -107,11 +109,16 @@ const ExcelSync = {
       { key: "type", label: "유형", width: 14 },
       { key: "priority", label: "중요도", width: 12 },
       { key: "accept", label: "수용여부", width: 12 },
-      { key: "status", label: "진행상태", width: 14 }
+      { key: "status", label: "진행상태", width: 14 },
+      { key: "origin", label: "구분(초기/추가)", width: 12 },
+      { key: "srcVoc", label: "출처 VOC", width: 14 },
+      { key: "addedDate", label: "추가 등록일", width: 14 }
     ],
     voc: [
       { key: "id", label: "VOC ID", width: 14 },
-      { key: "vocType", label: "구분", width: 10 },
+      { key: "stage", label: "단계", width: 16 },
+      { key: "vocType", label: "판정", width: 12 },
+      { key: "severity", label: "심각도", width: 10 },
       { key: "system", label: "서브시스템", width: 16 },
       { key: "priority", label: "우선순위", width: 12 },
       { key: "title", label: "요청제목", width: 36 },
@@ -119,7 +126,9 @@ const ExcelSync = {
       { key: "reqDate", label: "접수일자", width: 16 },
       { key: "targetDate", label: "목표완료일", width: 16 },
       { key: "status", label: "처리상태", width: 14 },
-      { key: "action", label: "처리결과 및 조치계획", width: 36 }
+      { key: "action", label: "처리결과 및 조치계획", width: 36 },
+      { key: "closedDate", label: "종료일", width: 14 },
+      { key: "reqLink", label: "연결 요구사항", width: 14 }
     ]
   },
 
@@ -134,8 +143,8 @@ const ExcelSync = {
   // 헤더 별칭 매핑 (화면 테이블 복사본이나 변형된 헤더도 자동 인식)
   HEADER_ALIASES: {
     users: {
-      empNo: ["작업자 ID(id)", "작업자 ID", "작업자 ID (작업자 선택 id)", "id", "empno"],
-      name: ["성명", "이름", "작업자명", "name"],
+      empNo: ["멤버 ID(id)", "멤버 ID", "멤버 ID (멤버 선택 id)", "작업자 ID(id)", "작업자 ID", "작업자 ID (작업자 선택 id)", "id", "empno"],
+      name: ["성명", "이름", "작업자명", "사용자명", "name"],
       role: ["권한등급(sys_admin/pm/lead/member)", "권한등급(sys_admin/pm/member)", "권한등급", "권한", "시스템 권한 등급", "role"],
       subsystem: ["담당서브시스템", "담당 서브시스템", "서브시스템", "subsystem"],
       dept: ["소속부서/담당역할", "소속 부서 / 담당 역할", "부서", "역할", "dept"],
@@ -193,11 +202,18 @@ const ExcelSync = {
       type: ["유형", "구분", "type"],
       priority: ["중요도", "우선순위", "priority"],
       accept: ["수용여부", "수용 여부", "accept"],
-      status: ["진행상태", "진행 상태", "상태", "요건 상태", "status"]
+      status: ["진행상태", "진행 상태", "상태", "요건 상태", "status"],
+      origin: ["구분(초기/추가)", "초기/추가", "origin"],
+      srcVoc: ["출처 voc", "출처voc", "srcvoc"],
+      addedDate: ["추가 등록일", "추가등록일", "addeddate"]
     },
     voc: {
       id: ["voc id", "vocid", "id"],
-      vocType: ["구분", "유형", "type"],
+      vocType: ["판정", "구분", "유형", "type"],
+      stage: ["단계", "발생 단계", "stage"],
+      severity: ["심각도", "severity"],
+      closedDate: ["종료일", "해결일", "closeddate"],
+      reqLink: ["연결 요구사항", "연결 req", "reqlink"],
       system: ["서브시스템", "서브시스템명", "system"],
       priority: ["우선순위", "중요도", "priority"],
       title: ["요청제목", "요청 제목 / 이슈 내용", "제목", "이슈내용", "title"],
@@ -211,7 +227,7 @@ const ExcelSync = {
 
   // 무시할 UI 전용 계산 컬럼 (화면 표 복사 시 자동 스킵)
   IGNORED_HEADERS: new Set([
-    "삭제", "하위·동위 추가 / 순서 / 삭제", "연계 Task 수", "실적 진척률", "평균 실적(%)"
+    "삭제", "하위·동위 추가 / 순서 / 삭제", "연계 Task 수", "실적 진척률", "평균 실적(%)", "기준선 시작일", "기준선 종료일"
   ]),
 
 
@@ -250,7 +266,9 @@ const ExcelSync = {
         colKey === "pStart" ||
         colKey === "pEnd" ||
         colKey === "aStart" ||
-        colKey === "aEnd") &&
+        colKey === "aEnd" ||
+        colKey === "bStart" ||
+        colKey === "bEnd") &&
       val
     ) {
       const cleanDate = this.normalizeDate(val);

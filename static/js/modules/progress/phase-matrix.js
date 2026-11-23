@@ -35,14 +35,14 @@ function renderPhaseMatrix() {
           <th rowspan="2" style="width: 110px;">관리유형</th>
           <th rowspan="2" style="width: 64px;" title="종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치">가중치</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
-          <th colspan="4" class="col-req">🎯 요구사항(REQ) 진척</th>
-          <th colspan="5" class="col-voc">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
+          <th colspan="5" class="col-req">🎯 요구사항(REQ) 진척</th>
+          <th colspan="6" class="col-voc">💬 VOC · 결함 처리</th>
           <th colspan="${activeRounds.length + 2}" class="col-deliv">📑 산출물 제출 진척 (${activeRounds.length}차 운영)</th>
         </tr>
         <tr>
           <th>계획</th><th>실적</th><th>달성률</th>
-          <th>전체</th><th>진행</th><th>완료</th><th>완료율</th>
-          <th>유효전체</th><th>대기</th><th>진행중</th><th>완료·제외</th><th>달성률</th>
+          <th>전체</th><th title="VOC 에서 등록한 추가 요구사항">추가</th><th>진행</th><th>완료</th><th>완료율</th>
+          <th>접수</th><th>판정 대기</th><th>미결</th><th title="완료 + 요구 반영">처리</th><th title="통합테스트 단계 · 판정 결함 중 미결">테스트 결함 미결</th><th>처리율</th>
           ${roundThs}<th>검토/작성중</th><th>완료율</th>
         </tr>
       `;
@@ -50,11 +50,11 @@ function renderPhaseMatrix() {
   }
 
   intTbody.innerHTML = "";
-  let sumReqTot = 0, sumReqPrg = 0, sumReqCmp = 0;
+  let sumReqTot = 0, sumReqAdd = 0, sumReqPrg = 0, sumReqCmp = 0;
   const sumRoundStats = {};
   activeRounds.forEach(r => { sumRoundStats[r] = { tot: 0, cmp: 0 }; });
   let sumDIng = 0, sumDAllTot = 0, sumDAllCmp = 0;
-  let sumVocTot = 0, sumVocWait = 0, sumVocProg = 0, sumVocDone = 0;
+  let sumVocTot = 0, sumVocUnd = 0, sumVocOpen = 0, sumVocDone = 0, sumDefOpen = 0, sumDefTot = 0;
   let sumWP = 0, sumWA = 0, sumWCount = 0;
 
   allSystems.forEach(sys => {
@@ -67,7 +67,7 @@ function renderPhaseMatrix() {
     sumWP += wP; sumWA += wA; sumWCount++;
 
     const rs = Metrics.reqStats(reqMasterData.filter(r => r.system === sys)), sReqs = rs.list, rPrg = rs.prog, rCmp = rs.done, rRate = rs.rate;
-    sumReqTot += sReqs.length; sumReqPrg += rPrg; sumReqCmp += rCmp;
+    sumReqTot += sReqs.length; sumReqAdd += rs.added; sumReqPrg += rPrg; sumReqCmp += rCmp;
 
     let sysDTot = 0, sysDCmp = 0;
     const roundTds = activeRounds.map(rnd => {
@@ -85,9 +85,11 @@ function renderPhaseMatrix() {
     const dRate = Metrics.pct(sysDCmp, sysDTot);
     sumDIng += dIng; sumDAllTot += sysDTot; sumDAllCmp += sysDCmp;
 
-    // VOC: 대기와 진행중 분리
-    const vs = Metrics.vocStats(vocData.filter(v => v.system === sys)), sVocs = vs.list, vWait = vs.wait, vProg = vs.prog, vDone = vs.done, vRate = vs.rate;
-    sumVocTot += sVocs.length; sumVocWait += vWait; sumVocProg += vProg; sumVocDone += vDone;
+    // VOC · 결함 (Metrics: 처리 = 완료 + 요구 반영, 테스트 결함 = 통합테스트 · 결함)
+    const sysVocs = vocData.filter(v => v.system === sys);
+    const vs = Metrics.vocStats(sysVocs), ds = Metrics.defectStats(sysVocs);
+    const vOpen = Metrics.vocOpen(sysVocs).length;
+    sumVocTot += vs.total; sumVocUnd += vs.undecided; sumVocOpen += vOpen; sumVocDone += vs.done; sumDefOpen += ds.open; sumDefTot += ds.total;
 
     const curSpec = WBSEngine.getSubsystemSdlcSpec(sys);
     const typeBadge = meta.type === "REQ"
@@ -104,14 +106,16 @@ function renderPhaseMatrix() {
       <td><strong>${wA}%</strong></td>
       <td style="font-weight:bold; color:${wRate >= 90 ? "var(--chart-good-text)" : (wRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${wRate}%</td>
       <td>${sReqs.length}건</td>
+      <td>${rs.added ? `<b>${rs.added}건</b>` : "0"}</td>
       <td>${rPrg}건</td>
       <td><strong>${rCmp}건</strong></td>
-      <td class="u-bold" style="color:var(--tint-ok-text);">${rRate}%</td>
-      <td>${sVocs.length}건</td>
-      <td style="color:var(--chart-warn-text);">${vWait}건</td>
-      <td class="u-c-primary">${vProg}건</td>
-      <td><strong>${vDone}건</strong></td>
-      <td class="u-bold" style="color:var(--tint-warn-text);">${vRate}%</td>
+      <td class="u-bold u-c-success">${rRate}%</td>
+      <td>${vs.total}건</td>
+      <td class="${vs.undecided ? "u-c-warning u-bold" : ""}">${vs.undecided}건</td>
+      <td>${vOpen}건</td>
+      <td><strong>${vs.done}건</strong></td>
+      <td>${ds.total ? `<b class="${ds.open ? "u-c-danger" : ""}">${ds.open}</b> / ${ds.total}건` : "-"}</td>
+      <td class="u-bold">${vs.rate}%</td>
       ${roundTds}
       <td>${dIng}건</td>
       <td class="u-bold u-c-info">${dRate}%</td>
@@ -138,14 +142,16 @@ function renderPhaseMatrix() {
     <td><strong>${avgWA}%</strong></td>
     <td><b>${avgWRate}%</b></td>
     <td><b>${sumReqTot}건</b></td>
+    <td><b>${sumReqAdd}건</b></td>
     <td><b>${sumReqPrg}건</b></td>
     <td><b>${sumReqCmp}건</b></td>
-    <td style="color:var(--tint-ok-text);"><b>${totRRate}%</b></td>
+    <td class="u-c-success"><b>${totRRate}%</b></td>
     <td><b>${sumVocTot}건</b></td>
-    <td style="color:var(--chart-warn-text);"><b>${sumVocWait}건</b></td>
-    <td class="u-c-primary"><b>${sumVocProg}건</b></td>
+    <td class="u-c-warning"><b>${sumVocUnd}건</b></td>
+    <td><b>${sumVocOpen}건</b></td>
     <td><b>${sumVocDone}건</b></td>
-    <td style="color:var(--tint-warn-text);"><b>${totVRate}%</b></td>
+    <td>${sumDefTot ? `<b>${sumDefOpen} / ${sumDefTot}건</b>` : "-"}</td>
+    <td><b>${totVRate}%</b></td>
     ${sumRoundTds}
     <td><b>${sumDIng}건</b></td>
     <td class="u-c-info"><b>${totDRate}%</b></td>

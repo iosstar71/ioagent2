@@ -215,6 +215,8 @@ var JudgeRules = {
     const g = document.getElementById("cfgDelayGap"), d = document.getElementById("cfgDueDays");
     if (g) g.value = WBSEngine.delayGap();
     if (d) d.value = WBSEngine.dueDays();
+    const sa = document.getElementById("cfgScopeAlert");
+    if (sa) sa.value = Metrics.scopeAlertCount(projectConfig);
   },
   apply() {
     const g = parseFloat((document.getElementById("cfgDelayGap") || {}).value);
@@ -223,6 +225,8 @@ var JudgeRules = {
     if (isNaN(d) || d < 1 || d > 90) return showToast("⚠️ 마감 임박 일수는 1 ~ 90 사이로 입력하세요.");
     projectConfig.delayGap = Math.round(g * 10) / 10;
     projectConfig.dueDays = d;
+    const sa = parseInt((document.getElementById("cfgScopeAlert") || {}).value, 10);
+    projectConfig.scopeAlert = isNaN(sa) || sa < 0 ? Metrics.SCOPE_ALERT_DEFAULT : sa;
     rebuildAll();
     this.render();
     showToast(`🚦 판정 기준을 적용했습니다: 지연 = 계획보다 ${projectConfig.delayGap}%p 이상 늦거나 계획종료일 경과 미완료 · 체크할 일 = ${d}일 안 마감`);

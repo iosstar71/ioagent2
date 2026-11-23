@@ -241,20 +241,30 @@
 
 
         <!-- 판정 기준: 지연 · 마감 임박 -->
-        <div class="card" style="border-left: 4px solid #ef4444;">
+        <div class="card card-accent-danger">
           <div class="card-title">
             <div>
-              <strong>🚦 판정 기준 (지연 · 마감 임박)</strong>
-              <div class="u-fs-xs u-c-muted u-mt-3">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>체크할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 Task · 산출물을 보여 줍니다.</div>
+              <strong>🚦 판정 기준 (지연 · 마감 임박 · 범위 협의)</strong>
+              <div class="u-fs-xs u-c-muted u-mt-3">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>체크할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 Task · 산출물을 보여 줍니다. <b>범위 협의</b> = 한 서브시스템에서 VOC 안에서 처리한 개선 요청이 이 건수 이상이면 Summary 에 알림 (0 = 끔).</div>
             </div>
           </div>
           <div class="u-flex u-gap-10 u-ai-center u-wrap">
             <label class="u-bold u-fs-sm">지연 판정 차이:</label>
-            <input type="number" id="cfgDelayGap" min="0" max="100" step="0.5" style="width:80px;"> <span>%p 이상</span>
+            <input type="number" class="num-in" id="cfgDelayGap" min="0" max="100" step="0.5"> <span>%p 이상</span>
             <label class="u-bold u-fs-sm u-ml-12">마감 임박:</label>
-            <input type="number" id="cfgDueDays" min="1" max="90" step="1" style="width:70px;"> <span>일 안</span>
+            <input type="number" class="num-in" id="cfgDueDays" min="1" max="90" step="1"> <span>일 안</span>
+            <label class="u-bold u-fs-sm u-ml-12">범위 협의 알림:</label>
+            <input type="number" class="num-in" id="cfgScopeAlert" min="0" max="999" step="1"> <span>건 이상</span>
             <button class="btn btn-primary btn-sm" data-click="JudgeRules.apply">✅ 적용 (다시 계산)</button>
           </div>
+        </div>
+
+        <!-- 기준선: 확정 순간의 계획 일정을 복사해 두고 지금 계획과 비교 (modules/wbs/baseline-ui.js) -->
+        <div class="card" id="baselineCard">
+          <div class="card-title">
+            <div><strong>📐 기준선</strong> <span class="lk-hint">확정한 순간의 Task 계획 일정을 남겨 두고 Gantt · Summary · 보고서에서 "기준선 대비 +N일" 로 비교 (다시 확정할 때는 사유 필수)</span></div>
+          </div>
+          <div id="baselineBox"></div>
         </div>
 
         <!-- [1-7] 표기 규칙: ID 접두사 + 주차 표시 (번호 · 날짜를 적는 방식을 한 곳에) -->
@@ -263,30 +273,9 @@
             <div><strong>표기 규칙</strong> <span class="lk-hint">ID 접두사 · 주차 표시 — 번호와 주차를 화면 · 보고서에 적는 방식</span></div>
           </div>
           <div class="rule-sec">
-            <div class="wk-head rule-sec-head"><b>🏷️ ID 규칙</b> <span class="lk-hint">WBS · REQ · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span>
+            <div class="wk-head rule-sec-head"><b>🏷️ ID 규칙</b> <span class="lk-hint">WBS · REQ · 추가 요구사항 · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span>
               <button class="btn btn-warning btn-sm rule-sec-btn" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button></div>
-            <div class="rule-id-grid">
-            <div class="rule-id-box">
-              <strong class="rule-id-name ">1. WBS ID 접두사</strong>
-              <input type="text" id="cfgWbsPrefix" placeholder="접두사 없음" data-change="updateIdPrefixConfig">
-              <label class="rule-id-check"><input type="checkbox" id="cfgWbsUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
-            </div>
-            <div class="rule-id-box">
-              <strong class="rule-id-name ">2. REQ ID 접두사</strong>
-              <input type="text" id="cfgReqPrefix" value="REQ" data-change="updateIdPrefixConfig">
-              <label class="rule-id-check"><input type="checkbox" id="cfgReqUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
-            </div>
-            <div class="rule-id-box">
-              <strong class="rule-id-name ">3. VOC ID 접두사</strong>
-              <input type="text" id="cfgVocPrefix" value="VOC" data-change="updateIdPrefixConfig">
-              <label class="rule-id-check"><input type="checkbox" id="cfgVocUseSubCode" data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
-            </div>
-            <div class="rule-id-box">
-              <strong class="rule-id-name ">4. Action Item 접두사</strong>
-              <input type="text" id="cfgActPrefix" value="ACT" data-change="updateIdPrefixConfig">
-              <label class="rule-id-check"><input type="checkbox" id="cfgActUseSubCode" checked data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
-            </div>
-            </div>
+            <div class="rule-id-grid" id="idRuleGrid"></div>
           </div>
           <div id="weekFmtBox" class="wk-box rule-sec">
             <div class="wk-head"><b>📅 주차 표시 방식</b> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 기본정보에서 설정)</span></div>

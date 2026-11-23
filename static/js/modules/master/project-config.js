@@ -35,6 +35,8 @@ let projectConfig = {
     wbsUseSubCode: false,
     reqPrefix: "REQ",
     reqUseSubCode: true,
+    crPrefix: "CR",
+    crUseSubCode: true,
     vocPrefix: "VOC",
     vocUseSubCode: true,
     actPrefix: "ACT",
@@ -117,175 +119,117 @@ function updateProjectTitles() {
   showToast(`시스템 타이틀 및 프로젝트명([${projectConfig.projectName}])이 반영되었습니다.`);
 }
 
-// WBS / REQ / VOC ID 채번 Prefix 및 서브시스템 코드 연동 설정
-function renderIdPrefixSettings() {
-  if (!projectConfig.idPrefixConfig) {
-    projectConfig.idPrefixConfig = {
-      wbsPrefix: "",
-      wbsUseSubCode: false,
-      reqPrefix: "REQ",
-      reqUseSubCode: true,
-      vocPrefix: "VOC",
-      vocUseSubCode: true
-    };
-  }
-  const c = projectConfig.idPrefixConfig;
-  const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ""; };
-  const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
-
-  setVal("cfgWbsPrefix", c.wbsPrefix);
-  setChk("cfgWbsUseSubCode", c.wbsUseSubCode);
-  setVal("cfgReqPrefix", c.reqPrefix);
-  setChk("cfgReqUseSubCode", c.reqUseSubCode);
-  setVal("cfgVocPrefix", c.vocPrefix);
-  setChk("cfgVocUseSubCode", c.vocUseSubCode);
-  setVal("cfgActPrefix", c.actPrefix || "ACT");
-  setChk("cfgActUseSubCode", c.actUseSubCode !== false);
-
-  updateIdPrefixPreview();
-}
-
-function updateIdPrefixPreview() {
-  const c = projectConfig.idPrefixConfig || {};
-  const sampleSubCode = (subsystemsMeta[1] && subsystemsMeta[1].code) ? subsystemsMeta[1].code : "EQP";
-
-  const wParts = [];
-  if ((c.wbsPrefix || "").trim()) wParts.push(c.wbsPrefix.trim().replace(/-+$/, ""));
-  if (c.wbsUseSubCode) wParts.push(sampleSubCode);
-  const wSample = (wParts.length > 0 ? wParts.join("-") + "-" : "") + "1.1.1";
-
-  const rParts = [];
-  if ((c.reqPrefix || "REQ").trim()) rParts.push((c.reqPrefix || "REQ").trim().replace(/-+$/, ""));
-  if (c.reqUseSubCode) rParts.push(sampleSubCode);
-  const rSample = rParts.join("-") + "-01";
-
-  const vParts = [];
-  if ((c.vocPrefix || "VOC").trim()) vParts.push((c.vocPrefix || "VOC").trim().replace(/-+$/, ""));
-  if (c.vocUseSubCode) vParts.push(sampleSubCode);
-  const vSample = vParts.join("-") + "-01";
-
-  const aParts = [];
-  if ((c.actPrefix || "ACT").trim()) aParts.push((c.actPrefix || "ACT").trim().replace(/-+$/, ""));
-  if (c.actUseSubCode !== false) aParts.push(sampleSubCode);
-  const aSample = aParts.join("-") + "-01";
-
-  const prevEl = document.getElementById("idPrefixPreviewText");
-  if (prevEl) {
-    prevEl.innerHTML = `• WBS: ${escapeHtml(wSample)}<br>• REQ: ${escapeHtml(rSample)}<br>• VOC: ${escapeHtml(vSample)}<br>• ActionItem: ${escapeHtml(aSample)}`;
-  }
-  const prevAct = document.getElementById("previewActId");
-  if (prevAct) prevAct.textContent = aSample;
-}
-
-function applyIdPrefixSettings(reNumberAll = false) {
-  if (!projectConfig.idPrefixConfig) projectConfig.idPrefixConfig = {};
-  const c = projectConfig.idPrefixConfig;
-  const getVal = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
-  const getChk = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
-
-  c.wbsPrefix = getVal("cfgWbsPrefix");
-  c.wbsUseSubCode = getChk("cfgWbsUseSubCode");
-  c.reqPrefix = getVal("cfgReqPrefix") || "REQ";
-  c.reqUseSubCode = getChk("cfgReqUseSubCode");
-  c.vocPrefix = getVal("cfgVocPrefix") || "VOC";
-  c.vocUseSubCode = getChk("cfgVocUseSubCode");
-  c.actPrefix = getVal("cfgActPrefix") || "ACT";
-  c.actUseSubCode = getChk("cfgActUseSubCode");
-
-  updateIdPrefixPreview();
-
-  if (reNumberAll) {
-    // 기존 요구사항 및 VOC ID도 설정된 Prefix+서브시스템코드 규칙으로 일괄 재채번 및 WBS reqId 참조 동기화
-    const reqIdMap = {};
-    const sysReqCounters = {};
-    reqMasterData.forEach(r => {
-      const oldId = r.id;
-      const sCode = WBSEngine.getSubsystemCode(r.system);
-      const key = c.reqUseSubCode ? sCode : "ALL";
-      sysReqCounters[key] = (sysReqCounters[key] || 0) + 1;
-      const parts = [c.reqPrefix.replace(/-+$/, "")];
-      if (c.reqUseSubCode && sCode) parts.push(sCode.replace(/-+$/, ""));
-      parts.push(String(sysReqCounters[key]).padStart(2, "0"));
-      const newId = parts.filter(Boolean).join("-");
-      reqIdMap[oldId] = newId;
-      r.id = newId;
+// ID 규칙 (WBS · REQ · 추가 요구사항 · VOC · Action Item) — 종류마다 접두사 + 서브시스템 코드 결합 여부, 한 표로
+//  projectConfig.idPrefixConfig 의 <k>Prefix · <k>UseSubCode 에 저장 (WBS ID 는 wbs-engine.js 가 같은 값을 읽음)
+var IdRules = {
+  KINDS: [
+    { k: "wbs", label: "WBS ID 접두사", def: "", sub: false, ph: "접두사 없음" },
+    { k: "req", label: "REQ ID 접두사", def: "REQ", sub: true },
+    { k: "cr", label: "추가 요구사항 ID 접두사", def: "CR", sub: true, hint: "VOC 에서 등록한 추가 요구사항" },
+    { k: "voc", label: "VOC ID 접두사", def: "VOC", sub: true },
+    { k: "act", label: "Action Item 접두사", def: "ACT", sub: true }
+  ],
+  _c() { if (!projectConfig.idPrefixConfig) projectConfig.idPrefixConfig = {}; return projectConfig.idPrefixConfig; },
+  conf(k) {
+    const c = this._c(), d = this.KINDS.find(x => x.k === k);
+    const sub = c[k + "UseSubCode"];
+    return { prefix: String(c[k + "Prefix"] || d.def).trim(), sub: sub === undefined ? d.sub : !!sub };
+  },
+  base(k, sCode) {
+    const { prefix, sub } = this.conf(k);
+    const parts = [prefix.replace(/-+$/, "")];
+    if (sub && sCode && sCode !== "ALL") parts.push(String(sCode).replace(/-+$/, ""));
+    return parts.filter(Boolean).join("-");
+  },
+  // 다음 번호 = 같은 앞부분 ID 중 가장 큰 번호 + 1 (지운 번호를 다시 쓰지 않음)
+  next(k, sCode, ids) {
+    const b = this.base(k, sCode), pre = b + "-";
+    const max = (ids || []).reduce((m, id) => {
+      const s = String(id || "");
+      if (!s.startsWith(pre)) return m;
+      const n = parseInt(s.slice(pre.length), 10);
+      return isNaN(n) || String(n) !== s.slice(pre.length).replace(/^0+(?=\d)/, "") ? m : Math.max(m, n);
+    }, 0);
+    return `${pre}${String(max + 1).padStart(2, "0")}`;
+  },
+  sample(k) { return k === "wbs" ? (this.base(k, this._sampleCode()) ? this.base(k, this._sampleCode()) + "-" : "") + "1.1.1" : this.base(k, this._sampleCode()) + "-01"; },
+  _sampleCode() { return (subsystemsMeta[1] && subsystemsMeta[1].code) || (subsystemsMeta[0] && subsystemsMeta[0].code) || "EQP"; },
+  render() {
+    const box = document.getElementById("idRuleGrid");
+    if (!box) return;
+    box.innerHTML = this.KINDS.map((d, i) => {
+      const c = this.conf(d.k);
+      return `<div class="rule-id-box">
+        <strong class="rule-id-name">${i + 1}. ${d.label}</strong>${d.hint ? `<span class="lk-hint">${d.hint}</span>` : ""}
+        <input type="text" id="cfgIdPrefix_${d.k}" value="${escapeAttr(c.prefix)}" placeholder="${escapeAttr(d.ph || d.def)}" data-change="updateIdPrefixConfig">
+        <label class="rule-id-check"><input type="checkbox" id="cfgIdSub_${d.k}"${c.sub ? " checked" : ""} data-change="updateIdPrefixConfig"> 서브시스템 코드 결합</label>
+        <code class="rule-id-sample">${escapeHtml(this.sample(d.k))}</code>
+      </div>`;
+    }).join("");
+    if (typeof I18N !== "undefined") I18N.translateTree(box);
+  },
+  read() {
+    const c = this._c();
+    this.KINDS.forEach(d => {
+      const el = document.getElementById("cfgIdPrefix_" + d.k), ck = document.getElementById("cfgIdSub_" + d.k);
+      if (el) c[d.k + "Prefix"] = el.value.trim() || d.def;
+      if (ck) c[d.k + "UseSubCode"] = ck.checked;
     });
-    wbsData.forEach(t => {
-      if (t.reqId && reqIdMap[t.reqId]) t.reqId = reqIdMap[t.reqId];
-    });
-
-    const sysVocCounters = {};
-    vocData.forEach(v => {
-      const sCode = WBSEngine.getSubsystemCode(v.system);
-      const key = c.vocUseSubCode ? sCode : "ALL";
-      sysVocCounters[key] = (sysVocCounters[key] || 0) + 1;
-      const parts = [c.vocPrefix.replace(/-+$/, "")];
-      if (c.vocUseSubCode && sCode) parts.push(sCode.replace(/-+$/, ""));
-      parts.push(String(sysVocCounters[key]).padStart(2, "0"));
-      v.id = parts.filter(Boolean).join("-");
-    });
-
-    // Action Item ID도 설정된 Prefix 및 서브시스템 코드 규칙으로 일괄 재채번
-    if (typeof meetingsData !== "undefined" && Array.isArray(meetingsData)) {
-      const sysActCounters = {};
-      meetingsData.forEach(m => {
-        if (Array.isArray(m.actionItems)) {
-          m.actionItems.forEach(a => {
-            const sCode = (typeof WBSEngine !== "undefined" ? WBSEngine.getSubsystemCode(m.system) : m.system) || "COM";
-            const key = c.actUseSubCode !== false ? sCode : "ALL";
-            sysActCounters[key] = (sysActCounters[key] || 0) + 1;
-            const parts = [(c.actPrefix || "ACT").replace(/-+$/, "")];
-            if (c.actUseSubCode !== false && sCode && sCode !== "ALL") parts.push(sCode.replace(/-+$/, ""));
-            parts.push(String(sysActCounters[key]).padStart(2, "0"));
-            a.id = parts.filter(Boolean).join("-");
-          });
-        }
+  },
+  // 전체 다시 매기기 — 서브시스템별 1번부터. 참조(WBS reqId · VOC reqLink · 요구사항 srcVoc)도 함께 바꿈
+  renumberAll() {
+    const code = sys => WBSEngine.getSubsystemCode(sys);
+    const run = (k, list, sysOf) => {
+      const cnt = {}, map = {};
+      list.forEach(r => {
+        const b = this.base(k, code(sysOf(r)));
+        cnt[b] = (cnt[b] || 0) + 1;
+        const id = `${b}-${String(cnt[b]).padStart(2, "0")}`;
+        if (r.id) map[r.id] = id;
+        r.id = id;
       });
-      if (typeof MeetingManager !== "undefined" && typeof MeetingManager.render === "function") {
-        MeetingManager.render();
-      }
+      return map;
+    };
+    const reqMap = Object.assign(run("req", reqMasterData.filter(r => r.origin !== "추가"), r => r.system),
+      run("cr", reqMasterData.filter(r => r.origin === "추가"), r => r.system));
+    const vocMap = run("voc", vocData, v => v.system);
+    wbsData.forEach(t => { if (t.reqId && reqMap[t.reqId]) t.reqId = reqMap[t.reqId]; });
+    vocData.forEach(v => { if (v.reqLink && reqMap[v.reqLink]) v.reqLink = reqMap[v.reqLink]; });
+    reqMasterData.forEach(r => { if (r.srcVoc && vocMap[r.srcVoc]) r.srcVoc = vocMap[r.srcVoc]; });
+    if (typeof meetingsData !== "undefined" && Array.isArray(meetingsData)) {
+      const cnt = {};
+      meetingsData.forEach(m => (m.actionItems || []).forEach(a => {
+        const b = this.base("act", WBSEngine.getSubsystemCode(m.system) || "COM");
+        cnt[b] = (cnt[b] || 0) + 1;
+        a.id = `${b}-${String(cnt[b]).padStart(2, "0")}`;
+      }));
+      if (typeof MeetingManager !== "undefined") MeetingManager.render();
     }
   }
+};
 
+function renderIdPrefixSettings() { IdRules.render(); }
+
+function applyIdPrefixSettings(reNumberAll = false) {
+  IdRules.read();
+  if (reNumberAll) IdRules.renumberAll();
+  IdRules.render();
   rebuildAll();
-  if (reNumberAll) {
-    showToast("WBS · 요구사항(REQ) · VOC · Action Item 전체 ID에 설정된 접두어(Prefix) 및 서브시스템 코드 규칙이 일괄 적용되었습니다.");
-  } else {
-    showToast("ID 규칙(Action Item 포함)이 변경되었습니다. (신규 생성 건부터 자동 적용)");
-  }
+  showToast(reNumberAll ? "WBS · 요구사항 · 추가 요구사항 · VOC · Action Item 전체 ID에 접두사 및 서브시스템 코드 규칙이 일괄 적용되었습니다."
+    : "ID 규칙이 변경되었습니다. (새로 만드는 것부터 적용)");
 }
 
 function updateIdPrefixConfig() {
   applyIdPrefixSettings(false);
 }
 
+// 새 ID: "REQ" · "CR"(추가 요구사항) · "VOC" · "ACT"
 function buildNextEntityId(entityType, sysName) {
-  const c = projectConfig.idPrefixConfig || { reqPrefix: "REQ", reqUseSubCode: true, vocPrefix: "VOC", vocUseSubCode: true, actPrefix: "ACT", actUseSubCode: true };
-  const sCode = WBSEngine.getSubsystemCode(sysName);
-
-  if (entityType === "ACT") {
-    const parts = [(c.actPrefix || "ACT").replace(/-+$/, "")];
-    if (c.actUseSubCode !== false && sCode && sCode !== "ALL") parts.push(sCode.replace(/-+$/, ""));
-    const basePref = parts.filter(Boolean).join("-");
-    const allActions = typeof MeetingManager !== "undefined" ? MeetingManager.getAllActionItems() : [];
-    const matching = allActions.filter(a => (a.id || "").startsWith(basePref + "-"));
-    const nextNum = matching.length + 1;
-    return `${basePref}-${String(nextNum).padStart(2, "0")}`;
+  const k = String(entityType || "").toLowerCase();
+  if (k === "act") {
+    const all = typeof MeetingManager !== "undefined" ? MeetingManager.getAllActionItems() : [];
+    return IdRules.next("act", WBSEngine.getSubsystemCode(sysName), all.map(a => a.id));
   }
-
-  if (entityType === "REQ") {
-    const parts = [(c.reqPrefix || "REQ").replace(/-+$/, "")];
-    if (c.reqUseSubCode && sCode) parts.push(sCode.replace(/-+$/, ""));
-    const basePref = parts.filter(Boolean).join("-");
-    const matching = reqMasterData.filter(r => (r.id || "").startsWith(basePref + "-"));
-    const nextNum = matching.length + 1;
-    return `${basePref}-${String(nextNum).padStart(2, "0")}`;
-  } else {
-    const parts = [(c.vocPrefix || "VOC").replace(/-+$/, "")];
-    if (c.vocUseSubCode && sCode) parts.push(sCode.replace(/-+$/, ""));
-    const basePref = parts.filter(Boolean).join("-");
-    const matching = vocData.filter(v => (v.id || "").startsWith(basePref + "-"));
-    const nextNum = matching.length + 1;
-    return `${basePref}-${String(nextNum).padStart(2, "0")}`;
-  }
+  const list = k === "voc" ? vocData : reqMasterData;
+  return IdRules.next(k === "cr" || k === "req" ? k : "voc", WBSEngine.getSubsystemCode(sysName), list.map(r => r.id));
 }

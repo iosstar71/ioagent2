@@ -78,32 +78,9 @@ function renderDashboard() {
   document.getElementById("req-stat-hold").innerText = reqHld;
   document.getElementById("req-stat-deleted").innerText = reqDel;
   if (document.getElementById("req-stat-rate")) document.getElementById("req-stat-rate").innerText = `${reqRate}%`;
-
-  // VOC 통계 (선택 범위 연동)
-  const scopeVocsAll = (selDomain === "ALL" && selSubsys === "ALL")
-    ? vocData
-    : vocData.filter(v => activeSystems.includes(v.system));
-
-  let vocTot = scopeVocsAll.length, vocRdy = 0, vocPrg = 0, vocCmp = 0, vocExc = 0, vocHld = 0, vocDel = 0;
-  scopeVocsAll.forEach(v => {
-    if (v.status === "대기") vocRdy++;
-    else if (v.status === "진행") vocPrg++;
-    else if (v.status === "완료") vocCmp++;
-    else if (v.status === "제외") vocExc++;
-    else if (v.status === "보류") vocHld++;
-    else if (v.status === "삭제") vocDel++;
-  });
-  const vocValid = vocTot - vocDel;
-  const vocRate = Metrics.pct(vocCmp + vocExc, vocValid, 1).toFixed(1);
-
-  document.getElementById("voc-stat-total").innerText = vocTot;
-  document.getElementById("voc-stat-ready").innerText = vocRdy;
-  document.getElementById("voc-stat-progress").innerText = vocPrg;
-  document.getElementById("voc-stat-completed").innerText = vocCmp;
-  document.getElementById("voc-stat-excluded").innerText = vocExc;
-  document.getElementById("voc-stat-hold").innerText = vocHld;
-  document.getElementById("voc-stat-deleted").innerText = vocDel;
-  document.getElementById("voc-stat-achieve").innerText = `${vocRate}%`;
+  const rs = Metrics.reqStats(scopeReqs);
+  const split = document.getElementById("req-stat-split");
+  if (split) split.textContent = I18N.tf("초기 {a} · 추가 {b}", { a: rs.initial, b: rs.added });
 
   // [1] 서브시스템별 공정 진척 현황 카드 (선택 필터 연동 적용)
   renderSubsystemCards(activeSystems);
@@ -196,52 +173,6 @@ function renderDashboard() {
     dashDelivTbody.appendChild(totalRow);
   }
 
-  // [4] 서브시스템별 VOC / 이슈 처리 현황 통계 (선택 필터 연동 적용)
-  const dashVocTbody = document.querySelector("#dashVocTable tbody");
-  dashVocTbody.innerHTML = "";
-  const scopeVocs = vocData.filter(v => activeSystems.includes(v.system) && v.status !== "삭제");
-  const openVocs = scopeVocs.filter(v => v.status !== "완료" && v.status !== "제외").length;
-  const doneVocs = scopeVocs.filter(v => v.status === "완료" || v.status === "제외").length;
-  const scopeVocRate = Metrics.pct(doneVocs, scopeVocs.length);
-  document.getElementById("dash-voc-open").innerText = openVocs;
-  document.getElementById("dash-voc-done").innerText = doneVocs;
-
-  let vTotSum = 0, vCmpSum = 0, vExcSum = 0, vPrgSum = 0, vRdySum = 0;
-  if (activeSystems.length === 0) {
-    dashVocTbody.innerHTML = `<tr><td class="u-tc u-p-20 u-c-muted" colspan="7">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 VOC가 없습니다.</td></tr>`;
-  } else {
-    activeSystems.forEach(sys => {
-      const vAll = scopeVocs.filter(v => v.system === sys);
-      const vCmp = vAll.filter(v => v.status === "완료").length;
-      const vExc = vAll.filter(v => v.status === "제외").length;
-      const vPrg = vAll.filter(v => v.status === "진행").length;
-      const vRdy = vAll.filter(v => v.status === "대기" || v.status === "보류").length;
-      const vRate = Metrics.pct(vCmp + vExc, vAll.length);
-
-      vTotSum += vAll.length; vCmpSum += vCmp; vExcSum += vExc; vPrgSum += vPrg; vRdySum += vRdy;
-
-      dashVocTbody.innerHTML += `
-        <tr>
-          <td><strong>${escapeHtml(sys)}</strong></td>
-          <td><b>${vAll.length}건</b></td>
-          <td><b class="u-c-success">${vCmp}건</b></td>
-          <td>${vExc}건</td>
-          <td>${vPrg}건</td>
-          <td>${vRdy}건</td>
-          <td><b style="color:${vRate >= 80 ? "var(--chart-good-text)" : "var(--chart-warn-text)"};">${vRate}%</b></td>
-        </tr>
-      `;
-    });
-    dashVocTbody.innerHTML += `
-      <tr class="matrix-total-row">
-        <td><strong>[선택 합계]</strong></td>
-        <td><b>${vTotSum}건</b></td>
-        <td><b class="u-c-success">${vCmpSum}건</b></td>
-        <td><b>${vExcSum}건</b></td>
-        <td><b>${vPrgSum}건</b></td>
-        <td><b>${vRdySum}건</b></td>
-        <td><b class="u-c-success">${scopeVocRate}%</b></td>
-      </tr>
-    `;
-  }
+  // [4] VOC · 결함 (판정 카드 · 테스트 결함 카드 · 서브시스템별 표 · 단계별 표) — modules/progress/voc-board.js
+  VocBoard.renderDashboard(activeSystems, (selDomain === "ALL" && selSubsys === "ALL") ? vocData : null);
 }

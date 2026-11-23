@@ -19,7 +19,8 @@ var RecordPanel = {
         { k: "type", l: "유형", opts: ["기능", "비기능", "화면", "인터페이스", "연계", "보안", "관리"] },
         { k: "priority", l: "우선순위", opts: ["긴급", "상", "중", "하"] },
         { k: "accept", l: "수용 여부", opts: ["수용", "불가", "검토중"] },
-        { k: "status", l: "상태", opts: ["대기", "진행", "완료", "보류", "삭제"] }],
+        { k: "status", l: "상태", opts: ["대기", "진행", "완료", "보류", "삭제"] },
+        { k: "srcVoc", l: "출처 VOC", ro: true, show: r => r.origin === "추가" }],
       extra: r => {
         const tasks = (wbsData || []).filter(t => t.reqId && t.reqId === r.id && t.isLeaf);
         const avg = tasks.length ? Math.round(tasks.reduce((a, t) => a + (parseFloat(t.aProg) || 0), 0) / tasks.length) : 0;
@@ -30,14 +31,26 @@ var RecordPanel = {
     voc: {
       data: "vocData", tab: "tab-voc", tbody: "vocTableBody", label: "VOC",
       after: ["renderVocTable", "renderDashboard", "renderPhaseMatrix", "persistChanges"],
+      save: (row, field, value) => VocRules.set(vocData.indexOf(row), field, value),
       title: r => r.title, fields: [
-        { k: "id", l: "ID", ro: true }, { k: "vocType", l: "구분", opts: ["VOC", "버그", "이슈"] },
-        { k: "system", l: "서브시스템", type: "system" },
+        { k: "id", l: "ID", ro: true }, { k: "system", l: "서브시스템", type: "system" },
+        { k: "stage", l: "단계", opts: [""].concat(Metrics.VOC_STAGES) }, { k: "vocType", l: "판정", opts: Metrics.VOC_JUDGE },
+        { k: "severity", l: "심각도", opts: [""].concat(Metrics.VOC_SEVERITY), show: r => Metrics.judgeOf(r) === "결함" },
+        { k: "priority", l: "우선순위", opts: ["긴급", "상", "중", "하"] },
         { k: "title", l: "제목 · 내용", type: "textarea", wide: true },
-        { k: "requester", l: "요청자" }, { k: "priority", l: "우선순위", opts: ["긴급", "상", "중", "하"] },
-        { k: "reqDate", l: "요청일", type: "date" }, { k: "targetDate", l: "목표일", type: "date" },
-        { k: "status", l: "상태", opts: ["대기", "진행", "완료", "보류", "제외", "삭제"] },
-        { k: "action", l: "조치 내용", type: "textarea", wide: true }]
+        { k: "requester", l: "요청자" },
+        { k: "status", l: "상태", opts: Metrics.VOC_STATUS },
+        { k: "reqDate", l: "접수일", type: "date" }, { k: "targetDate", l: "목표일", type: "date" },
+        { k: "action", l: "조치 내용", type: "textarea", wide: true }],
+      extra: r => {
+        const idx = vocData.indexOf(r);
+        if (r.reqLink) return `<div class="rec-section"><div class="rec-section-title">🔗 추가 요구사항 <code>${escapeHtml(r.reqLink)}</code></div>
+          <div class="rec-empty">이후 일정 · 산출물은 요구사항에서 관리합니다.</div></div>`;
+        if (!VocRules.canRegister(r)) return "";
+        return `<div class="rec-section"><div class="rec-section-title">📌 큰 개선 요청이면</div>
+          <button type="button" class="btn btn-sm" data-click="VocRules.register" data-click-args="${UiEvents.args(idx)}">➕ 추가 요구사항으로 등록</button>
+          <div class="rec-empty">작은 개선은 여기서 조치 · 완료하면 됩니다 (산출물 부담 없음).</div></div>`;
+      }
     },
     deliv: {
       data: "deliverablesData", tab: "tab-deliverables", tbody: "deliverablesTableBody", label: "산출물",
@@ -168,7 +181,7 @@ var RecordPanel = {
         <div class="neo-detail-nav"><button type="button" class="btn btn-xs" data-btn="cancel" data-click="RecordPanel.close" title="닫기 (Esc)">✕</button></div>
       </div>
       <div class="neo-detail-body">
-        <div class="neo-grid2">${s.fields.map(f => `<label class="neo-field${f.wide ? " neo-field-wide" : ""}"><span>${f.l}</span>${this._input(s, f, row)}</label>`).join("")}</div>
+        <div class="neo-grid2">${s.fields.filter(f => !f.show || f.show(row)).map(f => `<label class="neo-field${f.wide ? " neo-field-wide" : ""}"><span>${f.l}</span>${this._input(s, f, row)}</label>`).join("")}</div>
         ${s.extra ? s.extra(row) : ""}
         <div class="rec-hint">Esc 닫기 · Ctrl+Enter 입력 중인 칸 반영</div>
       </div>`;

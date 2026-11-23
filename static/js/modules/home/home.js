@@ -188,6 +188,25 @@ var HomeScreenManager = {
     if (typeof MyWorkHello !== "undefined") MyWorkHello.render();
   },
 
+  // Summary: 기준선 차이 · 테스트 결함 · 추가 요구사항 · 범위 협의 알림 한 줄 (해당 자료가 있을 때만)
+  renderVocLine() {
+    const el = document.getElementById("execVocLine");
+    if (!el) return;
+    const parts = [];
+    const bl = BaselineUI.lineHtml();
+    if (bl) parts.push(bl);
+    if (Metrics.hasTestStage(vocData)) {
+      const d = Metrics.defectStats(vocData, projectConfig.reportDate);
+      parts.push(`<span class="svl-item">🐞 <span>${I18N.tf("테스트 결함 {n}건 · 미결 {o} (치명 · 높음 {c}) · 판정 대기 {u}", { n: d.total, o: d.open, c: d.critOpen, u: d.undecided })}</span></span>`);
+    }
+    const vs = Metrics.vocStats(vocData), rs = Metrics.reqStats(reqMasterData);
+    if (vs.improve || rs.added) parts.push(`<span class="svl-item">📈 <span>${I18N.tf("고객 요청 변경 {n}건 (접수 대비 {p}%) — 추가 요구사항 {a}건 · VOC 안에서 처리 {b}건", { n: vs.improve, p: Metrics.pct(vs.improve, vs.total), a: rs.added, b: vs.improveInVoc })}</span></span>`);
+    Metrics.scopeAlerts(vocData, projectConfig).forEach(a =>
+      parts.push(`<span class="svl-item svl-warn">⚠️ <span>${I18N.tf("{sys}: VOC 안에서 처리한 개선 요청 {n}건 — 범위 협의 검토", { sys: a.system, n: a.count })}</span></span>`));
+    el.hidden = !parts.length;
+    el.innerHTML = parts.join("");
+  },
+
   renderExecutive() {
     const repDate = (typeof projectConfig !== "undefined" && projectConfig.reportDate) || "2027-06-01";
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "프로젝트";
@@ -276,6 +295,7 @@ var HomeScreenManager = {
     const elKpiDelivVocSub = document.getElementById("execKpiDelivVocSub");
     if (elKpiDelivVoc) elKpiDelivVoc.textContent = `산출물 ${delivRate}% · VOC ${vocRate}%`;
     if (elKpiDelivVocSub) elKpiDelivVocSub.textContent = `산출물 ${delivDone}/${validDelivs.length}건 승인 | VOC ${vocDone}/${validVocs.length}건 조치`;
+    this.renderVocLine();
 
     // 3. Subsystem Traffic Light Tiles Grid
     const gridEl = document.getElementById("execSubsystemGrid");

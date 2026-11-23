@@ -10,7 +10,7 @@ const JS = p => fs.readFileSync(path.join(ROOT, "static/js", p), "utf8").replace
 function load(globals) {
   const ctx = Object.assign({ window: {}, console, projectConfig: {}, subsystemsMeta: [] }, globals || {});
   vm.createContext(ctx);
-  ["modules/wbs/metrics.js", "modules/wbs/wbs-engine.js", "core/migrate.js"].forEach(f => vm.runInContext(JS(f), ctx, { filename: f }));
+  ["modules/wbs/metrics.js", "modules/wbs/baseline.js", "modules/wbs/wbs-engine.js", "core/migrate.js"].forEach(f => vm.runInContext(JS(f), ctx, { filename: f }));
   return ctx;
 }
 
@@ -34,10 +34,42 @@ function eq(name, got, want) {
   const reqs = [{ status: "완료" }, { status: "진행" }, { status: "삭제" }, { status: "대기" }];
   const r = M.reqStats(reqs);
   eq("reqStats: deleted excluded", [r.total, r.done, r.prog, r.rate], [3, 1, 1, 33]);
-  const vocs = [{ status: "완료" }, { status: "제외" }, { status: "보류" }, { status: "" }, { status: "진행" }, { status: "삭제" }];
+  const vocs = [{ status: "완료" }, { status: "요구 반영", vocType: "개선 요청" }, { status: "보류" }, { status: "" }, { status: "진행", vocType: "개선 요청" }, { status: "삭제" }];
   const v = M.vocStats(vocs);
-  eq("vocStats: done = 완료 + 제외, wait = 대기 · 보류 · 빈 값", [v.total, v.done, v.wait, v.prog, v.rate], [5, 2, 2, 1, 40]);
-  eq("vocOpen: deleted · done · excluded are not open", M.vocOpen(vocs).map(x => x.status), ["보류", "", "진행"]);
+  eq("vocStats: done = 완료 + 요구 반영, wait = 대기 · 보류 · 빈 값", [v.total, v.done, v.wait, v.prog, v.rate], [5, 2, 2, 1, 40]);
+  eq("vocStats: improvement requests = registered as REQ + handled in VOC", [v.improve, v.toReq, v.improveInVoc, v.undecided], [2, 1, 1, 3]);
+  eq("vocOpen: deleted · done · moved to REQ are not open", M.vocOpen(vocs).map(x => x.status), ["보류", "", "진행"]);
+  eq("vocLate: past target and not done; 보류 · 요구 반영 never late",
+    [M.vocLate({ targetDate: "2026-01-01", status: "진행" }, "2026-02-01"), M.vocLate({ targetDate: "2026-01-01", status: "보류" }, "2026-02-01"), M.vocLate({ targetDate: "2026-01-01", status: "요구 반영" }, "2026-02-01")], [true, false, false]);
+  eq("judgeOf: old 구분 values", ["VOC", "버그", "이슈", "결함", "", "Bug"].map(t => M.judgeOf({ vocType: t })), ["미판정", "결함", "이슈", "결함", "미판정", "결함"]);
+  eq("reqStats: initial / added", [M.reqStats([{ status: "대기" }, { status: "대기", origin: "추가" }, { status: "삭제", origin: "추가" }]).initial, M.reqStats([{ status: "대기", origin: "추가" }]).added], [1, 1]);
+}
+
+// ---- VOC 단계 · 결함 ----
+{
+  const { Metrics: M, WBSEngine: W } = load();
+  const P = W.DEFAULT_SDLC_PRESETS;
+  eq("stageGuess: waterfall phases", P.SDLC_WATERFALL.phases.map(ph => M.stageGuess(ph)), ["요건분석/설계", "요건분석/설계", "구현/단위테스트", "통합테스트", "안정화"]);
+  eq("stageGuess: phase.vocStage wins", M.stageGuess({ name: "개발", vocStage: "통합테스트" }), "통합테스트");
+  eq("stageGuess: 단위테스트 is not 통합테스트", M.stageGuess({ name: "구현/단위테스트" }), "구현/단위테스트");
+  const ph = [{ name: "분석", pStart: "2026-01-01", pEnd: "2026-02-28" }, { name: "개발", pStart: "2026-03-01", pEnd: "2026-06-30" },
+    { name: "통합테스트", pStart: "2026-06-15", pEnd: "2026-08-31" }, { name: "이행", pStart: "2026-09-01", pEnd: "2026-09-30" }];
+  eq("vocStageOf: inside / overlap → later phase / outside → nearest / no date",
+    [M.vocStageOf("2026-01-10", ph), M.vocStageOf("2026-06-20", ph), M.vocStageOf("2026-12-01", ph), M.vocStageOf("2025-11-01", ph), M.vocStageOf("", ph)],
+    ["요건분석/설계", "통합테스트", "안정화", "요건분석/설계", ""]);
+  const dv = [
+    { stage: "통합테스트", vocType: "결함", severity: "치명", status: "진행", reqDate: "2026-07-01" },
+    { stage: "통합테스트", vocType: "결함", severity: "보통", status: "완료", reqDate: "2026-07-01", closedDate: "2026-07-03" },
+    { stage: "통합테스트", vocType: "결함", status: "완료", reqDate: "2026-07-02" },
+    { stage: "통합테스트", vocType: "미판정", status: "대기", reqDate: "2026-07-02" },
+    { stage: "안정화", vocType: "결함", status: "진행", reqDate: "2026-07-02" },
+    { stage: "통합테스트", vocType: "결함", status: "삭제", reqDate: "2026-07-02" }];
+  const df = M.defectStats(dv, "2026-07-04");
+  eq("defectStats: 통합테스트 + 결함 only (안정화 · 삭제 out)", [df.total, df.open, df.closed, df.critOpen, df.undecided, df.noDate], [3, 1, 2, 1, 1, 1]);
+  eq("defectStats: daily burn-down", df.series.map(x => [x.opened, x.closed, x.remain]), [[2, 0, 2], [3, 0, 3], [3, 1, 2], [3, 1, 2]]);
+  eq("hasTestStage", [M.hasTestStage(dv), M.hasTestStage([{ stage: "안정화" }])], [true, false]);
+  const vs = M.vocStats(dv);
+  eq("vocStats.byStage", [vs.byStage["통합테스트"].total, vs.byStage["통합테스트"]["결함"], vs.byStage["안정화"]["결함"]], [4, 3, 1]);
   const ds = [{ round: "1차", status: "보완완료" }, { round: "1차", status: "작성중" }, { round: "3차", status: "보완완료" }];
   const d = M.delivStats(ds, ["1차", "2차"]);
   eq("delivStats: active rounds only", [d.total, d.done, d.ing, d.rate], [2, 1, 1, 50]);
@@ -84,6 +116,35 @@ function eq(name, got, want) {
   const d = { reqMasterData: [{ status: "착수전" }], deliverablesData: [{ round: "2회차", status: "착수전" }] };
   Migrate.data(d);
   eq("Migrate.data: old status and round names", [d.reqMasterData[0].status, d.deliverablesData[0].round, d.deliverablesData[0].status], ["대기", "2차", "대기"]);
+  const v = { vocData: [{ vocType: "VOC", status: "대기" }, { vocType: "버그", status: "완료", targetDate: "2026-03-01" }, { vocType: "VOC", status: "제외" }, { vocType: "이슈", status: "제외" }] };
+  Migrate.data(v);
+  eq("Migrate.data: VOC 구분 → 판정, 제외 → 완료 (+ 설명 종결 when undecided), closedDate from target",
+    v.vocData.map(x => [x.vocType, x.status, x.closedDate || ""]),
+    [["미판정", "대기", ""], ["결함", "완료", "2026-03-01"], ["설명 종결", "완료", ""], ["이슈", "완료", ""]]);
+  const ctx = load({ vocData: [{ system: "A", reqDate: "2026-07-01" }, { system: "A", reqDate: "2026-07-01", stage: "안정화" }, { system: "A", reqDate: "2026-07-01", stageManual: true }],
+    subsystemsMeta: [{ name: "A", sdlcCode: "X" }],
+    projectConfig: { customSdlcTypes: [{ code: "X", phases: [{ name: "테스트", pStart: "2026-06-01", pEnd: "2026-08-01" }] }], activeSdlcCodes: ["X"] } });
+  ctx.Migrate.PROJECT_STEPS.find(s => s.id === "voc-stage").run();
+  eq("Migrate voc-stage: fills empty stage only", ctx.vocData.map(x => x.stage || ""), ["통합테스트", "안정화", ""]);
+}
+
+// ---- 기준선 ----
+{
+  const { Baseline: B } = load();
+  const cfg = {};
+  const data = [{ id: "1", level: 1, isLeaf: false, system: "A" }, { id: "1.1", level: 2, isLeaf: true, system: "A", pStart: "2026-03-02", pEnd: "2026-03-10" },
+    { id: "1.2", level: 2, isLeaf: true, system: "A", pStart: "2026-03-11", pEnd: "2026-03-20" }, { id: "1.3", level: 2, isLeaf: true, system: "A" }];
+  eq("no baseline → summary.has false", B.summary(data, cfg).has, false);
+  const no = B.confirm(data, cfg, "pm", "kick-off", "2026-03-01");
+  eq("confirm: number 1, leaves with dates copied, parent rolled up", [no, data[1].bEnd, data[3].bHist, data[0].bStart, data[0].bEnd], [1, "2026-03-10", undefined, "2026-03-02", "2026-03-20"]);
+  data[2].pEnd = "2026-03-25";
+  B.annotate(data, cfg);
+  const s1 = B.summary(data, cfg);
+  eq("summary: end +5 days (calendar), 1 shifted, 1 added after", [s1.endVar, s1.shifted, s1.added], [5, 1, 1]);
+  eq("varOf: earlier is negative", B.varOf({ pEnd: "2026-03-08", bEnd: "2026-03-10" }, cfg), -2);
+  const no2 = B.confirm(data, cfg, "pm", "re-plan", "2026-03-15");
+  eq("re-baseline: compare first by default, last when set", [no2, B.summary(data, cfg).endVar, (cfg.baselineCompare = "last", B.annotate(data, cfg), B.summary(data, cfg).endVar)], [2, 5, 0]);
+  eq("diffDays: business basis skips weekend", B.diffDays("2026-03-09", "2026-03-06", { progressBasis: "BUSINESS", holidays: [] }), 1);
 }
 
 // ---- 영어 화면: 문구 틀(tf) · 규칙 ----

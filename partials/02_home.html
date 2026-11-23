@@ -68,13 +68,16 @@
           </div>
         </div>
 
+        <!-- VOC · 결함 · 범위 변경 한 줄 (있을 때만) -->
+        <div class="sum-voc-line" id="execVocLine" hidden></div>
+
         <!-- 서브시스템별 신호등(🟢/🟡/🔴) 타일 그리드 -->
         <div class="card u-mb-14">
           <div class="card-title">
             <span class="u-bold">🚦 서브시스템별 공정 달성률 신호등 현황판</span>
             <span class="u-fs-xs u-c-muted">* 신호등 기준: 🟢 정상(달성률 90% 이상) | 🟡 주의(70%~89%) | 🔴 경고(70% 미만) (카드 클릭 시 WBS 해당 서브시스템으로 즉시 이동)</span>
           </div>
-          <div class="u-gap-12" id="execSubsystemGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr));"></div>
+          <div class="u-gap-12 exec-sys-grid" id="execSubsystemGrid"></div>
         </div>
 
         <!-- 상위 도메인별 포트폴리오 표 & 주간보고서 원클릭 출력 바 -->

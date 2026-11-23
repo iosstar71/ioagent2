@@ -14,7 +14,7 @@
    "inline_hex": 32
   },
   "tab-dashboard": {
-   "inline": 26,
+   "inline": 25,
    "inline_hex": 8
   },
   "tab-deliverables": {
@@ -22,12 +22,12 @@
    "inline_hex": 0
   },
   "tab-home": {
-   "inline": 4,
+   "inline": 3,
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 54,
-   "inline_hex": 12
+   "inline": 51,
+   "inline_hex": 11
   },
   "tab-matrix": {
    "inline": 16,
@@ -48,14 +48,6 @@
   "tab-notices": {
    "inline": 33,
    "inline_hex": 1
-  },
-  "tab-req": {
-   "inline": 12,
-   "inline_hex": 0
-  },
-  "tab-voc": {
-   "inline": 13,
-   "inline_hex": 0
   },
   "tab-wbs": {
    "inline": 23,
@@ -93,18 +85,18 @@
   "js/modules/home": 20,
   "js/modules/master": 34,
   "js/modules/meeting": 46,
-  "js/modules/progress": 28,
+  "js/modules/progress": 21,
   "js/modules/report": 5,
-  "js/modules/requirement": 4,
+  "js/modules/requirement": 0,
   "js/modules/todo": 0,
   "js/modules/wbs": 19,
   "js/modules/weekly": 22
  },
  "total": {
   "css_important": 376,
-  "html_inline": 531,
-  "html_inline_hex": 155,
+  "html_inline": 501,
+  "html_inline_hex": 154,
   "js_hex": 104,
-  "js_inline": 243
+  "js_inline": 232
  }
 }

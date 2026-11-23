@@ -101,13 +101,23 @@ var SdlcBoard = {
     const dis = this.canEdit() ? "" : " disabled";
     const a = (i, f, v) => code == null ? UiEvents.args(i, f, v) : UiEvents.args(code, i, f, v);
     const bar = ph => `<span class="sb-track">${this._bar(ph)}</span>`;
-    return `<table class="m-table sb-table${compact ? " sb-compact" : ""}"><thead><tr><th class="sb-c-no">No</th><th>단계</th><th class="sb-c-w">가중치(%)</th><th class="sb-c-d">계획 시작</th><th class="sb-c-d">계획 종료</th>${compact ? "" : "<th>프로젝트 기간 안 위치</th>"}</tr></thead><tbody>
+    return `<table class="m-table sb-table${compact ? " sb-compact" : ""}"><thead><tr><th class="sb-c-no">No</th><th>단계</th><th class="sb-c-w">가중치(%)</th><th class="sb-c-d">계획 시작</th><th class="sb-c-d">계획 종료</th><th class="sb-c-vs" title="이 Phase 기간에 접수된 VOC 의 단계 (비우면 Phase 이름으로 자동)">VOC 단계</th>${compact ? "" : "<th>프로젝트 기간 안 위치</th>"}</tr></thead><tbody>
       ${(phases || []).map((ph, i) => `<tr><td class="ai-c">${i + 1}</td><td><b>${escapeHtml(ph.name)}</b>${compact ? bar(ph) : ""}</td>
         <td><input type="number" class="phase-w" min="0" max="100" step="1"${dis} value="${escapeAttr(String(ph.weight))}" data-change="${fn}" data-change-args="${a(i, "weight", "$value")}"></td>
         <td><input type="date"${dis} value="${escapeAttr(ph.pStart || "")}" data-change="${fn}" data-change-args="${a(i, "pStart", "$value")}"></td>
         <td><input type="date"${dis} value="${escapeAttr(ph.pEnd || "")}" data-change="${fn}" data-change-args="${a(i, "pEnd", "$value")}"></td>
+        <td>${this._vocStageSel(ph, dis, fn, a(i, "vocStage", "$value"))}</td>
         ${compact ? "" : `<td>${bar(ph)}</td>`}</tr>`).join("")}
       </tbody></table>`;
+  },
+  // VOC 단계 매핑 (빈 값 = Phase 이름으로 추정한 값을 씀 — Metrics.stageGuess)
+  _vocStageSel(ph, dis, fn, args) {
+    const guess = Metrics.stageGuess(Object.assign({}, ph, { vocStage: "" }));
+    const cur = Metrics.VOC_STAGES.indexOf(ph.vocStage) !== -1 ? ph.vocStage : "";
+    const tr = x => (typeof I18N !== "undefined" ? I18N.t(x) : x);
+    return `<select class="sb-vs"${dis} data-change="${fn}" data-change-args="${args}">
+      <option value="">${escapeHtml(tr("자동") + (guess ? ": " + tr(guess) : ""))}</option>
+      ${Metrics.VOC_STAGES.map(v => `<option value="${escapeAttr(v)}"${v === cur ? " selected" : ""}>${escapeHtml(v)}</option>`).join("")}</select>`;
   },
   // ---- [공정 유형]: 서브시스템과 따로, 시스템 설정의 모든 유형(SDLC · 개선과제)의 가중치 · 계획 일정 ----
   //  (서브시스템이 고를 수 있는 SDLC 유형은 이 프로젝트의 사용 유형, 최대 MAX 개)

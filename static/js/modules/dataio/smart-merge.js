@@ -165,6 +165,7 @@ const SmartMergeCenter = {
     rows.push({ category: "BASIC", key: "progressBasis", value: projectConfig.progressBasis || "CALENDAR", extra1: "CALENDAR=달력일수, BUSINESS=영업일", extra2: "계획 진척률 산정 기준", extra3: "" });
     rows.push({ category: "BASIC", key: "delayGap", value: String(WBSEngine.delayGap()), extra1: "%p", extra2: "지연 판정: 계획보다 실적이 이 값 이상 적으면 지연", extra3: "" });
     rows.push({ category: "BASIC", key: "dueDays", value: String(WBSEngine.dueDays()), extra1: "일", extra2: "체크할 일: 이 일수 안에 마감되는 Task · 산출물", extra3: "" });
+    rows.push({ category: "BASIC", key: "scopeAlert", value: String(Metrics.scopeAlertCount(projectConfig)), extra1: "건", extra2: "범위 협의 알림: 서브시스템별 VOC 처리 개선 요청 건수 (0 = 끔)", extra3: "" });
 
     (projectConfig.milestones || []).forEach(m => {
       rows.push({ category: "MILESTONE", key: m.scope || "ALL", value: m.name || "", extra1: m.date || "", extra2: m.desc || "", extra3: m.id || "" });
@@ -272,6 +273,7 @@ const SmartMergeCenter = {
       }
       if (r.category === "BASIC" && r.key === "delayGap" && r.value !== "" && !isNaN(parseFloat(r.value))) projectConfig.delayGap = Math.max(0, parseFloat(r.value));
       if (r.category === "BASIC" && r.key === "dueDays" && r.value !== "" && !isNaN(parseInt(r.value, 10))) projectConfig.dueDays = Math.max(1, parseInt(r.value, 10));
+      if (r.category === "BASIC" && r.key === "scopeAlert" && r.value !== "" && !isNaN(parseInt(r.value, 10))) projectConfig.scopeAlert = Math.max(0, parseInt(r.value, 10));
     });
     if (stdDelivs.length > 0) standardDeliverablesMeta = stdDelivs;
     return true;
@@ -409,6 +411,7 @@ const SmartMergeCenter = {
     }
     if (arr.length === 0) throw new Error("반영할 데이터가 비어 있습니다.");
 
+    if (itemType === "wbs") Baseline.carry(wbsData, arr);   // 기준선은 지금 자료 쪽을 이어 받음
     if (targetScope === "ALL") {
       if (itemType === "wbs") wbsData = arr;
       else if (itemType === "req") reqMasterData = arr;

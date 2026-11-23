@@ -21,13 +21,13 @@ var ExecDeck = {
   SECTIONS: [
     { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "종합 공정 S-커브" },
     { k: "bullet", l: "서브시스템별 계획 대비 실적" }, { k: "reqvoc", l: "서브시스템별 진척율 (WBS · 요구사항 · VOC)" },
-    { k: "sdlc", l: "단계별 종합 공정 매트릭스 (SDLC)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
+    { k: "sdlc", l: "단계별 종합 공정 매트릭스 (SDLC)" }, { k: "defect", l: "테스트 결함 현황 (결함이 있을 때)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
     { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
   ],
   PRESETS: [
     { id: "brief", name: "요약형", note: "표지 · 종합 진척 · 지연/마일스톤", sections: ["summary", "delay"] },
-    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "delay"] },
-    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "delay", "sys"] }
+    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "defect", "delay"] },
+    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "defect", "delay", "sys"] }
   ],
   DESIGNS: [
     { id: "classic", name: "Classic Band", note: "색 띠 제목 · 보고서 표준 (엑셀 · 워드 색상을 따름)" },
@@ -230,21 +230,22 @@ var ExecDeck = {
         const wp = num(row[6]), wa = num(row[7]), wNA = wp <= 0 && wa <= 0, wr = Metrics.achv(wp, wa);   // 계획 전이면 "-"
         const rq = reqs.filter(r => r.system === sys && r.status !== "삭제"), vc = vocs.filter(v => v.system === sys && v.status !== "삭제");
         const rd = rq.filter(r => r.status === "완료").length, rp = rq.filter(r => r.status === "진행").length;
-        const vw = vc.filter(v => v.status === "대기" || v.status === "보류" || !v.status).length, vp = vc.filter(v => v.status === "진행").length, vd = vc.filter(v => v.status === "완료" || v.status === "제외").length;
-        const rr = Metrics.pct(rd, rq.length), vr = Metrics.pct(vd, vc.length);
+        const vs = Metrics.vocStats(vc), vo = Metrics.vocOpen(vc).length, radd = rq.filter(r => r.origin === "추가").length;
+        const rr = Metrics.pct(rd, rq.length), vr = vs.rate;
         return [domainOf(sys), sys, `${WBSEngine.sysWeight(sys)}%`, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
-          `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) }, `${vc.length}`, `${vw}`, `${vp}`, `${vd}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
+          radd ? `${rq.length} (+${radd})` : `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) },
+          `${vs.total}`, vs.undecided ? { text: `${vs.undecided}`, bold: true, color: "B45309" } : "0", `${vo}`, `${vs.done}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       // 그룹 머리글
       const grp = (x, w, text, fill, fg) => { els.push(R(x, 1.15, w, 0.36, fill)); els.push(T(x, 1.15, w, 0.36, [p(text, 11, { bold: true, color: fg, align: "ctr" })], { anchor: "ctr" })); };
       grp(0.45, 3.1, "구분", H, P.headerTextColor);
       grp(3.55, 2.4, "WBS 공정 진척", "475569", "FFFFFF");
       grp(5.95, 3.2, "요구사항 (REQ) 진척", C, "FFFFFF");
-      grp(9.15, 3.7, "추가 VOC · 이슈 진척", "B45309", "FFFFFF");
+      grp(9.15, 3.7, "VOC · 결함 처리", "B45309", "FFFFFF");
       const rh = Math.min(0.42, 5.0 / Math.max(1, tr.length + 1));
-      table(els, 0.45, 1.51, [["도메인", 1.1, "l"], ["서브시스템", 1.3, "l"], ["가중치", 0.7], ["계획", 0.8], ["실적", 0.8], ["달성률", 0.8], ["전체", 0.8], ["진행", 0.8], ["완료", 0.8], ["완료율", 0.8],
-        ["유효 전체", 0.74], ["대기", 0.74], ["진행중", 0.74], ["완료·제외", 0.74], ["달성률", 0.74]], tr, rh, { headSize: 10, size: 10 });
-      els.push(T(0.45, 6.75, 12.4, 0.3, [p("※ 프로젝트 종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치", 9, { color: "64748B" })]));
+      table(els, 0.45, 1.51, [["도메인", 1.1, "l"], ["서브시스템", 1.3, "l"], ["가중치", 0.7], ["계획", 0.8], ["실적", 0.8], ["달성률", 0.8], ["전체(추가)", 0.8], ["진행", 0.8], ["완료", 0.8], ["완료율", 0.8],
+        ["접수", 0.74], ["판정 대기", 0.74], ["미결", 0.74], ["처리", 0.74], ["처리율", 0.74]], tr, rh, { headSize: 10, size: 10 });
+      els.push(T(0.45, 6.75, 12.4, 0.3, [p("※ 프로젝트 종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치 · 요구사항 (+n) = VOC 에서 등록한 추가 요구사항 · VOC 처리 = 완료 + 요구 반영", 9, { color: "64748B" })]));
       slides.push({ name: "서브시스템별 진척율", els });
     }
 
@@ -271,6 +272,45 @@ var ExecDeck = {
     });
 
     // 8. 지연 과업 · 주요 마일스톤
+    // 테스트 결함 현황 — 통합테스트 단계 접수가 있을 때만 (셈은 Metrics.defectStats)
+    const allVocs = c.data.vocs || [];
+    if (on("defect") && Metrics.hasTestStage(allVocs)) {
+      mark("테스트 결함 현황");
+      const els = head("테스트 결함 현황 (통합테스트 · 판정 결함)");
+      const d = Metrics.defectStats(allVocs, c.data.reportDate);
+      const kpi = [["결함", `${d.total}건`], ["미결", `${d.open}건`], ["치명 · 높음 미결", `${d.critOpen}건`], ["해결률", `${d.rate}%`], ["판정 대기", `${d.undecided}건`]];
+      kpi.forEach(([k, v], i) => {
+        const x = 0.45 + i * 2.52;
+        els.push(R(x, 1.15, 2.35, 1.1, SUB, { line: B }));
+        els.push(T(x, 1.2, 2.35, 0.35, [p(k, 11, { color: "475569", align: "ctr" })]));
+        els.push(T(x, 1.5, 2.35, 0.7, [p(v, 24, { bold: true, color: (k === "치명 · 높음 미결" && d.critOpen) || (k === "미결" && d.open) ? "B91C1C" : C, align: "ctr" })], { anchor: "ctr" }));
+      });
+      // 소진 추이: 누적 발생 · 누적 해결
+      const gx = 1.0, gy = 2.65, gw = 8.0, gh = 3.6, sr = d.series;
+      if (sr.length > 1) {
+        const max = Math.max(1, ...sr.map(x => x.opened)), n = sr.length - 1;
+        [0, Math.round(max / 2), max].forEach(v => {
+          const y = gy + gh - gh * v / max;
+          els.push(R(gx, y, gw, 0.01, "E2E8F0"));
+          els.push(T(0.4, y - 0.15, 0.55, 0.3, [p(String(v), 9, { color: "64748B", align: "r" })], { anchor: "ctr" }));
+        });
+        const step = Math.max(1, Math.ceil(sr.length / 8));
+        sr.forEach((x, i) => { if (i % step === 0 || i === n) els.push(T(gx + gw * i / n - 0.4, gy + gh + 0.05, 0.8, 0.3, [p(x.date.slice(5), 8.5, { color: "64748B", align: "ctr" })])); });
+        els.push({ t: "poly", x: gx, y: gy, w: gw, h: gh, color: "DC2626", width: 2.25, pts: sr.map((x, i) => [i / n, 1 - x.opened / max]) });
+        els.push({ t: "poly", x: gx, y: gy, w: gw, h: gh, color: "15803D", width: 2.25, pts: sr.map((x, i) => [i / n, 1 - x.closed / max]) });
+        els.push(R(gx + 0.2, gy + 0.1, 0.4, 0.04, "DC2626")); els.push(T(gx + 0.65, gy - 0.02, 1.6, 0.3, [p("누적 발생", 10, { color: "475569" })], { anchor: "ctr" }));
+        els.push(R(gx + 2.3, gy + 0.1, 0.4, 0.04, "15803D")); els.push(T(gx + 2.75, gy - 0.02, 1.6, 0.3, [p("누적 해결", 10, { color: "475569" })], { anchor: "ctr" }));
+      } else {
+        els.push(T(gx, gy + 1.4, gw, 0.5, [p("추이를 그리려면 접수일이 2일 이상 필요합니다.", 12, { color: "64748B", align: "ctr" })]));
+      }
+      // 심각도별
+      const sev = Metrics.VOC_SEVERITY.concat(d.bySev[""] ? [""] : []);
+      table(els, 9.4, 2.65, [["심각도", 1.4, "l"], ["전체", 1.0], ["미결", 1.0]],
+        sev.map(sv => [sv || "미지정", `${d.bySev[sv]}`, d.openBySev[sv] ? { text: `${d.openBySev[sv]}`, bold: true, color: "B91C1C" } : "0"]), 0.42, { boldCol: 0 });
+      els.push(T(0.45, 6.75, 12.4, 0.3, [p(`※ 결함 = 통합테스트 단계에 접수되어 '결함' 으로 판정된 VOC (안정화 단계는 VOC 현황에만)${d.noDate ? ` · 해결일 없는 완료 ${d.noDate}건은 추이에서 뺌` : ""}`, 9, { color: "64748B" })]));
+      slides.push({ name: "테스트 결함 현황", els });
+    }
+
     if (on("delay")) {
       mark("지연 Task · 주요 마일스톤");
       const els = head("지연 Task · 주요 마일스톤");
@@ -453,7 +493,8 @@ var ExecDeck = {
     const vocs = (snap.vocs || []).filter(v => v.system === sys);
     const newV = vocs.filter(v => v.reqDate && v.reqDate >= rep.startDate && v.reqDate <= rep.endDate);
     const openV = Metrics.vocOpen(vocs);
-    const vocLines = [p(`신규 등록 ${newV.length}건 · 미조치 ${openV.length}건`, 12, { bold: true })].concat((newV.length ? newV : openV).slice(0, 3).map(v => p(`${v.title} (${v.status})`, 11, { bullet: true })));
+    const nvs = Metrics.vocStats(newV);
+    const vocLines = [p(`신규 등록 ${newV.length}건${newV.some(v => "vocType" in v) ? ` (결함 ${nvs.byJudge["결함"]} · 개선 ${nvs.byJudge["개선 요청"]})` : ""} · 미조치 ${openV.length}건`, 12, { bold: true })].concat((newV.length ? newV : openV).slice(0, 3).map(v => p(`${v.title} (${v.status})`, 11, { bullet: true })));
     const nxtLines = [p(`차주 계획 ${nxt.length}건`, 12, { bold: true })]
       .concat(nxt.slice(0, 6).map(t => { const d = this.cleanDetail(t); return p(`${t.name}${d ? ` — ${d}` : ""}`, 11, { bullet: true }); }))
       .concat(nxt.length > 6 ? [p(`외 ${nxt.length - 6}건`, 10, { color: "64748B" })] : []);

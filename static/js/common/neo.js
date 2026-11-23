@@ -119,7 +119,8 @@ var NeoTodo = {
       actions.push(Object.assign({ _mtg: m.id }, a));
     }));
     actions.sort((a, b) => (a.targetDate || "9999").localeCompare(b.targetDate || "9999"));
-    return { delayed, dueSoon, vocs, delivs, actions };
+    const undecided = vocs.filter(v => Metrics.judgeOf(v) === "미판정");   // 미조치 VOC 중 아직 판정하지 않은 것
+    return { delayed, dueSoon, vocs, undecided, delivs, actions };
   },
 
   // 메뉴 배지용 건수 (대시보드 필터와 무관하게 전체 기준)
@@ -142,7 +143,7 @@ var NeoTodo = {
     const box = document.getElementById("neoTodoCard");
     if (!box) return;
     const c = this.collect(this._systems);
-    const parts = [["🔴", "지연 Task", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
+    const parts = [["🔴", "지연 Task", c.delayed.length], ["⏰", `${this.DUE_DAYS}일 안 마감`, c.dueSoon.length], ["📣", "미조치 VOC", c.vocs.length], ["🏷️", "판정 대기 VOC", c.undecided.length], ["📑", "확인할 산출물", c.delivs.length], ["⚡", "미완료 Action Item", c.actions.length]];
     const total = parts.reduce((a, p) => a + p[2], 0);
     const mineOpen = typeof TodoCenter !== "undefined" ? TodoCenter.stats().open : 0;
     box.innerHTML = `
@@ -328,6 +329,7 @@ var NeoDetail = {
           ${field("담당자", "owner", "text", `list="wbsOwnerList" maxlength="40" title="목록에서 고르거나 직접 입력 (1명)${leaf ? "" : " — 하위 Task 에도 자동 지정"}"`)}
           ${field("산출물", "output", "text")}
         </div>
+        ${BaselineUI.taskHtml(row)}
         ${leaf ? "" : '<div class="neo-note">상위 Task 의 일정·진척률은 하위 Task 에서 자동으로 합산됩니다.</div>'}
         <div class="neo-detail-actions">
           <button type="button" class="btn btn-sm" data-btn="warn" data-click="NeoDetail.run" data-click-args="${UiEvents.args("fillRowActualFromPlan")}" ${leaf ? "" : "disabled"}>⚡ 계획을 실적에 반영</button>
@@ -469,8 +471,8 @@ var StatusChips = {
       list: [["ALL", "전체", ""], ["대기", "대기", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["삭제", "삭제", "chip-del"]],
       of: r => [r.status || "대기"] },
     voc: { box: "vocStatusChips", run: "renderVocTable",
-      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["대기", "대기", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["제외", "제외", "chip-del"], ["삭제", "삭제", "chip-del"]],
-      of: r => [r.status || "대기", StatusChips._late(r.targetDate, ["완료", "제외", "삭제", "보류"].indexOf(r.status) !== -1) ? "지연" : ""] },
+      list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["대기", "대기", "chip-ready"], ["진행", "진행", "chip-progress"], ["완료", "완료", "chip-completed"], ["보류", "보류", "chip-hold"], ["요구 반영", "요구 반영", "chip-moved"], ["삭제", "삭제", "chip-del"]],
+      of: r => [r.status || "대기", Metrics.vocLate(r, projectConfig.reportDate) ? "지연" : ""] },
     deliv: { box: "delivStatusChips", run: "renderDeliverablesTable",
       list: [["ALL", "전체", ""], ["지연", "지연", "chip-delayed"], ["작성전", "작성전", "chip-ready"], ["작성중", "작성중", "chip-progress"], ["검토요청", "검토요청", "chip-hold"], ["보완완료", "보완완료", "chip-completed"]],
       of: r => [r.status || "작성전", StatusChips._late(r.pDate, r.status === "보완완료" || !!r.aDate) ? "지연" : ""] },
@@ -502,7 +504,7 @@ var StatusChips = {
     if (!box) return;
     const cur = this.get(k), cnt = { ALL: rows.length };
     rows.forEach(r => this.tags(k, r).forEach(t => { cnt[t] = (cnt[t] || 0) + 1; }));
-    box.innerHTML = d.list.filter(([v]) => v === "ALL" || v === cur || cnt[v] || ["삭제", "제외", "보류"].indexOf(v) === -1)
+    box.innerHTML = d.list.filter(([v]) => v === "ALL" || v === cur || cnt[v] || ["삭제", "요구 반영", "보류"].indexOf(v) === -1)
       .map(([v, label, cls]) => `<button type="button" class="neo-chip ${cls}${cur === v ? " active" : ""}" data-click="StatusChips.set" data-click-args="${UiEvents.args(k, v)}" aria-pressed="${cur === v ? "true" : "false"}">${label} <b>${cnt[v] || 0}</b></button>`).join("");
     if (typeof I18N !== "undefined") I18N.translateTree(box);
   }

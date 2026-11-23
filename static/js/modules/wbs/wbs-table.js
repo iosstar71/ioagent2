@@ -184,11 +184,7 @@ function renderWbsTable() {
 
 // 단계별 조회 (📶) — 서브시스템의 SDLC 단계(개선 타입은 개선 공정 단계)로 걸러 봄
 var WbsPhase = {
-  phasesOf(sys) {
-    const spec = WBSEngine.getSubsystemSdlcSpec(sys);
-    if (spec) return spec.phases || [];
-    return (projectConfig && projectConfig.reqSdlcPhases) || [];
-  },
+  phasesOf(sys) { return WBSEngine.phasesOfSystem(sys); },
   // 단계 이름 목록 (조회 범위 서브시스템 순서대로, 겹치는 이름은 한 번)
   names(systems) {
     const out = [];

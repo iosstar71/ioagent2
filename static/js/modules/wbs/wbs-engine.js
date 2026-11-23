@@ -196,6 +196,25 @@ const WBSEngine = {
     return list[0] || this.DEFAULT_SDLC_PRESETS.COMPACT;
   },
 
+  // 서브시스템의 Phase 목록 (SDLC 유형, 개선과제형은 적용한 개선과제 유형의 단계) — 계획 일정 · VOC 단계 매핑 포함
+  phasesOfSystem(sysName) {
+    const spec = this.getSubsystemSdlcSpec(sysName);
+    if (spec) return spec.phases || [];
+    return (typeof projectConfig !== "undefined" && projectConfig && projectConfig.reqSdlcPhases) || [];
+  },
+  // Phase 일정 — 계획 일정을 정하지 않은 Phase 는 WBS 의 그 Phase 행(2레벨) 계획 기간으로 채움
+  phaseDatesOf(sysName) {
+    const data = typeof wbsData !== "undefined" && Array.isArray(wbsData) ? wbsData : [];
+    return this.phasesOfSystem(sysName).map(ph => {
+      if (ph.pStart && ph.pEnd) return ph;
+      const ts = data.filter(t => t.system === sysName && t.level === 2 && t.pStart && t.pEnd && this.matchTaskToPhase(t, ph, data));
+      if (!ts.length) return ph;
+      return Object.assign({}, ph, { pStart: ts.map(t => t.pStart).sort()[0], pEnd: ts.map(t => t.pEnd).sort().pop() });
+    });
+  },
+  // VOC 접수일 → 단계 (Metrics.vocStageOf)
+  vocStageFor(sysName, date) { return Metrics.vocStageOf(date, this.phaseDatesOf(sysName)); },
+
   // 과업이 특정 SDLC 단계에 매칭되는지 판별
   matchTaskToPhase(task, phase, allData) {
     if (!task || !phase) return false;
@@ -496,6 +515,7 @@ const WBSEngine = {
       }
     }
     if (typeof projectConfig !== "undefined" && projectConfig.reportDate) this.applyStatus(data, projectConfig.reportDate);
+    if (typeof projectConfig !== "undefined" && projectConfig) Baseline.annotate(data, projectConfig);   // 기준선 일정 (modules/wbs/baseline.js)
     return data;
   },
 

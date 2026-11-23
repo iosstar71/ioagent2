@@ -66,6 +66,7 @@ var ScreenRender = {
       renderDomainChips();
       renderCustomSdlcCards();
       renderIdPrefixSettings();
+      BaselineUI.render();
       renderSubsystemsMetaTable();
       if (typeof ReqPhaseManager !== "undefined" && ReqPhaseManager.renderTable) ReqPhaseManager.renderTable();
       renderStandardDeliverablesMetaTable();
