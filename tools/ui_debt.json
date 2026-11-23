@@ -14,7 +14,7 @@
    "inline_hex": 32
   },
   "tab-deliverables": {
-   "inline": 13,
+   "inline": 12,
    "inline_hex": 0
   },
   "tab-home": {
@@ -86,7 +86,7 @@
  },
  "total": {
   "css_important": 359,
-  "html_inline": 437,
+  "html_inline": 436,
   "html_inline_hex": 139,
   "js_hex": 100,
   "js_inline": 196

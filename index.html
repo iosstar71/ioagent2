@@ -796,7 +796,6 @@
             <label class="u-fs-xs" title="계획 막대 아래에 기준선 일정을 연한 막대로, 기준선보다 밀린 기간을 빨간색으로 표시"><input type="checkbox" id="ganttBlShow" checked data-change="renderGantt"> 📐 기준선 보기</label>
             <label class="u-fs-xs" title="기준선보다 계획 종료가 늦어진 Task 와 그 상위 Task 만"><input type="checkbox" id="ganttBlSlip" data-change="renderGantt"> 밀린 Task만</label>
           </div>
-          <button class="btn btn-primary btn-sm" data-click="renderGantt">🔄 새로고침</button>
         </div>
       </div>
       <div class="gantt-legend" id="ganttBaselineBar"></div>
@@ -891,7 +890,7 @@
         </div>
       </div>
 
-      <div class="table-container wbs-scroll">
+      <div class="table-container grid-scroll">
         <table id="wbsTable">
           <thead>
             <tr>
@@ -955,7 +954,7 @@
         <div class="filter-item u-ml-auto"><span class="list-summary" id="reqListSummary"></span></div>
       </div>
 
-      <div class="table-container list-table-wrap">
+      <div class="table-container grid-scroll">
         <table id="reqMasterTable" class="list-table">
           <thead></thead>
           <tbody id="reqMasterTableBody"></tbody>
@@ -1004,7 +1003,7 @@
         <div class="filter-item u-ml-auto"><span class="list-summary" id="vocListSummary"></span></div>
       </div>
 
-      <div class="table-container list-table-wrap">
+      <div class="table-container grid-scroll">
         <table id="vocTable" class="list-table">
           <thead></thead>
           <tbody id="vocTableBody"></tbody>
@@ -1061,8 +1060,8 @@
         </span>
       </div>
 
-      <div class="table-container" style="max-height: 600px;">
-        <table id="deliverablesTable">
+      <div class="table-container grid-scroll">
+        <table id="deliverablesTable" class="list-table">
           <thead>
             <tr>
               <th style="width: 105px;">제출 차수</th>

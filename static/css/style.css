@@ -774,6 +774,8 @@ tr.wbs-group-head input, tr.wbs-group-head select { font-style: italic; }
 .badge-round-1 { background: var(--tint-info); color: var(--tint-info-text); border: 1px solid var(--border-color); }
 .badge-round-2 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .table-container { width: 100%; overflow-x: auto; max-height: 600px; border: 1px solid var(--border-color); border-radius: 4px; }
+/* 목록 화면(WBS · 요구사항 · VOC · 산출물)의 표 틀 — 네 화면이 같은 클래스 하나를 씀 (높이 · 고정 머리 규칙을 한 곳에서) */
+.grid-scroll { max-height: 620px; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
 th {
   background: var(--bg-main);
@@ -786,17 +788,25 @@ th {
   top: 0;
   z-index: 10;
 }
+/* 고정된 머리 칸은 표의 칸 경계선을 데려가지 못함(겹친 선은 표 격자에 붙어 있음) — 아래 선을 칸 자신이 그려 스크롤한 행이 머리 밑으로 비치지 않게 */
+th::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; border-bottom: 1px solid var(--border-color); pointer-events: none; }
 td { padding: 5px 8px; border: 1px solid var(--border-color); white-space: nowrap; }
 .matrix-table th { text-align: center; font-size: var(--fs-xs, 11px); }
 .matrix-table td { text-align: center; font-size: var(--fs-xs, 11px); }
 .matrix-table .col-phase { background: var(--tint-info); color: var(--tint-info-text); }
 .matrix-table .col-total { background: var(--bg-main); color: var(--text-main); font-weight: bold; }
 .matrix-total-row { background: var(--bg-main); font-weight: bold; }
-tr.wbs-row-lvl-1 { background-color: var(--lvl-1-bg); font-weight: bold; border-left: 4px solid var(--lvl-1-border); }
-tr.wbs-row-lvl-2 { background-color: var(--lvl-2-bg); font-weight: 600; border-left: 4px solid var(--lvl-2-border); }
-tr.wbs-row-lvl-3 { background-color: var(--lvl-3-bg); border-left: 4px solid var(--lvl-3-border); }
-tr.wbs-row-lvl-4 { background-color: var(--lvl-4-bg); border-left: 4px solid var(--lvl-4-border); }
-tr.wbs-row-lvl-5 { background-color: var(--lvl-5-bg); border-left: 4px solid var(--lvl-5-border); }
+tr.wbs-row-lvl-1 { background-color: var(--lvl-1-bg); font-weight: bold; }
+tr.wbs-row-lvl-2 { background-color: var(--lvl-2-bg); font-weight: 600; }
+tr.wbs-row-lvl-3 { background-color: var(--lvl-3-bg); }
+tr.wbs-row-lvl-4 { background-color: var(--lvl-4-bg); }
+tr.wbs-row-lvl-5 { background-color: var(--lvl-5-bg); }
+/* 레벨 색 띠는 첫 칸 안쪽에 (행 테두리로 그리면 고정된 표 머리 옆으로 비침) */
+tr.wbs-row-lvl-1 > td:first-child { box-shadow: inset 4px 0 0 var(--lvl-1-border); }
+tr.wbs-row-lvl-2 > td:first-child { box-shadow: inset 4px 0 0 var(--lvl-2-border); }
+tr.wbs-row-lvl-3 > td:first-child { box-shadow: inset 4px 0 0 var(--lvl-3-border); }
+tr.wbs-row-lvl-4 > td:first-child { box-shadow: inset 4px 0 0 var(--lvl-4-border); }
+tr.wbs-row-lvl-5 > td:first-child { box-shadow: inset 4px 0 0 var(--lvl-5-border); }
 .lvl-badge { display: inline-block; padding: 1px 5px; font-size: var(--fs-2xs, 10px); border-radius: 3px; color: #fff; font-weight: bold; margin-right: 4px; }
 .lvl-1 { background-color: var(--primary); }
 .lvl-2 { background-color: #2563eb; }
@@ -1744,7 +1754,6 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 #wbsTable .date-input-wrap { display: flex; align-items: center; gap: 2px; }
 /* WBS 표 머리 칸 너비 · 필터 (예전 인라인 스타일과 같은 값) */
 #wbsPhaseFilter { min-width: 150px; }
-#tab-wbs .wbs-scroll { max-height: 620px; }
 #wbsTable th.wbs-th-min250 { min-width: 250px; }
 #wbsTable th.wbs-th-w100 { width: 100px; }
 #wbsTable th.wbs-th-w112 { width: 112px; }
@@ -1968,6 +1977,8 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + var(--pane-sticky-h, 0
 
 /* [Workgroup 0.1] 체크아웃 · 체크인 */
 .lk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 8px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color, #cbd5e1); font-size: var(--fs-sm, 12px); background: rgba(100,116,139,0.06); }
+/* 화면 이름 줄 안의 맨 아래 한 줄 — 이름 줄과 함께 고정 */
+.sub-header-bar > .lk-bar { flex: 1 0 100%; margin: 2px 0 0; }
 .lk-bar[data-state="free"] { border-color: #86efac; background: rgba(16,185,129,0.06); }
 .lk-bar[data-state="mine"] { border-color: #93c5fd; background: rgba(59,130,246,0.08); }
 .lk-bar[data-state="other"] { border-color: #fca5a5; background: rgba(220,38,38,0.07); }
@@ -2811,7 +2822,6 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .sb-table .sb-c-vs { width: 140px; }
 .sb-table .sb-vs { width: 100%; }
 /* 요구사항 · VOC 목록 (열 정의 배열로 그림 — req-voc.js ListTable) */
-.list-table-wrap { max-height: 600px; }
 .list-summary { font-size: var(--fs-sm, 12px); font-weight: bold; color: var(--text-sub); white-space: nowrap; }
 .list-table .lt-c-id { width: 110px; }
 .list-table .lt-c-origin { width: 120px; }

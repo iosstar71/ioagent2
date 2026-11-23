@@ -376,8 +376,9 @@ var LockManager = {
       const bar = document.createElement("div");
       bar.className = "lk-bar";
       bar.dataset.kind = this.TAB_KIND[tab];
-      const tb = pane.querySelector(".sync-toolbar");
-      if (tb && tb.parentNode) tb.parentNode.insertBefore(bar, tb.nextSibling); else pane.insertBefore(bar, pane.firstChild);
+      // 화면 이름 줄 안에 넣어 스크롤해도 함께 고정 (StickyTop 이 이름 줄 높이로 아래 줄들의 고정 위치를 다시 잼)
+      const head = pane.querySelector(":scope > .sub-header-bar");
+      if (head) head.appendChild(bar); else pane.insertBefore(bar, pane.firstChild);
     });
     if (!this._bound) {
       this._bound = true;
