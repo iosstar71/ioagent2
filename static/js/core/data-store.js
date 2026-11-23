@@ -392,6 +392,7 @@ var SyncManager = {
       if (typeof WBSEngine.markLeafNodes === "function") WBSEngine.markLeafNodes(wbsData);
       WBSEngine.calculatePlanProgress(wbsData, projectConfig.reportDate);
       WBSEngine.rollup(wbsData);
+      if (Array.isArray(vocData)) WBSEngine.fillVocStages(vocData);   // VOC 단계 자동 (기준본에 포함)
     }
     if (!keepBaseline) this.setBaseline(keys, revs);
     this._suspendAuto = true;

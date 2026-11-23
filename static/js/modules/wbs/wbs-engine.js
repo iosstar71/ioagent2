@@ -214,6 +214,17 @@ const WBSEngine = {
   },
   // VOC 접수일 → 단계 (Metrics.vocStageOf)
   vocStageFor(sysName, date) { return Metrics.vocStageOf(date, this.phaseDatesOf(sysName)); },
+  // 단계가 빈 VOC 채우기 (접수 때 정한 · 사람이 고친 단계는 그대로). 채운 건수
+  //  자료를 불러온 뒤 계산 단계(SyncManager.afterDataApplied)에서 불러 기준본에 포함 — 저장 안 된 변경으로 보이지 않게
+  fillVocStages(list) {
+    let n = 0;
+    (list || []).forEach(v => {
+      if (!v || v.stage || v.stageManual || !v.reqDate) return;
+      const st = this.vocStageFor(v.system, v.reqDate);
+      if (st) { v.stage = st; n++; }
+    });
+    return n;
+  },
 
   // 과업이 특정 SDLC 단계에 매칭되는지 판별
   matchTaskToPhase(task, phase, allData) {

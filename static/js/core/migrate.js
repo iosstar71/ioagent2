@@ -67,16 +67,7 @@ var Migrate = {
     {
       id: "voc-stage",
       desc: "단계가 빈 VOC 에 접수일 · 서브시스템 Phase 일정으로 단계 채움 (접수 때 정한 단계는 바꾸지 않음)",
-      run: () => {
-        if (typeof vocData === "undefined" || !Array.isArray(vocData)) return false;
-        let n = 0;
-        vocData.forEach(v => {
-          if (!v || v.stage || v.stageManual || !v.reqDate) return;
-          const st = WBSEngine.vocStageFor(v.system, v.reqDate);
-          if (st) { v.stage = st; n++; }
-        });
-        return n > 0;
-      }
+      run: () => typeof vocData !== "undefined" && WBSEngine.fillVocStages(vocData) > 0
     },
     {
       id: "schema-version",
