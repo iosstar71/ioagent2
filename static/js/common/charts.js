@@ -20,7 +20,7 @@ var BulletChart = {
     [0, 25, 50, 75, 100].forEach(v => { s += `<text x="${x(v)}" y="14" class="bl-axis" text-anchor="middle">${v}%</text>`; });
     rows.forEach((r, i) => {
       const y = top + i * rowH, h = rowH - 12, lv = this.level(r);
-      s += `<g class="bl-row" ${r.href ? `data-sys="${String(r.name).replace(/"/g, "")}"` : ""}>`;
+      s += `<g class="bl-row" ${r.href ? `data-sys="${String(r.name).replace(/"/g, "")}"` : ""}>${r.tip ? `<title>${escapeHtml(r.tip)}</title>` : ""}`;
       s += `<text x="${labelW - 10}" y="${y + h / 2 + 5}" class="bl-name" text-anchor="end">${escapeHtml(r.name)}</text>`;
       s += `<rect x="${labelW}" y="${y}" width="${x(r.plan * this.RISK) - labelW}" height="${h}" class="bl-bad"/>`;
       s += `<rect x="${x(r.plan * this.RISK)}" y="${y}" width="${x(r.plan * this.WARN) - x(r.plan * this.RISK)}" height="${h}" class="bl-warn"/>`;
@@ -35,7 +35,14 @@ var BulletChart = {
   liveRows(filterSys) {
     const m = (typeof ReportExporter !== "undefined" && ReportExporter._collectMetrics) ? ReportExporter._collectMetrics() : null;
     return ((m && m.subsystemRows) || []).filter(r => !filterSys || filterSys === "ALL" || r[1] === filterSys)
-      .map(r => ({ name: r[1], plan: parseFloat(r[6]) || 0, actual: parseFloat(r[7]) || 0, href: true }));
+      .map(r => {
+        // 말풍선: 담당 PM · 최하위 Task 수 · 지연 (Dashboard 에서 뺀 서브시스템 카드의 정보)
+        const meta = (subsystemsMeta || []).find(m => m.name === r[1]) || {};
+        const leaves = (wbsData || []).filter(t => t.system === r[1] && t.isLeaf);
+        const late = leaves.filter(t => t.status === "지연").length;
+        const tip = I18N.tf("{s} — PM {pm} · Task {n}개 · 지연 {d} · 가중치 {w}%", { s: r[1], pm: meta.pm || "-", n: leaves.length, d: late, w: WBSEngine.sysWeight(r[1]) });
+        return { name: r[1], plan: parseFloat(r[6]) || 0, actual: parseFloat(r[7]) || 0, href: true, tip };
+      });
   },
   render(boxId, rows) {
     const box = document.getElementById(boxId);

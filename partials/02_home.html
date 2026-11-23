@@ -80,29 +80,14 @@
           <div class="u-gap-12 exec-sys-grid" id="execSubsystemGrid"></div>
         </div>
 
-        <!-- 상위 도메인별 포트폴리오 표 & 주간보고서 원클릭 출력 바 -->
+        <!-- 주요 위험 · 마일스톤 & 보고서 -->
         <div class="grid-2 u-mb-14">
-          <!-- 도메인별 포트폴리오 -->
-          <div class="card u-mb-0">
-            <div class="card-title">
-              <span class="u-bold">🏛️ 상위 도메인별 포트폴리오 추진 현황</span>
-            </div>
-            <div class="table-container" style="max-height:260px;">
-              <table class="matrix-table" id="execDomainPortfolioTable">
-                <thead>
-                  <tr>
-                    <th>상위 도메인명</th>
-                    <th>Task수</th>
-                    <th>가중치</th>
-                    <th>계획</th>
-                    <th>실적</th>
-                    <th>달성률</th>
-                    <th>상태</th>
-                  </tr>
-                </thead>
-                <tbody id="execDomainPortfolioBody"></tbody>
-              </table>
-            </div>
+          <!-- 주요 위험 상위 5 · 다가오는 마일스톤 (경영진이 판단할 것) -->
+          <div class="card u-mb-0 exec-risk-card">
+            <div class="card-title"><span class="u-bold">⚠️ 주요 위험 (상위 5)</span><span class="pm-hint">지연 · 선행 지연 · 치명 결함 · 범위 협의</span></div>
+            <ol class="exec-risk-list" id="execRiskList"></ol>
+            <div class="card-title exec-ms-title"><span class="u-bold">🏁 다가오는 마일스톤</span></div>
+            <ul class="exec-ms-list" id="execMsList"></ul>
           </div>
           <!-- 보고서: 종합보고서(PPT) · 주간보고(워드, 표 포함) — 기준일 주차 -->
           <div class="card exec-report-card">

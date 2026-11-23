@@ -1,178 +1,103 @@
-// [Project Mgmt] 종합 대시보드
-// -------------------------------------------------------------
-// [요건 8] 종합대시보드 렌더링 (서브시스템 카드 + 산출물 통계표 + VOC 통계표)
-// -------------------------------------------------------------
+// =============================================================================
+// Dashboard — PM · PL 이 매일 보는 한눈 현황 (자세한 표는 Phase 진척)
+//  조회 범위(도메인 · 서브시스템) → 핵심 숫자 4개 · 체크할 일 · S-curve | 불릿 차트 · 요약 카드 4개 · 도메인별 진척
+//  셈은 모두 엔진(WBSEngine · Metrics) — 화면에서 비율 · 기준을 새로 만들지 않음
+// =============================================================================
 function renderDashboard() {
   const repDate = projectConfig.reportDate;
-  // 불릿 차트 (대시보드 서브시스템 필터 반영)
-  if (typeof BulletChart !== "undefined") {
-    try { const sf = document.getElementById("dashSubsystemFilter"); BulletChart.render("dashBulletChart", BulletChart.liveRows(sf ? sf.value : "ALL")); } catch (e) { console.warn(e); }
-  }
+  const val = (id, d) => { const el = /** @type {HTMLSelectElement} */ (document.getElementById(id)); return el && el.value ? el.value : d; };
+  const selDomain = val("dashDomainFilter", "ALL"), selSubsys = val("dashSubsystemFilter", "ALL");
+  const activeSystems = getAllSubsystemNames().filter(sys => (selDomain === "ALL" || WBSEngine.getSubsystemDomain(sys) === selDomain) && (selSubsys === "ALL" || sys === selSubsys));
+  const whole = selDomain === "ALL" && selSubsys === "ALL";
+  const inScope = r => whole || activeSystems.includes(r.system);
 
-  // 대시보드 4대 영역 통합 필터링 (분야 / 서브시스템)
-  const dFilterEl = document.getElementById("dashDomainFilter");
-  const sFilterEl = document.getElementById("dashSubsystemFilter") || document.getElementById("scurveSystemFilter");
-  const selDomain = dFilterEl ? dFilterEl.value : "ALL";
-  const selSubsys = sFilterEl ? sFilterEl.value : "ALL";
+  // 불릿 차트 · 체크할 일
+  try { BulletChart.render("dashBulletChart", BulletChart.liveRows(selSubsys)); } catch (e) { console.warn(e); }
+  try { CheckList.render(activeSystems); } catch (e) { console.error(e); }
 
-  const allSystemsRaw = getAllSubsystemNames();
-  const activeSystems = allSystemsRaw.filter(sys => {
-    if (selDomain !== "ALL" && WBSEngine.getSubsystemDomain(sys) !== selDomain) return false;
-    if (selSubsys !== "ALL" && sys !== selSubsys) return false;
-    return true;
-  });
-  // [Neo 2.1] 확인할 일 (대시보드 조회 범위 기준)
-  if (typeof CheckList !== "undefined") { try { CheckList.render(activeSystems); } catch (e) { console.error(e); } }
+  // 핵심 숫자 (서브시스템별 진척률 × 서브시스템 가중치)
+  const scopeTasks = wbsData.filter(inScope);
+  const wp = WBSEngine.weightedProgress(scopeTasks.filter(d => d.level === 1));
+  const delayed = scopeTasks.filter(d => WBSEngine.getTaskStatus(d, repDate).code === "delayed").length;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("kpi-plan", `${wp.plan}%`);
+  set("kpi-actual", `${wp.actual}%`);
+  set("kpi-rate", wp.plan <= 0 && wp.actual <= 0 ? "-" : `${Metrics.achv(wp.plan, wp.actual, 1).toFixed(1)}%`);   // 계획 전이면 "-"
+  set("kpi-delayed", I18N.tf("{n} 건", { n: delayed }));
 
-  // KPI 계산 (선택 서브시스템에 맞춰 동적 집계)
-  const scopeTasks = (selDomain === "ALL" && selSubsys === "ALL")
-    ? wbsData
-    : wbsData.filter(d => activeSystems.includes(d.system));
-
-  const rootItems = scopeTasks.filter(d => d.level === 1);
-  const wp = WBSEngine.weightedProgress(rootItems);   // 서브시스템별 진척률 × 서브시스템 가중치
-  const totalPlan = wp.plan;
-  const totalActual = wp.actual;
-  const achieveRate = Metrics.achv(totalPlan, totalActual, 1).toFixed(1);
-
-  const delayedTasks = scopeTasks.filter(d => WBSEngine.getTaskStatus(d, repDate).code === "delayed");
-
-  document.getElementById("kpi-plan").innerText = `${totalPlan}%`;
-  document.getElementById("kpi-actual").innerText = `${totalActual}%`;
-  document.getElementById("kpi-rate").innerText = totalPlan <= 0 && totalActual <= 0 ? "-" : `${achieveRate}%`;   // 계획 전이면 "-"
-  document.getElementById("kpi-delayed").innerText = `${delayedTasks.length} 건`;
-
-  let cntTotal = scopeTasks.length, cntComp = 0, cntProg = 0, cntDel = 0, cntReady = 0;
-  scopeTasks.forEach(t => {
-    const st = WBSEngine.getTaskStatus(t, repDate).code;
-    if (st === "completed") cntComp++;
-    else if (st === "delayed") cntDel++;
-    else if (st === "progress") cntProg++;
-    else cntReady++;
-  });
-  document.getElementById("stat-count-total").innerText = cntTotal;
-  document.getElementById("stat-count-completed").innerText = cntComp;
-  document.getElementById("stat-count-progress").innerText = cntProg;
-  document.getElementById("stat-count-delayed").innerText = cntDel;
-  document.getElementById("stat-count-ready").innerText = cntReady;
-
-  // 요구사항 통계 (선택 범위 연동)
-  const scopeReqs = (selDomain === "ALL" && selSubsys === "ALL")
-    ? reqMasterData
-    : reqMasterData.filter(r => activeSystems.includes(r.system));
-
-  let reqTot = scopeReqs.length, reqRdy = 0, reqPrg = 0, reqCmp = 0, reqHld = 0, reqDel = 0;
-  scopeReqs.forEach(r => {
-    if (r.status === "대기") reqRdy++;
-    else if (r.status === "진행") reqPrg++;
-    else if (r.status === "완료") reqCmp++;
-    else if (r.status === "보류") reqHld++;
-    else if (r.status === "삭제") reqDel++;
-  });
-  const reqValid = reqTot - reqDel;
-  const reqRate = Metrics.pct(reqCmp, reqValid, 1).toFixed(1);
-  document.getElementById("req-stat-total").innerText = reqTot;
-  document.getElementById("req-stat-ready").innerText = reqRdy;
-  document.getElementById("req-stat-progress").innerText = reqPrg;
-  document.getElementById("req-stat-completed").innerText = reqCmp;
-  document.getElementById("req-stat-hold").innerText = reqHld;
-  document.getElementById("req-stat-deleted").innerText = reqDel;
-  if (document.getElementById("req-stat-rate")) document.getElementById("req-stat-rate").innerText = `${reqRate}%`;
-  const rs = Metrics.reqStats(scopeReqs);
-  const split = document.getElementById("req-stat-split");
-  if (split) split.textContent = I18N.tf("초기 {a} · 추가 {b}", { a: rs.initial, b: rs.added });
-
-  // [1] 서브시스템별 공정 진척 현황 카드 (선택 필터 연동 적용)
-  renderSubsystemCards(activeSystems);
-
-  // [2] S-Curve 주별 진척율 (선) 및 달성률 (막대) (선택 필터 연동 적용)
-  const scBadge = document.getElementById("scurveFilterBadge");
-  if (scBadge) {
-    scBadge.textContent = (selDomain === "ALL" && selSubsys === "ALL")
-      ? "전체 서브시스템 (종합)"
-      : `${selDomain !== "ALL" ? `[${selDomain}] ` : ""}${selSubsys !== "ALL" ? selSubsys : "전체"}`;
-  }
   DashboardChart.renderSCurve("scurveCanvas", wbsData, repDate, projectConfig.weekStartDay, selSubsys, selDomain);
-
-  // [3] 서브시스템 · 차수별 산출물 제출 현황 통계 (선택 필터 연동 적용)
-  const activeRounds = getActiveDeliverableRounds();
-  const dashDelivTable = document.getElementById("dashDeliverablesTable");
-  if (dashDelivTable) {
-    const thead = dashDelivTable.querySelector("thead");
-    if (thead) {
-      thead.innerHTML = `
-        <tr>
-          <th>서브시스템</th>
-          ${activeRounds.map(r => `<th>${r}(완료/전체)</th>`).join("")}
-          <th>보완완료</th>
-          <th>검토/작성중</th>
-          <th>작성전</th>
-          <th>제출완료율</th>
-        </tr>
-      `;
-    }
-  }
-  const dashDelivTbody = document.querySelector("#dashDeliverablesTable tbody");
-  dashDelivTbody.innerHTML = "";
-  const validDelivs = deliverablesData.filter(d => activeRounds.includes(d.round) && activeSystems.includes(d.system));
-  const doneDelivs = validDelivs.filter(d => d.status === "보완완료").length;
-  const totDelivRate = Metrics.pct(doneDelivs, validDelivs.length);
-  document.getElementById("dash-deliv-total").innerText = validDelivs.length;
-  document.getElementById("dash-deliv-done").innerText = doneDelivs;
-  if (document.getElementById("dash-deliv-rate")) document.getElementById("dash-deliv-rate").innerText = `${totDelivRate}%`;
-
-  const roundSums = {};
-  activeRounds.forEach(r => { roundSums[r] = { done: 0, tot: 0 }; });
-  let sDone = 0, sIng = 0, sRdy = 0;
-
-  if (activeSystems.length === 0) {
-    dashDelivTbody.innerHTML = `<tr><td class="u-tc u-p-20 u-c-muted" colspan="${activeRounds.length + 5}">선택된 조회 조건(도메인: ${selDomain}, 서브시스템: ${selSubsys})에 해당하는 산출물이 없습니다.</td></tr>`;
-  } else {
-    activeSystems.forEach(sys => {
-      const dAll = validDelivs.filter(d => d.system === sys);
-      const rCells = activeRounds.map((r, rIdx) => {
-        const list = dAll.filter(d => d.round === r);
-        const dCnt = list.filter(d => d.status === "보완완료").length;
-        roundSums[r].done += dCnt;
-        roundSums[r].tot += list.length;
-        const cls = rIdx % 2 === 0 ? "badge-round-1" : "badge-round-2";
-        return `<td><span class="badge-round ${cls}">${dCnt} / ${list.length}건</span></td>`;
-      }).join("");
-
-      const done = dAll.filter(d => d.status === "보완완료").length;
-      const ing = dAll.filter(d => d.status === "작성중" || d.status === "검토요청").length;
-      const rdy = dAll.filter(d => d.status === "작성전").length;
-      const rate = Metrics.pct(done, dAll.length);
-
-      sDone += done; sIng += ing; sRdy += rdy;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${escapeHtml(sys)}</strong></td>
-        ${rCells}
-        <td>${done}</td>
-        <td>${ing}</td>
-        <td>${rdy}</td>
-        <td style="font-weight:bold; color:${rate >= 80 ? "var(--chart-good-text)" : "var(--chart-warn-text)"}">${rate}%</td>
-      `;
-      dashDelivTbody.appendChild(tr);
-    });
-
-    const totRateVal = Metrics.pct(sDone, validDelivs.length);
-    const totRCells = activeRounds.map(r => `<td><b>${roundSums[r].done} / ${roundSums[r].tot}건</b></td>`).join("");
-    const totalRow = document.createElement("tr");
-    totalRow.className = "matrix-total-row";
-    totalRow.innerHTML = `
-      <td><strong>[선택 합계]</strong></td>
-      ${totRCells}
-      <td><b>${sDone}</b></td>
-      <td><b>${sIng}</b></td>
-      <td><b>${sRdy}</b></td>
-      <td class="u-bold u-c-info">${totRateVal}%</td>
-    `;
-    dashDelivTbody.appendChild(totalRow);
-  }
-
-  // [4] VOC · 결함 (판정 카드 · 테스트 결함 카드 · 서브시스템별 표 · 단계별 표) — modules/progress/voc-board.js
-  VocBoard.renderDashboard(activeSystems, (selDomain === "ALL" && selSubsys === "ALL") ? vocData : null);
+  DashSummary.render(activeSystems, whole);
+  DashSummary.domains();
 }
+
+// 요약 카드 4개 (요구사항 · VOC · 테스트 결함 · 산출물) + 도메인별 진척 표
+var DashSummary = {
+  _card(c) {
+    const lv = c.rate >= 80 ? "ok" : (c.rate >= 50 ? "warn" : "bad");
+    return `<button type="button" class="dash-sum${c.empty ? " empty" : ""}" data-click="DashSummary.go" data-click-args="${UiEvents.args(c.go)}" title="${escapeAttr(c.tip)}">
+      <span class="dash-sum-head"><span>${c.icon} ${c.title}</span><span>${c.label || ""}</span></span>
+      <span class="dash-sum-val${c.bad ? " bad" : ""}">${c.value}</span>
+      ${c.empty ? "" : `<span class="dash-sum-bar ${c.level || lv}"><i style="width:${Math.max(0, Math.min(100, c.rate))}%"></i></span>`}
+      <span class="dash-sum-sub">${c.sub}</span>
+      <span class="dash-sum-go">${c.goText} →</span></button>`;
+  },
+  render(systems, whole) {
+    const box = document.getElementById("dashSumGrid");
+    if (!box) return;
+    const rep = projectConfig.reportDate;
+    const inScope = r => whole || systems.includes(r.system);
+    const reqs = reqMasterData.filter(inScope), vocs = vocData.filter(inScope);
+    const rs = Metrics.reqStats(reqs), vs = Metrics.vocStats(vocs);
+    const cnt = st => rs.list.filter(r => r.status === st).length;
+    const rounds = getActiveDeliverableRounds();
+    const dl = Metrics.delivStats(deliverablesData.filter(inScope), rounds);
+    const dLate = Metrics.delivByPhase(dl.list, rounds, rep, []).reduce((a, x) => a + x.late, 0);
+    const hasTest = Metrics.hasTestStage(vocs, rep);
+    const df = Metrics.defectStats(vocs, rep);
+    const b = (n, cls) => n ? `<b class="${cls || ""}">${n}</b>` : "0";
+    const cards = [
+      { icon: "🎯", title: I18N.t("요구사항"), label: I18N.t("완료율"), value: `${rs.rate}%`, rate: rs.rate, go: "tab-req", goText: I18N.t("요구사항 화면"), tip: I18N.t("요구사항 화면으로"),
+        sub: I18N.tf("전체 {t} · 대기 {a} · 진행 {b} · 완료 {c} · 보류 {d}", { t: rs.total, a: cnt("대기"), b: cnt("진행"), c: rs.done, d: cnt("보류") }) + "<br>" + I18N.tf("초기 {a} · 추가 {b}", { a: rs.initial, b: rs.added }) },
+      { icon: "💬", title: I18N.t("VOC"), label: I18N.t("처리율"), value: `${vs.rate}%`, rate: vs.rate, go: "matrix:voc", goText: I18N.t("단계별 VOC"), tip: I18N.t("Phase 진척의 단계별 VOC 로"),
+        sub: I18N.tf("접수 {t} · 미결 {o} · 판정 대기 {u}", { t: vs.total, o: b(vs.total - vs.done), u: b(vs.undecided, "bad") }) + "<br>" + I18N.tf("결함 {a} · 개선 요청 {b} · 이슈 {c}", { a: vs.byJudge["결함"], b: vs.improve, c: vs.byJudge["이슈"] }) },
+      hasTest
+        ? { icon: "🐞", title: I18N.t("테스트 결함"), label: I18N.t("해결률"), value: I18N.tf("미결 {o} / {t}", { o: df.open, t: df.total }), bad: df.critOpen > 0, rate: df.rate, go: "matrix:voc", goText: I18N.t("결함 현황 · 소진 추이"), tip: I18N.t("Phase 진척의 테스트 결함 현황으로"),
+          sub: I18N.tf("해결률 {r}% · 치명 · 높음 미결 {c} · 판정 대기 {u}", { r: df.rate, c: b(df.critOpen, "bad"), u: b(df.undecided) }) }
+        : { icon: "🐞", title: I18N.t("테스트 결함"), value: I18N.t("통합테스트 접수 없음"), empty: true, rate: 0, go: "matrix:voc", goText: I18N.t("단계별 VOC"), tip: I18N.t("Phase 진척의 단계별 VOC 로"),
+          sub: I18N.t("기준일까지 통합테스트 단계로 접수된 VOC 가 생기면 보입니다.") },
+      { icon: "📑", title: I18N.t("산출물"), label: I18N.t("제출 완료율"), value: `${dl.rate}%`, rate: dl.rate, bad: dLate > 0 && dl.rate < 50, go: "matrix:deliv", goText: I18N.t("단계별 산출물"), tip: I18N.t("Phase 진척의 단계별 산출물로"),
+        sub: I18N.tf("완료 {d} / 전체 {t} · 작성 · 검토 {i}", { d: dl.done, t: dl.total, i: dl.ing }) + "<br>" + I18N.tf("계획 제출일 지남 {n}", { n: b(dLate, "bad") }) }
+    ];
+    box.innerHTML = cards.map(c => this._card(c)).join("");
+    I18N.translateTree(box);
+  },
+  // 요약 카드 → 해당 화면 (matrix:구역 = Phase 진척의 그 구역으로 스크롤)
+  go(where) {
+    const [tab, sec] = String(where).split(":");
+    GShell.go(tab === "matrix" ? "tab-matrix" : tab);
+    if (sec) setTimeout(() => { const el = document.getElementById(sec === "voc" ? "phaseVocCard" : "phaseDelivCard"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 250);
+  },
+  // 도메인별 진척 (도메인이 2개 이상일 때만 — 하나면 핵심 숫자와 같음)
+  domains() {
+    const card = document.getElementById("dashDomainCard"), body = document.getElementById("execDomainPortfolioBody");
+    if (!card || !body) return;
+    const domains = (projectConfig.domains || []).filter(d => (subsystemsMeta || []).some(s => s.domain === d));
+    card.hidden = domains.length < 2;
+    if (card.hidden) return;
+    const allSw = (subsystemsMeta || []).reduce((acc, m) => acc + WBSEngine.sysWeight(m.name), 0);
+    body.innerHTML = domains.map(dName => {
+      const dSubs = subsystemsMeta.filter(s => s.domain === dName).map(s => s.name);
+      const leaves = wbsData.filter(t => dSubs.includes(t.system) && t.isLeaf).length;
+      const roots = wbsData.filter(t => dSubs.includes(t.system) && t.level === 1);
+      const dwp = roots.length ? WBSEngine.weightedProgress(roots) : { plan: 0, actual: 0 };
+      // 도메인 비중 = 그 도메인 서브시스템 가중치 합 / 전체 서브시스템 가중치 합
+      const dWeight = allSw > 0 ? Math.round(dSubs.reduce((acc, n) => acc + WBSEngine.sysWeight(n), 0) / allSw * 1000) / 10 : 0;
+      const rate = Metrics.achv(dwp.plan, dwp.actual);
+      const lv = rate >= 90 ? ["rate-good", "tag-completed", "정상"] : (rate >= 70 ? ["rate-warn", "tag-progress", "주의"] : ["rate-bad", "tag-delayed", "지연"]);
+      return `<tr><td><strong>${escapeHtml(dName)}</strong></td><td>${leaves}</td><td>${dWeight}%</td><td>${dwp.plan}%</td><td><strong>${dwp.actual}%</strong></td>
+        <td class="u-bold ${lv[0]}">${rate}%</td><td><span class="status-tag ${lv[1]}">${lv[2]}</span></td></tr>`;
+    }).join("");
+    I18N.translateTree(card);
+  }
+};
+window.DashSummary = DashSummary;

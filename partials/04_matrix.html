@@ -22,7 +22,7 @@
               <option value="ALL">전체 서브시스템 보기</option>
             </select>
           </div>
-          <span class="lbl-progress-refreshed-at u-fs-xs" style="color:#64748b;"></span>
+          <span class="lbl-progress-refreshed-at u-fs-xs u-c-sub"></span>
           <button class="btn btn-primary btn-sm btn-progress-refresh" data-click="refreshMatrixView" title="최신 저장 데이터를 다시 불러와 WBS 계획·실적, 요구사항, 산출물, VOC 진척을 즉시 재계산합니다.">
             🔄 실적 새로고침
           </button>
@@ -38,13 +38,13 @@
           <table class="matrix-table" id="integratedProgressTable">
             <thead>
               <tr>
-                <th rowspan="2" style="width: 105px;">도메인</th>
-                <th rowspan="2" style="width: 130px;">서브시스템</th>
-                <th rowspan="2" style="width: 110px;">관리유형</th>
+                <th rowspan="2" class="pm-w-dom">도메인</th>
+                <th rowspan="2" class="pm-w-sys">서브시스템</th>
+                <th rowspan="2" class="pm-w-type">관리유형</th>
                 <th colspan="3" class="col-phase">WBS 공정 진척</th>
-                <th colspan="4" style="background:#f0fdf4; color:#166534;">🎯 요구사항(REQ) 진척</th>
-                <th class="u-c-info" colspan="4" style="background:var(--tint-info);">📑 산출물 제출 진척</th>
-                <th colspan="5" style="background:#fef3c7; color:#92400e;">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
+                <th colspan="4" class="col-req">🎯 요구사항(REQ) 진척</th>
+                <th colspan="4" class="col-deliv">📑 산출물 제출 진척</th>
+                <th colspan="5" class="col-voc">💬 추가 VOC / 이슈 진척 (대기·진행 분리)</th>
               </tr>
               <tr>
                 <th>계획</th><th>실적</th><th>달성률</th>
@@ -61,13 +61,13 @@
       <!-- [A-1] Section 2 (Middle): SDLC 타입 서브시스템 단계별 매트릭스 (매핑된 SDLC 타입만 표출) -->
       <div class="card u-mt-14" id="phaseMatrixCard">
         <div class="card-title">
-          <span>🏛️ [2] SDLC 단계별 종합 공정 매트릭스</span>
+          <span>🏛️ [2] SDLC 단계별 종합 공정 매트릭스</span><span class="pm-hint">칸 아래: 지연 Task 수 · 기준선 대비 밀린 일수 — 칸을 누르면 그 단계 Task 를 WBS 에서 엽니다</span>
         </div>
         <div id="phaseMatrixContainer">
           <table class="matrix-table" id="phaseMatrixTable">
             <thead>
               <tr>
-                <th rowspan="2" style="width: 140px;">서브시스템 (L1)</th>
+                <th rowspan="2" class="pm-w-sys">서브시스템 (L1)</th>
                 <th colspan="3" class="col-phase">1. 분석 및 설계</th>
                 <th colspan="3" class="col-phase">2. 구현 단계</th>
                 <th colspan="3" class="col-phase">3. 시험 및 검증</th>
@@ -87,7 +87,7 @@
         </div>
       </div>
 
-      <!-- Section 3 (Bottom): 개선과제 타입 서브시스템 요건별 진척 매트릭스 -->
+      <!-- [3] 개선과제 타입 서브시스템 요건별 진척 매트릭스 -->
       <div class="card u-mt-14" id="enhancementMatrixCard">
         <div class="card-title">
           <span>🔄 [3] 개선과제형(REQ) 서브시스템 요건 단위 진척 및 달성 현황</span>
@@ -96,19 +96,35 @@
           <table id="enhancementMatrixTable">
             <thead>
               <tr>
-                <th style="width: 100px;">도메인</th>
-                <th style="width: 110px;">서브시스템</th>
-                <th style="width: 110px;">요구사항 ID</th>
+                <th class="pm-w100">도메인</th>
+                <th class="pm-w110">서브시스템</th>
+                <th class="pm-w110">요구사항 ID</th>
                 <th>개선 요건 명칭 및 Task</th>
-                <th style="width: 90px;">연계 Task 수</th>
-                <th style="width: 90px;">계획 진척률</th>
-                <th style="width: 90px;">실적 진척률</th>
-                <th style="width: 90px;">달성률</th>
-                <th style="width: 100px;">요건 상태</th>
+                <th class="pm-w90">연계 Task 수</th>
+                <th class="pm-w90">계획 진척률</th>
+                <th class="pm-w90">실적 진척률</th>
+                <th class="pm-w90">달성률</th>
+                <th class="pm-w100">요건 상태</th>
               </tr>
             </thead>
             <tbody id="enhancementMatrixBody"></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- [4] 단계별 VOC · 테스트 결함 (결함 현황은 기준일까지 통합테스트 접수가 있을 때만) -->
+      <div class="card u-mt-14" id="phaseVocCard">
+        <div class="card-title"><span>💬 [4] 단계별 VOC · 테스트 결함</span></div>
+        <div id="phaseVocStageBox"></div>
+        <div id="phaseDefectBox" hidden>
+          <div class="pm-sub-title">🐞 테스트 결함 현황 (통합테스트 · 판정 결함)</div>
+          <div id="phaseDefectBody"></div>
+        </div>
+      </div>
+
+      <!-- [5] 단계별 산출물 제출 (단계 × 차수, 계획 제출일 지남) -->
+      <div class="card u-mt-14" id="phaseDelivCard">
+        <div class="card-title"><span>📑 [5] 단계별 산출물 제출</span><span class="pm-hint">지남 = 계획 제출일이 기준일보다 앞인데 보완완료 · 제출일이 없음</span></div>
+        <div class="table-container"><table class="matrix-table" id="phaseDelivTable"></table></div>
       </div>
     </div>

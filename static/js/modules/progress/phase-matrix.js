@@ -30,10 +30,10 @@ function renderPhaseMatrix() {
       const roundThs = activeRounds.map(r => `<th>${r}(완료/전체)</th>`).join("");
       thead.innerHTML = `
         <tr>
-          <th rowspan="2" style="width: 105px;">도메인</th>
-          <th rowspan="2" style="width: 130px;">서브시스템</th>
-          <th rowspan="2" style="width: 110px;">관리유형</th>
-          <th rowspan="2" style="width: 64px;" title="종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치">가중치</th>
+          <th rowspan="2" class="pm-w-dom">도메인</th>
+          <th rowspan="2" class="pm-w-sys">서브시스템</th>
+          <th rowspan="2" class="pm-w-type">관리유형</th>
+          <th rowspan="2" class="pm-w-wt" title="종합 진척률 = 서브시스템별 진척률 × 서브시스템 가중치">가중치</th>
           <th colspan="3" class="col-phase">WBS 공정 진척</th>
           <th colspan="5" class="col-req">🎯 요구사항(REQ) 진척</th>
           <th colspan="6" class="col-voc">💬 VOC · 결함 처리</th>
@@ -98,13 +98,13 @@ function renderPhaseMatrix() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+      <td><span class="badge pm-dom">${escapeHtml(domain)}</span></td>
       <td><strong>${escapeHtml(sys)}</strong></td>
       <td>${typeBadge}</td>
       <td class="ai-c">${WBSEngine.sysWeight(sys)}%</td>
       <td>${wP}%</td>
       <td><strong>${wA}%</strong></td>
-      <td style="font-weight:bold; color:${wRate >= 90 ? "var(--chart-good-text)" : (wRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${wRate}%</td>
+      <td class="u-bold ${PhaseView.rateCls(wRate)}">${wRate}%</td>
       <td>${sReqs.length}건</td>
       <td>${rs.added ? `<b>${rs.added}건</b>` : "0"}</td>
       <td>${rPrg}건</td>
@@ -174,7 +174,7 @@ function renderPhaseMatrix() {
   let sdlcTablesHtml = "";
   if (mappedSdlcSpecs.length === 0) {
     sdlcTablesHtml = `
-      <div class="u-tc u-c-muted u-p-20 u-bg-main u-r-6" style="border:1px dashed var(--border-color);">
+      <div class="u-tc u-c-muted u-p-20 u-bg-main u-r-6 pm-empty">
         ℹ️ 현재 조회 조건에 매핑된 SDLC 폭포수형 서브시스템이 없습니다. (개선과제형 REQ 또는 다른 서브시스템을 조회하세요)
       </div>
     `;
@@ -219,7 +219,9 @@ function renderPhaseMatrix() {
           }
           if (pAvg <= 0 && aAvg <= 0) { phTds += `<td class="rate-na">-</td><td class="rate-na">-</td><td class="rate-na">-</td>`; return; }   // 계획 전
           const rate = Metrics.achv(pAvg, aAvg);
-          phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td style="color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`;
+          // 칸 아래: 지연 Task 수 · 기준선 대비 밀린 일수 (누르면 그 단계 Task 를 WBS 에서)
+          const iss = WBSEngine.phaseIssues(phTasks, projectConfig.reportDate, t => Baseline.varOf(t, projectConfig));
+          phTds += `<td>${pAvg}%</td><td><strong>${aAvg}%</strong></td><td class="pm-cell ${PhaseView.rateCls(rate)}" data-click="PhaseView.openWbs" data-click-args="${UiEvents.args(sys, ph.name)}" title="${escapeAttr(I18N.tf("{s} · {p} Task 를 WBS 에서 보기", { s: sys, p: ph.name }))}">${rate}%${PhaseView.issueHtml(iss)}</td>`;
           sysTotalP += pAvg * wSum;
           sysTotalA += aAvg * wSum;
           sysTotalW += wSum;
@@ -241,12 +243,12 @@ function renderPhaseMatrix() {
 
         groupRowsHtml += `
           <tr>
-            <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+            <td><span class="badge pm-dom">${escapeHtml(domain)}</span></td>
             <td><strong>${escapeHtml(sys)}</strong></td>
             ${phTds}
             ${rootNA ? `<td class="col-total rate-na">-</td><td class="col-total rate-na">-</td><td class="col-total rate-na">-</td>` : `<td class="col-total">${rootP}%</td>
             <td class="col-total"><strong>${rootA}%</strong></td>
-            <td class="col-total" style="color:${rootRate >= 90 ? "var(--chart-good-text)" : (rootRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rootRate}%</td>`}
+            <td class="col-total ${PhaseView.rateCls(rootRate)}">${rootRate}%</td>`}
           </tr>
         `;
       });
@@ -259,7 +261,7 @@ function renderPhaseMatrix() {
         const totP = Math.round(totalStats[ph.key].p / totW);
         const totA = Math.round(totalStats[ph.key].a / totW);
         const totRate = Metrics.achv(totP, totA);
-        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td class="u-bold" style="color:var(--chart-warn-text);">${totRate}%</td>`;
+        sumPhTds += `<td>${totP}%</td><td><strong>${totA}%</strong></td><td class="u-bold rate-warn">${totRate}%</td>`;
       });
       const allW = totalStats.all.w || 1;
       const allP = Math.round(totalStats.all.p / allW);
@@ -278,7 +280,7 @@ function renderPhaseMatrix() {
 
       sdlcTablesHtml += `
         <div class="u-mb-16">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; padding:6px 10px; background:var(--bg-main); border-radius:6px; border:1px solid ${sIdx === 0 ? "var(--border-color)" : "#ddd6fe"};">
+          <div class="pm-group-head${sIdx === 0 ? "" : " alt"}">
             <span class="u-bold u-fs-sm u-c-primary">
               📂 <span>SDLC 유형:</span> <span>${escapeHtml(spec.name)}</span> (<span>${escapeHtml(spec.desc || "")}</span>) — <span>${I18N.tf("소속 서브시스템 {n}개", { n: groupSystems.length })}</span>
             </span>
@@ -287,8 +289,8 @@ function renderPhaseMatrix() {
             <table class="matrix-table">
               <thead>
                 <tr>
-                  <th rowspan="2" style="width: 105px;">도메인</th>
-                  <th rowspan="2" style="width: 130px;">서브시스템</th>
+                  <th rowspan="2" class="pm-w-dom">도메인</th>
+                  <th rowspan="2" class="pm-w-sys">서브시스템</th>
                   ${topThs}
                   <th colspan="3" class="col-total sdlc-ph-total">그룹 합계</th>
                 </tr>
@@ -332,69 +334,73 @@ function renderPhaseMatrix() {
         const taskCount = linkedTasks.length;
         const pAvg = taskCount > 0 ? Math.round(linkedTasks.reduce((acc, t) => acc + t.pProg, 0) / taskCount) : 0;
         const aAvg = taskCount > 0 ? Math.round(linkedTasks.reduce((acc, t) => acc + t.aProg, 0) / taskCount) : 0;
-        const rate = pAvg > 0 ? Math.round((aAvg / pAvg) * 100) : (aAvg >= 100 ? 100 : 0);
+        const rate = Metrics.achv(pAvg, aAvg);
         const rateNA = pAvg <= 0 && aAvg <= 0;   // 계획 전
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><span class="badge" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span></td>
+          <td><span class="badge pm-dom">${escapeHtml(domain)}</span></td>
           <td><strong>${escapeHtml(sys)}</strong></td>
           <td><span class="lvl-badge lvl-3">${escapeHtml(req.id)}</span></td>
           <td>${escapeHtml(req.name)}</td>
           <td class="u-tc"><b>${taskCount}</b>개</td>
           <td class="u-tr">${pAvg}%</td>
           <td class="u-tr"><strong>${aAvg}%</strong></td>
-          ${rateNA ? `<td class="rate-na u-tr">-</td>` : `<td style="text-align:right; font-weight:bold; color:${rate >= 90 ? "var(--chart-good-text)" : (rate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")}">${rate}%</td>`}
+          ${rateNA ? `<td class="rate-na u-tr">-</td>` : `<td class="u-tr u-bold ${PhaseView.rateCls(rate)}">${rate}%</td>`}
           <td class="u-tc"><span class="status-tag ${aAvg >= 100 ? "tag-completed" : (aAvg >= pAvg ? "tag-progress" : "tag-delayed")}">${aAvg >= 100 ? "완료" : (aAvg > 0 ? "진행" : "대기")}</span></td>
         `;
         enhTbody.appendChild(row);
       });
     });
   }
+  PhaseView.renderDeliv(allSystems, activeRounds);
+  PhaseView.renderVoc(allSystems, selDomain === "ALL" && selSubsys === "ALL");
 }
 
-function renderSubsystemCards(systems) {
-  const container = document.getElementById("subsystemCardsContainer");
-  if (!container) return;
-  container.innerHTML = "";
-
-  const dFilterEl = document.getElementById("dashDomainFilter");
-  const selDomain = dFilterEl ? dFilterEl.value : "ALL";
-
-  const targetSystems = selDomain === "ALL"
-    ? systems
-    : systems.filter(s => (typeof WBSEngine !== "undefined" ? WBSEngine.getSubsystemDomain(s) === selDomain : true));
-
-  targetSystems.forEach(sys => {
-    const sysRoot = wbsData.find(d => d.system === sys && d.level === 1);
-    const meta = subsystemsMeta.find(m => m.name === sys) || { domain: "공통", type: "SDLC", weight: 10, pm: "-" };
-    const domain = meta.domain || ((typeof WBSEngine !== "undefined") ? WBSEngine.getSubsystemDomain(sys) : "공통");
-    const leafTasks = wbsData.filter(d => d.system === sys && d.isLeaf);
-    const pVal = sysRoot ? sysRoot.pProg : 0;
-    const aVal = sysRoot ? sysRoot.aProg : 0;
-    const rate = Metrics.achv(pVal, aVal);
-
-    const card = document.createElement("div");
-    card.className = "card";
-    card.style.marginBottom = "0";
-    card.innerHTML = `
-      <div class="card-title">
-        <span>
-          <span class="badge u-mr-4" style="background:var(--chip-bg); color:var(--chip-text); font-size:var(--fs-2xs, 10px);">${escapeHtml(domain)}</span>
-          <b>${escapeHtml(sys)}</b>
-          <span class="u-fs-xs u-c-muted u-normal">(<span>${meta.type === "REQ" ? "개선타입(REQ)" : "SDLC형"}</span> · <span>${I18N.tf("가중치 {n}%", { n: WBSEngine.sysWeight(sys) })}</span> · PM: ${escapeHtml(meta.pm || "-")})</span>
-        </span>
-        ${pVal <= 0 && aVal <= 0 ? `<span class="status-tag tag-ready">달성률 -</span>` : `<span class="status-tag ${rate >= 90 ? "tag-completed" : (rate >= 70 ? "tag-progress" : "tag-delayed")}">달성률 ${rate}%</span>`}
-      </div>
-      <div class="u-flex u-jc-between u-mb-6 u-fs-sm">
-        <span>계획 진척률: <b>${pVal}%</b></span>
-        <span>실행 Task: <b>${leafTasks.length}개</b></span>
-        <span>실적 진척률: <b class="u-c-success" style="font-size:var(--fs-md, 14px);">${aVal}%</b></span>
-      </div>
-      <div class="u-r-4" style="background:var(--track); height:8px; overflow:hidden;">
-        <div style="background:var(--success); width:${Math.min(100, aVal)}%; height:100%;"></div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
+// Phase 진척 [2] 칸 표시 · [3] 단계별 산출물 · [4] 단계별 VOC · 테스트 결함 (셈은 WBSEngine · Metrics · VocBoard)
+var PhaseView = {
+  rateCls(r) { return r >= 90 ? "rate-good" : (r >= 70 ? "rate-warn" : "rate-bad"); },
+  issueHtml(iss) {
+    const parts = [];
+    if (iss.delayed) parts.push(`<span class="pm-iss-del">${escapeHtml(I18N.tf("지연 {n}", { n: iss.delayed }))}</span>`);
+    if (iss.slip) parts.push(`<span class="pm-iss-slip">${escapeHtml(I18N.tf("기준선 +{n}일", { n: iss.slip }))}</span>`);
+    return parts.length ? `<div class="pm-iss">${parts.join("")}</div>` : "";
+  },
+  // 그 서브시스템 · 단계의 Task 를 WBS 에서 (단계별 조회 + 서브시스템 조회)
+  openWbs(sys, phase) {
+    GShell.go("tab-wbs");
+    setTimeout(() => {
+      const set = (id, v) => { const el = /** @type {HTMLSelectElement} */ (document.getElementById(id)); if (el) el.value = v; };
+      set("wbsDomainFilter", "ALL"); set("wbsSubsystemFilter", sys); set("wbsStatusFilter", "ALL"); set("wbsMaxLevelFilter", "5");
+      renderWbsTable();
+      set("wbsPhaseFilter", phase);
+      renderWbsTable();
+    }, 150);
+  },
+  renderDeliv(systems, rounds) {
+    const t = document.getElementById("phaseDelivTable");
+    if (!t) return;
+    const order = (standardDeliverablesMeta || []).map(d => d.phase);
+    const rows = Metrics.delivByPhase(deliverablesData.filter(d => systems.includes(d.system)), rounds, projectConfig.reportDate, order);
+    const tot = Metrics.delivStats(deliverablesData.filter(d => systems.includes(d.system)), rounds);
+    const late = rows.reduce((a, r) => a + r.late, 0);
+    t.innerHTML = `<thead><tr><th class="pm-w-phase">단계</th>${rounds.map(r => `<th>${escapeHtml(r)} (완료/전체)</th>`).join("")}<th>완료 / 전체</th><th>계획 제출일 지남</th><th>완료율</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r => `<tr><td class="u-tl"><b>${escapeHtml(r.phase || "미지정")}</b></td>${rounds.map(x => `<td>${r.byRound[x].done} / ${r.byRound[x].total}</td>`).join("")}
+        <td>${r.done} / ${r.total}</td><td>${r.late ? `<b class="u-c-danger">${r.late}</b>` : 0}</td><td class="u-bold ${this.rateCls(r.rate)}">${r.rate}%</td></tr>`).join("")
+        : `<tr><td class="u-tc u-c-muted u-p-15" colspan="${rounds.length + 4}">${I18N.t("조회 조건에 해당하는 산출물이 없습니다.")}</td></tr>`}
+        ${rows.length ? `<tr class="matrix-total-row"><td class="u-tl"><b>${I18N.t("합계")}</b></td>${rounds.map(x => `<td><b>${rows.reduce((a, r) => a + r.byRound[x].done, 0)} / ${rows.reduce((a, r) => a + r.byRound[x].total, 0)}</b></td>`).join("")}
+        <td><b>${tot.done} / ${tot.total}</b></td><td><b>${late}</b></td><td class="u-bold u-c-info">${tot.rate}%</td></tr>` : ""}</tbody>`;
+    I18N.translateTree(t);
+  },
+  renderVoc(systems, whole) {
+    const box = document.getElementById("phaseVocStageBox");
+    if (!box) return;
+    const scope = whole ? vocData : vocData.filter(v => systems.includes(v.system));
+    box.innerHTML = VocBoard.stageTable(scope);
+    const d = document.getElementById("phaseDefectBox");
+    d.hidden = !Metrics.hasTestStage(scope, projectConfig.reportDate);
+    if (!d.hidden) document.getElementById("phaseDefectBody").innerHTML = VocBoard.defectHtml(scope, projectConfig.reportDate);
+    I18N.translateTree(document.getElementById("phaseVocCard"));
+  }
+};
+window.PhaseView = PhaseView;

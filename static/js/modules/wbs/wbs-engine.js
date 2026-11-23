@@ -245,6 +245,18 @@ const WBSEngine = {
     return keywords.some(k => k && searchText.includes(String(k).toLowerCase().trim()));
   },
 
+  // 단계 칸의 문제 요약 (Phase 진척 매트릭스): 지연 최하위 Task 수 · 기준선보다 가장 많이 밀린 일수
+  //  varOf: 기준선 차이 계산 함수 (Baseline.varOf) — 기준선이 없으면 null
+  phaseIssues(leaves, reportDateStr, varOf) {
+    let delayed = 0, slip = 0;
+    (leaves || []).forEach(t => {
+      if (this.getTaskStatus(t, reportDateStr).code === "delayed") delayed++;
+      const v = varOf ? varOf(t) : null;
+      if (v && v > slip) slip = v;
+    });
+    return { delayed, slip };
+  },
+
   // 서브시스템의 분야(Domain) 조회 헬퍼
   getSubsystemDomain(sysName) {
     const s = (sysName || "").trim();

@@ -93,7 +93,7 @@ async function main() {
     { let out = "", ok = true; try { out = execFileSync("node", [path.join(ROOT, "tools", "tests", "unit", "run_unit.js")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
       check("Calculation unit tests pass (Metrics · WBSEngine · Migrate · templates)", ok, out.trim().split("\n").slice(-3).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.5.1.zip" && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.6.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -113,7 +113,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Standalone v1.5.1" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.6.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -703,15 +703,15 @@ async function main() {
     });
     check("VOC added while the stage filter is 통합테스트: gets that stage (set by hand) and stays visible", v1.added === 1 && v1.stage === "통합테스트" && v1.manual && v1.shown && v1.chip === "ALL", JSON.stringify(v1));
     const v2 = await sx.evaluate(async () => {
-      GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 400));
-      const vis = () => { const c = document.getElementById("dashDefectCard"); return !!c && !c.hidden; };
+      GShell.go("tab-matrix"); await new Promise(r => setTimeout(r, 400));
+      const vis = () => { const c = document.getElementById("phaseDefectBox"); return !!c && !c.hidden; };
       const at0 = vis(), rep0 = projectConfig.reportDate;
-      syncGlobalDate("2027-10-08"); GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 400));
+      syncGlobalDate("2027-10-08"); GShell.go("tab-matrix"); await new Promise(r => setTimeout(r, 400));
       const atTest = vis(), d = Metrics.defectStats(vocData, projectConfig.reportDate);
       syncGlobalDate(rep0); await new Promise(r => setTimeout(r, 300));
       return { at0, atTest, total: d.total, open: d.open };
     });
-    check("Test defect card shows only with integration-test VOCs received by the report date (hidden 06-04, shown 10-08)", !v2.at0 && v2.atTest && v2.total === 2 && v2.open === 1, JSON.stringify(v2));
+    check("Test defect status (Phase progress [4]) shows only with integration-test VOCs received by the report date (hidden 06-04, shown 10-08)", !v2.at0 && v2.atTest && v2.total === 2 && v2.open === 1, JSON.stringify(v2));
     const v3 = await sx.evaluate(async () => {
       GShell.go("tab-mywork"); await new Promise(r => setTimeout(r, 300));
       const me = TodoCenter.me();
@@ -750,6 +750,35 @@ async function main() {
       return { n: cards.length, wide: cards.filter(c => c.classList.contains("pg-wide")).length, row1: h[0] === h[1] && t[0] === t[1], row3: h[3] === h[4] && t[3] === t[4] };
     });
     check("Project extra info: 2-column rows of equal height, baseline and holidays full width", v5.n === 6 && v5.wide === 2 && v5.row1 && v5.row3, JSON.stringify(v5));
+    console.log("\n[v1.6 screens: Summary · Dashboard · Phase progress]");
+    const s16 = await sx.evaluate(async () => {
+      GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 500));
+      const pane = document.getElementById("tab-dashboard");
+      const first = pane.querySelector(":scope > .dash-filter");
+      const kpi = pane.querySelector(".grid-4");
+      const d = { filterFirst: !!first && !!kpi && !!(first.compareDocumentPosition(kpi) & Node.DOCUMENT_POSITION_FOLLOWING), cards: document.querySelectorAll("#dashSumGrid .dash-sum").length, oldCards: !!document.getElementById("subsystemCardsContainer"),
+        side: getComputedStyle(document.querySelector(".dash-charts")).gridTemplateColumns.split(" ").length, height: Math.round(pane.getBoundingClientRect().height),
+        tip: (document.querySelector("#dashBulletChart .bl-row title") || {}).textContent || "" };
+      GShell.go("tab-matrix"); await new Promise(r => setTimeout(r, 500));
+      // (기준선은 앞 시험에서 지웠으므로 여기서는 지연 표시만 — 기준선 +N일은 단위 시험 phaseIssues)
+      const cell = [...document.querySelectorAll("#phaseMatrixContainer td.pm-cell")].find(td => /지연 1/.test(td.textContent));
+      d.cell = cell ? cell.textContent.replace(/\s+/g, " ").trim() : "";
+      d.deliv = document.querySelectorAll("#phaseDelivTable tbody tr").length;
+      d.vocStage = !!document.querySelector("#phaseVocStageBox .voc-stage-table");
+      if (cell) { cell.click(); await new Promise(r => setTimeout(r, 500)); }
+      d.wbs = { tab: document.querySelector(".tab-pane.active").id, sys: document.getElementById("wbsSubsystemFilter").value, phase: document.getElementById("wbsPhaseFilter").value, rows: document.querySelectorAll("#wbsTableBody tr").length };
+      GShell.go("tab-home"); await new Promise(r => setTimeout(r, 500));
+      d.risks = [...document.querySelectorAll("#execRiskList .exec-risk .status-tag")].map(x => x.textContent);
+      d.ms = document.querySelectorAll("#execMsList li").length;
+      d.domainOnSummary = !!document.querySelector("#tab-home #execDomainPortfolioBody");
+      return d;
+    });
+    check("Dashboard: scope filter on top, S-curve | bullet side by side, 4 summary cards, no subsystem cards, bullet tooltip with PM · Tasks; shorter screen",
+      s16.filterFirst && s16.cards === 4 && !s16.oldCards && s16.side === 2 && /PM .* Task \d+개/.test(s16.tip) && s16.height < 1500, JSON.stringify(s16));
+    check("Phase progress: cells show 지연 n (· 기준선 +N일) and open that phase in WBS; [3] deliverables by phase; [4] VOC by stage",
+      /지연 1/.test(s16.cell) && s16.deliv >= 3 && s16.vocStage && s16.wbs.tab === "tab-wbs" && s16.wbs.sys !== "ALL" && s16.wbs.phase !== "ALL" && s16.wbs.rows > 0, JSON.stringify({ cell: s16.cell, deliv: s16.deliv, wbs: s16.wbs }));
+    check("Summary: key risks (one of each kind first: 지연 · 선행 지연 · 범위 협의) and upcoming milestones; domain table moved to Dashboard",
+      s16.risks.length === 5 && ["지연", "선행 지연", "범위 협의"].every(k => s16.risks.includes(k)) && s16.ms >= 3 && !s16.domainOnSummary, JSON.stringify({ risks: s16.risks, ms: s16.ms }));
     check("Sample project tests ran without page errors", sx.errors.length === 0 && sx.external.length === 0, sx.errors.concat(sx.external).slice(0, 3).join(" | "));
 
     // Workgroup(서버 판)에서 내려받은 프로젝트 백업(JSON)을 새 프로젝트로 올림 (같은 자료 형식)

@@ -2975,3 +2975,76 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 :is(.u-tr, #u_) { text-align: right; }
 :is(.u-w100, #u_) { width: 100%; }
 :is(.u-wrap, #u_) { flex-wrap: wrap; }
+
+/* Dashboard (1.6): 조회 범위 · 차트 나란히 · 요약 카드 */
+.dash-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 12px; padding: 8px 14px; border: 1px solid var(--border-color); border-left: 4px solid var(--primary); border-radius: 8px; background: var(--bg-card); }
+.dash-filter-title { font-weight: 800; color: var(--text-main); }
+.dash-filter select { min-width: 150px; }
+.dash-filter-note { margin-left: auto; font-size: var(--fs-xs, 11px); color: var(--text-muted); }
+.kpi-card.kpi-b-primary { border-left-color: var(--primary); }
+.kpi-card.kpi-b-success { border-left-color: var(--success); }
+.kpi-card.kpi-b-accent { border-left-color: var(--accent); }
+.kpi-card.kpi-b-danger { border-left-color: var(--danger); }
+.dash-charts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; margin-bottom: 12px; align-items: stretch; }
+.scurve-box { height: 270px; position: relative; }
+.scurve-box canvas { height: 100%; }
+.sc-legend { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-xs, 11px); color: var(--text-sub); font-weight: 600; }
+.sc-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 2px; vertical-align: middle; }
+.sc-legend .sc-plan { background: var(--chart-plan); }
+.sc-legend .sc-actual { background: var(--chart-actual); }
+.sc-legend .sc-today { width: 2px; height: 10px; background: var(--chart-today); }
+.sc-legend .sc-rate { width: 9px; height: 10px; background: var(--chart-rate-fill); border: 1px solid var(--chart-rate-line); }
+.dash-sum-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.dash-sum { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-card); cursor: pointer; text-align: left; font: inherit; color: var(--text-main); }
+.dash-sum:hover { border-color: var(--primary); }
+.dash-sum-head { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-weight: 700; color: var(--text-sub); font-size: var(--fs-sm, 12px); }
+.dash-sum-val { font-size: var(--fs-xl, 22px); font-weight: 800; color: var(--text-main); }
+.dash-sum-val.bad { color: var(--danger); }
+.dash-sum-bar { height: 6px; border-radius: 3px; background: var(--bg-main); overflow: hidden; }
+.dash-sum-bar i { display: block; height: 100%; background: var(--primary); }
+.dash-sum-bar.ok i { background: var(--success); }
+.dash-sum-bar.warn i { background: var(--warning); }
+.dash-sum-bar.bad i { background: var(--danger); }
+.dash-sum-sub { font-size: var(--fs-xs, 11px); color: var(--text-sub); line-height: 1.5; }
+.dash-sum-sub b.bad { color: var(--danger); }
+.dash-sum-go { margin-top: auto; font-size: var(--fs-xs, 11px); color: var(--primary); font-weight: 700; }
+.dash-sum.empty .dash-sum-val { color: var(--text-muted); font-size: var(--fs-base, 13px); }
+@media (max-width: 1200px) { .dash-charts { grid-template-columns: minmax(0, 1fr); } .dash-sum-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Phase 진척 (1.6): 표 칸 너비 · 단계 칸 문제 표시 · 묶음 머리 · 등급 색 */
+.rate-good { color: var(--chart-good-text); }
+.rate-warn { color: var(--chart-warn-text); }
+.rate-bad { color: var(--chart-bad-text); }
+#tab-matrix .pm-w-dom { width: 105px; }
+#tab-matrix .pm-w-sys { width: 130px; }
+#tab-matrix .pm-w-type { width: 110px; }
+#tab-matrix .pm-w-wt { width: 64px; }
+#tab-matrix .pm-w-phase { width: 180px; }
+#tab-matrix .pm-w90 { width: 90px; }
+#tab-matrix .pm-w100 { width: 100px; }
+#tab-matrix .pm-w110 { width: 110px; }
+#tab-matrix .badge.pm-dom { background: var(--chip-bg); color: var(--chip-text); font-size: var(--fs-2xs, 10px); }
+.pm-empty { border: 1px dashed var(--border-color); }
+.pm-hint { font-size: var(--fs-xs, 11px); font-weight: 400; color: var(--text-muted); }
+.pm-group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 6px 10px; background: var(--bg-main); border-radius: 6px; border: 1px solid var(--border-color); }
+.pm-group-head.alt { border-color: var(--tint-info); }
+td.pm-cell { cursor: pointer; }
+td.pm-cell:hover { outline: 2px solid var(--primary); outline-offset: -2px; }
+.pm-iss { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; font-size: var(--fs-2xs, 10px); font-weight: 700; line-height: 1.25; }
+.pm-iss-del { color: var(--danger); }
+.pm-iss-slip { color: var(--warning); }
+.pm-sub-title { margin: 14px 0 8px; font-weight: 800; color: var(--text-main); }
+
+/* Summary (1.6): 주요 위험 상위 5 · 다가오는 마일스톤 */
+.exec-risk-list, .exec-ms-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.exec-risk { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-card); color: var(--text-main); font: inherit; font-size: var(--fs-sm, 12px); text-align: left; cursor: pointer; }
+.exec-risk:hover { border-color: var(--primary); }
+.exec-risk-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.exec-risk-sub { font-size: var(--fs-xs, 11px); color: var(--text-sub); white-space: nowrap; }
+.exec-risk-more, .exec-risk-none { font-size: var(--fs-xs, 11px); color: var(--text-muted); padding: 2px 8px; }
+.exec-ms-title { margin-top: 12px; }
+.exec-ms-list li { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 8px; font-size: var(--fs-sm, 12px); border-bottom: 1px dashed var(--border-color); }
+.exec-ms-date { font-weight: 700; color: var(--text-sub); }
+.exec-ms-due { color: var(--primary); }
+.card-title .pm-hint { background: none; border: 0; padding: 0; box-shadow: none; }
+

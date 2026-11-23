@@ -188,6 +188,17 @@ function eq(name, got, want) {
   eq("count patterns", [I.t("전체 저장 (2)"), I.t("단계 4개")], ["Save all (2)", "4 phases"]);
 }
 
+// ---- Phase 진척: 단계 칸 문제 요약 · 단계별 산출물 ----
+{
+  const { WBSEngine: E, Metrics: M } = load({ projectConfig: { delayGap: 5 } });
+  const leaves = [{ pStart: "2027-01-01", pEnd: "2027-01-10", pProg: 100, aProg: 50, bEnd: "2027-01-03" }, { pStart: "2027-01-01", pEnd: "2027-03-10", pProg: 20, aProg: 20 }];
+  eq("phaseIssues: delayed count, largest slip", E.phaseIssues(leaves, "2027-02-01", t => t.bEnd ? 7 : null), { delayed: 1, slip: 7 });
+  eq("phaseIssues: no baseline -> slip 0", E.phaseIssues(leaves, "2027-02-01", null).slip, 0);
+  const dl = [{ phase: "설계", round: "1차", status: "보완완료" }, { phase: "설계", round: "1차", status: "작성중", pDate: "2027-01-05" }, { phase: "분석", round: "2차", status: "작성전", pDate: "2027-03-01" }, { phase: "분석", round: "3차", status: "작성전" }];
+  const r = M.delivByPhase(dl, ["1차", "2차"], "2027-02-01", ["분석", "설계"]);
+  eq("delivByPhase: order, rounds, late, rate", r.map(x => [x.phase, x.total, x.done, x.late, x.rate, x.byRound["1차"].total]), [["분석", 1, 0, 0, 0, 0], ["설계", 2, 1, 1, 50, 2]]);
+}
+
 // ---- 결함 현황: 기준일까지 접수된 것만 ----
 {
   const { Metrics: M } = load();

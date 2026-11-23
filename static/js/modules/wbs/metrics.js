@@ -140,6 +140,21 @@ var Metrics = {
     return { list: d, total: d.length, open: open.length, closed: d.length - open.length, rate: this.pct(d.length - open.length, d.length),
       bySev, openBySev, critOpen: openBySev["치명"] + openBySev["높음"], undecided, series, noDate };
   },
+  // 단계별 산출물 제출 (Phase 진척): 단계 순서는 order(표준 산출물 단계 순서)를 따르고 그 밖은 뒤에
+  //  지연 = 계획 제출일이 기준일보다 앞인데 보완완료 · 실제 제출일이 없음
+  delivByPhase(list, rounds, refDate, order) {
+    const v = (list || []).filter(d => d && (!rounds || rounds.indexOf(d.round) !== -1));
+    const names = [];
+    (order || []).concat(v.map(d => d.phase || "")).forEach(p => { if (names.indexOf(p) === -1 && v.some(d => (d.phase || "") === p)) names.push(p); });
+    return names.map(phase => {
+      const rows = v.filter(d => (d.phase || "") === phase);
+      const byRound = {};
+      (rounds || []).forEach(r => { const rr = rows.filter(d => d.round === r); byRound[r] = { total: rr.length, done: rr.filter(d => this.DELIV_DONE.indexOf(d.status) !== -1).length }; });
+      const done = rows.filter(d => this.DELIV_DONE.indexOf(d.status) !== -1).length;
+      const late = rows.filter(d => d.pDate && refDate && d.pDate < refDate && this.DELIV_DONE.indexOf(d.status) === -1 && !d.aDate).length;
+      return { phase, total: rows.length, done, late, rate: this.pct(done, rows.length), byRound };
+    });
+  },
   delivStats(list, rounds) {
     const v = (list || []).filter(d => d && (!rounds || rounds.indexOf(d.round) !== -1));
     const done = v.filter(d => this.DELIV_DONE.indexOf(d.status) !== -1).length;

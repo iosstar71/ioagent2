@@ -372,36 +372,8 @@ var HomeScreenManager = {
       });
     }
 
-    // 4. Domain Portfolio Table
-    const domTbody = document.getElementById("execDomainPortfolioBody");
-    if (domTbody) {
-      domTbody.innerHTML = "";
-      const domains = (typeof projectConfig !== "undefined" && projectConfig.domains) ? projectConfig.domains : ["관리공통", "개선공정", "신규공정"];
-      domains.forEach(dName => {
-        const dSubs = (subsystemsMeta || []).filter(s => s.domain === dName).map(s => s.name);
-        const dTasks = (wbsData || []).filter(t => dSubs.includes(t.system) && t.isLeaf);
-        const dRoots = (wbsData || []).filter(t => dSubs.includes(t.system) && t.level === 1);
-        const dwp = dRoots.length ? WBSEngine.weightedProgress(dRoots) : { plan: 0, actual: 0 };
-        // 분야 비중 = 그 분야 서브시스템 가중치 합 / 전체 서브시스템 가중치 합
-        const allSw = (subsystemsMeta || []).reduce((acc, m) => acc + WBSEngine.sysWeight(m.name), 0);
-        const dWeight = allSw > 0 ? Math.round(dSubs.reduce((acc, n) => acc + WBSEngine.sysWeight(n), 0) / allSw * 1000) / 10 : 0;
-        const dPlan = dwp.plan;
-        const dActual = dwp.actual;
-        const dRate = Metrics.achv(dPlan, dActual);
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(dName)}</strong></td>
-          <td>${dTasks.length}개</td>
-          <td>${dWeight}%</td>
-          <td>${dPlan}%</td>
-          <td><strong>${dActual}%</strong></td>
-          <td style="font-weight:700; color:${dRate >= 90 ? "var(--chart-good-text)" : (dRate >= 70 ? "var(--chart-warn-text)" : "var(--chart-bad-text)")};">${dRate}%</td>
-          <td><span class="status-tag ${dRate >= 90 ? "tag-completed" : (dRate >= 70 ? "tag-progress" : "tag-delayed")}">${dRate >= 90 ? "정상" : (dRate >= 70 ? "주의" : "지연")}</span></td>
-        `;
-        domTbody.appendChild(tr);
-      });
-    }
+    // 4. 주요 위험 상위 5 · 다가오는 마일스톤
+    ExecRisk.render();
   },
 
   jumpToSubsystem(sysName) {
@@ -668,3 +640,47 @@ var HomeScreenManager = {
 };
 
 window.HomeScreenManager = HomeScreenManager;
+
+// Summary — 주요 위험 상위 5 (지연 · 치명 결함 · 선행 지연 · 범위 협의) · 다가오는 마일스톤
+//  셈은 CheckList(지연 · 선행) · Metrics(결함 · 범위) 그대로, 여기서는 고르고 줄 세우기만
+var ExecRisk = {
+  MAX: 5,
+  items() {
+    const rep = projectConfig.reportDate, c = CheckList.collect(null, false), out = [];
+    // 1) 치명 · 높음 미결 테스트 결함
+    Metrics.defectStats(vocData, rep).list.filter(v => ["치명", "높음"].includes(v.severity) && Metrics.VOC_DONE.indexOf(v.status) === -1)
+      .forEach(v => out.push({ rank: 0, tag: I18N.t("결함"), cls: "tag-delayed", text: `[${v.system}] ${v.id} ${v.title || ""}`, sub: v.severity, go: ["tab-voc", v.id] }));
+    // 2) 지연 Task (계획 대비 차이 큰 순)
+    c.delayed.forEach(x => out.push({ rank: 1, gap: x.gap, tag: I18N.t("지연"), cls: "tag-delayed", text: `[${x.t.system}] ${x.t.id} ${x.t.name || ""}`,
+      sub: I18N.tf("계획 {p}% · 실적 {a}%", { p: x.t.pProg, a: x.t.aProg }), go: ["tab-wbs", x.t.id] }));
+    // 3) 선행 지연 영향
+    c.predHit.forEach(x => out.push({ rank: 2, tag: I18N.t("선행 지연"), cls: "tag-hold", text: `[${x.t.system}] ${x.t.id} ${x.t.name || ""}`, sub: WbsStatusView.tip(x.r).split("\n")[0], go: ["tab-wbs", x.t.id] }));
+    // 4) 범위 협의 알림
+    Metrics.scopeAlerts(vocData, projectConfig).forEach(a => out.push({ rank: 3, tag: I18N.t("범위 협의"), cls: "tag-hold", text: I18N.tf("{s}: VOC 안에서 처리한 개선 요청 {n}건", { s: a.system, n: a.count }), sub: "", go: ["tab-voc", ""] }));
+    out.sort((a, b) => a.rank - b.rank || (b.gap || 0) - (a.gap || 0));
+    // 종류마다 하나씩 먼저 (지연이 많아도 결함 · 선행 · 범위 협의가 가려지지 않게), 나머지는 순서대로
+    const first = [0, 1, 2, 3].map(k => out.find(x => x.rank === k)).filter(Boolean);
+    return first.concat(out.filter(x => first.indexOf(x) === -1));
+  },
+  render() {
+    const ol = document.getElementById("execRiskList"), ul = document.getElementById("execMsList");
+    if (!ol || !ul) return;
+    const all = this.items(), top = all.slice(0, this.MAX).sort((a, b) => a.rank - b.rank || (b.gap || 0) - (a.gap || 0));
+    ol.innerHTML = top.length ? top.map(r => `<li><button type="button" class="exec-risk" data-click="ExecRisk.open" data-click-args="${UiEvents.args(r.go[0], r.go[1])}">
+        <span class="status-tag ${r.cls}">${escapeHtml(r.tag)}</span><span class="exec-risk-text">${escapeHtml(r.text)}</span><span class="exec-risk-sub">${escapeHtml(r.sub || "")}</span></button></li>`).join("")
+      + (all.length > top.length ? `<li class="exec-risk-more">${escapeHtml(I18N.tf("그 밖에 {n}건 — Dashboard 의 체크할 일에서", { n: all.length - top.length }))}</li>` : "")
+      : `<li class="exec-risk-none">${I18N.t("눈에 띄는 위험이 없습니다.")}</li>`;
+    const rep = projectConfig.reportDate;
+    const ms = (projectConfig.milestones || []).filter(m => m && m.date && m.name && m.date >= rep).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    ul.innerHTML = ms.length ? ms.map(m => `<li><span class="exec-ms-date">${escapeHtml(m.date)}</span><span class="exec-ms-name">${escapeHtml(m.name)}${m.scope && m.scope !== "ALL" ? ` <span class="u-c-muted">(${escapeHtml(m.scope)})</span>` : ""}</span><b class="exec-ms-due">${escapeHtml(DayUtil.dueText(m.date))}</b></li>`).join("")
+      : `<li class="exec-risk-none">${I18N.t("남은 마일스톤이 없습니다.")}</li>`;
+    I18N.translateTree(ol); I18N.translateTree(ul);
+  },
+  open(tab, id) {
+    if (tab === "tab-wbs" && id) return CheckList.openTask(id);
+    if (id) return CheckList.reveal(tab, id);
+    GShell.go(tab);
+  }
+};
+window.ExecRisk = ExecRisk;
+

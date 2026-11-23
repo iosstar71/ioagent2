@@ -1,20 +1,9 @@
 // =============================================================================
 // VOC · 결함 현황 (대시보드 · Phase 현황 · Summary 가 같이 씀) — 셈은 모두 Metrics
-//  - judgeChips : 판정별 건수 칩 (판정 대기 · 결함 · 개선 요청(요구 등록) · 설명 종결 · 이슈)
 //  - stageTable : 단계 × 판정 표 (합계 행)
 //  - defect     : 테스트 결함 현황 카드 (통합테스트 단계 접수가 있을 때만) + 소진 차트(SVG)
 // =============================================================================
 var VocBoard = {
-  JUDGE_CLS: { "미판정": "chip-hold", "결함": "chip-delayed", "개선 요청": "chip-progress", "설명 종결": "chip-completed", "이슈": "chip-ready" },
-
-  judgeChips(st) {
-    return Metrics.VOC_JUDGE.map(j => {
-      const n = st.byJudge[j] || 0;
-      const label = j === "미판정" ? "판정 대기" : j;
-      const extra = j === "개선 요청" && st.toReq ? ` <span class="u-fs-xs">(${I18N.tf("요구 등록 {n}", { n: st.toReq })})</span>` : "";
-      return `<span class="status-badge-chip ${this.JUDGE_CLS[j]}"><span>${label}</span>: <b>${n}</b>${extra}</span>`;
-    }).join("");
-  },
 
   // 단계 × 판정 (행: 4단계 + 미지정(있을 때) + 합계)
   stageTable(list) {
@@ -62,38 +51,6 @@ var VocBoard = {
         <table class="matrix-table df-sev"><thead><tr><th>심각도</th><th>전체</th><th>미결</th></tr></thead>
           <tbody>${sev.map(s => `<tr><td class="u-tl">${escapeHtml(s || "미지정")}</td><td>${d.bySev[s]}</td><td>${d.openBySev[s] ? `<b class="u-c-danger">${d.openBySev[s]}</b>` : 0}</td></tr>`).join("")}</tbody></table>
       </div>`;
-  },
-
-  // 대시보드: 위 판정 카드 · 결함 카드 · 아래 서브시스템 표 + 단계 표
-  renderDashboard(systems, all) {
-    const scope = all || vocData.filter(v => systems.indexOf(v.system) !== -1);
-    const st = Metrics.vocStats(scope);
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-    set("voc-stat-total", st.total);
-    set("voc-stat-achieve", st.rate + "%");
-    const chips = document.getElementById("vocJudgeChips");
-    if (chips) chips.innerHTML = this.judgeChips(st);
-
-    const card = document.getElementById("dashDefectCard");
-    if (card) {
-      card.hidden = !Metrics.hasTestStage(scope, projectConfig.reportDate);
-      if (!card.hidden) document.getElementById("dashDefectBody").innerHTML = this.defectHtml(scope, projectConfig.reportDate);
-    }
-
-    const tb = document.querySelector("#dashVocTable tbody");
-    if (tb) {
-      const row = (name, s, total) => `<tr${total ? ' class="col-total"' : ""}><td class="u-tl"><b>${escapeHtml(name)}</b></td><td><b>${s.total}</b></td><td>${s.done}</td>
-        <td>${s.total - s.done ? `<b>${s.total - s.done}</b>` : 0}</td><td>${s.undecided ? `<b class="u-c-warning">${s.undecided}</b>` : 0}</td>
-        <td>${s.byJudge["결함"]}</td><td>${s.improve}</td><td><b class="${s.rate >= 80 ? "u-c-success" : "u-c-warning"}">${s.rate}%</b></td></tr>`;
-      tb.innerHTML = systems.length
-        ? systems.map(sys => row(sys, Metrics.vocStats(scope.filter(v => v.system === sys)))).join("") + row(I18N.t("[선택 합계]"), st, true)
-        : `<tr><td class="u-tc u-p-20 u-c-muted" colspan="8">${I18N.t("선택된 조회 조건에 해당하는 VOC 가 없습니다.")}</td></tr>`;
-    }
-    set("dash-voc-open", Metrics.vocOpen(scope).length);
-    set("dash-voc-done", st.done);
-    const stBox = document.getElementById("dashVocStageBox");
-    if (stBox) stBox.innerHTML = this.stageTable(scope);
-    if (typeof I18N !== "undefined") ["vocJudgeChips", "dashDefectBody", "dashVocStageBox"].forEach(id => { const el = document.getElementById(id); if (el) I18N.translateTree(el); });
   }
 };
 window.VocBoard = VocBoard;

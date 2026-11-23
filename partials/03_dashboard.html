@@ -11,196 +11,85 @@
           <button class="btn btn-success btn-sm" data-click="ReportExporter.exportExcelReport" title="주간보고 탭의 [전체 통합 엑셀]과 동일한 주간보고 엑셀(.xlsx: 종합요약·금주실적·차주계획·VOC·회의일정)을 다운로드합니다.">
             📥 엑셀 다운로드 (보고서)
           </button>
-          <!-- PPT 보고서 기능 일시 비활성화 (재정비 후 재오픈 예정) -->
-          <button class="btn btn-warning btn-sm" id="btnDashPptxReport" disabled aria-disabled="true" style="opacity:0.45; cursor:not-allowed;" title="PPT 보고서 기능은 현재 버전에서 일시 비활성화되었습니다.">
-            📥 PPT 다운로드 (준비중)
-          </button>
-          <span class="lbl-progress-refreshed-at u-fs-xs" style="color:#64748b;"></span>
+          <span class="lbl-progress-refreshed-at u-fs-xs u-c-sub"></span>
           <button class="btn btn-primary btn-sm btn-progress-refresh" data-click="refreshDashboardView" title="최신 저장 데이터(DB 서버 / JSON 파일 / 로컬 저장소)를 다시 불러와 계획·실적 진척률을 재계산합니다.">
             🔄 실적 새로고침
           </button>
         </div>
       </div>
 
+      <!-- 조회 범위 (아래 모든 숫자 · 차트에 함께 적용) -->
+      <div class="dash-filter">
+        <span class="dash-filter-title">🔍 조회 범위</span>
+        <div class="filter-item">
+          <label class="u-bold">🗂️ 도메인:</label>
+          <select class="u-bold" id="dashDomainFilter" data-change="UiH.domainFilter" data-change-args='["dashDomainFilter", "dashSubsystemFilter", "renderDashboard"]'></select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🏢 서브시스템:</label>
+          <select class="u-bold" id="dashSubsystemFilter" data-change="renderDashboard">
+            <option value="ALL">전체 서브시스템 (종합)</option>
+          </select>
+        </div>
+        <span class="dash-filter-note">핵심 숫자 · 체크할 일 · S-curve · 불릿 차트 · 요약 카드에 함께 적용</span>
+      </div>
+
       <!-- 상단 4대 KPI 카드 -->
       <div class="grid-4 u-mb-12">
-        <div class="kpi-card" style="border-left-color: var(--primary);">
+        <div class="kpi-card kpi-b-primary">
           <div class="kpi-title">종합 계획 진척률 (기준일 연산)</div>
           <div class="kpi-value" id="kpi-plan">0.0%</div>
           <div class="kpi-sub">서브시스템 가중치 합산</div>
         </div>
-        <div class="kpi-card" style="border-left-color: var(--success);">
+        <div class="kpi-card kpi-b-success">
           <div class="kpi-title">종합 실적 진척률 (가중치 롤업)</div>
           <div class="kpi-value u-c-success" id="kpi-actual">0.0%</div>
           <div class="kpi-sub">L5 ➔ L1 자동합산</div>
         </div>
-        <div class="kpi-card" style="border-left-color: var(--accent);">
+        <div class="kpi-card kpi-b-accent">
           <div class="kpi-title">종합 달성률 (실적 / 계획)</div>
           <div class="kpi-value" id="kpi-rate">0.0%</div>
           <div class="kpi-sub">목표 대비 이행 효율</div>
         </div>
-        <div class="kpi-card" style="border-left-color: var(--danger);">
+        <div class="kpi-card kpi-b-danger">
           <div class="kpi-title">지연 Task / 일정 오류 수</div>
           <div class="kpi-value u-c-danger" id="kpi-delayed">0 건</div>
           <div class="kpi-sub">기간 이탈 오류: <b class="u-c-danger" id="kpi-out-of-range-count">0</b>건 포함</div>
         </div>
       </div>
 
-      <!-- [Neo 2.1] 체크할 일 -->
+      <!-- 체크할 일 -->
       <div class="card neo-todo" id="neoTodoCard"></div>
 
-      <!-- 공정 상태 요약 칩 바 ([Neo 2.1] 누르면 WBS 에서 해당 상태 최하위 Task 조회) -->
-      <div class="status-summary-bar neo-click-chips">
-        <span class="status-badge-chip chip-total" data-click="CheckList.openWbsStatus" data-click-args='["ALL"]' title="WBS 에서 보기">공정 전체: <b id="stat-count-total">0</b></span>
-        <span class="status-badge-chip chip-completed" data-click="CheckList.openWbsStatus" data-click-args='["완료"]' title="WBS 에서 보기">완료: <b id="stat-count-completed">0</b></span>
-        <span class="status-badge-chip chip-progress" data-click="CheckList.openWbsStatus" data-click-args='["진행중"]' title="WBS 에서 보기">진행중: <b id="stat-count-progress">0</b></span>
-        <span class="status-badge-chip chip-delayed" data-click="CheckList.openWbsStatus" data-click-args='["지연"]' title="WBS 에서 보기">지연: <b id="stat-count-delayed">0</b></span>
-        <span class="status-badge-chip chip-ready" data-click="CheckList.openWbsStatus" data-click-args='["대기"]' title="WBS 에서 보기">대기: <b id="stat-count-ready">0</b></span>
-        <span class="status-badge-chip chip-error" id="stat-chip-error" style="display:none;">⚠️ 기간이탈 오류: <b id="stat-count-error">0</b></span>
-      </div>
-
-      <!-- 요구사항 및 VOC 전체 상태별 종합 통계 바 -->
-      <div class="grid-2 u-mb-12">
+      <!-- S-curve | 불릿 차트 (나란히) -->
+      <div class="dash-charts">
         <div class="card u-mb-0">
           <div class="card-title">
-            <span>🎯 요구사항(REQ) 상태별 종합 통계</span>
-            <span class="u-fs-xs u-c-muted">전체: <b id="req-stat-total">0</b>건 (<span id="req-stat-split"></span>) | 완료율: <b class="u-c-primary" id="req-stat-rate">0.0%</b></span>
+            <span>📈 S-Curve 주별 진척률 · 달성률</span>
+            <span class="sc-legend"><i class="sc-plan"></i>누적 계획 <i class="sc-actual"></i>누적 실적 <i class="sc-today"></i>기준일 <i class="sc-rate"></i>달성률</span>
           </div>
-          <div class="status-summary-bar u-mb-0">
-            <span class="status-badge-chip chip-ready">대기: <b id="req-stat-ready">0</b></span>
-            <span class="status-badge-chip chip-progress">진행중: <b id="req-stat-progress">0</b></span>
-            <span class="status-badge-chip chip-completed">완료: <b id="req-stat-completed">0</b></span>
-            <span class="status-badge-chip chip-hold">보류: <b id="req-stat-hold">0</b></span>
-            <span class="status-badge-chip chip-del">삭제: <b id="req-stat-deleted">0</b></span>
-          </div>
+          <div class="scurve-box"><canvas class="u-w100" id="scurveCanvas"></canvas></div>
         </div>
-
-        <div class="card u-mb-0">
+        <div class="card bullet-card u-mb-0">
           <div class="card-title">
-            <span>💬 VOC · 결함 판정 현황</span>
-            <span class="u-fs-xs u-c-muted">접수: <b id="voc-stat-total">0</b>건 | 처리율: <b class="u-c-success u-fs-base" id="voc-stat-achieve">0%</b></span>
-          </div>
-          <div class="status-summary-bar u-mb-0" id="vocJudgeChips"></div>
-        </div>
-      </div>
-
-      <!-- 테스트 결함 현황: 통합테스트 단계 접수가 있을 때만 (voc-board.js) -->
-      <div class="card u-mb-12" id="dashDefectCard" hidden>
-        <div class="card-title"><span>🐞 테스트 결함 현황 (통합테스트 · 판정 결함)</span></div>
-        <div id="dashDefectBody"></div>
-      </div>
-
-      <!-- 대시보드 4대 영역 통합 조회 필터 (서브시스템 공정 현황 상단 배치) -->
-      <div class="card u-mb-12" style="padding: 12px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid var(--primary);">
-        <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-10">
-          <div class="u-flex u-ai-center u-gap-8">
-            <span style="font-size: var(--fs-xl, 18px);">🔍</span>
-            <div>
-              <strong class="u-fs-base u-c-info">대시보드 통합 연동 조회 필터</strong>
-              <div class="u-fs-xs" style="color: #64748b;">공정 진척 현황 카드 · S-Curve 차트 · 산출물 통계 · VOC 통계 4대 영역 전체 실시간 동시 연동</div>
-            </div>
-          </div>
-          <div class="u-flex u-ai-center u-gap-10 u-wrap">
-            <div class="filter-item">
-              <label class="u-bold u-fs-115" style="color: #334155;">🗂️ 도메인별 조회:</label>
-              <select class="u-bold u-fs-115 u-r-4" id="dashDomainFilter" data-change="UiH.domainFilter" data-change-args='["dashDomainFilter", "dashSubsystemFilter", "renderDashboard"]' style="padding: 4px 8px; border: 1px solid #cbd5e1; min-width: 140px;">
-              </select>
-            </div>
-            <div class="filter-item">
-              <label class="u-bold u-fs-115" style="color: #334155;">🏢 서브시스템별 조회:</label>
-              <select class="u-bold u-fs-115 u-r-4" id="dashSubsystemFilter" data-change="renderDashboard" style="padding: 4px 8px; border: 1px solid #cbd5e1; min-width: 160px;">
-                <option value="ALL">전체 서브시스템 (종합)</option>
-              </select>
-            </div>
-            <button class="btn btn-primary btn-sm btn-progress-refresh" data-click="refreshDashboardView" title="최신 실적 재로드 및 대시보드 통계 즉시 재집계">
-              🔄 실적 새로고침
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- [요건 8] 서브시스템별 공정 현황 카드 (Phase 진척 탭에서 종합대시보드로 이동) -->
-      <div class="card u-mb-12">
-        <div class="card-title">
-          <span>🏢 서브시스템별 공정 진척 현황</span>
-        </div>
-        <div id="subsystemCardsContainer" class="grid-2 u-gap-12"></div>
-      </div>
-
-      <!-- S-Curve 누적 진척 및 달성률 차트 -->
-      <div class="card">
-        <div class="card-title">
-          <span>📈 S-Curve 주별 진척률 (선) 및 달성률 (막대)</span>
-          <div class="u-flex u-gap-12 u-ai-center u-fs-115 u-wrap">
-            <span class="u-iflex u-ai-center u-gap-4 u-semibold" style="color: var(--chart-plan);"><span class="u-iblock u-r-2" style="width:12px; height:3px; background:var(--chart-plan);"></span> 누적 계획(%)</span>
-            <span class="u-iflex u-ai-center u-gap-4 u-semibold" style="color: var(--chart-actual);"><span class="u-iblock u-r-2" style="width:12px; height:3px; background:var(--chart-actual);"></span> 누적 실적(%)</span>
-            <span class="u-iflex u-ai-center u-gap-4 u-semibold" style="color: var(--chart-today);"><span class="u-iblock" style="width:2px; height:10px; background:var(--chart-today);"></span> 기준일</span>
-            <span class="u-iflex u-ai-center u-gap-4 u-semibold" style="color: var(--chart-rate-text);"><span class="u-iblock" style="width:9px; height:10px; background:var(--chart-rate-fill); border:1px solid var(--chart-rate-line);"></span> 달성률(%)</span>
-            <span class="u-fs-xs u-c-muted u-ml-4">(※ 상단 대시보드 필터와 100% 자동 연동)</span>
-          </div>
-        </div>
-        <div style="height: 270px; position: relative;">
-          <canvas class="u-w100" id="scurveCanvas" style="height: 100%;"></canvas>
-        </div>
-      </div>
-
-      <!-- 불릿 차트 -->
-      <div class="card bullet-card">
-          <div class="card-title">
-            <span class="u-bold">🎯 서브시스템별 계획 대비 실적 (불릿 차트)</span>
-            <span class="bl-legend"><i class="lg-bar"></i>실적 <i class="lg-mark"></i>계획(기준일) <i class="lg-bad"></i>위험 <i class="lg-warn"></i>주의 <i class="lg-ok"></i>정상 · 줄을 누르면 WBS 로 이동</span>
+            <span class="u-bold">🎯 서브시스템별 계획 대비 실적</span>
+            <span class="bl-legend"><i class="lg-bar"></i>실적 <i class="lg-mark"></i>계획(기준일) <i class="lg-bad"></i>위험 <i class="lg-warn"></i>주의 <i class="lg-ok"></i>정상 · 줄을 누르면 WBS 로</span>
           </div>
           <div id="dashBulletChart" class="bullet-box"></div>
         </div>
-        
-      <!-- [요건 8] 산출물 제출 통계표 & VOC/이슈 처리 통계표 (대시보드 통계형 개편) -->
-      <div class="grid-2">
-        <div class="card u-mb-0">
-          <div class="card-title">
-            <span>📑 서브시스템 · 차수별 산출물 제출 현황 통계</span>
-            <span class="u-fs-xs u-c-muted">보완완료: <b id="dash-deliv-done">0</b> / 전체: <b id="dash-deliv-total">0</b>건 (완료율 <b class="u-c-success" id="dash-deliv-rate">0%</b>)</span>
-          </div>
-          <div class="table-container" style="max-height: 240px;">
-            <table id="dashDeliverablesTable" class="matrix-table">
-              <thead>
-                <tr>
-                  <th>서브시스템</th>
-                  <th>1차(완료/전체)</th>
-                  <th>2차(완료/전체)</th>
-                  <th>보완완료</th>
-                  <th>검토/작성중</th>
-                  <th>작성전</th>
-                  <th>제출완료율</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
+      </div>
 
-        <div class="card u-mb-0">
-          <div class="card-title">
-            <span>💬 서브시스템별 VOC · 결함 처리 현황</span>
-            <span class="u-fs-xs u-c-muted">미결: <b id="dash-voc-open">0</b>건 / 처리: <b id="dash-voc-done">0</b>건</span>
-          </div>
-          <div class="table-container dash-voc-wrap">
-            <table id="dashVocTable" class="matrix-table">
-              <thead>
-                <tr>
-                  <th>서브시스템</th>
-                  <th>접수</th>
-                  <th>처리</th>
-                  <th>미결</th>
-                  <th>판정 대기</th>
-                  <th>결함</th>
-                  <th>개선 요청</th>
-                  <th>처리율</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="dash-voc-stage" id="dashVocStageBox"></div>
+      <!-- 요약 카드: 요구사항 · VOC · 테스트 결함 · 산출물 (자세한 표는 Phase 진척) -->
+      <div class="dash-sum-grid" id="dashSumGrid"></div>
+
+      <!-- 도메인별 진척 (도메인이 2개 이상일 때) -->
+      <div class="card" id="dashDomainCard" hidden>
+        <div class="card-title"><span>🏛️ 도메인별 진척</span></div>
+        <div class="table-container">
+          <table class="matrix-table" id="execDomainPortfolioTable">
+            <thead><tr><th>도메인</th><th>Task 수</th><th>가중치</th><th>계획</th><th>실적</th><th>달성률</th><th>상태</th></tr></thead>
+            <tbody id="execDomainPortfolioBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
