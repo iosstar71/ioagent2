@@ -98,6 +98,14 @@ var TodoCenter = {
     return exists && exists() ? { type, id } : null;
   },
 
+  // 할 일 내용은 여러 줄 (줄바꿈은 Shift+Enter)
+  MAX_TITLE: 1000,
+  // 입력칸에서 Enter = 추가, Shift+Enter = 줄바꿈 (한글 입력 중 조합 Enter 는 무시)
+  enterAdd(e) {
+    if (!e || e.shiftKey || e.isComposing || e.keyCode === 229) return;
+    e.preventDefault();
+    this.add();
+  },
   add() {
     const v = id => { const el = document.getElementById(id); return el ? String(el.value || "").trim() : ""; };
     const title = v("todoNewTitle");
@@ -106,7 +114,7 @@ var TodoCenter = {
     const link = this._link(lt, lid);
     if (lt && lid && !link) showToast(`⚠️ [${this.LINKS[lt]}] ${lid} 을(를) 찾을 수 없어 연결 없이 등록합니다.`);
     todosData.push({
-      id: this.newId("TD"), owner: this.me(), kind: "todo", title: title.slice(0, 200),
+      id: this.newId("TD"), owner: this.me(), kind: "todo", title: title.slice(0, this.MAX_TITLE),
       due: v("todoNewDue"), priority: this.PRI[v("todoNewPri")] ? v("todoNewPri") : "M",
       link, done: false, doneAt: "", createdAt: new Date().toISOString().slice(0, 19).replace("T", " ")
     });
@@ -140,7 +148,7 @@ var TodoCenter = {
     const v = sel => { const el = document.querySelector(sel); return el ? String(el.value || "").trim() : ""; };
     const title = v(`[data-todo-edit="title"]`);
     if (!title) return showToast("할 일 내용을 입력하세요.");
-    t.title = title.slice(0, 200);
+    t.title = title.slice(0, this.MAX_TITLE);
     t.due = v(`[data-todo-edit="due"]`);
     t.priority = this.PRI[v(`[data-todo-edit="pri"]`)] ? v(`[data-todo-edit="pri"]`) : "M";
     const lt = v(`[data-todo-edit="linkType"]`), lid = v(`[data-todo-edit="linkId"]`);
@@ -159,7 +167,7 @@ var TodoCenter = {
     if (this.todos().some(t => t.autoKey === key && !t.done)) return showToast("이미 내 할 일에 담겨 있습니다.");
     const link = item.type === "DLV" ? null : this._link(item.type, String(item.id));
     todosData.push({
-      id: this.newId("TD"), owner: this.me(), kind: "todo", title: item.title.slice(0, 200), due: item.due || "",
+      id: this.newId("TD"), owner: this.me(), kind: "todo", title: item.title.slice(0, this.MAX_TITLE), due: item.due || "",
       priority: key.indexOf("WBS:") === 0 && /^-/.test(item.tag || "") ? "H" : "M", link, autoKey: key,
       done: false, doneAt: "", createdAt: new Date().toISOString().slice(0, 19).replace("T", " ")
     });
@@ -221,7 +229,7 @@ var TodoCenter = {
     const row = t => {
       if (this._editing === t.id) {
         return `<li class="todo-item editing">
-          <input type="text" data-todo-edit="title" value="${escapeAttr(t.title)}" maxlength="200" aria-label="할 일 내용">
+          <textarea data-todo-edit="title" class="todo-edit-title" rows="${Math.min(6, Math.max(2, String(t.title).split("\n").length))}" maxlength="1000" aria-label="할 일 내용">${escapeHtml(t.title)}</textarea>
           <input type="date" data-todo-edit="due" value="${escapeAttr(t.due || "")}" aria-label="마감일">
           <select data-todo-edit="pri" aria-label="중요도">${priOpts(t.priority)}</select>
           <select data-todo-edit="linkType" aria-label="연결할 항목 종류" title="연결할 항목 (선택)"><option value="">연결 없음</option>${Object.keys(this.LINKS).map(k => `<option value="${k}" ${t.link && t.link.type === k ? "selected" : ""}>${this.LINKS[k]}</option>`).join("")}</select>
@@ -234,7 +242,7 @@ var TodoCenter = {
       return `<li class="todo-item${t.done ? " done" : ""}">
         <input type="checkbox" class="todo-check" ${t.done ? "checked" : ""} data-change="TodoCenter.toggle" data-change-args="${A(t.id)}" aria-label="완료">
         <span class="todo-pri pri-${escapeAttr(t.priority || "M")}" title="중요도 ${escapeAttr(this.PRI[t.priority] || "보통")}"></span>
-        <span class="todo-title">${escapeHtml(t.title)}</span>
+        <span class="todo-title">${escapeHtml(t.title).replace(/\n/g, "<br>")}</span>
         ${link}
         ${t.done ? `<span class="todo-due none">${escapeHtml(t.doneAt || "")} 완료</span>` : this.due(t.due)}
         <span class="todo-actions">
@@ -264,7 +272,7 @@ var TodoCenter = {
               </div>
             </div>
             <div class="todo-form">
-              <input type="text" id="todoNewTitle" maxlength="200" placeholder="할 일을 입력하고 Enter (예: 2차 산출물 검토 의견 회신)" aria-label="할 일 내용" data-keypress="TodoCenter.add" data-keypress-key="Enter">
+              <textarea id="todoNewTitle" class="todo-new-title" rows="2" maxlength="1000" placeholder="할 일을 입력하고 Enter (줄바꿈은 Shift+Enter, 예: 2차 산출물 검토 의견 회신)" aria-label="할 일 내용" data-keydown="TodoCenter.enterAdd" data-keydown-key="Enter" data-keydown-args='["$event"]'></textarea>
               <input type="date" id="todoNewDue" aria-label="마감일" title="마감일">
               <select id="todoNewPri" aria-label="중요도" title="중요도">${priOpts("M")}</select>
               <select id="todoNewLinkType" aria-label="연결할 항목 종류" title="연결할 항목 (선택)">
