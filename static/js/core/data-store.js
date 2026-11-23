@@ -41,6 +41,10 @@ var SyncManager = {
     "tab-master": ["projectConfig", "subsystemsMeta", "standardDeliverablesMeta", "projectUsers"],
     "tab-config": ["projectConfig", "theme", "processTypes"]
   },
+  // 화면별 [새로고침]은 그 화면 자료 + 모든 화면이 함께 쓰는 설정 정보(서브시스템 · 멤버 선택 목록, 진척률 기준 · 가중치)도 다시 받음
+  //  — 다른 사람이 바꾼 설정이 어느 화면에서 새로고침해도 반영되게. [저장] 범위는 TAB_KEYS 그대로 (다른 화면에서 설정을 저장하지 않게)
+  SHARED_KEYS: ["projectConfig", "subsystemsMeta", "projectUsers"],
+  refreshKeys(tabId) { const k = this.TAB_KEYS[tabId]; return k ? k.concat(this.SHARED_KEYS.filter(x => k.indexOf(x) === -1)) : null; },
 
   backend() {
     return (typeof DbConnector !== "undefined" && DbConnector.isServerMode()) ? ServerBackend : LocalBackend;
@@ -374,6 +378,11 @@ var SyncManager = {
     DataRegistry.apply(res.data, loadedKeys);
     this.afterDataApplied(loadedKeys, false, res.revs);
     this._restoreUiState(uiState);
+    // [전체 새로고침]은 프로젝트 목록(머리줄 선택 상자 · 프로젝트 관리 표)도 다시 받음 — 다른 사람이 추가 · 삭제한 프로젝트
+    if (!keys) {
+      try { await ProjectManager.refreshList(); ProjectManager.renderSelector(); ProjectManager.renderList(); }
+      catch (e) { console.warn("[SyncManager] project list refresh failed", e); }
+    }
     this.setStatus(`최신 (${new Date().toLocaleTimeString()})`, "ok");
     if (!opts.silent) {
       const where = keys ? loadedKeys.map(k => DataRegistry.DEFS[k].label).join(", ") : "전체 데이터";
@@ -536,7 +545,7 @@ var SyncUI = {
         <span class="sync-toolbar-scope">🗂️ ${keys ? keys.map(k => DataRegistry.DEFS[k].label).join(" · ") : "전체 데이터"}</span>
         <span class="sync-toolbar-state" data-keys="${keys ? keys.join(",") : ""}">-</span>
         <button class="btn btn-primary btn-xs" data-click="SyncManager.save" data-click-args="${UiEvents.args(keys || null, { notify: true })}" title="이 화면의 변경 내용을 저장합니다.">💾 저장</button>
-        <button class="btn btn-secondary btn-xs" data-click="SyncManager.refresh" data-click-args="${UiEvents.args(keys || null)}" title="이 화면의 데이터를 저장소의 최신 데이터로 다시 불러옵니다.">🔄 새로고침</button>`;
+        <button class="btn btn-secondary btn-xs" data-click="SyncManager.refresh" data-click-args="${UiEvents.args(SyncManager.refreshKeys(tabId))}" title="이 화면의 데이터를 저장소의 최신 데이터로 다시 불러옵니다.">🔄 새로고침</button>`;
       pane.insertBefore(bar, pane.firstChild);
     });
   },
