@@ -113,7 +113,7 @@ Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업
   - `workgroup/` — 서버(`server/`, `wbs_db_server.py`), 설정(`conf/app.ini`), Workgroup 도구 · 시험, 그리고 `workgroup/webapp/`(Workgroup 전용 화면 파일 · 생성 파일 · 덮어쓰기)
   - `workgroup/webapp/static/js/overrides/*.js` — 공통 화면 코드 중 Workgroup 에서 다르게 동작하는 메서드(로그인 · 서버 저장 · 체크아웃 잠금 등)를 같은 이름으로 덮어씀.
     **공통 파일의 메서드를 고칠 때 `grep -rn "<메서드 이름>" workgroup/webapp/static/js/overrides` 로 같은 이름이 있는지 확인**하고 있으면 함께 고친다.
-- 평소 시험은 Standalone 만. **Workgroup 시험 · 배포본은 사용자가 요청할 때만** (소스는 함께 고침):
+- 시험 (2026-11 결정): 버전을 마칠 때 **Standalone E2E + Workgroup 서버 API 시험(9초)은 항상**, **Workgroup E2E(약 4분)는 화면 · 저장 쪽을 고친 버전에서 함께**. **Workgroup 배포본은 사용자가 요청할 때만** (소스는 함께 고침):
   `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 Workgroup 시험(아래 6).
 - Workgroup 만의 것: 서버, 로그인 · 계정 등록, 체크아웃 잠금, 채팅, 첨부, 도움말 내장(manual-viewer). Standalone 만의 것: 📦 마스터 파일 메뉴, 샘플 프로젝트, IndexedDB 저장(Workgroup 은 같은 이름의 localStorage `AppStore`).
 - 저장: 두 판 모두 자동저장 없음 — [저장]을 눌러야 기록. 화면 설정(기준일 · 테마)과 프로그램이 한 자료 변환만 조용히 기록(`SyncManager.saveSettingsQuiet`).
