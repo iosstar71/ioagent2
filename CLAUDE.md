@@ -3,6 +3,7 @@
 브랜드 IOSTAR-PM · 사내 표시 PM Hub · 판: **Standalone**(DB · 서버 없음) / **Workgroup**(서버 DB) / Enterprise(계획).
 **두 판이 이 브랜치(`iostar-pm-standalone`) 한 코드에 있다** — 화면은 맨 위 `index.html` · `static/` 한 벌, Workgroup 만의 것은 `workgroup/` (구조: `docs/EDITIONS.md`).
 사용자와는 **한국어**로 답한다. 커밋 메시지 · 도구 콘솔 출력은 영어.
+**새 대화를 시작하면 `docs/HANDOFF.md` 를 먼저 읽는다** (사용자가 정한 것 · 지금 버전 · 다음 할 일). 결정이 생기면 그 파일도 고친다.
 
 ## 1. 사용량을 아끼는 작업 방식 (먼저 읽기)
 - **큰 파일은 통째로 읽지 않는다.** `grep -n` 으로 줄을 찾고 `sed -n 'a,bp'` 또는 Read(offset/limit)로 그 부분만.

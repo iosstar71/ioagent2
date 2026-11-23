@@ -405,7 +405,7 @@ async function localMain() {
     const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
     RecordPanel.close(); meetingsData = keep; MeetingManager.render();
     const c = document.getElementById("ruleCard");
-    o.rule = !!c && !!c.querySelector("#weekFmtBox") && c.querySelectorAll(".rule-id-box").length === 4;
+    o.rule = !!c && !!c.querySelector("#weekFmtBox") && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
     o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
     o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
     const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
@@ -463,7 +463,7 @@ async function localMain() {
     RecordPanel.close(); reqMasterData = reqMasterData.filter(r => r.id !== "REQ-PD"); renderReqMasterTable();
     return o; });
   check("Summary report: default keeps the old contents (detailed, Classic Band); presets brief / standard / detailed + per-slide choice; 5 design sets build PPT and preview; detail panel starts under the screen header",
-    ph3.def === "detail/classic" && ph3.ui === "4,9,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
+    ph3.def === "detail/classic" && ph3.ui === "4,10,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
   // 요건 반영 (0.6.0): 서브메뉴 줄 통일 · 머리글 · Admin 프로젝트/시스템 타이틀(서버 저장) · 자료 묶음 · 설정 탭 이름 · 테마 6종
   const rq = await page.evaluate(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};
