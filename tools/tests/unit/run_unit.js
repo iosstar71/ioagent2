@@ -130,6 +130,8 @@ function eq(name, got, want) {
     [["1.1:delayed"], ["1.2:overlap"], ["1.2:started"], ["1.3:"]]);
   eq("predCheck: a finished Task has no warning; unknown ID is missing", [reasons("2.5"), E.predCheck({ pred: "9.9" }, d, rep).list[0].missing], [["1.1:", "1.2:", "1.3:"], true]);
   eq("predWarnings: only Tasks with a warning", [...E.predWarnings(d, rep).keys()].map(t => t.id), ["2.1", "2.2", "2.3"]);
+  const cyc = [{ id: "A", pred: "" }, { id: "B", pred: "A" }, { id: "C", pred: "B" }, { id: "D", pred: "" }];
+  eq("predCycle: A←B←C, adding C (or B) as A's predecessor loops; D does not", [E.predCycle(cyc, cyc[0], "C"), E.predCycle(cyc, cyc[0], "B"), E.predCycle(cyc, cyc[0], "D"), E.predCycle(cyc, cyc[0], "A")], [true, true, false, true]);
   const r = [{ id: "1", level: 1, system: "A" }, { id: "1.1", level: 2, system: "A" }, { id: "1.2", level: 2, system: "A", pred: "1.1" }, { id: "1.3", level: 2, system: "A", pred: "1.2, 7.7" }];
   r.splice(1, 0, { id: "", level: 2, system: "A" });
   E.sortAndAutoNumber(r);

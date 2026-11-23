@@ -469,6 +469,20 @@ const WBSEngine = {
     });
     return { list, warn: list.some(x => x.reasons.length > 0) };
   },
+  // task 의 선행으로 candId 를 넣으면 돌고 도는 연결(A→B→A, A→B→C→A)이 생기는지 — candId 에서 선행을 따라가다 task 를 만나면 순환
+  predCycle(data, task, candId) {
+    const map = new Map((data || []).map(t => [String(t.id), t]));
+    const seen = new Set(), stack = [String(candId)];
+    while (stack.length) {
+      const id = stack.pop();
+      if (id === String(task.id)) return true;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const t = map.get(id);
+      if (t) this.predIds(t).forEach(p => stack.push(p));
+    }
+    return false;
+  },
   // 경고가 있는 Task → predCheck 결과
   predWarnings(data, reportDateStr) {
     const byId = new Map((data || []).map(t => [String(t.id), t]));

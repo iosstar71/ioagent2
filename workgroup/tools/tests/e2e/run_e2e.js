@@ -982,11 +982,10 @@ async function serverScenarios() {
       th04.def === "urban-slate" && th04.opts === "urban-slate,brown,navy,classic,dark,electric" && th04.icons > 20 && !!th04.chart && /iostar_mono/.test(th04.logo), JSON.stringify(th04));
     check("Real clicks/inputs work under CSP (all tabs + table edit)", tabOk && edited && a.csp.length === 0, a.csp.slice(0, 2).join(" | "));
     await a.waitForTimeout(300);
-    const barText = await a.evaluate(() => document.getElementById("gSaveBarText").textContent);
-    const bar = await a.evaluate(() => { const b = document.getElementById("gSaveBar"); return !!b && !b.hidden && /\d/.test(document.getElementById("gSaveBarText").textContent); });
+    const dirty = await a.evaluate(() => SyncManager.dirtyCount());
     await a.keyboard.press("Control+s"); await a.waitForTimeout(1200);
-    const barAfter = await a.evaluate(() => document.getElementById("gSaveBar").hidden);
-    check("G: unsaved-changes bar appears in server mode and Ctrl+S saves all", bar && barAfter, JSON.stringify([bar, barAfter, barText]));
+    const after = await a.evaluate(() => ({ n: SyncManager.dirtyCount(), bar: !!document.getElementById("gSaveBar") }));
+    check("1.5: no bottom save bar (the header shows unsaved changes); Ctrl+S saves all", dirty > 0 && after.n === 0 && !after.bar, JSON.stringify({ dirty, after }));
     // 서버 주소 + 로컬 모드 저장값 → 전환 질문
     const b = await newPage({ init: () => { if (!localStorage.getItem("__seen")) { localStorage.setItem("__seen", "1"); localStorage.setItem("WBS_DB_CONNECTOR_CONFIG_2026_V1_1", JSON.stringify({ mode: "LOCAL" })); } } });
     await b.goto(url); await b.waitForTimeout(1500);

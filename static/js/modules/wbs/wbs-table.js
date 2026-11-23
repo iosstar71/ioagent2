@@ -104,6 +104,7 @@ function renderWbsTable() {
         <div style="padding-left: ${indent}px; display:flex; align-items:center;">
           <span class="lvl-badge lvl-${row.level}">L${row.level}</span>
           ${foldBadge}
+          ${view && view.heads.has(row) ? `<span class="wbs-head-cnt">${escapeHtml(I18N.tf("{st} {n}건", { st: view.label, n: view.heads.get(row) }))}</span>` : ""}
           ${WbsStatusView.predIcon(row, predWarn)}
           <input type="text" value="${escapeHtml(row.name)}" style="flex:1 1 0; width:0; min-width:180px;" data-change="UiH.set" data-change-args="${UiEvents.args("wbsData", idx, "name", "$value", "persistChanges")}">
         </div>
@@ -193,17 +194,17 @@ var WbsStatusView = {
   rows(data, st, maxLvl, predWarn) {
     if (!st || st === "ALL") return null;
     const match = new Set((data || []).filter(t => st === this.PRED ? predWarn.has(t) : (t.isLeaf && t.status === st)));
-    const heads = new Set();
+    const heads = new Map();   // 묶음 머리 → 그 아래 해당 Task 수
     (data || []).forEach((t, i) => {
       if (!match.has(t)) return;
       let lv = t.level || 1;
       for (let j = i - 1; j >= 0 && lv > 1; j--) {
         const u = data[j], ul = u.level || 1;
         if ((u.system || "").trim() !== (t.system || "").trim()) break;
-        if (ul < lv) { if (ul <= maxLvl && !match.has(u)) heads.add(u); lv = ul; }
+        if (ul < lv) { if (ul <= maxLvl && !match.has(u)) heads.set(u, (heads.get(u) || 0) + 1); lv = ul; }
       }
     });
-    return { match, heads };
+    return { match, heads, label: st };
   },
   // 작업명 앞 ⛓: 선행 Task 가 있으면 표시, 경고면 주황 + 말풍선
   predIcon(row, predWarn) {

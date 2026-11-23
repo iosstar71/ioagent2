@@ -616,14 +616,15 @@ async function main() {
       const a = rows();
       document.getElementById("wbsMaxLevelFilter").value = "2"; renderWbsTable();
       const b = rows();
+      const cnt = (document.querySelector('#wbsTableBody tr[data-wbs-id="3"] .wbs-head-cnt') || {}).textContent || "";
       NeoChips.set("지연");
       const c = rows();
       document.getElementById("wbsMaxLevelFilter").value = "5"; NeoChips.set("ALL");
       return { aMatch: a.filter(x => !x.head).map(x => x.id).join(), aHeads: a.filter(x => x.head).length, bHeadMax: Math.max(...b.filter(x => x.head).map(x => x.lvl)), bMatch: b.filter(x => !x.head).length,
-        cLeaf: c.filter(x => !x.head).length, cDelayed: wbsData.filter(t => t.isLeaf && t.status === "지연").length, cHeadMax: Math.max(...c.filter(x => x.head).map(x => x.lvl)), firstIsHead: c[0] && c[0].head };
+        cLeaf: c.filter(x => !x.head).length, cDelayed: wbsData.filter(t => t.isLeaf && t.status === "지연").length, cHeadMax: Math.max(...c.filter(x => x.head).map(x => x.lvl)), firstIsHead: c[0] && c[0].head, cnt };
     });
     check("Status buttons show the matching Tasks with their upper Tasks as group heads, down to the chosen level",
-      grp.aMatch === "2.3.2.1,3.3.1.3,3.3.2.2,4.3.1.1" && grp.aHeads >= 6 && grp.bHeadMax === 2 && grp.bMatch === 4 && grp.cLeaf === grp.cDelayed && grp.cHeadMax <= 2 && grp.firstIsHead, JSON.stringify(grp));
+      grp.aMatch === "2.3.2.1,3.3.1.3,3.3.2.2,4.3.1.1" && grp.aHeads >= 6 && grp.bHeadMax === 2 && grp.bMatch === 4 && grp.cLeaf === grp.cDelayed && grp.cHeadMax <= 2 && grp.firstIsHead && grp.cnt === "선행 지연 2건", JSON.stringify(grp));
     const pd = await sx.evaluate(async () => {
       const idx = wbsData.findIndex(t => t.id === "2.4.1.1");
       NeoDetail.open(idx); await new Promise(r => setTimeout(r, 150));
@@ -636,12 +637,14 @@ async function main() {
       NeoDetail.setPred(1, "2.3.1.1"); await new Promise(r => setTimeout(r, 150));
       const afterOk = wbsData.find(t => t.id === "2.3.2.1").pred;
       NeoDetail.setPred(1, ""); await new Promise(r => setTimeout(r, 150));
+      NeoDetail.setPred(1, "2.4.1.1"); await new Promise(r => setTimeout(r, 150));   // 2.4.1.1 의 선행이 2.3.2.1 → 순환이라 거부
+      const loop = wbsData.find(t => t.id === "2.3.2.1").pred;
       const cleared = wbsData.find(t => t.id === "2.3.2.1").pred;
       NeoDetail.close();
-      return { ins, lines, warnLine: warnLine.replace(/\s+/g, " ").trim(), afterBad, afterOk, cleared };
+      return { ins, lines, warnLine: warnLine.replace(/\s+/g, " ").trim(), afterBad, afterOk, cleared, loop };
     });
-    check("Detail panel: 3 predecessor inputs with name · status · plan end; own upper Task refused; set and clear",
-      pd.ins.join() === "2.3.1.3,2.3.2.1,2.3.2.2" && pd.lines === 3 && /2\.2\.2\.2.*지연.*선행 지연/.test(pd.warnLine) && pd.afterBad === "2.2.2.2" && pd.afterOk === "2.2.2.2, 2.3.1.1" && pd.cleared === "2.2.2.2", JSON.stringify(pd));
+    check("Detail panel: 3 predecessor inputs with name · status · plan end; own upper Task and loops (A→B→A) refused; set and clear",
+      pd.ins.join() === "2.3.1.3,2.3.2.1,2.3.2.2" && pd.lines === 3 && /2\.2\.2\.2.*지연.*선행 지연/.test(pd.warnLine) && pd.afterBad === "2.2.2.2" && pd.afterOk === "2.2.2.2, 2.3.1.1" && pd.cleared === "2.2.2.2" && pd.loop === "2.2.2.2", JSON.stringify(pd));
     const rn = await sx.evaluate(() => {
       const name = id => (wbsData.find(t => t.id === id) || {}).name;
       const target = name("2.2.2.2");

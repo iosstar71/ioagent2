@@ -6,7 +6,6 @@
 //  - 작업자 메뉴: 테마 3종 · 메뉴 위치(위쪽/왼쪽, 선택 설정) · 화면 밀도 · 언어 · 암호 · 잠금
 //  - 검색 (Ctrl+K): 화면 · WBS · 요구사항 · VOC · 작업자
 //  - 즐겨찾기: 자주 쓰는 화면 최대 3개를 메뉴 줄에 고정
-//  - 아래 고정 줄: DB 서버 모드에서 저장하지 않은 변경이 있으면 표시 (Ctrl+S 로 모두 저장)
 //  ※ 기존 탭 버튼(.tab-bar)은 권한 판정·호환을 위해 숨긴 채 유지하고, 화면 전환은 기존 switchTab 을 사용
 // =============================================================================
 var GShell = {
@@ -63,7 +62,6 @@ var GShell = {
     document.addEventListener("keydown", e => this.onKey(e));
     const a = document.querySelector(".tab-pane.active");
     this.sync(a ? a.id : "tab-home");
-    this._wrapIndicators();
   },
 
   // ---- 권한: 기존 탭 버튼이 보이는 화면만 메뉴에 표시 ----
@@ -319,37 +317,6 @@ var GShell = {
         setTimeout(() => row.classList.remove("g-flash"), 2200);
       }
     }, 350);
-  },
-
-  // ---- 아래 고정 줄: 저장하지 않은 변경 (DB 서버 모드) ----
-  _wrapIndicators() {
-    if (typeof SyncUI === "undefined" || this._wrapped) return;
-    this._wrapped = true;
-    const orig = SyncUI.refreshIndicators.bind(SyncUI);
-    SyncUI.refreshIndicators = () => { orig(); this.renderSaveBar(); };
-    this.renderSaveBar();
-  },
-  renderSaveBar() {
-    let bar = document.getElementById("gSaveBar");
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "gSaveBar";
-      bar.className = "g-savebar";
-      bar.hidden = true;
-      bar.innerHTML = `<span id="gSaveBarText"></span><span class="g-savebar-btns">
-        <button type="button" class="btn btn-sm" data-btn="cancel" data-click="SyncManager.refresh" data-click-args='[null]'>변경 취소 (다시 불러오기)</button>
-        <button type="button" class="btn btn-sm" data-btn="save" data-click="SyncManager.save" data-click-args='[null, {"notify": true}]'>💾 모두 저장 (Ctrl+S)</button></span>`;
-      document.body.appendChild(bar);
-      if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(bar);
-    }
-    const n = (typeof SyncManager !== "undefined" && !SyncManager.isLocal()) ? SyncManager.dirtyCount() : 0;
-    bar.hidden = n === 0;
-    document.body.classList.toggle("g-has-savebar", n > 0);
-    if (n > 0) {
-      const t = document.getElementById("gSaveBarText");
-      t.textContent = `저장하지 않은 변경 ${n}건`;
-      if (typeof I18N !== "undefined") I18N.translateTree(bar);
-    }
   }
 };
 

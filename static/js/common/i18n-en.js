@@ -3656,6 +3656,8 @@ var I18N_EN = (function () {
 
   // 문구 틀 — 화면 코드는 I18N.tf(틀, 값) 으로 한국어 문장을 만들고, 영어 화면은 이 틀로 번역됨 ({이름} 자리는 그대로 옮김)
   const templates = {
+    "{st} {n}건": "{st} {n}",
+    "⚠️ [{id}] 는 이미 이 Task 뒤에 오도록 연결되어 있어 선행으로 지정할 수 없습니다 (순환).": "⚠️ [{id}] already comes after this Task — it cannot be a predecessor (loop).",
     "선행 Task {ids}": "Predecessors {ids}",
     "선행 {id} {why} (계획 종료 {end})": "Pred. {id} {why} (plan end {end})",
     "⚠️ WBS ID [{id}] 를 찾을 수 없습니다.": "⚠️ WBS ID [{id}] not found.",

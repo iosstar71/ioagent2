@@ -268,6 +268,7 @@ var NeoDetail = {
       const p = wbsData.find(t => String(t.id) === v);
       const rel = p && (p === row || String(p.id).startsWith(row.id + ".") || String(row.id).startsWith(p.id + "."));
       if (!p || rel) { showToast(p ? "⚠️ 자기 자신이나 상위 · 하위 Task 는 선행으로 지정할 수 없습니다." : I18N.tf("⚠️ WBS ID [{id}] 를 찾을 수 없습니다.", { id: v })); return this.render(); }
+      if (WBSEngine.predCycle(wbsData, row, v)) { showToast(I18N.tf("⚠️ [{id}] 는 이미 이 Task 뒤에 오도록 연결되어 있어 선행으로 지정할 수 없습니다 (순환).", { id: v })); return this.render(); }
     }
     ids[i] = v;
     const next = ids.filter(Boolean).filter((x, k, a) => a.indexOf(x) === k).slice(0, WBSEngine.PRED_MAX).join(", ");
