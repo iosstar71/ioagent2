@@ -76,7 +76,7 @@
   "js/modules/deliverable": 2,
   "js/modules/home": 19,
   "js/modules/master": 34,
-  "js/modules/meeting": 46,
+  "js/modules/meeting": 44,
   "js/modules/progress": 1,
   "js/modules/report": 5,
   "js/modules/requirement": 0,
@@ -89,6 +89,6 @@
   "html_inline": 437,
   "html_inline_hex": 139,
   "js_hex": 100,
-  "js_inline": 198
+  "js_inline": 196
  }
 }

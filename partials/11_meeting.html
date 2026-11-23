@@ -9,9 +9,7 @@
           <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
         </div>
         <div class="u-flex u-ai-center u-gap-8 u-wrap">
-          <button class="btn btn-primary btn-sm" data-click="MeetingManager.openNewMeetingModal" title="새 회의 일정 등록">
-            ➕ 신규 회의 일정 등록
-          </button>
+          <button class="btn btn-sm" data-btn="add" data-click="MeetingManager.openNewMeetingModal" title="새 회의 일정 등록">➕ 신규 회의 일정 등록</button>
         </div>
       </div>
       <div class="master-subtab-bar sub-tabs" id="meetingSubTabs">
@@ -55,9 +53,7 @@
               </div>
             </div>
             <div class="u-flex u-ai-center u-gap-8">
-              <button class="btn btn-success btn-xs" data-click="MeetingManager.exportScheduleListExcel" title="조회된 회의 일정 목록 엑셀(XLSX) 다운로드">
-                📥 엑셀 다운로드 (회의일정)
-              </button>
+              <button class="btn btn-xs" data-btn="excel-down" data-click="MeetingManager.exportScheduleListExcel" title="조회된 회의 일정 목록 엑셀(XLSX) 다운로드">📥 엑셀 다운로드 (회의일정)</button>
               <span class="u-fs-xs u-c-muted">총 등록 회의:</span>
               <span id="meetingTotalCountBadge" class="brand-badge" style="background:var(--tint-info-text); color:white;">0건</span>
             </div>
@@ -135,7 +131,7 @@
               </div>
             </div>
             <div class="u-flex u-gap-6">
-              <button class="btn btn-primary btn-xs" data-click="MeetingManager.openNewMeetingModal">➕ 새 회의 일정 등록</button>
+              <button class="btn btn-xs" data-btn="add" data-click="MeetingManager.openNewMeetingModal">➕ 새 회의 일정 등록</button>
             </div>
           </div>
         </div>
@@ -176,7 +172,7 @@
               <span class="lk-hint">추가는 회의록 작성에서 · 행을 누르면 오른쪽에서 수정</span>
             </div>
             <div class="u-flex u-gap-6">
-              <button class="btn btn-success btn-xs" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 다운로드 (Action Item)</button>
+              <button class="btn btn-xs" data-btn="excel-down" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 다운로드 (Action Item)</button>
             </div>
           </div>
           <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-10 u-mb-10 u-r-6" style="background:#f8fafc; padding:8px 12px; border:1px solid #e2e8f0;">

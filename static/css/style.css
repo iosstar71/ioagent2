@@ -518,11 +518,12 @@ body[data-density="spacious"] table td {
 .gantt-pm-milestone.integrated .gantt-pm-diamond { color:#7c3aed; text-shadow:0 0 1px #4c1d95; }
 .gantt-pm-diamond.passed { opacity:0.55; }
 .gantt-pm-label { font-size:var(--fs-2xs, 10px); font-weight:bold; color:var(--text-main); background:rgba(255,255,255,0.85); padding:0 3px; border-radius:3px; }
-.wr-detail-head { position:sticky; top:0; z-index:20; background:var(--bg-main); padding:8px 0; margin-bottom:8px; border-bottom:2px solid var(--primary); }
-.wr-detail-title { font-size:var(--fs-base, 13px); padding:6px 10px; border-radius:6px; background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.25); margin-bottom:6px; }
-.wr-toolbar { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; }
-.wr-toolbar-group { display:flex; gap:6px; flex-wrap:wrap; padding:0 8px 0 0; border-right:1px solid var(--border-color); }
-.wr-toolbar-group:last-child { border-right:none; }
+/* 고친 내용 저장 · 다운로드 줄 (주간보고 · 회의록): 스크롤해도 화면 이름 · 서브메뉴 줄 바로 아래에 고정 */
+.wr-detail-head, .doc-head { position:sticky; top:calc(var(--sticky-top, 45px) + var(--pane-sticky-h, 0px)); z-index:40; background:var(--bg-main); padding:8px 0; margin-bottom:8px; border-bottom:2px solid var(--primary); }
+.wr-detail-title, .doc-head-title { font-size:var(--fs-base, 13px); padding:6px 10px; border-radius:6px; background:rgba(37,99,235,0.07); border:1px solid rgba(37,99,235,0.25); margin-bottom:6px; }
+.wr-toolbar, .doc-toolbar { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; }
+.wr-toolbar-group, .doc-toolbar-group { display:flex; gap:6px; flex-wrap:wrap; padding:0 8px 0 0; border-right:1px solid var(--border-color); }
+.wr-toolbar-group:last-child, .doc-toolbar-group:last-child { border-right:none; }
 .wr-manual-tag { background:#fef3c7; color:#92400e; font-size:var(--fs-2xs, 10px); font-weight:bold; padding:1px 5px; border-radius:3px; }
 .btn[data-btn] { border-width:1px; border-style:solid; font-weight:600; transition:filter .15s, box-shadow .15s; }
 .btn[data-btn]:hover:not(:disabled) { filter:brightness(0.95); box-shadow:0 1px 4px rgba(15,23,42,0.18); }

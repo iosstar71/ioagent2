@@ -74,7 +74,24 @@ Object.assign(MeetingManager, {
       ? `<span class="badge" style="background:var(--chart-good-text); color:white;">완료</span>`
       : `<span class="badge" style="background:var(--primary); color:white;">${mtg.status}</span>`;
 
+    const idArg = UiEvents.args(String(mtg.id));
     container.innerHTML = `
+      <!-- 저장 · 다운로드 (주간보고와 같은 위쪽 고정 줄) -->
+      <div class="doc-head">
+        <div class="doc-head-title">📝 <b>${escapeHtml(mtg.title)}</b> · ${escapeHtml(mtg.date)}
+          <span class="u-fs-xs u-c-muted"> · 💡 [✅ 작성 완료 (저장)]을 눌러야 저장됩니다. 저장하지 않고 다른 회의록을 고르면 저장 여부를 묻습니다.</span></div>
+        <div class="doc-toolbar">
+          <div class="doc-toolbar-group">
+            <button class="btn btn-sm" data-btn="save" data-click="MeetingManager.completeMinutes" data-click-args='[true]' title="작성한 회의록을 저장합니다.">✅ 작성 완료 (저장)</button>
+            <button class="btn btn-sm" data-btn="cancel" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
+          </div>
+          <div class="doc-toolbar-group">
+            <button class="btn btn-sm" data-btn="word-down" data-click="MeetingManager.exportMeetingDocx" data-click-args="${idArg}">📥 워드 다운로드 (회의록)</button>
+            <button class="btn btn-sm" data-btn="excel-down" data-click="MeetingManager.exportMeetingExcel" data-click-args="${idArg}">📥 엑셀 다운로드 (회의록)</button>
+          </div>
+        </div>
+      </div>
+
       <!-- 1) 회의 기본 정보 카드 -->
       <div class="card" style="margin-bottom:14px; border-left:4px solid ${sysColor};">
         <div class="card-title u-flex u-jc-between u-ai-center">
@@ -216,18 +233,6 @@ Object.assign(MeetingManager, {
         </div>
       </div>
 
-      <!-- 5) 하단 회의록 전용 내보내기 툴바 -->
-      <div class="u-flex u-jc-between u-ai-center u-bg-main u-bd u-r-8" style="padding:12px 16px;">
-        <span class="u-fs-sm u-c-muted">
-          💡 회의록 작성 후 [✅ 작성 완료 (저장)] 버튼을 눌러야 저장됩니다. 저장하지 않고 다른 회의록을 선택하면 저장 여부를 확인합니다.
-        </span>
-        <div class="u-flex u-gap-8">
-          <button class="btn btn-primary btn-sm" data-click="MeetingManager.completeMinutes" data-click-args='[true]'>✅ 작성 완료 (저장)</button>
-          <button class="btn btn-secondary btn-sm" data-click="UiH.meetingDiscard" title="저장하지 않은 회의록 변경 내용을 취소합니다.">↩️ 변경 취소</button>
-          <button class="btn btn-info btn-sm" data-click="MeetingManager.exportMeetingDocx" data-click-args="${UiEvents.args(String(mtg.id))}" style="background:var(--primary); color:white; border-color:var(--primary);">📥 워드 다운로드 (회의록)</button>
-          <button class="btn btn-success btn-sm" data-click="MeetingManager.exportMeetingExcel" data-click-args="${UiEvents.args(String(mtg.id))}">📥 엑셀 다운로드 (회의록)</button>
-        </div>
-      </div>
     `;
   },
 
