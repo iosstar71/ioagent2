@@ -83,29 +83,3 @@ function rebuildAll(forceImmediateSave = false) {
   // 프로그램이 자료 형식을 바꾼 경우(사용자가 고친 것이 아님)는 묻지 않고 바로 기록
   if (migrated && typeof SyncManager !== "undefined" && SyncManager.isLocal()) setTimeout(() => SyncManager.save(null, { notify: false }), 0);
 }
-
-// 홈 / 대시보드 / 단계별 진척 [🔄 실적 새로고침] → 저장소 최신본 재조회 후 진척률 재계산
-function refreshDashboardView() { return ProgressRefreshManager.refresh("dashboard"); }
-function refreshMatrixView() { return ProgressRefreshManager.refresh("matrix"); }
-function refreshHomeView() { return ProgressRefreshManager.refresh("home"); }
-
-var ProgressRefreshManager = {
-  KEYS: ["wbsData", "deliverablesData", "reqMasterData", "vocData", "projectConfig", "subsystemsMeta"],
-
-  async refresh(origin = "home") {
-    const btns = document.querySelectorAll(".btn-progress-refresh");
-    btns.forEach(b => { b.disabled = true; });
-    try {
-      const res = await SyncManager.refresh(this.KEYS, { silent: true });
-      const now = new Date().toLocaleTimeString();
-      document.querySelectorAll(".lbl-progress-refreshed-at").forEach(el => { el.textContent = `최종 갱신: ${now}`; });
-      if (res.ok) {
-        const where = origin === "matrix" ? "단계별 진척" : (origin === "dashboard" ? "종합 대시보드" : "홈 화면");
-        showToast(`🔄 [${where} 실적 새로고침 완료] 저장소 최신 실적 기준으로 계획·실적 진척률을 재계산했습니다. (${now})`);
-      }
-    } finally {
-      btns.forEach(b => { b.disabled = false; });
-    }
-  }
-};
-window.ProgressRefreshManager = ProgressRefreshManager;
