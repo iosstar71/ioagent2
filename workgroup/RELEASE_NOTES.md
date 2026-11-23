@@ -1,5 +1,17 @@
 # IOSTAR-PM Workgroup — 릴리즈 노트
 
+## v1.6.0
+
+- **화면 역할 정리** — Summary(경영진) · Dashboard(PM · PL 한눈에) · Phase 진척(단계 상세)
+  - **Dashboard**: 조회 범위(도메인 · 서브시스템)를 맨 위로, 핵심 숫자 4개 · 체크할 일 · **S-curve | 불릿 차트 나란히** · **요약 카드 4개**(요구사항 · VOC · 테스트 결함 · 산출물 — 누르면 해당 화면 · Phase 진척의 그 구역으로) · 도메인별 진척(도메인 2개 이상일 때). 서브시스템 진척 카드(불릿 차트와 겹침) · 상태 건수 줄(체크할 일과 겹침) · 산출물 · VOC 표(Phase 진척과 겹침) · 쓰지 않던 [PPT 다운로드(준비중)] 버튼을 뺌 — 화면 길이 약 절반
+  - 불릿 차트 줄에 마우스를 올리면 담당 PM · Task 수 · 지연 · 가중치
+  - **Phase 진척**: [2] 단계 매트릭스 칸에 **지연 Task 수 · 기준선 대비 +N일**, 칸을 누르면 그 서브시스템 · 단계 Task 를 WBS 에서 엶. 순서 [3] 개선과제 요건 진척 → [4] **단계별 VOC · 테스트 결함**(결함 현황 · 소진 추이는 기준일까지 통합테스트 접수가 있을 때만) → [5] **단계별 산출물 제출**(단계 × 차수, 계획 제출일 지남)
+  - **Summary**: 도메인 표 자리에 **주요 위험 상위 5**(치명 · 높음 결함 · 지연 · 선행 지연 · 범위 협의 — 종류마다 하나씩 먼저) · **다가오는 마일스톤**(D-n). 도메인 표는 Dashboard 로
+- **내부 정리 (화면 · 동작은 그대로)**
+  - `neo.js` 를 기능별 파일로 나누고 이름을 기능에 맞춤: `day-util.js`(DayUtil) · `status-chips.js`(WbsStatusChips · StatusChips) · `page-layout.js`(SideMenu · PageHead · UiScale · StickyTop · PanelDock) · `todo/check-list.js`(CheckList · MenuBadges) · `wbs/wbs-detail.js`(WbsDetail). 호환용 UiMode(항상 Neo) 삭제
+  - 고친 화면(WBS · Gantt · Dashboard · Phase 진척 · Summary)의 인라인 스타일을 클래스로(전체 인라인 501 → 437), 늘 있는 모듈의 `typeof` 확인 줄임, WBS 표 · 상세 패널 · 기준선에 자료형 검사(오류 0), 개선과제 달성률도 `Metrics.achv` 로
+  - 계산 추가: `WBSEngine.phaseIssues`(단계 칸 지연 · 기준선 밀림) · `Metrics.delivByPhase`(단계별 산출물) — 단위 시험 81
+
 ## v1.5.1
 
 - **VOC 추가**: 단계(예: 통합테스트)로 걸러 본 채 [VOC 추가] 를 누르면 그 단계로 만들고(직접 지정) 목록에 바로 보임 — 전에는 기준일 단계로 자동 지정되어 걸러진 목록에서 사라졌음. 상태 버튼에 가려지면 [전체] 로

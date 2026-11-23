@@ -4,9 +4,9 @@
 고칠 때마다 이 파일의 "지금 상태"와 "다음 할 일"을 같이 고친다.
 
 ## 지금 상태
-- 버전 **1.5.1** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
+- 버전 **1.6.0** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
 - 두 판: Standalone(정적 · IndexedDB) / Workgroup(Python 서버 + SQLite). 한 코드, 판 차이는 `tools/edition.py` 표시와 `workgroup/`
-- 시험 기준: 단위 78(샘플 경우 포함) · Standalone E2E 68 (샘플 프로젝트 구간 포함) · Workgroup E2E (조립 폴더에서) · 서버 API 36
+- 시험 기준: 단위 81(샘플 경우 포함) · Standalone E2E 71 (샘플 프로젝트 구간 포함) · Workgroup E2E 116 · 서버 API 36 (1.6.0 에서 모두 통과) · Workgroup E2E (조립 폴더에서) · 서버 API 36
 - 설계 문서: `docs/design/DESIGN_v1.4.md`(적용), `docs/design/PLAN_v1.5.md`(적용)
 
 ## 사용자가 정한 것 (다시 묻지 않기)
@@ -32,6 +32,8 @@
 - **샘플 프로젝트 = 시험 기준 자료(1.5 부터)**: 화면 시험은 [🧪 샘플 프로젝트 추가] 로 만든 샘플로 한다. 새 기능을 만들면 ① `tools/build_sample.js` 에 그 경우를 넣고 ② `tools/tests/sample_coverage.js` 에 검사를 더하고 ③ `node tools/build_sample.js` → 단위 시험 · E2E 샘플 구간에 화면 확인을 더함. 샘플의 자료 오류는 원래 있던 휴일 날짜 3건뿐(가중치 합 · 날짜 역전은 넣지 않음) — 오류 화면은 E2E 가 따로 만든 작은 자료로 시험
 
 ## 구조 정리 — 화면을 고칠 때 그 화면만 (CLAUDE.md 1-2)
+- **버전 마무리 절차 (2026-11 사용자 지적 후)**: 버전을 끝내기 전에 이번에 고친 화면 · 파일마다 1-2 항목을 확인한다 — ① 인라인 스타일 · 고정 색 → 클래스 ② 늘 있는 모듈의 `typeof` 확인 지우기 ③ 800줄 넘는 파일 나누기 ④ 자료형 검사 켜기(오류 0) ⑤ 계산은 엔진 + 단위 시험 ⑥ 저장 쪽 조용한 catch → 콘솔. 시작 전에 `css_safety_net.js --save`, 끝나고 `--check` (화면 그대로인지). 보고할 때 한 것 · 못 한 것을 함께 알림
+- 1.6 에서 한 것: `neo.js` 기능별 분리 · 이름 변경(UiMode 삭제), WBS · Gantt · Dashboard · Phase 진척 · Summary 인라인 스타일 정리(501 → 437), WBS 표 · 상세 패널 · 기준선 · 날짜 도움 자료형 검사, 고친 파일의 `typeof` 정리
 - 2~9번 항목(`typeof` 줄이기 · 열 정의 배열 · CSS 부채 · 덮어쓰기 줄이기 · 단위 시험 · 조용한 catch · 자료형 검사 · 800줄 넘는 파일 나누기 · 전역 이름)은 **해당 화면 수정 때 하나씩**
 - 1번(Workgroup 덮어쓰기를 어댑터로)은 **사용자가 요청할 때만** (사용량 때문에 보류)
 - 1.4 에서 한 것: 요구사항 · VOC 목록 열 정의 배열(`ListTable`), 대시보드 VOC 집계를 `Metrics` 로, Workgroup 덮어쓰기 2개(엑셀 열 이름 · Merge 목록) 공통으로 합침, ID 규칙 표 한 곳(`IdRules`)
@@ -40,7 +42,7 @@
 - **1.5** (완료): 선행 Task 지연 경고 · WBS 상태 버튼 묶음 머리 · 샘플 프로젝트 보강(시험 기준) · 다운로드 제한 · 감사 로그(Workgroup, 서버 API 시험만 — Workgroup E2E 는 요청 때) · 체크인 아이콘 색
 - **보류 — Workgroup 폴더 구조**: 회사 배포 플랫폼에서 서버 실행이 가능해지면 다시 검토 (지금은 `webapp/` 이 웹 루트, DB · 설정은 그 밖). 웹 루트를 맨 위로 바꾸면 `/conf` · `/upload` 차단 추가 필요
 - **검토 — 서버를 Java 로**: 가능 (서버 약 3.7천 줄, 화면은 그대로, `test_server_api.py` 로 같은 동작 확인). 사용자가 정하면 진행
-- **1.6 (결정됨)**: 화면 역할 정리 — Summary(경영진) · Dashboard(PM · PL 한눈에, 스크롤 1~2번) · Phase 진척(단계 상세). Dashboard 진척 카드 삭제(불릿 차트 유지 — 색 기준을 Summary 신호등과 같게, PM · Task 수는 말풍선), 필터 맨 위, 표 · 결함 차트는 Phase 진척으로. 계획: `docs/design/PLAN_v1.6.md`. 전 · 후 캡처로 먼저 확인
+- **1.6 (완료)**: 화면 역할 정리 — Summary(경영진) · Dashboard(PM · PL 한눈에, 스크롤 1~2번) · Phase 진척(단계 상세). Dashboard 진척 카드 삭제(불릿 차트 유지 — 색 기준을 Summary 신호등과 같게, PM · Task 수는 말풍선), 필터 맨 위, 표 · 결함 차트는 Phase 진척으로. 계획: `docs/design/PLAN_v1.6.md`. Phase 진척 순서는 사용자 요청으로 [3] 개선과제 · [4] VOC · [5] 산출물
 - **1.7**: 멤버 투입 기간 · 철수 임박 알림 (M/M 집계는 Enterprise)
 - **Enterprise**: Oracle · 세션 · 트랜잭션 · 인력 원가, 자료 저장 방식 재설계
 - 외부 평가 의견(2026-11): 강점 = 입력이 적고 자동 계산 — 새 기능도 **선택 입력 · 자동 계산** 위주로

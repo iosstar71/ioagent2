@@ -405,14 +405,15 @@ async function localMain() {
     const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
     RecordPanel.close(); meetingsData = keep; MeetingManager.render();
     const c = document.getElementById("ruleCard");
-    o.rule = !!c && !!c.querySelector("#weekFmtBox") && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
+    // ID 규칙 카드와 주차 표시 카드는 같은 줄에 나란히 (1.5.1 배치)
+    o.rule = !!c && c.nextElementSibling && c.nextElementSibling.contains(document.getElementById("weekFmtBox")) && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
     o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
     o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
     const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
     const probe = document.createElement("button"); probe.className = "g-side-item"; document.body.appendChild(probe);
     o.navy = getComputedStyle(probe).color; probe.remove(); document.body.setAttribute("data-theme", th);
     return o; });
-  check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
+  check("Action Items are added only in minutes and edited in the right panel; ID rules and week display side by side; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
     ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
     && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
   // 2차: [보고] 메뉴 — 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정(PM 이상)
@@ -527,7 +528,7 @@ async function localMain() {
   await page.evaluate(() => document.fonts.ready);
   const fontOk = await page.evaluate(() => [...document.fonts].some(f => f.family.replace(/"/g, "") === "Pretendard" && f.status === "loaded"));
   const neoMode = await page.evaluate(() => ({ mode: "neo", sw: false, cls: document.body.classList.contains("ui-neo"), sel: !!document.getElementById("gUiModeSelect") || !!document.getElementById("cfgUiModeSelect"), ph: document.querySelectorAll(".neo-ph").length, todo: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length }));
-  check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 7 && fontOk, JSON.stringify({ neoMode, fontOk }));
+  check("v3: Neo is the only UI (no UI-mode switch), Neo screens + dashboard to-do summary, Pretendard font loaded", neoMode.mode === "neo" && !neoMode.sw && neoMode.cls && !neoMode.sel && neoMode.ph >= 10 && neoMode.todo === 8 && fontOk, JSON.stringify({ neoMode, fontOk }));
   if (await page.evaluate(() => typeof CheckList !== "undefined")) {
     await page.evaluate(() => { changeTheme("electric"); LayoutManager.setLayout("top-nav", false); GShell.go("tab-dashboard"); }); await page.waitForTimeout(500);
     const before = await page.evaluate(() => ({ chips: document.querySelectorAll("#neoTodoCard .neo-todo-chip").length, delayed: CheckList.collect(null).delayed.length }));
@@ -541,7 +542,7 @@ async function localMain() {
     const after = await page.evaluate(id => ({ delayed: CheckList.collect(null).delayed.length, style: HomeScreenManager.userStyle(), tab: document.querySelector(".tab-pane.active").id,
       listed: !!Array.prototype.find.call(document.querySelectorAll("#homeTodoContainer .todo-auto-group:first-of-type .todo-auto-main, #homeTodoContainer .todo-auto-main"), b => b.textContent.indexOf(id) !== -1),
       badge: (document.querySelector('.g-nav-top [data-tab="tab-wbs"] .neo-badge') || document.querySelector('.g-group[data-group="sc"] .g-group-count:not([hidden])') || {}).textContent || "" }), target.id);
-    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 7 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
+    check("Neo: dashboard summary line links to the My To-do home, which lists the new delayed task; menu badge", before.chips === 8 && dashLine.indexOf(String(after.delayed)) !== -1 && after.tab === "tab-mywork" && after.delayed === before.delayed + 1 && after.listed && Number(after.badge) >= 1, JSON.stringify({ before, dashLine, after }));
     const item = await page.$(`#homeTodoContainer .todo-auto-main[data-click-args*='"${target.id}"']`);
     await item.click(); await page.waitForTimeout(900);
     const det = await page.evaluate(() => ({ tab: document.querySelector(".tab-pane.active").id, open: WbsDetail.isOpen(), id: WbsDetail._id, sel: !!document.querySelector("#wbsTableBody tr.neo-sel") }));
@@ -551,18 +552,21 @@ async function localMain() {
     check("Neo: editing in the detail panel updates WBS data and table", Number(edited.a) === Number(target.orig) && edited.still && edited.cell !== false, JSON.stringify(edited));
     await page.keyboard.press("Escape"); await page.waitForTimeout(200);
     await page.click('#neoStatusChips .neo-chip[data-click-args*="완료"]'); await page.waitForTimeout(500);
-    const chips = await page.evaluate(() => { const rows = [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]")]; const act = document.querySelector("#neoStatusChips .neo-chip.active");
+    const chips = await page.evaluate(() => { const rows = [...document.querySelectorAll("#wbsTableBody tr[data-wbs-id]:not(.wbs-group-head)")];  /* 상위 Task 는 묶음 머리로 함께 보임 */ const act = document.querySelector("#neoStatusChips .neo-chip.active");
       return { n: rows.length, allDone: rows.every(r => wbsData.find(t => t.id === r.getAttribute("data-wbs-id")).status === "완료"), active: act && act.getAttribute("data-click-args"), cnt: act && Number(act.querySelector("b").textContent), closed: !WbsDetail.isOpen() }; });
     check("Neo: status chip filter shows only that status (count matches); Esc closes panel", chips.n > 0 && chips.allDone && chips.n === chips.cnt && /완료/.test(chips.active) && chips.closed, JSON.stringify(chips));
     await page.click('#neoStatusChips .neo-chip[data-click-args*="ALL"]'); await page.waitForTimeout(300);
     await page.evaluate(() => GShell.go("tab-dashboard")); await page.waitForTimeout(400);
-    await page.click('.neo-click-chips .chip-progress'); await page.waitForTimeout(600);
-    const dchip = await page.evaluate(() => [document.querySelector(".tab-pane.active").id, document.getElementById("wbsStatusFilter").value]);
+    // 1.6: Dashboard 의 상태 건수 줄은 없어지고 요약 카드가 해당 화면으로 이동 (상태별 보기는 체크할 일 · WBS 상태 버튼)
+    await page.click('#dashSumGrid .dash-sum'); await page.waitForTimeout(600);
+    const dcard = await page.evaluate(() => document.querySelector(".tab-pane.active").id);
+    await page.evaluate(() => CheckList.openWbsStatus("진행중")); await page.waitForTimeout(600);
+    const dchip = await page.evaluate(d => [document.querySelector(".tab-pane.active").id, document.getElementById("wbsStatusFilter").value, d], dcard);
     await page.evaluate(() => WbsDetail.open(wbsData.findIndex(t => t.isLeaf))); await page.evaluate(() => GShell.go("tab-voc")); await page.waitForTimeout(300);
     const leave = await page.evaluate(() => WbsDetail.isOpen());
     await page.evaluate(() => GShell.go("tab-wbs")); await page.waitForTimeout(300);
     check("Neo: detail panel closes when leaving the WBS screen", leave === false, String(leave));
-    check("Neo: dashboard status chip opens WBS filtered by that status", dchip[0] === "tab-wbs" && dchip[1] === "진행중", JSON.stringify(dchip));
+    check("1.6: dashboard summary card opens its screen; a status from the check list opens WBS filtered by it", dchip[2] === "tab-req" && dchip[0] === "tab-wbs" && dchip[1] === "진행중", JSON.stringify(dchip));
     await page.evaluate(() => WbsStatusChips.set("ALL"));
     await page.evaluate(() => LayoutManager.setLayout("sidebar-left", false)); await page.waitForTimeout(300);
     await page.click("#neoSideToggle"); await page.waitForTimeout(300);
@@ -1091,8 +1095,10 @@ async function serverScenarios() {
       const gone = !ProjectData.projects().some(p => p.id === sp.id);
       return { id: sp.id, name, s1, s2, chat: chat.ok, cur: ProjectContext.current, noRestore, gone };
     });
-    check("Sample project add (server): new project with the sample (126 tasks, 4 subsystems), current project untouched; full reset clears it; no old sample-restore action",
-      da41s.s1.wbs === 126 && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT" && da41s.noRestore && da41s.gone, JSON.stringify(da41s));
+    // 샘플 Task 수는 샘플 자료에서 읽음 (샘플은 tools/build_sample.js 로 바뀜)
+    const sampleWbs = new Function(fs.readFileSync(path.join(ROOT, "webapp", "static", "js", "core", "sample-snapshot.js"), "utf8") + ";return WATERFALL_MANUFACTURING_SAMPLE_SNAPSHOT.wbsData.length")();
+    check(`Sample project add (server): new project with the sample (${sampleWbs} tasks, 4 subsystems), current project untouched; full reset clears it; no old sample-restore action`,
+      da41s.s1.wbs === sampleWbs && da41s.s1.subs === 4 && da41s.s2.wbs === 0 && da41s.s2.subs === 0 && da41s.s2.name === da41s.name && da41s.chat && da41s.cur === "DEFAULT" && da41s.noRestore && da41s.gone, JSON.stringify(da41s));
 
     // [v3.9.2] 시스템 설정 > 프로젝트: 파일로 내려받기 → 새 프로젝트로 추가 (같은 이름이면 새 이름) / 모든 프로젝트 JSON
     await a.evaluate(async () => {
