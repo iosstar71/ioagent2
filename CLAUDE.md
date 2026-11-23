@@ -119,7 +119,7 @@ Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업
 - 버전: 두 판 같은 번호 (`conf/app.ini` · `workgroup/conf/app.ini` 의 version). 릴리즈 노트: `RELEASE_NOTES.md` · `workgroup/RELEASE_NOTES.md`.
 
 ## 6. 시험 · 배포
-- Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>`
+- Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>` (pprjmgmt 폴더판) + `--root` (zip 맨 위에 index.html — 회사 배포 플랫폼용). **작업 후 두 zip 을 만들어 사용자에게 보낸다**
 - Workgroup: `python tools/edition.py assemble workgroup <폴더>` 다음 그 폴더에서 `node tools/tests/e2e/run_e2e.js`(실제 서버, ~20분 — 백그라운드로) · `python tools/tests/test_server_api.py`(10초) · `python tools/make_release.py <출력 폴더>`
   (조립한 폴더에서 화면 부채 기준을 바꾸면 `tools/ui_debt.json` 을 `workgroup/tools/` 로 다시 복사)
 - 호환 시험 자료: `tools/tests/fixtures/` (상대 판에서 만든 프로젝트 백업 JSON)

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """[IOSTAR-PM Standalone] 배포 zip 만들기 — 전사 시스템 하위 폴더(pprjmgmt)에 그대로 올리는 정적 파일(HTML · CSS · JS)만
 
-    python tools/make_release.py [출력폴더]   → IOSTAR-PM-Standalone_v1.0.0.zip (안에 배포 폴더 pprjmgmt/ 하나 — 웹 주소 /pprjmgmt)
+    python tools/make_release.py [출력폴더]          → IOSTAR-PM-Standalone_v1.0.0.zip (안에 배포 폴더 pprjmgmt/ 하나 — 웹 주소 /pprjmgmt)
+    python tools/make_release.py [출력폴더] --root   → IOSTAR-PM-Standalone_v1.0.0_root.zip (zip 맨 위에 index.html — 배포 플랫폼이 루트의 index 로 여는 경우)
+      화면은 모든 경로를 상대 주소로 쓰므로 어느 주소(루트 · 하위 폴더)에 올려도 같게 동작
 
 - 넣는 것: index.html · static/ · legal/ · README.txt (서버 프로그램 없음, 자료는 각 사용자 브라우저에 저장)
 - 풀었을 때 크기가 5MB 를 넘으면 실패 (한도 10MB)
@@ -36,7 +38,7 @@ def iter_files():
             yield f, f.relative_to(ROOT)
 
 
-def make(out_dir: Path) -> Path:
+def make(out_dir: Path, root: bool = False) -> Path:
     edition._require_built_index()
     build_initial_data.build()
     app_config.build()
@@ -44,10 +46,10 @@ def make(out_dir: Path) -> Path:
     total = sum(f.stat().st_size for f, _ in files)
     if total > PACKAGE_MAX:
         raise SystemExit(f"[ERROR] package is {total / 1048576:.2f}MB (> {PACKAGE_MAX / 1048576:.0f}MB). Remove files before release.")
-    out = out_dir / f"{PKG}.zip"
+    out = out_dir / f"{PKG}{'_root' if root else ''}.zip"
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for path, rel in files:
-            info = zipfile.ZipInfo.from_file(path, arcname=f"{FOLDER}/{rel.as_posix()}")
+            info = zipfile.ZipInfo.from_file(path, arcname=rel.as_posix() if root else f"{FOLDER}/{rel.as_posix()}")
             info.flag_bits |= 0x800  # UTF-8 파일명
             info.compress_type = zipfile.ZIP_DEFLATED
             data = path.read_bytes()
@@ -59,6 +61,7 @@ def make(out_dir: Path) -> Path:
 
 
 if __name__ == "__main__":
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT.parent
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    target = Path(args[0]) if args else ROOT.parent
     target.mkdir(parents=True, exist_ok=True)
-    make(target)
+    make(target, root="--root" in sys.argv)

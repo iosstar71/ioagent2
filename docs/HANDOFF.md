@@ -41,6 +41,7 @@
 - 외부 평가 의견(2026-11): 강점 = 입력이 적고 자동 계산 — 새 기능도 **선택 입력 · 자동 계산** 위주로
 
 ## 시험 · 배포 빠른 참조
+- **작업이 끝나면 Standalone 배포 zip 을 만들어 보냄**: `python tools/make_release.py <폴더>` (pprjmgmt/ 폴더판) 와 `--root` (index.html 이 zip 맨 위 — 회사 배포 플랫폼은 루트의 index 로 염, 2026-11 결정). 화면은 상대 경로라 어느 주소에서도 동작
 - `python tools/build_index.py` (partials → index.html) · `python tools/check_ui_debt.py` · `node tools/tests/unit/run_unit.js`
 - Standalone: `node tools/tests/e2e/run_e2e.js` · 배포 `python tools/make_release.py <폴더>`
 - Workgroup: `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 `python tools/app_config.py`, `python tools/tests/test_server_api.py`, `node tools/tests/e2e/run_e2e.js`(~20분), `python tools/make_release.py <폴더>`
