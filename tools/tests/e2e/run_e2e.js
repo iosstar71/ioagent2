@@ -93,7 +93,7 @@ async function main() {
     { let out = "", ok = true; try { out = execFileSync("node", [path.join(ROOT, "tools", "tests", "unit", "run_unit.js")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
       check("Calculation unit tests pass (Metrics · WBSEngine · Migrate · templates)", ok, out.trim().split("\n").slice(-3).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.3.4.zip" && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.4.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -113,7 +113,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Standalone v1.3.4" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.4.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -384,10 +384,21 @@ async function main() {
       /My Work/.test(mn.groups) && /Dashboard/.test(mn.groups) && /요구 · VOC · 산출물/.test(mn.groups) && /보고 · 소통/.test(mn.groups) && mn.land === "tab-home" && mn.mw && !mn.sw, JSON.stringify(mn));
     await wc.evaluate(() => { vocData = [{ id: "VOC-1", system: "A", title: "v", status: "대기" }, { id: "VOC-2", system: "A", title: "b", status: "착수전", vocType: "버그" }];
       DataRegistry.normalizeTerms({ vocData }); GShell.go("tab-voc"); });
-    await wc.selectOption("#vocTypeFilter", "버그"); await wc.waitForTimeout(300);
-    const vt = await wc.evaluate(() => ({ rows: document.querySelectorAll("#vocTableBody tr").length, st: vocData[1].status, dash: (() => { renderDashboard(); return document.getElementById("voc-stat-total") ? document.getElementById("voc-stat-total").textContent : "" })() }));
-    await wc.selectOption("#vocTypeFilter", "ALL");
-    check("VOC 구분 (VOC / 버그 / 이슈) filters the list only; old 착수전 reads as 대기", vt.rows === 1 && vt.st === "대기", JSON.stringify(vt));
+    await wc.selectOption("#vocJudgeFilter", "결함"); await wc.waitForTimeout(300);
+    const vt = await wc.evaluate(() => ({ rows: document.querySelectorAll("#vocTableBody tr").length, st: vocData[1].status, judge: vocData[1].vocType, old: vocData[0].vocType,
+      badges: !!document.getElementById("tab-voc-stat-total"), heads: document.querySelectorAll("#vocTable thead th").length, cells: (document.querySelector("#vocTableBody tr") || { children: [] }).children.length }));
+    await wc.selectOption("#vocJudgeFilter", "ALL");
+    check("VOC 판정: old 구분 버그 → 결함, VOC → 미판정; judgement filter; header and row cells from one column list; no duplicate status-count row",
+      vt.rows === 1 && vt.st === "대기" && vt.judge === "결함" && vt.old === "미판정" && !vt.badges && vt.heads === vt.cells, JSON.stringify(vt));
+    const cr = await wc.evaluate(async () => {
+      VocRules.set(0, "vocType", "개선 요청"); VocRules.register(0); await new Promise(r => setTimeout(r, 150));
+      document.getElementById("confirmDialogOkBtn").click(); await new Promise(r => setTimeout(r, 200));
+      const req = reqMasterData.find(r => r.srcVoc === "VOC-1");
+      const vs = Metrics.vocStats(vocData);
+      return { st: vocData[0].status, link: vocData[0].reqLink, req: req && [req.id, req.origin], open: Metrics.vocOpen(vocData).map(v => v.id), done: vs.done, total: vs.total };
+    });
+    check("VOC 개선 요청 → [추가 요구사항으로 등록]: CR ID in requirements, VOC 요구 반영 (counted as handled, not open)",
+      cr.st === "요구 반영" && cr.req && /^CR-/.test(cr.req[0]) && cr.req[1] === "추가" && cr.link === cr.req[0] && cr.open.indexOf("VOC-1") === -1 && cr.done === 1, JSON.stringify(cr));
     await wc.evaluate(() => SampleProject.add()); await wc.waitForTimeout(300); await wc.click("#confirmDialogOkBtn"); await wc.waitForTimeout(1200);
     const sp = await wc.evaluate(() => { const p = ProjectContext.localList().find(x => /샘플/.test(x.name)); const st = p ? LocalBackend._read(p.id) : null;
       return { has: !!p, wbs: st ? (st.wbsData || []).length : 0, members: p ? ProjectTransfer._usersOf(p.id, ProjectContext.allUsers).length : 0 }; });
@@ -463,7 +474,7 @@ async function main() {
       const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
       RecordPanel.close(); meetingsData = keep; MeetingManager.render();
       const c = document.getElementById("ruleCard");
-      o.rule = !!c && !!c.querySelector("#weekFmtBox") && c.querySelectorAll(".rule-id-box").length === 4;
+      o.rule = !!c && !!c.querySelector("#weekFmtBox") && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
       o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
       o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
       const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
@@ -521,7 +532,7 @@ async function main() {
       RecordPanel.close(); reqMasterData = reqMasterData.filter(r => r.id !== "REQ-PD"); renderReqMasterTable();
       return o; });
     check("Summary report: default keeps the old contents (detailed, Classic Band); presets brief / standard / detailed + per-slide choice; 5 design sets build PPT and preview; detail panel starts under the screen header",
-      ph3.def === "detail/classic" && ph3.ui === "4,9,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
+      ph3.def === "detail/classic" && ph3.ui === "4,10,5" && ph3.brief === "표지,종합 진척 현황,지연·마일스톤" && ph3.standard && ph3.custom === "custom/true" && ph3.designs === "true,true,true,true,true" && ph3.sidebar && ph3.dock, JSON.stringify(ph3));
     // 요건 반영: 서브메뉴 줄 통일 · 저장 방식 · 머리글 · Admin 프로젝트 · 자료 묶음 · 제출일 일괄 변경 · 테마 6종 · 달성률 "-"
     const rq = await wc.evaluate(async () => {
       const wait = ms => new Promise(r => setTimeout(r, ms)), o = {};

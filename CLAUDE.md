@@ -39,6 +39,9 @@
   | 화면 설정(app.ini) | `conf/app.ini` → `python tools/app_config.py` 가 `static/js/config/app-config.js` 생성 |
   | 예전 자료 변환 · 자료 정의 | `core/migrate.js` (`Migrate`), `docs/DATA_MODEL.md` |
   | 달성률 · 비율 · 건수 기준 | `modules/wbs/metrics.js` (`Metrics`), 시험 `tools/tests/unit/run_unit.js` |
+| VOC 판정 · 단계 · 결함 집계 · 범위 알림 | `Metrics` (`VOC_JUDGE` `VOC_STAGES` `defectStats` …), 목록 · 등록 `modules/requirement/req-voc.js` (`ListTable` `VocRules`), 현황 그리기 `modules/progress/voc-board.js` |
+| 기준선 | 계산 `modules/wbs/baseline.js` (`Baseline`), 화면 `baseline-ui.js` (`BaselineUI`) |
+| ID 규칙(접두사 · 다음 번호) | `modules/master/project-config.js` (`IdRules.KINDS`) |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
 - **시험은 필요한 만큼만**: 작은 수정 → `node --check <파일>` + `python tools/check_ui_debt.py`; 계산 수정 → `node tools/tests/unit/run_unit.js`(1초); 화면 동작 변경 → E2E 1회.
   E2E 는 끝에 한 번 돌린다(Standalone ~3분, Workgroup ~20분 — Workgroup 은 백그라운드로).

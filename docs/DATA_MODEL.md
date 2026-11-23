@@ -19,7 +19,7 @@
 | `wbsData` | WBS Task | `system` | 서브시스템 |
 | `deliverablesData` | 산출물 | `system` | 서브시스템 |
 | `reqMasterData` | 요구사항 | `system` | 서브시스템 |
-| `vocData` | VOC · 버그 · 이슈 | `system` | 서브시스템 |
+| `vocData` | VOC · 결함 (판정 · 단계) | `system` | 서브시스템 |
 | `noticesData` | 공지 | `id` | 프로젝트 공유 |
 | `communicationsData` | 게시판 글 | `id` | 프로젝트 공유 |
 | `meetingsData` | 회의 · 회의록 · Action Item | `id` | 프로젝트 공유 |
@@ -46,7 +46,9 @@
 | `activeReqPreset` · `reqSdlcPhases` | 적용한 개선과제 유형 코드 · 그 단계(가중치 · 계획 일정) |
 | `reqTypeCopies` | 적용하지 않은 개선과제 유형별 가중치 · 계획 일정 `{ 코드: phases }` |
 | `customReqPresets` | 예전 사용자 정의 개선과제 유형 (읽기만) |
-| `idPrefixConfig` | WBS · REQ · VOC · Action Item ID 접두사 |
+| `idPrefixConfig` | WBS · REQ · 추가 요구사항(CR) · VOC · Action Item ID 접두사 (`<k>Prefix` · `<k>UseSubCode`, k = wbs·req·cr·voc·act) |
+| `baselines` · `baselineCompare` | 기준선 이력 `[{ no, date, by, reason }]` · 비교 기준 `first`(기본) · `last` |
+| `scopeAlert` | 범위 협의 알림 건수 (서브시스템별 VOC 안에서 처리한 개선 요청, 기본 10, 0 = 끔) |
 | `milestones` | 마일스톤 `{ scope: ALL·서브시스템, name, date, desc }` |
 | `channels` | 게시판 채널 |
 | `exportSettings` | 보고서 설정 (색 · 글꼴 · 종합보고서 구성) |
@@ -63,10 +65,10 @@
 | `subsystemsMeta` | `domain` `code`(ID 접두) `name` `type`(SDLC·REQ) `sdlcCode` `weight`(서브시스템 가중치) `pm` `desc` |
 | `standardDeliverablesMeta` | `phase` `name` `round1~4`(차수별 필수) `defaultDate` `remarks` |
 | `projectUsers` | `empNo` `name` `role`(SYS_ADMIN·PM·LEAD·MEMBER) `subsystem` `dept` `pwdHash` `pwdTemp`(처음 암호 — 바꿔야 함) `lang` |
-| `wbsData` | `id` `level`(1~5) `system` `name` `weight` `reqId` `pStart` `pEnd` `aStart` `aEnd` `pProg` `aProg` `owner` `output` `isLeaf` `status` — `pProg` · `status` 는 계산값 |
+| `wbsData` | `id` `level`(1~5) `system` `name` `weight` `reqId` `pStart` `pEnd` `aStart` `aEnd` `pProg` `aProg` `owner` `output` `isLeaf` `status` `bHist`(Leaf 만, `{ 기준선 번호: [계획 시작, 계획 종료] }`) — `pProg` · `status` · `bStart` · `bEnd`(비교 기준선) 는 계산값 |
 | `deliverablesData` | `id` `round`(N차) `system` `phase` `name` `pDate` `aDate` `status`(작성전·작성중·검토요청·보완완료) `manager` `remarks` |
-| `reqMasterData` | `id` `system` `name` `type` `priority` `accept` `status`(대기·진행·완료·보류·삭제) |
-| `vocData` | `id` `vocType`(VOC·버그·이슈) `system` `priority` `title` `requester` `reqDate` `targetDate` `status` `action` |
+| `reqMasterData` | `id` `system` `name` `type` `priority` `accept` `status`(대기·진행·완료·보류·삭제) `origin`("추가" = VOC 에서 등록, 없으면 초기) `srcVoc` `addedDate` |
+| `vocData` | `id` `vocType`(판정: 미판정·결함·개선 요청·설명 종결·이슈) `stage`(요건분석/설계·구현/단위테스트·통합테스트·안정화, 접수일로 자동) `stageManual` `severity`(치명·높음·보통·낮음, 결함일 때) `system` `priority` `title` `requester` `reqDate` `targetDate` `status`(대기·진행·완료·보류·요구 반영·삭제) `closedDate` `reqLink` `action` — 목록 · 기준은 `Metrics` |
 | `noticesData` | `id` `title` `content` `author` `authorEmpNo` `date` `priority`(긴급·중요·일반) `isPinned` `viewCount` |
 | `communicationsData` | `id` `title` `channel` `taskId` `author` `authorEmpNo` `role` `content` `date` `replies` `status`(OPEN·PROGRESS·RESOLVED) |
 | `meetingsData` | `id` `system` `title` `date` `startTime` `endTime` `location` `host` `status` `notes` `summary` `attendees[]` `agendas[]` `actionItems[]` `updatedAt` |
@@ -79,6 +81,8 @@
 | 변환 | 위치 |
 |---|---|
 | 상태 '착수전' → '대기', 산출물 'N회차' → 'N차' | `Migrate.DATA_STEPS` terms |
+| VOC 구분 → 판정 (VOC→미판정, 버그→결함), 상태 '제외' → 완료(+설명 종결), 끝난 VOC 종료일 | `Migrate.DATA_STEPS` voc-judge |
+| 단계가 빈 VOC 에 접수일 · Phase 일정으로 단계 채움 | `Migrate.PROJECT_STEPS` voc-stage |
 | WBS 가중치 방식 (서브시스템 안 형제 합계 100) | `Migrate.PROJECT_STEPS` weight-model → `WbsWeight.migrateIfNeeded` |
 | SDLC 사용 유형 = 서브시스템들이 쓰는 유형 | `Migrate.PROJECT_STEPS` sdlc-used-types → `SdlcBoard.syncActive` |
 | 테마 예전 값 | `common/tabs-theme.js` THEME_ALIASES |
