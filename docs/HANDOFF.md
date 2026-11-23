@@ -51,4 +51,4 @@
 - **작업이 끝나면 Standalone 배포 zip 을 만들어 보냄**: `python tools/make_release.py <폴더>` (pprjmgmt/ 폴더판만 — pprjmgmt 폴더도 배포 플랫폼에서 동작, 2026-11 결정). `--root`(index.html 이 zip 맨 위)는 요청할 때만
 - `python tools/build_index.py` (partials → index.html) · `python tools/check_ui_debt.py` · `node tools/tests/unit/run_unit.js`
 - Standalone: `node tools/tests/e2e/run_e2e.js` · 배포 `python tools/make_release.py <폴더>`
-- Workgroup: `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 `python tools/app_config.py`, `python tools/tests/test_server_api.py`, `node tools/tests/e2e/run_e2e.js`(~20분), `python tools/make_release.py <폴더>`
+- Workgroup: `python tools/edition.py assemble workgroup <폴더>` → 그 폴더에서 `python tools/app_config.py`, `python tools/tests/test_server_api.py`, `node tools/tests/e2e/run_e2e.js`(~4분), `python tools/make_release.py <폴더>`

@@ -50,7 +50,7 @@
 | [Workgroup] 다운로드 제한 · 감사 로그 | 서버 `workgroup/server/audit.py`, 화면 `workgroup/webapp/static/js/core/download-guard.js` |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
 - **시험은 필요한 만큼만**: 작은 수정 → `node --check <파일>` + `python tools/check_ui_debt.py`; 계산 수정 → `node tools/tests/unit/run_unit.js`(1초); 화면 동작 변경 → E2E 1회.
-  E2E 는 끝에 한 번 돌린다(Standalone ~3분, Workgroup ~20분 — Workgroup 은 백그라운드로).
+  E2E 는 끝에 한 번 돌린다(Standalone ~3분, Workgroup ~4분 — 2026-11 실측 249초, 그중 25초는 "주기 통신 없음" 확인용 대기).
 - **화면 확인 캡처**는 deviceScaleFactor 1, 필요한 영역만 clip. 사용자에게 보낼 것만 2배/합성.
 - 미리보기용 정적 서버: 배포 폴더 이름이 `/pprjmgmt` 이어야 한다(심볼릭 링크 폴더를 쓸 때 기존 폴더가 있으면 그 안에 링크가 생기니 새 폴더로).
 - 사용자가 설명만 원하면 코드를 고치지 않는다. 큰 디자인 변경은 **실제 화면에 임시 CSS 를 입힌 전/후 캡처**로 먼저 확인받는다.
@@ -122,6 +122,6 @@ Task · 멤버 · PL · 다운로드/업로드 · 마스터 파일 · 내 작업
 
 ## 6. 시험 · 배포
 - Standalone: `node tools/tests/e2e/run_e2e.js` (배포 zip 을 만들어 `/pprjmgmt` 에서 시험) · `python tools/make_release.py <폴더>` (pprjmgmt 폴더판). **작업 후 이 zip 을 만들어 사용자에게 보낸다** (`--root` 판은 요청할 때만)
-- Workgroup: `python tools/edition.py assemble workgroup <폴더>` 다음 그 폴더에서 `node tools/tests/e2e/run_e2e.js`(실제 서버, ~20분 — 백그라운드로) · `python tools/tests/test_server_api.py`(10초) · `python tools/make_release.py <출력 폴더>`
+- Workgroup: `python tools/edition.py assemble workgroup <폴더>` 다음 그 폴더에서 `node tools/tests/e2e/run_e2e.js`(실제 서버, ~4분) · `python tools/tests/test_server_api.py`(10초) · `python tools/make_release.py <출력 폴더>`
   (조립한 폴더에서 화면 부채 기준을 바꾸면 `tools/ui_debt.json` 을 `workgroup/tools/` 로 다시 복사)
 - 호환 시험 자료: `tools/tests/fixtures/` (상대 판에서 만든 프로젝트 백업 JSON)
