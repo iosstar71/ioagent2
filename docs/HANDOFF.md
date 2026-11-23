@@ -4,9 +4,9 @@
 고칠 때마다 이 파일의 "지금 상태"와 "다음 할 일"을 같이 고친다.
 
 ## 지금 상태
-- 버전 **1.5.0** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
+- 버전 **1.5.1** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
 - 두 판: Standalone(정적 · IndexedDB) / Workgroup(Python 서버 + SQLite). 한 코드, 판 차이는 `tools/edition.py` 표시와 `workgroup/`
-- 시험 기준: 단위 74(샘플 경우 27 포함) · Standalone E2E (샘플 프로젝트 구간 포함) · Workgroup E2E (조립 폴더에서) · 서버 API 36
+- 시험 기준: 단위 78(샘플 경우 포함) · Standalone E2E 68 (샘플 프로젝트 구간 포함) · Workgroup E2E (조립 폴더에서) · 서버 API 36
 - 설계 문서: `docs/design/DESIGN_v1.4.md`(적용), `docs/design/PLAN_v1.5.md`(적용)
 
 ## 사용자가 정한 것 (다시 묻지 않기)
@@ -27,6 +27,8 @@
 - **Workgroup 아래 고정 줄([변경 취소] · [모두 저장]) 없앰(1.5)** — 위쪽 줄과 같은 기능
 - **1.5 를 Workgroup 으로 배포하기 전에 Workgroup E2E 한 번 필요** (다운로드 제한 · 감사 로그 · 아래 줄 삭제는 Workgroup 화면). 요청하시면 조립 폴더에서 실행
 - **다운로드 제한 · 감사 로그는 Workgroup 만**. 다운로드 제한은 멤버별(프로젝트별), 감사 로그 열람 Admin · PM, 보관 1년, 감사 로그 화면은 프로젝트 설정 > 감사 로그 (PM 이 Admin 메뉴를 못 보므로)
+- **테스트 결함 현황(1.5.1 결정, B안)**: 기준일까지 통합테스트 단계로 접수된 VOC 가 있을 때만 보이고 건수도 기준일까지 (`Metrics.hasTestStage/defectStats(list, refDate)`)
+- **기준선 "재설정" = 지우고 새로 시작** (`Baseline.clear`, [🗑️ 기준선 지우기]). 다시 확정(이력 남김)도 그대로 있음. Gantt 위쪽 줄에서 둘 다 가능
 - **샘플 프로젝트 = 시험 기준 자료(1.5 부터)**: 화면 시험은 [🧪 샘플 프로젝트 추가] 로 만든 샘플로 한다. 새 기능을 만들면 ① `tools/build_sample.js` 에 그 경우를 넣고 ② `tools/tests/sample_coverage.js` 에 검사를 더하고 ③ `node tools/build_sample.js` → 단위 시험 · E2E 샘플 구간에 화면 확인을 더함. 샘플의 자료 오류는 원래 있던 휴일 날짜 3건뿐(가중치 합 · 날짜 역전은 넣지 않음) — 오류 화면은 E2E 가 따로 만든 작은 자료로 시험
 
 ## 구조 정리 — 화면을 고칠 때 그 화면만 (CLAUDE.md 1-2)
@@ -38,7 +40,8 @@
 - **1.5** (완료): 선행 Task 지연 경고 · WBS 상태 버튼 묶음 머리 · 샘플 프로젝트 보강(시험 기준) · 다운로드 제한 · 감사 로그(Workgroup, 서버 API 시험만 — Workgroup E2E 는 요청 때) · 체크인 아이콘 색
 - **보류 — Workgroup 폴더 구조**: 회사 배포 플랫폼에서 서버 실행이 가능해지면 다시 검토 (지금은 `webapp/` 이 웹 루트, DB · 설정은 그 밖). 웹 루트를 맨 위로 바꾸면 `/conf` · `/upload` 차단 추가 필요
 - **검토 — 서버를 Java 로**: 가능 (서버 약 3.7천 줄, 화면은 그대로, `test_server_api.py` 로 같은 동작 확인). 사용자가 정하면 진행
-- **1.6**: 멤버 투입 기간 · 철수 임박 알림 (M/M 집계는 Enterprise)
+- **1.6 (결정됨)**: 화면 역할 정리 — Summary(경영진) · Dashboard(PM · PL 한눈에, 스크롤 1~2번) · Phase 진척(단계 상세). Dashboard 진척 카드 삭제(불릿 차트 유지 — 색 기준을 Summary 신호등과 같게, PM · Task 수는 말풍선), 필터 맨 위, 표 · 결함 차트는 Phase 진척으로. 계획: `docs/design/PLAN_v1.6.md`. 전 · 후 캡처로 먼저 확인
+- **1.7**: 멤버 투입 기간 · 철수 임박 알림 (M/M 집계는 Enterprise)
 - **Enterprise**: Oracle · 세션 · 트랜잭션 · 인력 원가, 자료 저장 방식 재설계
 - 외부 평가 의견(2026-11): 강점 = 입력이 적고 자동 계산 — 새 기능도 **선택 입력 · 자동 계산** 위주로
 

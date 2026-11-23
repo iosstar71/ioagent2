@@ -195,7 +195,7 @@ var HomeScreenManager = {
     const parts = [];
     const bl = BaselineUI.lineHtml();
     if (bl) parts.push(bl);
-    if (Metrics.hasTestStage(vocData)) {
+    if (Metrics.hasTestStage(vocData, projectConfig.reportDate)) {
       const d = Metrics.defectStats(vocData, projectConfig.reportDate);
       parts.push(`<span class="svl-item">🐞 <span>${I18N.tf("테스트 결함 {n}건 · 미결 {o} (치명 · 높음 {c}) · 판정 대기 {u}", { n: d.total, o: d.open, c: d.critOpen, u: d.undecided })}</span></span>`);
     }

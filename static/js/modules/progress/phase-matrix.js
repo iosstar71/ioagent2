@@ -87,7 +87,7 @@ function renderPhaseMatrix() {
 
     // VOC · 결함 (Metrics: 처리 = 완료 + 요구 반영, 테스트 결함 = 통합테스트 · 결함)
     const sysVocs = vocData.filter(v => v.system === sys);
-    const vs = Metrics.vocStats(sysVocs), ds = Metrics.defectStats(sysVocs);
+    const vs = Metrics.vocStats(sysVocs), ds = Metrics.defectStats(sysVocs, projectConfig.reportDate);
     const vOpen = Metrics.vocOpen(sysVocs).length;
     sumVocTot += vs.total; sumVocUnd += vs.undecided; sumVocOpen += vOpen; sumVocDone += vs.done; sumDefOpen += ds.open; sumDefTot += ds.total;
 

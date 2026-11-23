@@ -48,6 +48,12 @@ var Baseline = {
     }
   },
 
+  // 지우기: 기준선 이력과 Task 의 기준선 일정을 모두 없앰 (처음부터 다시 확정)
+  clear(data, cfg) {
+    delete cfg.baselines; delete cfg.baselineCompare;
+    (data || []).forEach(t => { if (t) { delete t.bHist; delete t.bStart; delete t.bEnd; } });
+  },
+
   // 엑셀 업로드 · 파일 Merge 로 행을 바꿀 때: 같은 서브시스템 · 같은 WBS ID 의 기준선을 이어 받음
   //  (기준선은 PM 이 확정하는 것이라 지금 자료에 있는 기준선이 우선)
   carry(oldRows, newRows) {

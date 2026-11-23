@@ -902,9 +902,14 @@
               <option value="1">L1만 표시 (L2 이하 접기)</option>
             </select>
           </div>
+          <div class="filter-item">
+            <label class="u-fs-xs" title="계획 막대 아래에 기준선 일정을 연한 막대로, 기준선보다 밀린 기간을 빨간색으로 표시"><input type="checkbox" id="ganttBlShow" checked data-change="renderGantt"> 📐 기준선 보기</label>
+            <label class="u-fs-xs" title="기준선보다 계획 종료가 늦어진 Task 와 그 상위 Task 만"><input type="checkbox" id="ganttBlSlip" data-change="renderGantt"> 밀린 Task만</label>
+          </div>
           <button class="btn btn-primary btn-sm" data-click="renderGantt">🔄 새로고침</button>
         </div>
       </div>
+      <div class="gantt-legend" id="ganttBaselineBar"></div>
       <div class="card">
         <div class="gantt-wrapper">
           <div class="gantt-tree" id="ganttTreeList"></div>
@@ -2330,9 +2335,10 @@
       </div>
 
       <div class="master-subpane" data-group="master" id="masterSub-holiday" data-subpane="holiday">
-        <div class="pane-grid-2">
+        <!-- 2열 배치: 진척률 | 판정 기준 → 기준선(전체 폭) → ID 규칙 | 주차 표시 → 공휴일(전체 폭). 한 줄의 카드는 같은 높이 -->
+        <div class="pane-grid-2 pg-even">
         <!-- 계획 진척률 산정 기준 (달력일수 / 영업일) -->
-        <div class="card" style="border-left: 4px solid #0ea5e9;">
+        <div class="card">
           <div class="card-title">
             <div>
               <strong>계획 진척률 산정 기준 (달력 일수 / 영업일)</strong>
@@ -2352,7 +2358,7 @@
 
 
         <!-- 판정 기준: 지연 · 마감 임박 -->
-        <div class="card card-accent-danger">
+        <div class="card">
           <div class="card-title">
             <div>
               <strong>🚦 판정 기준 (지연 · 마감 임박 · 범위 협의)</strong>
@@ -2371,7 +2377,7 @@
         </div>
 
         <!-- 기준선: 확정 순간의 계획 일정을 복사해 두고 지금 계획과 비교 (modules/wbs/baseline-ui.js) -->
-        <div class="card" id="baselineCard">
+        <div class="card pg-wide" id="baselineCard">
           <div class="card-title">
             <div><strong>📐 기준선</strong> <span class="lk-hint">확정한 순간의 Task 계획 일정을 남겨 두고 Gantt · Summary · 보고서에서 "기준선 대비 +N일" 로 비교 (다시 확정할 때는 사유 필수)</span></div>
           </div>
@@ -2379,17 +2385,18 @@
         </div>
 
         <!-- [1-7] 표기 규칙: ID 접두사 + 주차 표시 (번호 · 날짜를 적는 방식을 한 곳에) -->
-        <div class="card rule-card" id="ruleCard">
+        <div class="card" id="ruleCard">
           <div class="card-title">
-            <div><strong>표기 규칙</strong> <span class="lk-hint">ID 접두사 · 주차 표시 — 번호와 주차를 화면 · 보고서에 적는 방식</span></div>
+            <div><strong>🏷️ ID 규칙</strong> <span class="lk-hint">WBS · REQ · 추가 요구사항 · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span></div>
+            <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button>
           </div>
-          <div class="rule-sec">
-            <div class="wk-head rule-sec-head"><b>🏷️ ID 규칙</b> <span class="lk-hint">WBS · REQ · 추가 요구사항 · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span>
-              <button class="btn btn-warning btn-sm rule-sec-btn" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button></div>
-            <div class="rule-id-grid" id="idRuleGrid"></div>
+          <div class="rule-id-grid" id="idRuleGrid"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <div><strong>📅 주차 표시 방식</strong> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 기본정보에서 설정)</span></div>
           </div>
-          <div id="weekFmtBox" class="wk-box rule-sec">
-            <div class="wk-head"><b>📅 주차 표시 방식</b> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 기본정보에서 설정)</span></div>
+          <div id="weekFmtBox" class="wk-box wk-plain">
             <div class="wk-grid">
               <div>
                 <div class="wk-label">① 주차 기준</div>
@@ -2412,7 +2419,7 @@
           </div>
         </div>
         <!-- [1-6] 휴일 및 비작업일 캘린더 관리 -->
-        <div class="card" style="border-left: 4px solid #f59e0b;">
+        <div class="card pg-wide">
           <div class="card-title">
             <div>
               <strong>공휴일 · 비작업일</strong>
@@ -2430,7 +2437,7 @@
               <option value="NATIONAL">대한민국 법정공휴일만 보기</option>
             </select>
           </div>
-          <div class="table-container" style="max-height: 215px;">
+          <div class="table-container pg-scroll">
             <table id="holidayTable">
               <thead><tr><th style="width:90px;">구분</th><th>휴일명</th><th style="width:160px;">일자 (요일)</th><th style="width:50px;">삭제</th></tr></thead>
               <tbody></tbody>

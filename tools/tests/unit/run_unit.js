@@ -172,6 +172,8 @@ function eq(name, got, want) {
   eq("varOf: earlier is negative", B.varOf({ pEnd: "2026-03-08", bEnd: "2026-03-10" }, cfg), -2);
   const no2 = B.confirm(data, cfg, "pm", "re-plan", "2026-03-15");
   eq("re-baseline: compare first by default, last when set", [no2, B.summary(data, cfg).endVar, (cfg.baselineCompare = "last", B.annotate(data, cfg), B.summary(data, cfg).endVar)], [2, 5, 0]);
+  B.clear(data, cfg);
+  eq("clear: no baseline history or Task baseline dates left", [B.summary(data, cfg).has, data.some(t => t.bHist || t.bStart || t.bEnd), "baselineCompare" in cfg], [false, false, false]);
   eq("diffDays: business basis skips weekend", B.diffDays("2026-03-09", "2026-03-06", { progressBasis: "BUSINESS", holidays: [] }), 1);
 }
 
@@ -184,6 +186,13 @@ function eq(name, got, want) {
   eq("tf fills Korean template", I.tf("가중치 {n}%", { n: 30 }), "가중치 30%");
   eq("template translates in English", I.t(I.tf("가중치 {n}%", { n: 30 })), "weight 30%");
   eq("count patterns", [I.t("전체 저장 (2)"), I.t("단계 4개")], ["Save all (2)", "4 phases"]);
+}
+
+// ---- 결함 현황: 기준일까지 접수된 것만 ----
+{
+  const { Metrics: M } = load();
+  const l = [{ stage: "통합테스트", vocType: "결함", reqDate: "2027-09-10", status: "진행" }, { stage: "통합테스트", vocType: "결함", reqDate: "2027-09-20", status: "완료", closedDate: "2027-09-21" }];
+  eq("hasTestStage / defectStats follow the report date", [M.hasTestStage(l, "2027-09-01"), M.hasTestStage(l, "2027-09-15"), M.defectStats(l, "2027-09-15").total, M.defectStats(l, "2027-09-30").total, M.hasTestStage(l)], [false, true, 1, 2, true]);
 }
 
 // ---- 샘플 프로젝트가 담은 경우 (tools/tests/sample_coverage.js) ----

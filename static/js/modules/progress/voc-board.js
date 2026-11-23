@@ -76,7 +76,7 @@ var VocBoard = {
 
     const card = document.getElementById("dashDefectCard");
     if (card) {
-      card.hidden = !Metrics.hasTestStage(scope);
+      card.hidden = !Metrics.hasTestStage(scope, projectConfig.reportDate);
       if (!card.hidden) document.getElementById("dashDefectBody").innerHTML = this.defectHtml(scope, projectConfig.reportDate);
     }
 

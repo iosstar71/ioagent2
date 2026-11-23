@@ -275,7 +275,7 @@ var ExecDeck = {
     // 8. 지연 과업 · 주요 마일스톤
     // 테스트 결함 현황 — 통합테스트 단계 접수가 있을 때만 (셈은 Metrics.defectStats)
     const allVocs = c.data.vocs || [];
-    if (on("defect") && Metrics.hasTestStage(allVocs)) {
+    if (on("defect") && Metrics.hasTestStage(allVocs, c.data.reportDate)) {
       mark("테스트 결함 현황");
       const els = head("테스트 결함 현황 (통합테스트 · 판정 결함)");
       const d = Metrics.defectStats(allVocs, c.data.reportDate);

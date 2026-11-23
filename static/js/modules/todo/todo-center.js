@@ -145,6 +145,10 @@ var TodoCenter = {
     t.title = title.slice(0, 200);
     t.due = v(`[data-todo-edit="due"]`);
     t.priority = this.PRI[v(`[data-todo-edit="pri"]`)] ? v(`[data-todo-edit="pri"]`) : "M";
+    const lt = v(`[data-todo-edit="linkType"]`), lid = v(`[data-todo-edit="linkId"]`);
+    const link = this._link(lt, lid);
+    if (lt && lid && !link) return showToast(`⚠️ [${this.LINKS[lt]}] ${lid} 을(를) 찾을 수 없습니다. ID 를 확인하세요.`);
+    t.link = link;   // 종류나 ID 를 비우면 연결 없음
     this._editing = null;
     this.save();
   },
@@ -222,6 +226,8 @@ var TodoCenter = {
           <input type="text" data-todo-edit="title" value="${escapeAttr(t.title)}" maxlength="200" aria-label="할 일 내용">
           <input type="date" data-todo-edit="due" value="${escapeAttr(t.due || "")}" aria-label="마감일">
           <select data-todo-edit="pri" aria-label="중요도">${priOpts(t.priority)}</select>
+          <select data-todo-edit="linkType" aria-label="연결할 항목 종류" title="연결할 항목 (선택)"><option value="">연결 없음</option>${Object.keys(this.LINKS).map(k => `<option value="${k}" ${t.link && t.link.type === k ? "selected" : ""}>${this.LINKS[k]}</option>`).join("")}</select>
+          <input type="text" data-todo-edit="linkId" value="${escapeAttr(t.link ? t.link.id : "")}" placeholder="ID (예: 1.2.1.1, VOC-06)" aria-label="연결할 항목 ID">
           <button type="button" class="btn btn-xs" data-btn="save" data-click="TodoCenter.saveEdit" data-click-args="${A(t.id)}">저장</button>
           <button type="button" class="btn btn-xs" data-btn="cancel" data-click="TodoCenter.edit" data-click-args="${A(t.id)}">취소</button>
         </li>`;

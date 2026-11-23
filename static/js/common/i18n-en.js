@@ -13,6 +13,19 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "🗑️ 기준선 지우기": "🗑️ Clear baseline",
+    "기준선 지우기": "Clear baseline",
+    "기준선 다시 확정": "Re-confirm baseline",
+    "기준선 확정": "Confirm baseline",
+    "계획 (실적 채움)": "Plan (filled = actual)",
+    "기준선보다 밀린 기간": "Slipped past baseline",
+    "선행 경고": "Predecessor warning",
+    "기준선 없음": "No baseline",
+    "기준선 이력을 모두 지웁니다. Gantt · Summary · 보고서의 기준선 비교가 사라지고, 다시 [기준선 확정] 을 눌러 처음부터 시작합니다. 계속할까요?": "This clears the whole baseline history. Baseline comparisons disappear from Gantt, Summary and reports until you confirm a new baseline. Continue?",
+    "🗑️ 기준선을 지웠습니다. [저장] 을 눌러 기록하세요.": "🗑️ Baseline cleared. Press [Save] to keep it.",
+    "📐 기준선 보기": "📐 Show baseline",
+    "밀린 Task만": "Slipped Tasks only",
+    "기준선 이력을 모두 지우고 처음부터 다시 확정합니다": "Clears the baseline history so you can confirm again from scratch",
     "⛓ 선행 지연": "⛓ Pred. late",
     "선행 지연": "Predecessor late",
     "일정 겹침": "Dates overlap",
@@ -3656,6 +3669,7 @@ var I18N_EN = (function () {
 
   // 문구 틀 — 화면 코드는 I18N.tf(틀, 값) 으로 한국어 문장을 만들고, 영어 화면은 이 틀로 번역됨 ({이름} 자리는 그대로 옮김)
   const templates = {
+    "기준선 {s} ~ {e}": "Baseline {s} ~ {e}",
     "{st} {n}건": "{st} {n}",
     "⚠️ [{id}] 는 이미 이 Task 뒤에 오도록 연결되어 있어 선행으로 지정할 수 없습니다 (순환).": "⚠️ [{id}] already comes after this Task — it cannot be a predecessor (loop).",
     "선행 Task {ids}": "Predecessors {ids}",

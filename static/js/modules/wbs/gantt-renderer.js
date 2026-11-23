@@ -178,9 +178,18 @@ const GanttRenderer = {
       header.appendChild(col);
     });
 
+    // 기준선 보기 · 밀린 Task만 (밀린 Task = 계획 종료가 기준선 종료보다 늦은 최하위 Task, 그 상위 Task 도 함께)
+    const chk = id => { const el = document.getElementById(id); return !el || el.checked; };
+    const hasBl = !!Baseline.current(projectConfig);
+    const blShow = hasBl && chk("ganttBlShow");
+    const slipOnly = hasBl && (document.getElementById("ganttBlSlip") || {}).checked;
+    const slipped = slipOnly ? wbsData.filter(t => t.isLeaf && (Baseline.varOf(t, projectConfig) || 0) > 0) : [];
+    const keep = slipOnly ? new Set(wbsData.filter(t => slipped.some(x => x === t || String(x.id).startsWith(t.id + ".")))) : null;
+    BaselineUI.ganttBar();
     const filtered = wbsData.filter(t => {
       if (dFilter !== "ALL" && WBSEngine.getSubsystemDomain(t.system) !== dFilter) return false;
       if (sysFilter !== "ALL" && t.system !== sysFilter) return false;
+      if (keep && !keep.has(t)) return false;
       return (t.level || 1) <= maxLvl;
     });
 
@@ -237,14 +246,26 @@ const GanttRenderer = {
           row.appendChild(dot);
         }
         // 기준선: 계획 막대 아래 얇은 선 (기준선 확정 뒤에만 — modules/wbs/baseline.js)
-        if (task.bStart && task.bEnd) {
+        //  기준선 일정은 연한 막대, 기준선 종료 뒤로 밀린 기간은 빨간 막대 + "+N일"
+        if (blShow && task.bStart && task.bEnd) {
           const bl = document.createElement("div"), bx = Math.max(0, this._x(tl, task.bStart));
           const v = Baseline.varOf(task, projectConfig);
-          bl.className = "gantt-bline" + (v > 0 ? " late" : "");
+          const tip = I18N.tf("기준선 {s} ~ {e}", { s: task.bStart, e: task.bEnd }) + (v ? ` (${v > 0 ? "+" : ""}${v}${I18N.t("일")})` : "");
+          bl.className = "gantt-bline";
           bl.style.left = `${bx}px`;
-          bl.style.width = `${Math.max(4, this._x(tl, task.bEnd) + Math.round(tl.pxPerDay) - bx - 2)}px`;
-          bl.title = `기준선 ${task.bStart} ~ ${task.bEnd}${v ? ` (${v > 0 ? "+" : ""}${v}일)` : ""}`;
+          const bEndX = this._x(tl, task.bEnd) + Math.round(tl.pxPerDay);
+          bl.style.width = `${Math.max(4, bEndX - bx - 2)}px`;
+          bl.title = tip;
           row.appendChild(bl);
+          if (v > 0 && task.pEnd) {
+            const sl = document.createElement("div");
+            sl.className = "gantt-bslip";
+            sl.style.left = `${bEndX - 2}px`;
+            sl.style.width = `${Math.max(3, this._x(tl, task.pEnd) + Math.round(tl.pxPerDay) - bEndX)}px`;
+            sl.title = tip;
+            sl.innerHTML = `<span>+${v}${I18N.t("일")}</span>`;
+            row.appendChild(sl);
+          }
         }
       }
       // 서브시스템 마일스톤은 해당 서브시스템 L1 행에 표시

@@ -213,7 +213,7 @@ var WeeklyExport = {
     const newV = scopeVocs.filter(v => v.reqDate && v.reqDate >= rep.startDate && v.reqDate <= rep.endDate);
     const nvs = Metrics.vocStats(newV);
     const vocTexts = judged ? [["VOC · 결함", I18N.tf("금주 신규 {n}건 (결함 {a} · 개선 요청 {b} · 판정 대기 {c}) · 미결 {m}건", { n: newV.length, a: nvs.byJudge["결함"], b: nvs.byJudge["개선 요청"], c: nvs.undecided, m: openVocs.length })
-      + (Metrics.hasTestStage(scopeVocs) ? " / " + I18N.tf("테스트 결함 {t}건 중 미결 {o}건 (치명 · 높음 {k})", { t: df.total, o: df.open, k: df.critOpen }) : "")]] : [];
+      + (Metrics.hasTestStage(scopeVocs, rep.endDate) ? " / " + I18N.tf("테스트 결함 {t}건 중 미결 {o}건 (치명 · 높음 {k})", { t: df.total, o: df.open, k: df.critOpen }) : "")]] : [];
     const s4 = {
       title: "4. 이슈 · 요구사항 · VOC",
       texts: [["주요 현안 및 지원 요청", rep.issuesNotes || "특이사항 없음"]].concat(vocTexts),

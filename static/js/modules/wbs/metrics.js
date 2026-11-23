@@ -110,17 +110,20 @@ var Metrics = {
     return Object.keys(by).filter(s => by[s] >= lim).map(s => ({ system: s, count: by[s] }));
   },
   // 테스트 결함 = 단계 통합테스트 + 판정 결함 (안정화는 VOC 현황에만)
-  isTestDefect(v) { return !!v && v.status !== "삭제" && v.stage === this.TEST_STAGE && this.judgeOf(v) === "결함"; },
-  hasTestStage(list) { return (list || []).some(v => v && v.status !== "삭제" && v.stage === this.TEST_STAGE); },
+  //  refDate(기준일)를 주면 그날까지 접수된 것만 — 다른 지표처럼 "기준일 시점" (지난 주를 다시 볼 때 뒤에 들어온 결함이 섞이지 않게)
+  _byRef(v, refDate) { return !refDate || (!!v.reqDate && v.reqDate <= refDate); },
+  isTestDefect(v, refDate) { return !!v && v.status !== "삭제" && v.stage === this.TEST_STAGE && this.judgeOf(v) === "결함" && this._byRef(v, refDate); },
+  // 결함 현황을 보여 줄지: 기준일까지 통합테스트 단계로 접수된 VOC 가 있을 때만
+  hasTestStage(list, refDate) { return (list || []).some(v => v && v.status !== "삭제" && v.stage === this.TEST_STAGE && this._byRef(v, refDate)); },
   // 결함 현황 + 소진 추이 (일별 누적 발생 · 해결 · 잔여). 해결일(closedDate)이 없는 끝난 건은 추이에서 빼고 noDate 로 셈
   defectStats(list, refDate) {
-    const d = (list || []).filter(v => this.isTestDefect(v));
+    const d = (list || []).filter(v => this.isTestDefect(v, refDate));
     const isDone = v => this.VOC_DONE.indexOf(v.status) !== -1;
     const open = d.filter(v => !isDone(v));
     const bySev = {}, openBySev = {};
     this.VOC_SEVERITY.concat([""]).forEach(s => { bySev[s] = 0; openBySev[s] = 0; });
     d.forEach(v => { const s = this.VOC_SEVERITY.indexOf(v.severity) !== -1 ? v.severity : ""; bySev[s]++; if (!isDone(v)) openBySev[s]++; });
-    const undecided = (list || []).filter(v => v && v.status !== "삭제" && v.stage === this.TEST_STAGE && this.judgeOf(v) === "미판정").length;
+    const undecided = (list || []).filter(v => v && v.status !== "삭제" && v.stage === this.TEST_STAGE && this.judgeOf(v) === "미판정" && this._byRef(v, refDate)).length;
     const dates = d.map(v => v.reqDate).filter(Boolean).sort();
     const series = [];
     let noDate = 0;

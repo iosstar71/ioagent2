@@ -21,6 +21,9 @@ function open(load) {
   return { S, E, M: ctx.Metrics, B: ctx.Baseline, rep };
 }
 
+// 통합테스트 기간 안의 날짜 (기준일을 이날로 바꾸면 결함 현황이 보임)
+const TEST_DATE = "2027-10-08";
+
 const CASES = [
   // 기본 구성
   ["subsystems: SDLC and improvement (REQ) types, 3 domains", ({ S }) => S.subsystemsMeta.some(s => s.type === "REQ") && S.subsystemsMeta.some(s => s.type === "SDLC") && new Set(S.subsystemsMeta.map(s => s.domain)).size >= 3],
@@ -47,7 +50,8 @@ const CASES = [
   ["VOC: statuses 대기 · 진행 · 완료 · 보류 · 요구 반영 · 삭제", ({ S }) => ["대기", "진행", "완료", "보류", "요구 반영", "삭제"].every(st => S.vocData.some(v => v.status === st))],
   ["VOC: late (target passed) and on-hold past target (not late)", ({ S, M, rep }) => S.vocData.some(v => M.vocLate(v, rep)) && S.vocData.some(v => v.status === "보류" && v.targetDate < rep && !M.vocLate(v, rep))],
   ["VOC: stages filled automatically and one set by hand", ({ S }) => S.vocData.some(v => v.stage && !v.stageManual) && S.vocData.some(v => v.stageManual)],
-  ["defects: integration-test defects with severity, open + closed (burn-down), undecided in test", ({ S, M, rep }) => { const d = M.defectStats(S.vocData, rep); return d.total >= 2 && d.open >= 1 && d.closed >= 1 && d.critOpen + d.bySev["치명"] >= 1 && d.undecided >= 1 && d.series.length >= 2; }],
+  ["defects: none before the integration test (hidden at the report date), shown when the report date is in the test period", ({ S, M, rep }) => !M.hasTestStage(S.vocData, rep) && M.hasTestStage(S.vocData, TEST_DATE)],
+  ["defects at the test date: severity, open + closed (burn-down), undecided in test", ({ S, M }) => { const d = M.defectStats(S.vocData, TEST_DATE); return d.total >= 2 && d.open >= 1 && d.closed >= 1 && d.bySev["치명"] >= 1 && d.undecided >= 1 && d.series.length >= 2; }],
   ["VOC: scope alert (improvement requests handled in VOC)", ({ S, M }) => M.scopeAlerts(S.vocData, S.projectConfig).length >= 1],
   // 산출물 · 회의 · 보고 · 게시판
   ["deliverables: every status and 2 rounds; one past its plan date", ({ S, rep }) => ["작성전", "작성중", "검토요청", "보완완료"].every(st => S.deliverablesData.some(d => d.status === st)) && new Set(S.deliverablesData.map(d => d.round)).size >= 2 && S.deliverablesData.some(d => d.pDate < rep && d.status !== "보완완료" && !d.aDate)],

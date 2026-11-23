@@ -93,7 +93,7 @@ async function main() {
     { let out = "", ok = true; try { out = execFileSync("node", [path.join(ROOT, "tools", "tests", "unit", "run_unit.js")], { encoding: "utf8" }); } catch (e) { ok = false; out = String(e.stdout || e.message); }
       check("Calculation unit tests pass (Metrics · WBSEngine · Migrate · templates)", ok, out.trim().split("\n").slice(-3).join(" | ")); }
     console.log("\n[Static package under /pprjmgmt]");
-    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.5.0.zip" && web.entries.includes("index.html") && web.entries.includes("static")
+    check("Package is static files only (index.html at the top, no server program)", web.zip === "IOSTAR-PM-Standalone_v1.5.1.zip" && web.entries.includes("index.html") && web.entries.includes("static")
       && !web.entries.some(f => /server|\.py$|conf|data/.test(f)), web.entries.join(","));
     const pm = await newPage();
     await pm.goto(web.url);
@@ -113,7 +113,7 @@ async function main() {
       users: (ProjectContext.allUsers || projectUsers).map(u => u.empNo).join(), ls: Object.keys(localStorage).join(), idb: AppStore.length > 0 && !AppStore._fallback,
       gone: [typeof RealtimeChatManager, typeof AttachManager, typeof Features, typeof ServerHeartbeat].every(t => t === "undefined") && !document.getElementById("subtabBtn_CHAT") && !document.querySelector('[data-subtab="locks"]') }));
     check("Starts empty in Local mode; data in IndexedDB only (the enterprise system's localStorage untouched); chat / attachments / samples / server features gone",
-      st.ver === "Standalone v1.5.0" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
+      st.ver === "Standalone v1.5.1" && st.title.includes("PM Hub") && st.title.includes("IOSTAR-PM Standalone") && st.mode === "LOCAL" && st.wbs === 0 && st.subs === 0 && st.users === "admin,admin2" && st.ls === "enterprise_app_key" && st.idb && st.gone, JSON.stringify(st));
     for (const t of ["tab-home", "tab-dashboard", "tab-gantt", "tab-wbs", "tab-req", "tab-voc", "tab-deliverables", "tab-weekly-report", "tab-meeting", "tab-notices", "tab-master", "tab-merge", "tab-config"]) {
       await pm.evaluate(t => GShell.go(t), t); await pm.waitForTimeout(150);
     }
@@ -474,14 +474,15 @@ async function main() {
       const a = meetingsData[0].actionItems[0]; o.saved = a.title + "/" + a.status + "/" + RecordPanel.isOpen();
       RecordPanel.close(); meetingsData = keep; MeetingManager.render();
       const c = document.getElementById("ruleCard");
-      o.rule = !!c && !!c.querySelector("#weekFmtBox") && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
+      // ID 규칙 카드와 주차 표시 카드는 같은 줄에 나란히 (1.5.1 배치)
+      o.rule = !!c && !!document.getElementById("weekFmtBox") && c.nextElementSibling && c.nextElementSibling.contains(document.getElementById("weekFmtBox")) && (IdRules.render(), c.querySelectorAll(".rule-id-box").length === 5);
       o.card = [...document.querySelectorAll(".exec-report-card .exec-report-btns button")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join();
       o.exp = ExcelSync.EXPORT_THEMES.join() + "|" + ["Official Navy", "Office Blue", "Office Gray", "Office Green", "Matte Slate"].map(v => ExcelSync.normalizeExportTheme(v)).join();
       const th = document.body.getAttribute("data-theme"); document.body.setAttribute("data-theme", "classic");
       const probe = document.createElement("button"); probe.className = "g-side-item"; document.body.appendChild(probe);
       o.navy = getComputedStyle(probe).color; probe.remove(); document.body.setAttribute("data-theme", th);
       return o; });
-    check("Action Items are added only in minutes and edited in the right panel; ID + week rules in one card; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
+    check("Action Items are added only in minutes and edited in the right panel; ID rules and week display side by side; Summary card = 종합보고서 PPT + weekly Word; export colours Navy · Gray · Mint; Navy side menu text is light",
       ph1.noAdd && ph1.open && ph1.saved === "b/완료/true" && ph1.rule && ph1.card === 'ExecDeck.downloadPptx,ExecReport.download["WORD"]'
       && ph1.exp === "Navy,Gray,Mint|Navy,Navy,Gray,Mint,Gray" && ph1.navy === "rgb(227, 236, 250)", JSON.stringify(ph1));
     // 2차: [보고] 메뉴 — 주간보고 작성 · 출력 / 종합보고서 출력 / 보고서 설정(PM 이상)
@@ -687,6 +688,68 @@ async function main() {
       return out;
     });
     check("Check-in button: the ✅ icon takes the button text colour in every theme (no green on blue)", Object.values(ci).every(v => v === true), JSON.stringify(ci));
+    console.log("\n[v1.5.1 fixes on the sample project]");
+    const v1 = await sx.evaluate(async () => {
+      GShell.go("tab-voc"); await new Promise(r => setTimeout(r, 300));
+      const st = document.getElementById("vocStageFilter"); st.value = "통합테스트"; renderVocTable();
+      StatusChips.set("voc", "진행");
+      const before = vocData.length;
+      addNewVoc(); await new Promise(r => setTimeout(r, 200));
+      const v = vocData[vocData.length - 1];
+      const shown = !!document.querySelector(`#vocTableBody tr[data-rec-id="${CSS.escape(v.id)}"]`) || [...document.querySelectorAll("#vocTableBody tr")].some(tr => tr.textContent.includes(v.id));
+      const out = { added: vocData.length - before, stage: v.stage, manual: !!v.stageManual, shown, chip: StatusChips.get("voc") };
+      vocData.pop(); st.value = "ALL"; StatusChips.set("voc", "ALL");
+      return out;
+    });
+    check("VOC added while the stage filter is 통합테스트: gets that stage (set by hand) and stays visible", v1.added === 1 && v1.stage === "통합테스트" && v1.manual && v1.shown && v1.chip === "ALL", JSON.stringify(v1));
+    const v2 = await sx.evaluate(async () => {
+      GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 400));
+      const vis = () => { const c = document.getElementById("dashDefectCard"); return !!c && !c.hidden; };
+      const at0 = vis(), rep0 = projectConfig.reportDate;
+      syncGlobalDate("2027-10-08"); GShell.go("tab-dashboard"); await new Promise(r => setTimeout(r, 400));
+      const atTest = vis(), d = Metrics.defectStats(vocData, projectConfig.reportDate);
+      syncGlobalDate(rep0); await new Promise(r => setTimeout(r, 300));
+      return { at0, atTest, total: d.total, open: d.open };
+    });
+    check("Test defect card shows only with integration-test VOCs received by the report date (hidden 06-04, shown 10-08)", !v2.at0 && v2.atTest && v2.total === 2 && v2.open === 1, JSON.stringify(v2));
+    const v3 = await sx.evaluate(async () => {
+      GShell.go("tab-mywork"); await new Promise(r => setTimeout(r, 300));
+      const me = TodoCenter.me();
+      todosData.push({ id: "TD-E2E", owner: me, kind: "todo", title: "연결 수정 시험", due: "", priority: "M", link: null, done: false, doneAt: "", createdAt: "2027-06-04 09:00:00" });
+      TodoCenter.edit("TD-E2E"); await new Promise(r => setTimeout(r, 150));
+      document.querySelector('[data-todo-edit="linkType"]').value = "VOC";
+      document.querySelector('[data-todo-edit="linkId"]').value = "VOC-MES-01";
+      TodoCenter.saveEdit("TD-E2E"); await new Promise(r => setTimeout(r, 150));
+      const a = JSON.stringify(todosData.find(t => t.id === "TD-E2E").link);
+      TodoCenter.edit("TD-E2E"); await new Promise(r => setTimeout(r, 150));
+      document.querySelector('[data-todo-edit="linkType"]').value = "";
+      TodoCenter.saveEdit("TD-E2E"); await new Promise(r => setTimeout(r, 150));
+      const b = todosData.find(t => t.id === "TD-E2E").link;
+      todosData.splice(todosData.findIndex(t => t.id === "TD-E2E"), 1);
+      return { a, b };
+    });
+    check("My Work: a to-do's link can be changed and removed when editing", v3.a === '{"type":"VOC","id":"VOC-MES-01"}' && v3.b === null, JSON.stringify(v3));
+    const v4 = await sx.evaluate(async () => {
+      GShell.go("tab-gantt"); await new Promise(r => setTimeout(r, 400));
+      document.getElementById("ganttBlSlip").checked = true; renderGantt();
+      const slips = [...document.querySelectorAll("#ganttRowsContainer .gantt-bslip")].map(x => x.textContent);
+      const legend = document.getElementById("ganttBaselineBar").textContent.replace(/\s+/g, " ");
+      document.getElementById("ganttBlSlip").checked = false;
+      BaselineUI.clear(); await new Promise(r => setTimeout(r, 150));
+      document.getElementById("confirmDialogOkBtn").click(); await new Promise(r => setTimeout(r, 400));
+      const cleared = { list: Baseline.list(projectConfig).length, bHist: wbsData.filter(t => t.bHist).length, lines: document.querySelectorAll("#ganttRowsContainer .gantt-bline").length,
+        btn: /기준선 확정/.test(document.getElementById("ganttBaselineBar").textContent) };
+      return { slips, legend, cleared };
+    });
+    check("Gantt: baseline legend + buttons, slipped days in red (+7일), [밀린 Task만]; [기준선 지우기] clears the history",
+      v4.slips.length >= 2 && v4.slips.every(x => x === "+7일") && /기준선 다시 확정/.test(v4.legend) && /기준선 지우기/.test(v4.legend) && v4.cleared.list === 0 && v4.cleared.bHist === 0 && v4.cleared.lines === 0 && v4.cleared.btn, JSON.stringify(v4));
+    const v5 = await sx.evaluate(async () => {
+      GShell.go("tab-master"); MasterSubTabs.show("holiday"); await new Promise(r => setTimeout(r, 400));
+      const cards = [...document.querySelectorAll("#masterSub-holiday .pane-grid-2 > .card")];
+      const h = cards.map(c => Math.round(c.getBoundingClientRect().height)), t = cards.map(c => Math.round(c.getBoundingClientRect().top));
+      return { n: cards.length, wide: cards.filter(c => c.classList.contains("pg-wide")).length, row1: h[0] === h[1] && t[0] === t[1], row3: h[3] === h[4] && t[3] === t[4] };
+    });
+    check("Project extra info: 2-column rows of equal height, baseline and holidays full width", v5.n === 6 && v5.wide === 2 && v5.row1 && v5.row3, JSON.stringify(v5));
     check("Sample project tests ran without page errors", sx.errors.length === 0 && sx.external.length === 0, sx.errors.concat(sx.external).slice(0, 3).join(" | "));
 
     // Workgroup(서버 판)에서 내려받은 프로젝트 백업(JSON)을 새 프로젝트로 올림 (같은 자료 형식)

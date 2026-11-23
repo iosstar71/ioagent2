@@ -1616,6 +1616,7 @@ body:not(.ui-neo) .neo-ph-desc { font-size: var(--fs-xs, 11px); }
 .todo-item.done .todo-title { text-decoration: line-through; color: var(--text-muted); }
 .todo-item.editing { flex-wrap: wrap; background: var(--bg-main); border-radius: 8px; }
 .todo-item.editing input[type="text"] { flex: 1 1 260px; padding: 5px 8px; }
+.todo-item.editing input[data-todo-edit="linkId"] { flex: 0 1 170px; }
 .todo-check { width: 17px; height: 17px; flex: 0 0 auto; cursor: pointer; }
 .todo-pri { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: #94a3b8; }
 .todo-pri.pri-H { background: #dc2626; } .todo-pri.pri-M { background: #d97706; } .todo-pri.pri-L { background: #94a3b8; }
@@ -2559,10 +2560,6 @@ body.rec-panel-open #tab-req.active, body.rec-panel-open #tab-voc.active, body.r
 .g-swatch[data-theme-pick="electric"] i { background: linear-gradient(135deg, #FFD60A 50%, #FF3D8B 50%); }
 
 /* ── 1차 정리: 표기 규칙 카드 · Action Item 목록 ───────────────────────────── */
-.rule-card .rule-sec { margin-top: 12px; padding: 10px 12px; border: 1px dashed var(--border-color); border-radius: 8px; }
-.rule-card .rule-sec:first-of-type { margin-top: 0; }
-.rule-sec-head { justify-content: flex-start; }
-.rule-sec-btn { margin-left: auto; }
 .rule-id-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 .rule-id-box { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-main); }
 .rule-id-name { font-size: var(--fs-sm, 12px); color: var(--text-main); }
@@ -2741,6 +2738,12 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .pane-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .pane-grid-2 > .card { margin: 0; min-width: 0; }
 .pane-grid-2 .rule-id-grid { grid-template-columns: repeat(2, 1fr); }
+/* 프로젝트 부가정보: 같은 줄 카드는 같은 높이, 넓은 카드는 두 칸 */
+.pane-grid-2.pg-even { align-items: stretch; }
+.pane-grid-2 > .pg-wide { grid-column: 1 / -1; }
+.pane-grid-2 .pg-scroll { max-height: 320px; }
+.wk-box.wk-plain { margin: 0; padding: 0; border: 0; }
+@media (max-width: 1100px) { .pane-grid-2 { grid-template-columns: minmax(0, 1fr); } }
 .pane-grid-2 .wk-grid { grid-template-columns: 1fr; }
 @media (max-width: 1100px) { .pane-grid-2 { grid-template-columns: 1fr; } }
 .ss-domain-add { display: flex; gap: 6px; margin-bottom: 8px; max-width: 520px; }
@@ -2796,7 +2799,6 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .req-origin-add { display: inline-block; padding: 0 6px; border-radius: 8px; font-size: var(--fs-xs, 11px); font-weight: bold; background: var(--tint-info); color: var(--tint-info-text); }
 
 .num-in { width: 80px; }
-.card.card-accent-danger { border-left: 4px solid var(--danger); }
 .exec-sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
 .sum-voc-line { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 14px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); font-size: var(--fs-sm, 12px); color: var(--text-main); }
 .sum-voc-line .svl-warn { color: var(--warning); font-weight: bold; }
@@ -2804,8 +2806,17 @@ body.neo-detail-open #tab-wbs.active > .sub-header-bar, body.rec-panel-open .tab
 .bl-sum { font-size: var(--fs-sm, 12px); font-weight: bold; color: var(--text-main); }
 .bl-hist { margin-top: 10px; }
 .bl-task { margin: 6px 0; font-size: var(--fs-sm, 12px); color: var(--text-sub); }
-.gantt-bline { position: absolute; top: 25px; height: 3px; border-radius: 2px; background: var(--text-muted); opacity: 0.7; }
-.gantt-bline.late { background: var(--warning); }
+.gantt-bline { position: absolute; top: 24px; height: 5px; border-radius: 2px; background: var(--text-muted); opacity: 0.45; }
+.gantt-bslip { position: absolute; top: 24px; height: 5px; border-radius: 2px; background: var(--danger); overflow: visible; }
+.gantt-bslip span { position: absolute; left: 100%; top: -5px; margin-left: 3px; font-size: var(--fs-2xs, 10px); font-weight: 800; color: var(--danger); white-space: nowrap; }
+.gantt-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 8px; padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); font-size: var(--fs-sm, 12px); color: var(--text-sub); }
+.gantt-legend .gl-key { display: inline-flex; align-items: center; gap: 5px; }
+.gantt-legend .gl-key i { display: inline-block; width: 22px; border-radius: 2px; }
+.gantt-legend .gl-plan { height: 10px; background: var(--primary); }
+.gantt-legend .gl-base { height: 5px; background: var(--text-muted); opacity: 0.45; }
+.gantt-legend .gl-slip { height: 5px; background: var(--danger); }
+.gantt-legend .gl-key i.gl-pred { width: 9px; height: 9px; border-radius: 50%; background: var(--warning); }
+.gantt-legend .gl-sum { margin-left: auto; font-weight: 700; color: var(--text-main); }
 /* VOC · 결함 현황 (voc-board.js) */
 .dash-voc-wrap { max-height: 240px; }
 .dash-voc-stage { margin-top: 10px; }

@@ -147,7 +147,9 @@ def diff_events(key, before, after, pid):
     elif key == "projectConfig" and isinstance(after, dict):
         bl_b = (before or {}).get("baselines") if isinstance(before, dict) else None
         bl_a = after.get("baselines")
-        if isinstance(bl_a, list) and len(bl_a) > len(bl_b or []):
+        if bl_b and not bl_a:
+            out.append(("BASELINE", "기준선 지우기", f"지운 기준선 {len(bl_b)}개"))
+        elif isinstance(bl_a, list) and len(bl_a) > len(bl_b or []):
             last = bl_a[-1] if isinstance(bl_a[-1], dict) else {}
             out.append(("BASELINE", f"기준선 {last.get('no', len(bl_a))}", str(last.get("reason") or "")))
     elif key == "projectUsers":

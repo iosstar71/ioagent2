@@ -76,12 +76,15 @@ function build(S) {
   upsert(v, Object.assign({}, base, { id: "VOC-MES-04", system: "MES", priority: "높음", vocType: "이슈", title: "야간 라인 네트워크 끊김 시 실적 유실 우려", requester: "생산2팀 반장", reqDate: "2027-05-30", targetDate: "2027-06-20", status: "진행", action: "단말 로컬 저장 후 재전송 방안 검토" }));
   upsert(v, Object.assign({}, base, { id: "VOC-MES-05", system: "MES", priority: "보통", vocType: "개선 요청", title: "작업지시 화면 글자 크기 확대", requester: "생산1팀 작업자", reqDate: "2027-06-01", targetDate: "2027-06-18", status: "진행", action: "VOC 안에서 처리 (작은 개선)" }));
   upsert(v, Object.assign({}, base, { id: "VOC-QMS-03", system: "QMS", priority: "보통", vocType: "개선 요청", title: "검사 성적서 PDF 일괄 출력 요청", requester: "품질팀 대리", reqDate: "2027-05-24", targetDate: "2027-07-30", status: "요구 반영", reqLink: "CR-QMS-01", closedDate: "2027-05-27", action: "범위가 커서 추가 요구사항으로 등록" }));
-  upsert(v, Object.assign({}, base, { id: "VOC-OEE-03", system: "OEE", priority: "긴급", vocType: "결함", stage: "통합테스트", stageManual: true, severity: "치명", title: "가동률 계산 시 비가동 시간 중복 차감", requester: "설비팀 과장", reqDate: "2027-05-21", targetDate: "2027-05-28", status: "완료", closedDate: "2027-05-27", action: "비가동 구간 병합 로직 수정" }));
-  upsert(v, Object.assign({}, base, { id: "VOC-OEE-04", system: "OEE", priority: "높음", vocType: "결함", stage: "통합테스트", stageManual: true, severity: "보통", title: "센서 값 누락 시 그래프가 0 으로 표시", requester: "설비팀 대리", reqDate: "2027-05-26", targetDate: "2027-06-01", status: "진행", action: "누락 구간 점선 처리 중" }));
-  upsert(v, Object.assign({}, base, { id: "VOC-OEE-05", system: "OEE", priority: "보통", vocType: "미판정", stage: "통합테스트", stageManual: true, title: "미소정지 알림이 두 번 옴", requester: "설비팀 사원", reqDate: "2027-06-02", targetDate: "2027-06-16", status: "대기" }));
+  // 통합테스트 결함은 MES · QMS 통합테스트 기간(9~10월) 접수 — 기준일(06-04)에는 결함 현황이 보이지 않고, 기준일을 10월로 바꾸면 나타남
+  ["VOC-OEE-03", "VOC-OEE-04", "VOC-OEE-05"].forEach(id => { const i = v.findIndex(x => x.id === id); if (i !== -1) v.splice(i, 1); });
+  upsert(v, Object.assign({}, base, { id: "VOC-MES-06", system: "MES", priority: "긴급", vocType: "결함", severity: "치명", title: "작업지시 확정 시 LOT 번호 중복 발번", requester: "생산1팀 반장", reqDate: "2027-09-17", targetDate: "2027-09-22", status: "완료", closedDate: "2027-09-21", action: "LOT 채번 잠금 처리" }));
+  upsert(v, Object.assign({}, base, { id: "VOC-MES-07", system: "MES", priority: "높음", vocType: "결함", stage: "통합테스트", stageManual: true, severity: "보통", title: "실적 보정 승인 후 화면이 갱신되지 않음", requester: "생산2팀 대리", reqDate: "2027-09-20", targetDate: "2027-09-24", status: "진행", action: "승인 후 목록 다시 불러오기 수정 중" }));
+  upsert(v, Object.assign({}, base, { id: "VOC-QMS-04", system: "QMS", priority: "보통", vocType: "미판정", title: "SPC 관리도 한계선이 두 번 그려짐", requester: "품질팀 사원", reqDate: "2027-09-28", targetDate: "2027-10-06", status: "대기" }));
   upsert(v, Object.assign({}, base, { id: "VOC-PMO-02", system: "PMO", priority: "보통", vocType: "개선 요청", title: "주간보고 자동 메일 발송", requester: "경영지원팀", reqDate: "2027-04-20", targetDate: "2027-05-20", status: "보류", action: "2단계에서 검토 (보류는 지연으로 세지 않음)" }));
   upsert(v, Object.assign({}, base, { id: "VOC-PMO-03", system: "PMO", priority: "보통", vocType: "미판정", title: "(중복 접수) 주간보고 메일", requester: "경영지원팀", reqDate: "2027-04-21", targetDate: "2027-05-20", status: "삭제" }));
 
+  set(v, "VOC-OEE-01", { targetDate: "2027-06-02" });   // 목표일이 기준일보다 앞 — 지연 VOC
   // ---- 산출물: 차수별 · 지연(계획 제출일 지남)은 기존 5 · 7번
   // ---- Action Item: 기한 지난 진행중
   const m = byId(S.meetingsData, "MTG-20270602-01") || S.meetingsData[2];

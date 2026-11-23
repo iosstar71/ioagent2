@@ -26,8 +26,8 @@
    "inline_hex": 1
   },
   "tab-master": {
-   "inline": 51,
-   "inline_hex": 11
+   "inline": 48,
+   "inline_hex": 9
   },
   "tab-matrix": {
    "inline": 16,
@@ -94,8 +94,8 @@
  },
  "total": {
   "css_important": 376,
-  "html_inline": 501,
-  "html_inline_hex": 154,
+  "html_inline": 498,
+  "html_inline_hex": 152,
   "js_hex": 104,
   "js_inline": 232
  }

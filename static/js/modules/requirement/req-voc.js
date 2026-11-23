@@ -210,14 +210,17 @@ function renderVocTable() {
 }
 
 function addNewVoc() {
-  const sysFilter = filterVal("vocSubsystemFilter"), jF = filterVal("vocJudgeFilter");
+  const sysFilter = filterVal("vocSubsystemFilter"), jF = filterVal("vocJudgeFilter"), stF = filterVal("vocStageFilter");
+  // 단계를 골라 둔 채 추가하면 그 단계로 (직접 지정) — 기준일 단계로 자동 지정하면 걸러진 목록에서 바로 사라짐
+  const pickStage = Metrics.VOC_STAGES.indexOf(stF) !== -1 ? stF : "";
   const defaultSys = sysFilter !== "ALL" ? sysFilter : (subsystemsMeta[0] ? subsystemsMeta[0].name : "서브시스템A");
   const reqDate = projectConfig.reportDate;
   vocData.push({
     id: buildNextEntityId("VOC", defaultSys),
     system: defaultSys,
     vocType: Metrics.VOC_JUDGE.indexOf(jF) !== -1 ? jF : "미판정",
-    stage: WBSEngine.vocStageFor(defaultSys, reqDate),
+    stage: pickStage || WBSEngine.vocStageFor(defaultSys, reqDate),
+    ...(pickStage ? { stageManual: true } : {}),
     title: "신규 VOC 요청사항",
     priority: "중",
     requester: "요청부서",
@@ -226,6 +229,7 @@ function addNewVoc() {
     status: "대기",
     action: ""
   });
+  if (!["ALL", "대기"].includes(StatusChips.get("voc"))) StatusChips._v.voc = "ALL";   // 새 행(대기)이 상태 버튼에 가려지지 않게
   renderVocTable();
   renderDashboard();
   renderPhaseMatrix();
