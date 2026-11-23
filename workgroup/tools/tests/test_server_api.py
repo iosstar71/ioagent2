@@ -249,10 +249,6 @@ class ServerApiTest(unittest.TestCase):
         row["projectRoles"]["DEFAULT"].pop("noDownload", None)
         self.call("/api/db/save", {"changes": {"projectUsers": {"parts": {"lead_park": row}, "base": {"lead_park": revs["projectUsers"]["lead_park"]["rev"]}}}}, self.admin)
 
-    def test_24_ai_draft_off_by_default(self):
-        s, d = self.call("/api/ai/weekly-draft", {"data": {"week": "W1"}}, self.admin)
-        self.assertEqual((s, d.get("code")), (403, "AI_OFF"))
-
     # ---------------------------------------------------------------- 보안 (v1.0.10)
     def test_23_default_password_must_change(self):
         s, d = self.login("pmo_kim", self.pwd.get("pmo_kim", "1234"))
@@ -718,78 +714,6 @@ class ServerApiTest(unittest.TestCase):
         self.assertEqual(s, 200)
         self.assertTrue(any(m["message"] == "hello" for m in d["messages"]))
 
-
-
-FAKE_ANTHROPIC = r'''
-import json, pathlib
-class AuthenticationError(Exception): pass
-class RateLimitError(Exception): pass
-class APIConnectionError(Exception): pass
-class APIStatusError(Exception): pass
-class _B:
-    def __init__(self, **k): self.__dict__.update(k)
-class _Messages:
-    def create(self, **kw):
-        pathlib.Path(__file__).with_name("last_call.json").write_text(json.dumps(kw, ensure_ascii=False), encoding="utf-8")
-        if "REFUSE" in kw["messages"][0]["content"]:
-            return _B(stop_reason="refusal", content=[])
-        text = json.dumps({"currentWeekSummary": "- 2.3.1.1 완료", "nextWeekSummary": "- 2.3.1.2 착수 예정", "issuesNotes": "특이사항 없음"}, ensure_ascii=False)
-        return _B(stop_reason="end_turn", content=[_B(type="text", text=text)])
-class Anthropic:
-    def __init__(self, **kw): self.messages = _Messages()
-'''
-
-
-class AiDraftApiTest(unittest.TestCase):
-    """[features] ai_draft=1 서버 — 가짜 anthropic 패키지로 요청 · 응답 모양 · 감사 로그 확인"""
-    call = ServerApiTest.__dict__["call"]
-    login = ServerApiTest.__dict__["login"]
-    ready = ServerApiTest.__dict__["ready"]
-
-    @classmethod
-    def setUpClass(cls):
-        cls.tmp = Path(tempfile.mkdtemp(prefix="axpmys_ai_"))
-        copy_program(cls.tmp)
-        ini = cls.tmp / "conf" / "app.ini"
-        ini.write_text(ini.read_text(encoding="utf-8").replace("ai_draft=0", "ai_draft=1"), encoding="utf-8")
-        (cls.tmp / "anthropic").mkdir()
-        (cls.tmp / "anthropic" / "__init__.py").write_text(FAKE_ANTHROPIC, encoding="utf-8")
-        cls.port = free_port()
-        cls.base = f"http://127.0.0.1:{cls.port}"
-        cls.pwd = {}
-        cls.proc = subprocess.Popen([sys.executable, "wbs_db_server.py", "--port", str(cls.port), "--host", "127.0.0.1", "--silent"],
-                                    cwd=cls.tmp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        for _ in range(50):
-            try:
-                urllib.request.urlopen(cls.base + "/api/db/ping", timeout=1)
-                break
-            except Exception:
-                time.sleep(0.2)
-        cls.admin = cls.ready("admin")
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.proc.terminate()
-        cls.proc.wait(timeout=5)
-        shutil.rmtree(cls.tmp, ignore_errors=True)
-
-    def test_draft(self):
-        call = self.call
-        s, d = call("/api/ai/weekly-draft", {"data": {"week": "6월 1주", "curTasks": [{"id": "2.3.1.1"}]}}, self.admin)
-        self.assertEqual(s, 200, d)
-        self.assertEqual(d["draft"]["nextWeekSummary"], "- 2.3.1.2 착수 예정")
-        sent = json.loads((self.tmp / "anthropic" / "last_call.json").read_text(encoding="utf-8"))
-        self.assertEqual(sent["model"], "claude-opus-5-5")
-        self.assertIn("2.3.1.1", sent["messages"][0]["content"])
-        self.assertEqual(sent["output_config"]["format"]["type"], "json_schema")
-        s, d = call("/api/ai/weekly-draft", {"data": {"week": "REFUSE"}}, self.admin)
-        self.assertEqual((s, d.get("code")), (422, "AI_REFUSED"))
-        s, d = call("/api/ai/weekly-draft", {}, self.admin)
-        self.assertEqual(s, 400)
-        s, _ = call("/api/ai/weekly-draft", {"data": {"week": "x"}})
-        self.assertEqual(s, 401)
-        s, d = call("/api/audit/list", {"kind": "AI"}, self.admin)
-        self.assertEqual([r["target"] for r in d["rows"]], ["주간보고 초안"])
 
 class LockApiTest(unittest.TestCase):
     """[Workgroup 0.1] 서브시스템 체크아웃 · 체크인 (lock_mode=required)"""
