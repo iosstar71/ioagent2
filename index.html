@@ -3089,7 +3089,12 @@
   <div class="modal-overlay" id="mergePreviewModal">
     <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
       <div class="card-title"><span id="mpTitle">📤 업로드 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeTable.close">닫기</button></div>
-      <div class="bk-hint u-mb-8" id="mpFile"></div>
+      <div class="mp-scope-row">
+        <label class="u-bold" for="mpScope">🏢 반영할 서브시스템</label>
+        <select id="mpScope" class="u-bold" data-change="MergeTable.changeScope" data-change-args='["$value"]'></select>
+        <span class="bk-hint" id="mpFile"></span>
+      </div>
+      <div class="mp-impact" id="mpImpact" hidden></div>
       <div class="table-container" style="max-height:none;">
         <table class="m-table">
           <thead><tr><th class="u-tc" style="width:44px;">반영</th><th>자료</th><th class="u-tr" style="width:80px;">파일 행</th><th class="u-tr" style="width:90px;">반영할 행</th><th class="u-tr" style="width:150px;">제외할 행</th><th style="width:300px;">반영 방법</th></tr></thead>

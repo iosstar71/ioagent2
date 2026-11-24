@@ -13,6 +13,9 @@ var I18N_EN = (function () {
   const tr = (s, p) => (typeof I18N !== "undefined" ? I18N.t(s, p) : s);
 
   const exact = {
+    "🏢 반영할 서브시스템": "🏢 Subsystem to update",
+    "⚠️ 파일에 있는 서브시스템의 자료가 파일 내용으로 바뀝니다 (체크아웃 중인 서브시스템은 그대로)": "⚠️ Data of the subsystems in the file will be replaced (checked-out subsystems are kept)",
+    "⚠️ 전체 서브시스템의 자료가 파일 내용으로 바뀝니다 — 파일에 없는 서브시스템 자료는 지워집니다": "⚠️ Data of ALL subsystems will be replaced by the file — data of subsystems not in the file will be deleted",
     "🔍 조회 범위": "🔍 Scope",
     "🗂️ 도메인:": "🗂️ Domain:",
     "🏢 서브시스템:": "🏢 Subsystem:",
@@ -3714,6 +3717,10 @@ var I18N_EN = (function () {
 
   // 문구 틀 — 화면 코드는 I18N.tf(틀, 값) 으로 한국어 문장을 만들고, 영어 화면은 이 틀로 번역됨 ({이름} 자리는 그대로 옮김)
   const templates = {
+    "파일 범위: {s}": "File scope: {s}",
+    "⚠️ [{s}] 서브시스템 자료가 파일 내용으로 바뀝니다 (다른 서브시스템은 그대로)": "⚠️ Data of subsystem [{s}] will be replaced by the file (other subsystems are kept)",
+    "{a}건 → {b}건": "{a} → {b}",
+    "함께 반영: {list}": "Also applied: {list}",
     "{n} 건": "{n}",
     "전체 {t} · 대기 {a} · 진행 {b} · 완료 {c} · 보류 {d}": "Total {t} · waiting {a} · in progress {b} · done {c} · on hold {d}",
     "접수 {t} · 미결 {o} · 판정 대기 {u}": "Received {t} · open {o} · awaiting judgement {u}",

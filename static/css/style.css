@@ -1972,6 +1972,15 @@ html { scroll-padding-top: calc(var(--sticky-top, 97px) + var(--pane-sticky-h, 0
 .mp-off { opacity: 0.55; }
 .mp-ign { color: #b45309; font-weight: 800; }
 .mp-apply { color: #059669; }
+.mp-scope-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.mp-scope-row select { min-width: 180px; }
+/* 반영하면 바뀌는 자료 — 꼭 보고 누르도록 눈에 띄게 (한 서브시스템 = 주의, 전체 = 위험) */
+.mp-impact { margin: 0 0 10px; padding: 10px 12px; border: 2px solid var(--warning); border-radius: 8px; background: color-mix(in srgb, var(--warning) 10%, var(--bg-card)); color: var(--text-main); }
+.mp-impact.all { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--bg-card)); }
+.mp-impact-head { font-weight: 800; font-size: var(--fs-base, 13px); }
+.mp-impact ul { margin: 6px 0 0; padding-left: 20px; }
+.mp-impact li b { margin-left: 4px; }
+.mp-impact-sub { margin-top: 4px; font-size: var(--fs-xs, 11px); color: var(--text-sub); }
 .da-target { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .da-expect { font-weight: 800; color: #dc2626; }
 

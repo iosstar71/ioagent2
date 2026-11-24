@@ -38,36 +38,4 @@ Object.assign(MergeTable, {
   },
 
   // 시트마다 어떤 자료인지 (이름 → 머리줄)
-  async previewFile(file, opts = {}) {
-    let parsed;
-    try { parsed = await this.parseFile(file); }
-    catch (err) { return showToast(`⚠️ 파일을 읽지 못했습니다: ${err.message}`); }
-    const keys = opts.keys || this.ITEMS.map(i => i.k);
-    const only = keys.length === 1 ? keys[0] : null;
-    const scope = opts.scope || "ALL";
-    const plan = [];
-    keys.forEach(k => {
-      let rows = null;
-      try { rows = this.extract(parsed, k, only); } catch (err) { rows = null; }
-      if (rows && rows.length) plan.push(this._planOne(k, rows, scope));
-    });
-    if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 다운로드한 양식(엑셀 / JSON)을 쓰세요.`);
-    this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
-    const checked = opts.checked && opts.checked.length ? opts.checked : keys;
-    document.getElementById("mpTitle").textContent = `${opts.title || "📤 업로드"} — 미리 보기`;
-    document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
-    document.getElementById("mpBody").innerHTML = plan.map((p, i) => `<tr class="${p.ok ? "" : "mp-off"}">
-        <td style="text-align:center;"><input type="checkbox" class="mp-chk" data-i="${i}" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
-        <td><b>${escapeHtml(p.label)}</b></td>
-        <td style="text-align:right;">${p.fileRows}</td>
-        <td style="text-align:right;"><b class="mp-apply">${p.rows.length}</b></td>
-        <td style="text-align:right;">${p.ignored ? `<span class="mp-ign" title="${escapeAttr(p.why)}">${p.ignored}</span>` : "0"}${p.why ? `<div class="mt-desc">${escapeHtml(p.why)}</div>` : ""}</td>
-        <td class="mt-desc">${escapeHtml(p.how)}</td>
-      </tr>`).join("");
-    const auto = typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.autoDownload && BackupHistoryManager.autoDownload();
-    document.getElementById("mpNote").textContent = `[반영]을 누르면 지금 상태를 스냅샷으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 다운로드음)" : ""}. 체크한 자료만 반영합니다.`;
-    const m = document.getElementById("mergePreviewModal");
-    if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
-    m.style.display = "flex";
-  },
 });

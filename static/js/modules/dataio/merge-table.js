@@ -175,6 +175,7 @@ var MergeTable = {
       const k = String((r && r[0]) || "").trim(), v = String((r && r[1]) || "").trim();
       if (k === "기준 종합본" || k === "기준 마스터 파일") meta.basedOn = v;
       else if (k === "보낸 사람") meta.exportedBy = v;
+      else if (k === "범위") meta.targetScope = v === "전체" ? "ALL" : v;
     });
     return { sheets: all.filter(sh => sh !== info), meta };
   },
@@ -242,31 +243,49 @@ var MergeTable = {
   },
 
   // 공통 미리 보기: opts = { scope, keys(이 자료만), checked(처음 체크할 자료), title, onDone }
+  //  범위(서브시스템)는 창 안에서도 바꿀 수 있음 — 멤버가 보낸 파일이면 그 파일의 범위를 먼저 고름
   async previewFile(file, opts = {}) {
     let parsed;
     try { parsed = await this.parseFile(file); }
     catch (err) { return showToast(`⚠️ 파일을 읽지 못했습니다: ${err.message}`); }
     const keys = opts.keys || this.ITEMS.map(i => i.k);
+    const src = parsed.json || parsed.meta || {};
+    const subs = getAllSubsystemNames();
+    const fileScope = src.targetScope && src.targetScope !== "ALL" && subs.includes(src.targetScope) ? src.targetScope : "";
+    let scope = opts.scope || "ALL";
+    if (scope === "ALL" && fileScope) scope = fileScope;
+    this._src = { file, parsed, keys, opts, src, fileScope };
+    if (!this._renderPlan(scope)) return;
+    const m = document.getElementById("mergePreviewModal");
+    I18N.translateTree(m);
+    m.style.display = "flex";
+  },
+  // 고른 범위로 반영 계획을 다시 만들어 창을 그림 (처음 열 때 · 범위를 바꿀 때)
+  _renderPlan(scope) {
+    const { file, parsed, keys, opts, src, fileScope } = this._src;
     const only = keys.length === 1 ? keys[0] : null;
-    const scope = opts.scope || "ALL";
     const plan = [];
     keys.forEach(k => {
       let rows = null;
       try { rows = this.extract(parsed, k, only); } catch (err) { rows = null; }
       if (rows && rows.length) plan.push(this._planOne(k, rows, scope));
     });
-    if (!plan.length) return showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 다운로드한 양식(엑셀 / JSON)을 쓰세요.`);
+    if (!plan.length) { showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 다운로드한 양식(엑셀 / JSON)을 쓰세요.`); return false; }
     this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
-    // [Local] 오래된 종합본을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
-    const src = parsed.json || parsed.meta || {};
+    // [Local] 오래된 마스터 파일을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
     const based = src.basedOn, cur = projectConfig.packageStamp;
     const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 마스터 파일(${based})을 받아 작업한 것입니다. 지금 마스터 파일은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
     const who = src.exportedBy ? `보낸 사람: ${src.exportedBy} · ` : "";
     const checked = opts.checked && opts.checked.length ? opts.checked : keys;
+    const hasSys = plan.some(p => this.item(p.k).unit === "sys");
     document.getElementById("mpTitle").textContent = `${opts.title || "📤 업로드"} — 미리 보기`;
-    document.getElementById("mpFile").textContent = `${file.name} · 범위: ${scope === "ALL" ? "전체" : scope}`;
+    document.getElementById("mpFile").innerHTML = `<span>${escapeHtml(file.name)}</span>${fileScope ? ` · <span>${escapeHtml(I18N.tf("파일 범위: {s}", { s: fileScope }))}</span>` : ""}`;
+    const sel = /** @type {HTMLSelectElement} */ (document.getElementById("mpScope"));
+    sel.innerHTML = [`<option value="ALL">${escapeHtml(I18N.t("전체 서브시스템"))}</option>`].concat(getAllSubsystemNames().map(x => `<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`)).join("");
+    sel.value = scope;
+    sel.disabled = !hasSys;
     document.getElementById("mpBody").innerHTML = plan.map((p, i) => `<tr class="${p.ok ? "" : "mp-off"}">
-        <td class="u-tc"><input type="checkbox" class="mp-chk" data-i="${i}" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
+        <td class="u-tc"><input type="checkbox" class="mp-chk" data-i="${i}" data-change="MergeTable.renderImpact" ${p.ok && checked.includes(p.k) ? "checked" : ""} ${p.ok ? "" : "disabled"}></td>
         <td><b>${escapeHtml(p.label)}</b></td>
         <td class="u-tr">${p.fileRows}</td>
         <td class="u-tr"><b class="mp-apply">${p.rows.length}</b></td>
@@ -275,14 +294,38 @@ var MergeTable = {
       </tr>`).join("");
     const auto = typeof BackupHistoryManager !== "undefined" && BackupHistoryManager.autoDownload && BackupHistoryManager.autoDownload();
     document.getElementById("mpNote").textContent = `${stale}${who}[반영]을 누르면 지금 상태를 스냅샷으로 먼저 남깁니다${auto ? " (백업 JSON 파일도 다운로드음)" : ""}. 체크한 자료만 반영합니다.`;
-    const m = document.getElementById("mergePreviewModal");
-    if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
-    m.style.display = "flex";
+    this.renderImpact();
+    I18N.translateTree(document.getElementById("mergePreviewModal"));
+    return true;
+  },
+  changeScope(v) { if (this._src) this._renderPlan(v || "ALL"); },
+  // 바뀌는 자료 강조: 체크한 자료 중 서브시스템 단위 업무 자료가 어느 범위에서 몇 건 → 몇 건으로 바뀌는지
+  renderImpact() {
+    const box = document.getElementById("mpImpact");
+    const plan = this._plan;
+    if (!box || !plan) return;
+    const picks = [...document.querySelectorAll("#mpBody .mp-chk")].filter(c => c.checked && !c.disabled).map(c => plan.items[+c.dataset.i]);
+    const work = picks.filter(p => this.WORK.includes(p.k));
+    const others = picks.filter(p => !this.WORK.includes(p.k)).map(p => p.label);
+    const all = plan.scope === "ALL";
+    box.hidden = !picks.length;
+    box.classList.toggle("all", all);
+    const partial = work.some(p => p.lockedOut && p.lockedOut.length);   // [Workgroup] 체크아웃된 곳을 빼면 파일에 있는 서브시스템만 바꿈
+    const head = all && partial
+      ? I18N.t("⚠️ 파일에 있는 서브시스템의 자료가 파일 내용으로 바뀝니다 (체크아웃 중인 서브시스템은 그대로)")
+      : all
+      ? I18N.t("⚠️ 전체 서브시스템의 자료가 파일 내용으로 바뀝니다 — 파일에 없는 서브시스템 자료는 지워집니다")
+      : I18N.tf("⚠️ [{s}] 서브시스템 자료가 파일 내용으로 바뀝니다 (다른 서브시스템은 그대로)", { s: plan.scope });
+    const line = p => `<li><span>${escapeHtml(p.label)}</span> <b>${escapeHtml(I18N.tf("{a}건 → {b}건", { a: this.count(p.k, p.scope), b: p.rows.length }))}</b></li>`;
+    box.innerHTML = `<div class="mp-impact-head">${escapeHtml(head)}</div>`
+      + (work.length ? `<ul>${work.map(line).join("")}</ul>` : "")
+      + (others.length ? `<div class="mp-impact-sub">${escapeHtml(I18N.tf("함께 반영: {list}", { list: others.join(", ") }))}</div>` : "");
   },
   close() {
     const m = document.getElementById("mergePreviewModal");
     if (m) m.style.display = "none";
     this._plan = null;
+    this._src = null;
   },
 
   confirm() {

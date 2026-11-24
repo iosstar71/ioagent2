@@ -163,7 +163,12 @@ async function main() {
     const jm = JSON.parse(mine.text);
     check("Worker downloads own-subsystem data (JSON) marked with the package it was based on", jm.targetScope === "W1" && jm.basedOn === j1.packageStamp && jm.wbsData.every(t => t.system === "W1"), mine.name);
     // PM: 미리 보기로 반영
-    await pm.evaluate(async t => { await MergeTable.previewFile(new File([t], "wg_a.json"), { scope: "W1", title: "📋 자료 올리기" }); }, mine.text);
+    // PM 이 범위를 '전체'로 둔 채 올려도 창에서 파일의 범위(W1)가 골라지고, 바뀌는 서브시스템을 강조
+    await pm.evaluate(async t => { await MergeTable.previewFile(new File([t], "wg_a.json"), { scope: "ALL", title: "📋 자료 올리기" }); }, mine.text);
+    const pv0 = await pm.evaluate(() => { const r = { scope: document.getElementById("mpScope").value, head: document.querySelector("#mpImpact .mp-impact-head").textContent };
+      MergeTable.changeScope("ALL"); r.allCls = document.getElementById("mpImpact").className; r.allHead = document.querySelector("#mpImpact .mp-impact-head").textContent;
+      MergeTable.changeScope("W1"); return r; });
+    check("Merge preview: subsystem can be chosen in the popup (file scope picked first) and the changed subsystem is highlighted", pv0.scope === "W1" && pv0.head.includes("[W1]") && /\ball\b/.test(pv0.allCls) && pv0.allHead.includes("지워집니다"), JSON.stringify(pv0));
     const pv1 = await pm.evaluate(() => ({ note: document.getElementById("mpNote").textContent, rows: [...document.querySelectorAll("#mpBody tr")].length }));
     await pm.click("#mpOkBtn"); await pm.waitForTimeout(600);
     const merged = await pm.evaluate(() => wbsData.find(t => t.id === "1.1").name);
