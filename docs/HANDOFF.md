@@ -4,7 +4,7 @@
 고칠 때마다 이 파일의 "지금 상태"와 "다음 할 일"을 같이 고친다.
 
 ## 지금 상태
-- 버전 **1.6.4** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
+- 버전 **1.6.5** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
 - 두 판: Standalone(정적 · IndexedDB) / Workgroup(Python 서버 + SQLite). 한 코드, 판 차이는 `tools/edition.py` 표시와 `workgroup/`
 - 시험 기준: 단위 81(샘플 경우 포함) · Standalone E2E 73 · Workgroup E2E 116 · 서버 API 36 (모두 통과) · Workgroup E2E (조립 폴더에서) · 서버 API 36
 - 설계 문서: `docs/design/DESIGN_v1.4.md`(적용), `docs/design/PLAN_v1.5.md`(적용)
