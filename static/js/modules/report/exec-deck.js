@@ -201,7 +201,15 @@ var ExecDeck = {
       const per = this.roadmapSplit ? 4 : c.order.length, pages = Math.max(1, Math.ceil(c.order.length / per)), size = Math.ceil(c.order.length / pages);
       for (let i = 0; i < pages; i++) {
         const sys = c.order.slice(i * size, (i + 1) * size), els2 = i ? head(`추진 로드맵 (${i + 1}/${pages})`) : (pages > 1 ? head(`추진 로드맵 (1/${pages})`) : els);
-        const rmEls = RoadmapChart.slideEls({ systems: sys, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: (projectConfig.milestones || []).filter(m => !m.scope || m.scope === "ALL" || sys.indexOf(m.scope) !== -1), style: this.roadmapStyle, depth: this.roadmapSplit ? 3 : undefined, T, p, box: { x: 0.35, y: 0.9, w: Wd - 0.7, h: 5.75 } });
+        // 핵심 메시지 (거버닝 메시지): 전체 계획 대비 실적 · 서브시스템 상태 수 · 다음 마일스톤
+        const roots = c.order.map(sy => rm.tasks.find(t => t.system === sy && +t.level === 1)).filter(Boolean);
+        const cnt = { 정상: 0, 주의: 0, 지연: 0 };
+        roots.forEach(t => { cnt[RoadmapChart.status(t.pProg, t.aProg).label]++; });
+        const nextMs = (projectConfig.milestones || []).filter(m => String(m.date) >= String(c.data.reportDate)).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
+        const msg = `전체 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} — ${roots.length}개 서브시스템 중 정상 ${cnt.정상} · 주의 ${cnt.주의} · 지연 ${cnt.지연}${nextMs ? `   |   다음 마일스톤 ${String(nextMs.date).slice(5).replace("-", ".")} ${nextMs.name}` : ""}`;
+        els2.push(R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08, native: true }), R(0.35, 0.9, 0.07, 0.4, C, { native: true }),
+          T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, color: "1E293B" })], { anchor: "ctr", native: true }));
+        const rmEls = RoadmapChart.slideEls({ systems: sys, side: true, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: (projectConfig.milestones || []).filter(m => !m.scope || m.scope === "ALL" || sys.indexOf(m.scope) !== -1), style: this.roadmapStyle, depth: this.roadmapSplit ? 3 : undefined, T, p, box: { x: 0.35, y: 1.38, w: Wd - 0.7, h: 5.27 } });
         rmEls.push(T(0.35, 6.9, Wd - 0.7, 0.2, [p(legend, 7, { color: "94A3B8" })], { anchor: "ctr" }));
         els2.push(...rmEls.map(e => Object.assign(e, { native: true })));
         slides.push({ name: "로드맵", els: els2 });

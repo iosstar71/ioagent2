@@ -139,14 +139,37 @@ var RoadmapChart = {
       .forEach(([cx, c]) => els.push({ t: "rect", shape: "ellipse", x: cx - 0.06, y: ay - 0.06, w: 0.12, h: 0.12, fill: c, line: "FFFFFF" }));
   },
 
+  // 오른쪽 칸: 상태 칩 + 지금 단계(기준일 기준) + 다음 단계 시작
+  _side(els, b, o) {
+    const { x, y, w, h, ref, T, p } = o, r = this._d(ref);
+    const ph = b.phases.slice().sort((a, c) => a.s - c.s);
+    const now = ph.filter(q => q.s <= r && q.e >= r), next = ph.find(q => q.s > r);
+    const cut = (v, n) => { v = String(v || ""); return v.length > n ? v.slice(0, n - 1) + "…" : v; };
+    const cur = now.length ? cut(now[0].t.name, 9) + (now.length > 1 ? ` 외 ${now.length - 1}` : "") : next ? "착수 전" : "완료";
+    const st = this.status(b.root.pProg, b.root.aProg), col = (now[0] || next || ph[ph.length - 1]).color;
+    els.push({ t: "rect", x, y: y + 0.03, w, h: h - 0.06, fill: "FFFFFF", line: this.LINE, r: 0.08 });
+    els.push({ t: "rect", x: x + 0.08, y: y + h / 2 - 0.11, w: 0.5, h: 0.22, fill: this.tint(st.color, 0.86), r: 0.11 });
+    els.push(T(x + 0.08, y + h / 2 - 0.11, 0.5, 0.22, [p(st.label, 8, { bold: true, color: st.color, align: "ctr" })], { anchor: "ctr" }));
+    els.push(T(x + 0.62, y + 0.03, w - 0.66, h - 0.06, [p(cur, 8.5, { bold: true, color: this.shade(col) }),
+      p(next ? `→ ${this._md(next.t.pStart)} ${cut(next.t.name, 8)}` : "→ -", 7.5, { color: this.SUB })], { anchor: "ctr" }));
+  },
+  // 상태 (계획 대비 달성률 — 종합보고서의 다른 장표와 같은 기준)
+  STATUS: [[90, "정상", "15803D"], [70, "주의", "B45309"], [0, "지연", "B91C1C"]],
+  status(plan, actual) {
+    const r = Metrics.achv(plan, actual, 0);
+    const s = this.STATUS.find(([min]) => r >= min);
+    return { label: s[1], color: s[2] };
+  },
+
   // 로드맵 한 장: systems = 서브시스템 순서, tasksOf(이름) = 그 서브시스템 WBS (레벨 1 · 2 · 3), milestones = [{scope,name,date}]
   slideEls(o) {
     const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;
     const els = [], s = this._d(start), e = this._d(end);
-    const LW = Math.min(1.75, box.w * 0.14), x = box.x + LW, w = box.w - LW, bottom = box.y + box.h;
+    const LW = Math.min(1.5, box.w * 0.13), KW = o.side ? 1.75 : 0, x = box.x + LW, w = box.w - LW - KW, bottom = box.y + box.h;
     const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p });
     const inRange = m => this._d(m.date) >= s && this._d(m.date) <= e;
     const all = (milestones || []).filter(inRange);   // 서브시스템 마일스톤은 [이름] 을 붙여 같은 줄에
+    if (KW) els.push(T(x + w + 0.12, box.y + 0.29, KW - 0.12, 0.26, [p("현재 단계 · 다음 일정", 8.5, { bold: true, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
     // 마일스톤 줄
     let y = box.y + 0.62;
     if (all.length) {   // 줄 수는 그려 본 뒤에 정하고 바탕을 맨 뒤에 깔아 넣음
@@ -169,8 +192,8 @@ var RoadmapChart = {
       const bh = b.units * unit;
       if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
       els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
-      els.push(T(box.x + 0.14, bh > 0.6 ? y + bh / 2 - 0.34 : y, LW - 0.2, bh > 0.6 ? 0.32 : bh, [p(b.sys, 13, { bold: true, color: this.INK })], { anchor: bh > 0.6 ? "b" : "ctr" }));
-      if (bh > 0.6) els.push(T(box.x + 0.14, y + bh / 2 - 0.01, LW - 0.2, Math.min(0.42, bh / 2 - 0.04), [p(b.root.name || "", 8, { color: this.SUB })]));
+      els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 12, { bold: true, color: this.INK }), p(b.root.name || "", 7.5, { color: this.SUB })], { anchor: "ctr" }));
+      if (KW) this._side(els, b, { x: x + w + 0.12, y, w: KW - 0.12, h: bh, ref, T, p });
       if (o.style === "bracket") { this._bracketBlock(els, b, { X, y, bh, ref, T, p, x, w }); y += bh + GAP; return; }
       const ph = unit * 1.2, kh = unit;
       b.phases.forEach(it => this._pill(els, { x: X(it.s) + 0.025, y: y + it.lane * ph + 0.04, w: X(it.e) - X(it.s) - 0.05, h: ph - 0.08, color: it.color, state: this._state(it, ref), name: it.t.name, size: 9.5, T, p }));
