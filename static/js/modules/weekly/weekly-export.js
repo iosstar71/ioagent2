@@ -80,11 +80,11 @@ var WeeklyExport = {
       decisions: (m.agendas || []).map(a => `${a.title}: ${a.decision || "합의"}`).join(" / ") || m.summary || ""
     }));
   },
-  // 주차별 누적 계획 진척률 (L1 과업 가중 평균, 대시보드 S-커브와 같은 계산)
-  _planCurve() {
+  // 주차별 누적 계획 진척률 (L1 과업 가중 평균, 대시보드 S-커브와 같은 계산). sys 를 주면 그 서브시스템만
+  _planCurve(sys) {
     const weeks = WeeklyReportManager.getAllWeeks();
-    const tasks = (wbsData || []).filter(d => d.level === 1);
-    const shares = WBSEngine.rootShares(tasks);   // 서브시스템 가중치 × L1 비율
+    const tasks = (wbsData || []).filter(d => d.level === 1 && (!sys || d.system === sys));
+    const shares = sys ? new Map(tasks.map(t => [t, 1 / tasks.length])) : WBSEngine.rootShares(tasks);   // 서브시스템 가중치 × L1 비율 (한 서브시스템이면 L1 고르게)
     const day = 86400000;
     return weeks.map(w => {
       const end = new Date(w.endDate);

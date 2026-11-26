@@ -121,6 +121,10 @@ var RoadmapChart = {
       const H = up ? UP : DN;
       els.push({ t: "bracket", dir: up ? "up" : "down", x: x0, y: up ? ay - H : ay, w: x1 - x0, h: H, color: L.line, fill: L.fill, width: 2.25, r: 0.2 });
       els.push(lbl(x0, x1, up ? ay - H + 0.02 : ay + H - 0.26, 0.24, ph.t.name, 9.5, L.ink));
+      // 세부 작업을 괄호로 그리지 않을 때(o.list): 괄호 안에 기간 + 세부 작업 이름 목록
+      const l3 = (b.l3 || []).filter(k => String(k.t.id).startsWith(ph.t.id + "."));
+      if (up && l3.length && !kidOf(ph).length) els.push(T(x0 + 0.03, ay - H + 0.27, x1 - x0 - 0.06, H - 0.32,
+        [p(`${this._md(ph.t.pStart)}~${this._md(ph.t.pEnd)}`, 7, { color: this.SUB, align: "ctr" })].concat(l3.map(k => p(k.t.name, 7.5, { color: this.INK, align: "ctr" })))));
       kidOf(ph).forEach(k => {
         const kx0 = X(k.s) + 0.05, kx1 = X(k.e) - 0.05, K = this._look(ph.color, this._state(k, ref));
         const kUp = up && k.lane === 0, kh = kUp ? UP - 0.28 : up ? DN - 0.04 : Math.max(0.2, DN - 0.3);
@@ -185,7 +189,8 @@ var RoadmapChart = {
       const kids = (o.depth || (systems.length > 4 ? 2 : 3)) < 3 ? [] : this._items(tasks, 3).map(k => { const ph = phases.find(q => String(k.t.id).startsWith(q.t.id + ".")); return Object.assign(k, { color: ph ? ph.color : k.color }); });
       const kl = kids.length ? this._lanes(kids) : 0;
       const down = phases.some(q => q.lane > 0) || kids.some(k => k.lane > 0);
-      return { sys, root: tasks.find(t => +t.level === 1) || {}, phases, pl, kids, kl, units: o.style === "bracket" ? (down ? 4.3 : 2.25) : pl * 1.2 + kl };
+      const l3 = o.list ? this._items(tasks, 3) : [];
+      return { sys, root: tasks.find(t => +t.level === 1) || {}, phases, pl, kids, kl, l3, units: o.style === "bracket" ? (down ? 4.3 : 2.25) : pl * 1.2 + kl };
     }).filter(b => b.phases.length);
     const GAP = 0.08, unit = (bottom - y - GAP * blocks.length) / Math.max(1, blocks.reduce((a, b) => a + b.units, 0));
     blocks.forEach((b, i) => {
