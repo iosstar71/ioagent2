@@ -172,20 +172,21 @@ var ExecDeck = {
       const msg = `기준일 계획 ${sc.planNow}% 대비 실적 ${sc.actNow}% — ${sc.actNow >= sc.planNow ? `계획보다 ${sc.actNow - sc.planNow}%p 앞섬` : `계획보다 ${sc.planNow - sc.actNow}%p 뒤처짐`}`;
       nat.push(R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08 }), R(0.35, 0.9, 0.07, 0.4, C),
         T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, color: sc.actNow >= sc.planNow ? "15803D" : "B91C1C" })], { anchor: "ctr" }));
-      // 종합
-      nat.push(T(0.35, 1.42, 5.4, 0.3, [p("■ 프로젝트 종합", 11, { bold: true, color: C })], { anchor: "ctr" }));
-      this.curveEls(nat, { x: 0.85, y: 1.95, w: 4.85, h: 4.35, sc, color: C, T, R, p, axis: true, size: 8 });
-      nat.push(R(0.9, 6.62, 0.35, 0.04, "94A3B8"), T(1.3, 6.5, 1.9, 0.28, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
-        R(3.2, 6.62, 0.35, 0.05, C), T(3.6, 6.5, 2.3, 0.28, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }));
-      // 서브시스템별 (작은 그림)
+      // 종합 (가로로 넓게)
+      nat.push(T(0.35, 1.38, 5, 0.26, [p("■ 프로젝트 종합", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
+      nat.push(R(Wd - 4.9, 1.49, 0.3, 0.03, "94A3B8"), T(Wd - 4.55, 1.38, 2.0, 0.26, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
+        R(Wd - 2.5, 1.49, 0.3, 0.04, C), T(Wd - 2.15, 1.38, 1.8, 0.26, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }));
+      this.curveEls(nat, { x: 0.85, y: 1.85, w: Wd - 1.3, h: 1.7, sc, color: C, T, R, p, axis: true, size: 7.5 });
+      // 서브시스템별 (가로로 긴 작은 그림)
       const n = Math.max(1, c.order.length), cols = n <= 4 ? 2 : 3, rws = Math.ceil(n / cols);
-      const gx = 5.95, gy = 1.42, gw = Wd - 0.35 - gx, gh = 6.85 - gy, cw = gw / cols, ch = gh / rws;
+      const gx = 0.35, gy = 4.2, gw = Wd - 0.7, gh = 6.95 - gy, cw = gw / cols, ch = gh / rws;
+      nat.push(T(0.35, gy - 0.3, 5, 0.26, [p("■ 서브시스템별 (실적 / 계획)", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
       c.order.forEach((sy, i) => {
         const x = gx + (i % cols) * cw, y = gy + Math.floor(i / cols) * ch, s2 = this.scurve(c, sy), rr = Metrics.achv(s2.planNow, s2.actNow);
-        nat.push(R(x + 0.04, y + 0.04, cw - 0.08, ch - 0.08, "FFFFFF", { line: B, r: 0.08 }));
-        nat.push(T(x + 0.12, y + 0.07, cw - 0.24, 0.26, [p(sy, 10, { bold: true, color: "1E293B" })], { anchor: "ctr" }));
-        nat.push(T(x + 0.12, y + 0.07, cw - 0.24, 0.26, [p(`${s2.actNow}% / ${s2.planNow}%`, 8.5, { bold: true, color: rateColor(rr), align: "r" })], { anchor: "ctr" }));
-        this.curveEls(nat, { x: x + 0.18, y: y + 0.4, w: cw - 0.36, h: ch - 0.58, sc: s2, color: rateColor(rr) === "15803D" ? C : rateColor(rr), T, R, p });
+        nat.push(R(x + 0.03, y + 0.03, cw - 0.06, ch - 0.06, "FFFFFF", { line: B, r: 0.06 }));
+        nat.push(T(x + 0.1, y + 0.05, cw * 0.45, 0.22, [p(sy, 9, { bold: true, color: "1E293B" })], { anchor: "ctr" }));
+        nat.push(T(x + cw * 0.45, y + 0.05, cw * 0.55 - 0.12, 0.22, [p(`${s2.actNow}% / ${s2.planNow}% (${rr}%)`, 8, { bold: true, color: rateColor(rr), align: "r" })], { anchor: "ctr" }));
+        this.curveEls(nat, { x: x + 0.12, y: y + 0.3, w: cw - 0.24, h: ch - 0.4, sc: s2, color: rateColor(rr) === "15803D" ? C : rateColor(rr), T, R, p });
       });
       els.push(...nat.map(e => Object.assign(e, { native: true })));
       slides.push({ name: "S-커브", els });
@@ -229,7 +230,7 @@ var ExecDeck = {
         const vs = Metrics.vocStats(vc), vo = Metrics.vocOpen(vc).length, radd = rq.filter(r => r.origin === "추가").length;
         const rr = Metrics.pct(rd, rq.length), vr = vs.rate;
         return [domainOf(sys), sys, `${WBSEngine.sysWeight(sys)}%`, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
-          radd ? `${rq.length} (+${radd})` : `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) },
+          "", radd ? `${rq.length} (+${radd})` : `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) },
           `${vs.total}`, vs.undecided ? { text: `${vs.undecided}`, bold: true, color: "B45309" } : "0", `${vo}`, `${vs.done}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       const X0 = 0.35, TW = Wd - 0.7;
@@ -238,15 +239,23 @@ var ExecDeck = {
       // ①
       let y = 0.95;
       cap(y, "① 서브시스템별 진척율 (WBS · 요구사항 · VOC)"); y += 0.3;
-      const c1 = fitCols([["도메인", 1.0, "l"], ["서브시스템", 1.0, "l"], ["가중치", 0.62], ["계획", 0.62], ["실적", 0.62], ["달성률", 0.66], ["전체(추가)", 0.8], ["진행", 0.55], ["완료", 0.55], ["완료율", 0.66], ["접수", 0.55], ["판정 대기", 0.66], ["미결", 0.55], ["처리", 0.55], ["처리율", 0.66]]);
+      const c1 = fitCols([["도메인", 0.85, "l"], ["서브시스템", 0.85, "l"], ["가중치", 0.55], ["계획", 0.55], ["실적", 0.55], ["달성률", 0.62], ["계획 대비 실적", 1.7], ["전체(추가)", 0.8], ["진행", 0.55], ["완료", 0.55], ["완료율", 0.66], ["접수", 0.55], ["판정 대기", 0.66], ["미결", 0.55], ["처리", 0.55], ["처리율", 0.66]]);
       const gw = k => c1.slice(0, k).reduce((a, q) => a + q[1], 0);
       const grp = (a, b, text, fill, fg) => { nat.push(R(X0 + gw(a), y, gw(b) - gw(a), 0.25, fill)); nat.push(T(X0 + gw(a), y, gw(b) - gw(a), 0.25, [p(text, 9, { bold: true, color: fg, align: "ctr" })], { anchor: "ctr" })); };
-      grp(0, 3, "구분", H, P.headerTextColor); grp(3, 6, "WBS 공정 진척", "475569", "FFFFFF"); grp(6, 10, "요구사항 (REQ) 진척", C, "FFFFFF"); grp(10, 15, "VOC · 결함 처리", "B45309", "FFFFFF");
+      grp(0, 3, "구분", H, P.headerTextColor); grp(3, 7, "WBS 공정 진척", "475569", "FFFFFF"); grp(7, 11, "요구사항 (REQ) 진척", C, "FFFFFF"); grp(11, 16, "VOC · 결함 처리", "B45309", "FFFFFF");
       y += 0.25;
       const groups = c.data.sdlc && c.data.sdlc.length ? c.data.sdlc : WeeklyExport._sdlc();
       const lines2 = groups.reduce((a, g) => a + g.rows.length + 2.2, 0);
       const rh = Math.max(0.2, Math.min(0.36, (6.85 - y - 0.75) / (tr.length + 1 + lines2)));
       table(nat, X0, y, c1, tr, rh, { headSize: 8.5, size: 8.5 });
+      // 달성률 막대 (계획 = 검은 눈금, 실적 = 막대)
+      const bx = X0 + gw(6) + 0.08, bw = c1[6][1] - 0.16;
+      c.order.forEach((sys, i) => {
+        const row = rows.find(r => r[1] === sys) || [], pl = num(row[6]), ac = num(row[7]), rr = Metrics.achv(pl, ac), yy = y + rh * (i + 1);
+        nat.push(R(bx, yy + rh * 0.3, bw, rh * 0.4, "EEF2F6"));
+        if (ac > 0) nat.push(R(bx, yy + rh * 0.3, bw * Math.min(100, ac) / 100, rh * 0.4, rateColor(rr) === "15803D" ? C : rateColor(rr)));
+        nat.push(R(bx + bw * Math.min(100, pl) / 100 - 0.01, yy + rh * 0.15, 0.02, rh * 0.7, "111827"));
+      });
       y += rh * (tr.length + 1) + 0.15;
       // ②
       cap(y, "② 단계별 공정 매트릭스 (계획 / 실적 (달성률))"); y += 0.3;
@@ -498,17 +507,17 @@ var ExecDeck = {
       if (axis) els.push(T(x - 0.5, y + h - h * v / 100 - 0.12, 0.45, 0.24, [p(`${v}%`, size || 8, { color: "64748B", align: "r" })], { anchor: "ctr" }));
     });
     if (axis) {
-      const step = Math.max(1, Math.ceil(sc.labels.length / 8));
+      const step = Math.max(1, Math.ceil(sc.labels.length / 14));
       sc.labels.forEach((l, i) => { if (i % step === 0) els.push(T(x + w * i / n - 0.3, y + h + 0.04, 0.6, 0.22, [p(l, size || 8, { color: "64748B", align: "ctr" })])); });
     }
     if (sc.repIndex >= 0) {
-      els.push(R(x + w * sc.repIndex / n - 0.008, y, 0.016, h, "DC2626"));
+      els.push(R(x + w * sc.repIndex / n - 0.006, y, 0.012, h, "DC2626"));
       if (axis) els.push(T(x + w * sc.repIndex / n - 0.5, y - 0.26, 1.0, 0.24, [p("기준일", 8, { bold: true, color: "DC2626", align: "ctr" })]));
     }
-    els.push({ t: "poly", x, y, w, h, color: "94A3B8", width: axis ? 2 : 1.25, pts: sc.plan.map((v, i) => [i / n, 1 - v / 100]) });
+    els.push({ t: "poly", x, y, w, h, color: "94A3B8", width: axis ? 1.25 : 0.75, pts: sc.plan.map((v, i) => [i / n, 1 - v / 100]) });
     const act = sc.actual.map((v, i) => v === null ? null : [i / n, 1 - v / 100]).filter(Boolean);
-    if (act.length > 1) els.push({ t: "poly", x, y, w, h, color, width: axis ? 2.75 : 1.75, pts: act });
-    if (axis) sc.known.forEach(i => els.push(R(x + w * i / n - 0.05, y + h - h * sc.actual[i] / 100 - 0.05, 0.1, 0.1, color, { shape: "ellipse" })));
+    if (act.length > 1) els.push({ t: "poly", x, y, w, h, color, width: axis ? 1.75 : 1.25, pts: act });
+    if (axis) sc.known.forEach(i => els.push(R(x + w * i / n - 0.035, y + h - h * sc.actual[i] / 100 - 0.035, 0.07, 0.07, color, { shape: "ellipse" })));
   },
 
   sysSlide(c, rep, head, T, R, p, pct) {
@@ -537,28 +546,32 @@ var ExecDeck = {
     const mtgNxt = (snap.meetingsNext || []).filter(x => x.system === sys);
     const mtgNLines = [p(`예정 회의 ${mtgNxt.length}건`, 12, { bold: true })].concat(mtgNxt.slice(0, 4).map(x => p(`${x.date}${x.startTime ? ` ${x.startTime}${x.endTime ? "~" + x.endTime : ""}` : ""} ${x.title}`, 11, { bullet: true })));
 
-    // 위 왼쪽: 이 서브시스템 로드맵 (작게) · 위 오른쪽: 단계별 진척 표 · 아래: 주간보고 내용
+    // 위 띠 (테두리 상자 두 칸): 왼쪽 이 서브시스템 로드맵 (작게) · 오른쪽 단계별 진척율 (표 + 달성률 막대)
+    const TY = 0.9, TH = 1.55, LX = 0.35, LWd = 6.25, RXp = LX + LWd + 0.08, RWd = Wd - 0.35 - RXp;
+    nat.push(R(LX, TY, LWd, TH, "FFFFFF", { line: B }), R(RXp, TY, RWd, TH, "FFFFFF", { line: B }));
     const rm = this.roadmapRange(), tasks = rm.tasks.filter(t => t.system === sys);
-    nat.push(...RoadmapChart.slideEls({ systems: [sys], tasksOf: () => tasks, start: rm.start, end: rm.end, ref: c.data.reportDate, depth: 2, list: true, style: "bracket",
-      milestones: (projectConfig.milestones || []).filter(m => m.scope === sys), T, p, box: { x: 0.35, y: 0.88, w: 6.55, h: 2.5 } }));
-    const tx = 7.05, tw = Wd - 0.35 - tx, rh = 0.24;
-    nat.push(T(tx, 0.88, tw, 0.26, [p(`가중치 ${WBSEngine.sysWeight(sys)}% · 담당 PM ${row[3] || "-"} · 지연 ${row[9] || 0}건`, 8.5, { bold: true, color: "334155" })], { anchor: "ctr" }));
-    const cols = [["단계", 1.05, "l"], ["기간", 0.82], ["계획", 0.48], ["실적", 0.48], ["달성률", tw - 2.83]];
-    let x = tx;
-    cols.forEach(([h, w]) => { nat.push(R(x, 1.16, w, rh, P.headerBg), T(x, 1.16, w, rh, [p(h, 8, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
+    nat.push(...RoadmapChart.slideEls({ systems: [sys], tasksOf: () => tasks, start: rm.start, end: rm.end, ref: c.data.reportDate, depth: 3, compact: true, style: "bracket",
+      milestones: [], T, p, box: { x: LX + 0.1, y: TY + 0.05, w: LWd - 0.2, h: TH - 0.3 } }));
     const root = tasks.find(t => +t.level === 1) || {};
-    const prow = tasks.filter(t => +t.level === 2).map(t => [t.name, `${String(t.pStart || "").slice(5).replace("-", ".")}~${String(t.pEnd || "").slice(5).replace("-", ".")}`, t.pProg, t.aProg, false])
-      .concat([["합계", "", root.pProg, root.aProg, true]]);
-    const prh = Math.min(rh, (3.35 - 1.4) / prow.length);
+    const prow = tasks.filter(t => +t.level === 2).map(t => [t.name, t.pProg, t.aProg, false]).concat([["합계", root.pProg, root.aProg, true]]);
+    const tx = RXp + 0.06, tw = RWd - 0.12, cols = [["단계", 1.05, "l"], ["계획", 0.42], ["실적", 0.42], ["달성률", 0.5], ["계획 대비 실적", tw - 2.39]];
+    const hy = TY + 0.06, rh = Math.min(0.2, (TH - 0.32) / (prow.length + 1));
+    let x = tx;
+    cols.forEach(([h, w]) => { nat.push(R(x, hy, w, rh, P.headerBg), T(x, hy, w, rh, [p(h, 7, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
     prow.forEach((r, i) => {
-      const y = 1.4 + i * prh, pl = Math.round(+r[2] || 0), ac = Math.round(+r[3] || 0), rr = pl <= 0 && ac <= 0 ? null : Metrics.achv(pl, ac), fill = r[4] ? "E2E8F0" : (i % 2 ? "FFFFFF" : SUB);
+      const y = hy + rh * (i + 1), pl = Math.round(+r[1] || 0), ac = Math.round(+r[2] || 0), rr = pl <= 0 && ac <= 0 ? null : Metrics.achv(pl, ac), fill = r[3] ? "E2E8F0" : "FFFFFF";
       let xx = tx;
-      [r[0], r[1], `${pl}%`, `${ac}%`, rr === null ? "-" : `${rr}%`].forEach((v, j) => {
+      [r[0], `${pl}%`, `${ac}%`, rr === null ? "-" : `${rr}%`, ""].forEach((v, j) => {
         const w = cols[j][1];
-        nat.push(R(xx, y, w, prh, fill, { line: B }), T(xx, y, w, prh, [p(v, 8, { bold: r[4] || j === 4, color: j === 4 && rr !== null ? rateColor(rr) : "1F2937", align: cols[j][2] || "ctr" })], { anchor: "ctr" }));
+        nat.push(R(xx, y, w, rh, fill, { line: B }), T(xx, y, w, rh, [p(v, 7, { bold: r[3] || j === 3, color: j === 3 && rr !== null ? rateColor(rr) : "1F2937", align: cols[j][2] || "ctr" })], { anchor: "ctr" }));
         xx += w;
       });
+      const bx = xx - cols[4][1] + 0.05, bw = cols[4][1] - 0.1;
+      nat.push(R(bx, y + rh * 0.3, bw, rh * 0.4, "EEF2F6"));
+      if (ac > 0) nat.push(R(bx, y + rh * 0.3, bw * Math.min(100, ac) / 100, rh * 0.4, rr === null || rateColor(rr) === "15803D" ? C : rateColor(rr)));
+      nat.push(R(bx + bw * Math.min(100, pl) / 100 - 0.008, y + rh * 0.12, 0.016, rh * 0.76, "111827"));
     });
+    nat.push(T(RXp + 0.06, TY + TH - 0.24, RWd - 0.12, 0.22, [p(`가중치 ${WBSEngine.sysWeight(sys)}% · 담당 PM ${row[3] || "-"} · 지연 ${row[9] || 0}건`, 7.5, { color: "475569", align: "r" })], { anchor: "ctr" }));
     // 아래: 금주 실적 | 차주 계획
     const box = (x, y, w, h, title, lines) => {
       nat.push(R(x, y, w, h, "FFFFFF", { line: B }), R(x, y, w, 0.26, SUB));
@@ -566,7 +579,7 @@ var ExecDeck = {
       nat.push(T(x + 0.06, y + 0.28, w - 0.12, h - 0.3, this.fit(lines.map(q => Object.assign({}, q, { size: q.size * 0.82 })), w - 0.12, h - 0.3)));
     };
     const issue = rep.issuesNotes && rep.issuesNotes.trim() && rep.issuesNotes.trim() !== "특이사항 없음";
-    const top = 3.5, bot = issue ? 6.6 : 7.08, LW2 = 5.35, RX = 0.35 + LW2 + 0.12, RW = Wd - 0.35 - RX;
+    const top = TY + TH + 0.1, bot = issue ? 6.6 : 7.08, LW2 = 5.35, RX = 0.35 + LW2 + 0.12, RW = Wd - 0.35 - RX;
     nat.push(T(0.35, top, LW2, 0.26, [p("■ 금주 실적", 11, { bold: true, color: C })], { anchor: "ctr" }), T(RX, top, RW, 0.26, [p("■ 차주 계획", 11, { bold: true, color: C })], { anchor: "ctr" }));
     const by = top + 0.3, bh = bot - by, h1 = bh * 0.6;
     const summary = rep.currentWeekSummary ? [p(rep.currentWeekSummary, 11, { color: "334155" })] : [];

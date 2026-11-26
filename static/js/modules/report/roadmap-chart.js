@@ -49,34 +49,36 @@ var RoadmapChart = {
 
   // 분기 · 월 머리줄 + 달 경계 흐린 세로선(아래 끝까지) + 기준일 → X(시각) 돌려줌
   _scale(els, o) {
-    const { x, w, y, bottom, s, e, ref, T, p } = o;
+    const { x, w, y, bottom, s, e, ref, T, p } = o, cp = !!o.compact;   // compact: 분기 띠 없이 작은 월 줄만
     const X = t => x + Math.max(0, Math.min(1, (t - s) / (e - s))) * w;
+    const MY = cp ? y : y + 0.3, MH = cp ? 0.2 : 0.24, LY = MY + MH + 0.02;
     const months = [];
     for (const d = new Date(s); d.getTime() <= e; d.setMonth(d.getMonth() + 1, 1)) months.push(new Date(d.getFullYear(), d.getMonth(), 1).getTime());
     const next = m => { const d = new Date(m); return new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(); };
     const qs = {};
     months.forEach(m => { const d = new Date(m), k = `${d.getFullYear()} Q${Math.floor(d.getMonth() / 3) + 1}`; qs[k] = qs[k] || [Math.max(m, s), 0]; qs[k][1] = Math.min(next(m), e); });
-    Object.keys(qs).forEach(k => {
+    if (!cp) Object.keys(qs).forEach(k => {
       const x0 = X(qs[k][0]) + 0.02, x1 = X(qs[k][1]) - 0.02;
       els.push({ t: "rect", x: x0, y, w: x1 - x0, h: 0.26, fill: this.BAND, r: 0.13 });
       if (x1 - x0 > 0.55) els.push(T(x0, y, x1 - x0, 0.26, [p(k, 8.5, { bold: true, color: "475569", align: "ctr" })], { anchor: "ctr" }));
     });
-    els.push({ t: "poly", x, y: y + 0.56, w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.GRID, width: 0.75 });
+    els.push({ t: "poly", x, y: LY, w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.GRID, width: 0.75 });
     months.forEach(m => {
       const d = new Date(m), x0 = X(Math.max(m, s)), x1 = X(Math.min(next(m), e));
-      if (x1 - x0 > 0.3) els.push(T(x0, y + 0.3, x1 - x0, 0.24, [p(`${d.getMonth() + 1}월`, 9, { bold: true, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
-      if (m > s) els.push({ t: "poly", x: x0, y: y + 0.3, w: 0.001, h: bottom - y - 0.3, pts: [[0, 0], [0, 1]], color: this.GRID, width: 0.75 });
+      if (x1 - x0 > 0.3) els.push(T(x0, MY, x1 - x0, MH, [p(`${d.getMonth() + 1}월`, cp ? 7 : 9, { bold: !cp, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
+      if (m > s) els.push({ t: "poly", x: x0, y: MY, w: 0.001, h: bottom - MY, pts: [[0, 0], [0, 1]], color: this.GRID, width: 0.5 });
     });
     return X;
   },
   _now(els, X, o) {
-    const { y, bottom, s, e, ref, T, p } = o, r = this._d(ref);
+    const { y, bottom, s, e, ref, T, p } = o, r = this._d(ref), cp = !!o.compact;
     if (!(r >= s && r <= e)) return;
     const xr = X(r);
-    els.push({ t: "poly", x: xr, y, w: 0.001, h: bottom - y, pts: [[0, 0], [0, 1]], color: this.NOW, width: 1.5 });
-    els.push({ t: "rect", shape: "ellipse", x: xr - 0.05, y: y - 0.05, w: 0.1, h: 0.1, fill: this.NOW });
-    els.push({ t: "rect", x: xr - 0.52, y: bottom + 0.03, w: 1.04, h: 0.24, fill: this.NOW, r: 0.12 });
-    els.push(T(xr - 0.52, bottom + 0.03, 1.04, 0.24, [p(`기준일 ${this._md(ref)}`, 8, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
+    els.push({ t: "poly", x: xr, y, w: 0.001, h: bottom - y, pts: [[0, 0], [0, 1]], color: this.NOW, width: 1 });
+    els.push({ t: "rect", shape: "ellipse", x: xr - 0.04, y: y - 0.04, w: 0.08, h: 0.08, fill: this.NOW });
+    const bw = cp ? 0.8 : 1.04, bh = cp ? 0.18 : 0.24;
+    els.push({ t: "rect", x: xr - bw / 2, y: bottom + 0.02, w: bw, h: bh, fill: this.NOW, r: bh / 2 });
+    els.push(T(xr - bw / 2, bottom + 0.02, bw, bh, [p(`기준일 ${this._md(ref)}`, cp ? 6.5 : 8, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
   },
 
   // 알약 막대: 완료 = 진한 색 · 흰 글, 진행 중 = 중간 색 + 테두리, 예정 = 옅은 색
@@ -84,7 +86,7 @@ var RoadmapChart = {
     const { x, y, w, h, color, state, name, T, p, size } = o;
     const ww = Math.max(0.08, w), r = Math.min(h / 2, ww / 2);
     const st = { done: [color, null, "FFFFFF"], doing: [this.tint(color, 0.72), color, this.INK], plan: [this.tint(color, 0.88), null, this.shade(color)] }[state];
-    els.push({ t: "rect", x, y, w: ww, h, fill: st[0], line: st[1], lw: 1.5, r });
+    els.push({ t: "rect", x, y, w: ww, h, fill: st[0], line: st[1], lw: 1, r });
     els.push(T(x - 0.03, y, ww + 0.06, h, [p(name, size, { bold: true, color: st[2], align: "ctr" })], { anchor: "ctr" }));
   },
   // 마일스톤 ◆ + 날짜 · 이름 — 글은 오른쪽에 (끝에 닿으면 왼쪽에), 겹치면 아랫줄
@@ -107,7 +109,7 @@ var RoadmapChart = {
   // 괄호 모양 한 묶음: 서브시스템 가로축 위 ∩ 단계(안에 ∩ 작업), 겹쳐 함께 가는 것은 축 아래 ∪, 단계 경계 점
   //  완료 = 진하게 칠함 · 진행 중 = 옅게 칠함 · 예정 = 선만 옅게 (계획 일정과 기준일로만 정함)
   _look(color, state) {
-    return { done: { fill: this.tint(color, 0.72), line: color, ink: this.shade(color) }, doing: { fill: this.tint(color, 0.9), line: color, ink: this.shade(color) },
+    return { done: { fill: this.tint(color, 0.78), line: color, ink: this.shade(color) }, doing: { fill: this.tint(color, 0.93), line: color, ink: this.shade(color) },
       plan: { fill: "FFFFFF", line: this.tint(color, 0.5), ink: this.tint(color, 0.2) } }[state];
   },
   _bracketBlock(els, b, o) {
@@ -119,28 +121,29 @@ var RoadmapChart = {
     b.phases.forEach(ph => {
       const x0 = X(ph.s) + 0.03, x1 = X(ph.e) - 0.03, L = this._look(ph.color, this._state(ph, ref)), up = ph.lane === 0;
       const H = up ? UP : DN;
-      els.push({ t: "bracket", dir: up ? "up" : "down", x: x0, y: up ? ay - H : ay, w: x1 - x0, h: H, color: L.line, fill: L.fill, width: 2.25, r: 0.2 });
-      els.push(lbl(x0, x1, up ? ay - H + 0.02 : ay + H - 0.26, 0.24, ph.t.name, 9.5, L.ink));
+      els.push({ t: "bracket", dir: up ? "up" : "down", x: x0, y: up ? ay - H : ay, w: x1 - x0, h: H, color: L.line, fill: L.fill, width: 1.25, r: Math.min(0.2, H * 0.4) });
+      const fs = o.compact ? 8 : 9.5, th = o.compact ? 0.18 : 0.24;
+      els.push(lbl(x0, x1, up ? ay - H + 0.02 : ay + H - th - 0.02, th, ph.t.name, fs, L.ink));
       // 세부 작업을 괄호로 그리지 않을 때(o.list): 괄호 안에 기간 + 세부 작업 이름 목록
       const l3 = (b.l3 || []).filter(k => String(k.t.id).startsWith(ph.t.id + "."));
       if (up && l3.length && !kidOf(ph).length) els.push(T(x0 + 0.03, ay - H + 0.27, x1 - x0 - 0.06, H - 0.32,
         [p(`${this._md(ph.t.pStart)}~${this._md(ph.t.pEnd)}`, 7, { color: this.SUB, align: "ctr" })].concat(l3.map(k => p(k.t.name, 7.5, { color: this.INK, align: "ctr" })))));
       kidOf(ph).forEach(k => {
         const kx0 = X(k.s) + 0.05, kx1 = X(k.e) - 0.05, K = this._look(ph.color, this._state(k, ref));
-        const kUp = up && k.lane === 0, kh = kUp ? UP - 0.28 : up ? DN - 0.04 : Math.max(0.2, DN - 0.3);
-        els.push({ t: "bracket", dir: kUp ? "up" : "down", x: kx0, y: kUp ? ay - kh : ay, w: kx1 - kx0, h: kh, color: K.line, fill: "FFFFFF", width: 1.25, r: 0.14 });
-        els.push(lbl(kx0 - 0.04, kx1 + 0.04, kUp ? ay - kh + 0.03 : ay + 0.03, Math.max(0.2, kh - 0.06), k.t.name, 7.5, this.INK));
+        const kUp = up && k.lane === 0, kh = kUp ? UP - th - 0.06 : up ? DN - 0.04 : Math.max(0.16, DN - th - 0.06);
+        els.push({ t: "bracket", dir: kUp ? "up" : "down", x: kx0, y: kUp ? ay - kh : ay, w: kx1 - kx0, h: kh, color: K.line, fill: "FFFFFF", width: 0.75, r: Math.min(0.14, kh * 0.4) });
+        els.push(lbl(kx0 - 0.04, kx1 + 0.04, kUp ? ay - kh + 0.02 : ay + 0.02, Math.max(0.14, kh - 0.04), k.t.name, o.compact ? 6.5 : 7.5, this.INK));
       });
     });
     // 축 · 끝점 · 단계 경계 점
-    els.push({ t: "poly", x, y: ay, w, h: 0.001, pts: [[0, 0], [1, 0]], color: "334155", width: 2.25 });
-    [x, x + w].forEach(cx => els.push({ t: "rect", shape: "ellipse", x: cx - 0.07, y: ay - 0.07, w: 0.14, h: 0.14, fill: "334155" }));
+    els.push({ t: "poly", x, y: ay, w, h: 0.001, pts: [[0, 0], [1, 0]], color: "4472C4", width: 1.5 });
+    [x, x + w].forEach(cx => els.push({ t: "rect", shape: "ellipse", x: cx - 0.06, y: ay - 0.06, w: 0.12, h: 0.12, fill: "4472C4" }));
     const dots = [];   // 단계 시작 점 + 마지막 끝 점 (붙어 있는 경계는 한 점)
     b.phases.forEach(ph => dots.push([X(ph.s), ph.color]));
     const last = b.phases.reduce((a, q) => q.e > a.e ? q : a, b.phases[0]);
     dots.push([X(last.e), last.color]);
     dots.filter((d, i) => !dots.slice(0, i).some(q => Math.abs(q[0] - d[0]) < 0.12))
-      .forEach(([cx, c]) => els.push({ t: "rect", shape: "ellipse", x: cx - 0.06, y: ay - 0.06, w: 0.12, h: 0.12, fill: c, line: "FFFFFF" }));
+      .forEach(([cx, c]) => els.push({ t: "rect", shape: "ellipse", x: cx - 0.045, y: ay - 0.045, w: 0.09, h: 0.09, fill: c, line: "FFFFFF" }));
   },
 
   // 오른쪽 칸: 상태 칩 + 지금 단계(기준일 기준) + 다음 단계 시작
@@ -169,13 +172,13 @@ var RoadmapChart = {
   slideEls(o) {
     const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;
     const els = [], s = this._d(start), e = this._d(end);
-    const LW = Math.min(1.5, box.w * 0.13), KW = o.side ? 1.75 : 0, x = box.x + LW, w = box.w - LW - KW, bottom = box.y + box.h;
-    const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p });
+    const LW = o.compact ? 0 : Math.min(1.5, box.w * 0.13), KW = o.side ? 1.75 : 0, x = box.x + LW, w = box.w - LW - KW, bottom = box.y + box.h;
+    const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p, compact: o.compact });
     const inRange = m => this._d(m.date) >= s && this._d(m.date) <= e;
     const all = (milestones || []).filter(inRange);   // 서브시스템 마일스톤은 [이름] 을 붙여 같은 줄에
     if (KW) els.push(T(x + w + 0.12, box.y + 0.29, KW - 0.12, 0.26, [p("현재 단계 · 다음 일정", 8.5, { bold: true, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
     // 마일스톤 줄
-    let y = box.y + 0.62;
+    let y = box.y + (o.compact ? 0.26 : 0.62);
     if (all.length) {   // 줄 수는 그려 본 뒤에 정하고 바탕을 맨 뒤에 깔아 넣음
       const at = els.length, msH = 0.22, rows = this._milestones(els, X, all, { y: y + 0.03, rowH: msH, right: x + w, T, p });
       els.splice(at, 0, { t: "rect", x: box.x, y, w: box.w, h: msH * rows + 0.06, fill: "FFFBEB", r: 0.08 },
@@ -195,18 +198,20 @@ var RoadmapChart = {
     const GAP = 0.08, unit = (bottom - y - GAP * blocks.length) / Math.max(1, blocks.reduce((a, b) => a + b.units, 0));
     blocks.forEach((b, i) => {
       const bh = b.units * unit;
-      if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
-      els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
-      els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 12, { bold: true, color: this.INK }), p(b.root.name || "", 7.5, { color: this.SUB })], { anchor: "ctr" }));
+      if (!o.compact) {   // compact(서브시스템 장표 위의 작은 로드맵)는 이름 칸 · 줄무늬 없이
+        if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
+        els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
+        els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 12, { bold: true, color: this.INK }), p(b.root.name || "", 7.5, { color: this.SUB })], { anchor: "ctr" }));
+      }
       if (KW) this._side(els, b, { x: x + w + 0.12, y, w: KW - 0.12, h: bh, ref, T, p });
-      if (o.style === "bracket") { this._bracketBlock(els, b, { X, y, bh, ref, T, p, x, w }); y += bh + GAP; return; }
+      if (o.style === "bracket") { this._bracketBlock(els, b, { X, y, bh, ref, T, p, x, w, compact: o.compact }); y += bh + GAP; return; }
       const ph = unit * 1.2, kh = unit;
       b.phases.forEach(it => this._pill(els, { x: X(it.s) + 0.025, y: y + it.lane * ph + 0.04, w: X(it.e) - X(it.s) - 0.05, h: ph - 0.08, color: it.color, state: this._state(it, ref), name: it.t.name, size: 9.5, T, p }));
       const ky = y + b.pl * ph;
       b.kids.forEach(k => this._pill(els, { x: X(k.s) + 0.04, y: ky + k.lane * kh + 0.035, w: X(k.e) - X(k.s) - 0.08, h: kh - 0.07, color: k.color, state: this._state(k, ref), name: k.t.name, size: 7, T, p }));
       y += bh + GAP;
     });
-    this._now(els, X, { y: box.y + 0.56, bottom, s, e, ref, T, p });
+    this._now(els, X, { y: box.y + (o.compact ? 0.22 : 0.56), bottom, s, e, ref, T, p, compact: o.compact });
     return els;
   }
 };
