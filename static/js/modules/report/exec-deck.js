@@ -19,15 +19,15 @@ var ExecDeck = {
   //  · 디자인을 늘리려면 DESIGNS 에 한 줄 추가 + _head() / _cover() 에 모양 추가
   // ---------------------------------------------------------------------------
   SECTIONS: [
-    { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "종합 공정 S-커브" },
+    { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "종합 공정 S-커브" }, { k: "roadmap", l: "추진 로드맵 (통합 + 서브시스템, 한 장)" },
     { k: "bullet", l: "서브시스템별 계획 대비 실적" }, { k: "reqvoc", l: "서브시스템별 진척율 (WBS · 요구사항 · VOC)" },
     { k: "sdlc", l: "단계별 종합 공정 매트릭스 (SDLC)" }, { k: "defect", l: "테스트 결함 현황 (결함이 있을 때)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
     { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
   ],
   PRESETS: [
     { id: "brief", name: "요약형", note: "표지 · 종합 진척 · 지연/마일스톤", sections: ["summary", "delay"] },
-    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "defect", "delay"] },
-    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "bullet", "reqvoc", "sdlc", "defect", "delay", "sys"] }
+    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "roadmap", "bullet", "reqvoc", "sdlc", "defect", "delay"] },
+    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "roadmap", "bullet", "reqvoc", "sdlc", "defect", "delay", "sys"] }
   ],
   DESIGNS: [
     { id: "classic", name: "Classic Band", note: "색 띠 제목 · 보고서 표준 (엑셀 · 워드 색상을 따름)" },
@@ -188,6 +188,15 @@ var ExecDeck = {
       els.push(R(gx + 3.1, gy + 0.1, 0.4, 0.05, C)); els.push(T(gx + 3.55, gy - 0.02, 3.6, 0.3, [p(`누적 실적 (기준일 ${sc.actNow}%, ● = 주간보고 작성 시점)`, 10, { color: "475569" })], { anchor: "ctr" }));
       els.push(T(0.45, 6.6, 12.4, 0.5, [p(`기준일 계획 ${sc.planNow}% 대비 실적 ${sc.actNow}% — ${sc.actNow >= sc.planNow ? `계획보다 ${sc.actNow - sc.planNow}%p 앞섬` : `계획보다 ${sc.planNow - sc.actNow}%p 뒤처짐`}`, 13, { bold: true, color: sc.actNow >= sc.planNow ? "15803D" : "B91C1C" })], { anchor: "ctr" }));
       slides.push({ name: "S-커브", els });
+    }
+
+    // 4-1. 로드맵 — 통합 + 서브시스템을 한 장에 (RoadmapChart)
+    if (on("roadmap")) {
+      mark("로드맵");
+      const rm = this.roadmapRange(), els = head("추진 로드맵");
+      els.push(...RoadmapChart.slideEls({ systems: c.order, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: projectConfig.milestones || [], style: this.roadmapStyle, T, p, box: { x: 0.45, y: 1.0, w: 12.43, h: 5.62 } }));
+      els.push(T(0.45, 6.89, 9, 0.22, [p(this.roadmapStyle === "bracket" ? "진하게 칠함: 완료   옅게 칠함: 진행 중   선만: 예정 (계획 일정 기준)   축 아래: 같은 기간에 함께 가는 트랙   ◆ 마일스톤   빨간 선: 기준일" : "진한 색: 완료   테두리: 진행 중   옅은 색: 예정 (계획 일정 기준)   ◆ 마일스톤   빨간 선: 기준일", 8, { color: "94A3B8" })], { anchor: "ctr" }));
+      slides.push({ name: "로드맵", els });
     }
 
     // 5. 서브시스템별 계획 대비 실적 — 불릿 차트 (10개씩)
@@ -456,6 +465,12 @@ var ExecDeck = {
   },
 
   // S-커브 자료: 계획선은 작성 시점 계획(없으면 지금 계획), 실적은 주차별 주간보고 작성 시점 실적을 이어 그림
+  // 로드맵 기간: 프로젝트 시작 ~ 종료 (없으면 WBS 계획 날짜의 처음 ~ 끝)
+  roadmapRange() {
+    const tasks = (wbsData || []).filter(t => +t.level >= 1 && +t.level <= 3);
+    const ds = tasks.flatMap(t => [t.pStart, t.pEnd]).filter(Boolean).sort();
+    return { tasks, start: projectConfig.projectStartDate || ds[0], end: projectConfig.projectEndDate || ds[ds.length - 1] };
+  },
   scurve(c) {
     const plan = (c.data.planCurve && c.data.planCurve.length ? c.data.planCurve : WeeklyExport._planCurve());
     const labels = plan.map(x => x.label);
@@ -563,14 +578,25 @@ var ExecDeck = {
     const shape = el => {
       const nid = id++;
       const fill = el.fill ? `<a:solidFill><a:srgbClr val="${el.fill}"/></a:solidFill>` : "<a:noFill/>";
-      const line = el.line ? `<a:ln w="9525"><a:solidFill><a:srgbClr val="${el.line}"/></a:solidFill></a:ln>` : "<a:ln><a:noFill/></a:ln>";
-      const geo = `<a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${E(Math.max(0.01, el.w))}" cy="${E(Math.max(0.01, el.h))}"/></a:xfrm><a:prstGeom prst="${el.shape === "ellipse" ? "ellipse" : el.shape === "round" ? "roundRect" : "rect"}"><a:avLst/></a:prstGeom>`;
+      const line = el.line ? `<a:ln w="${Math.round((el.lw || 0.75) * 12700)}"><a:solidFill><a:srgbClr val="${el.line}"/></a:solidFill></a:ln>` : "<a:ln><a:noFill/></a:ln>";
+      const geo = `<a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${E(Math.max(0.01, el.w))}" cy="${E(Math.max(0.01, el.h))}"/></a:xfrm>${el.r ? `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${Math.min(50000, Math.round(el.r / Math.max(0.01, Math.min(el.w, el.h)) * 100000))}"/></a:avLst></a:prstGeom>` : `<a:prstGeom prst="${el.shape === "ellipse" ? "ellipse" : el.shape === "diamond" ? "diamond" : el.shape === "round" ? "roundRect" : "rect"}"><a:avLst/></a:prstGeom>`}`;
       if (el.t === "poly") {
         const PW = 100000, PH = 100000;
         const pts = el.pts.map(([px, py]) => `<a:pt x="${Math.round(px * PW)}" y="${Math.round(py * PH)}"/>`);
         const path = `<a:path w="${PW}" h="${PH}"><a:moveTo>${pts[0]}</a:moveTo>${pts.slice(1).map(q => `<a:lnTo>${q}</a:lnTo>`).join("")}</a:path>`;
         return `<p:sp><p:nvSpPr><p:cNvPr id="${nid}" name="Line ${nid}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${E(el.w)}" cy="${E(el.h)}"/></a:xfrm>` +
           `<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst>${path}</a:pathLst></a:custGeom><a:noFill/>` +
+          `<a:ln w="${Math.round((el.width || 2) * 12700)}" cap="rnd"><a:solidFill><a:srgbClr val="${el.color}"/></a:solidFill><a:round/></a:ln></p:spPr></p:sp>`;
+      }
+      if (el.t === "bracket") {
+        // 괄호(∩ 위 · ∪ 아래): 끝이 열린 선, 모서리만 둥글게 (길이가 달라도 같은 둥글기 — EMU 로 직접 그림). fill 이 있으면 안쪽을 칠함
+        const w = E(Math.max(0.01, el.w)), h = E(Math.max(0.01, el.h)), r = Math.min(E(el.r || 0.2), Math.floor(w / 2), h);
+        const pt = (x, y) => `<a:pt x="${x}" y="${y}"/>`, arc = (st, sw) => `<a:arcTo wR="${r}" hR="${r}" stAng="${st * 60000}" swAng="${sw * 60000}"/>`;
+        const path = el.dir === "down"
+          ? `<a:moveTo>${pt(0, 0)}</a:moveTo><a:lnTo>${pt(0, h - r)}</a:lnTo>${arc(180, -90)}<a:lnTo>${pt(w - r, h)}</a:lnTo>${arc(90, -90)}<a:lnTo>${pt(w, 0)}</a:lnTo>`
+          : `<a:moveTo>${pt(0, h)}</a:moveTo><a:lnTo>${pt(0, r)}</a:lnTo>${arc(180, 90)}<a:lnTo>${pt(w - r, 0)}</a:lnTo>${arc(270, 90)}<a:lnTo>${pt(w, h)}</a:lnTo>`;
+        return `<p:sp><p:nvSpPr><p:cNvPr id="${nid}" name="Bracket ${nid}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${E(el.x)}" y="${E(el.y)}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
+          `<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="0" t="0" r="r" b="b"/><a:pathLst><a:path w="${w}" h="${h}"${el.fill ? "" : ' fill="none"'}>${path}</a:path></a:pathLst></a:custGeom>${fill}` +
           `<a:ln w="${Math.round((el.width || 2) * 12700)}" cap="rnd"><a:solidFill><a:srgbClr val="${el.color}"/></a:solidFill><a:round/></a:ln></p:spPr></p:sp>`;
       }
       if (el.t === "rect") {
@@ -650,9 +676,16 @@ var ExecDeck = {
     const px = v => (v * 96).toFixed(1) + "px";
     const font = deck.c.pal.fontName || "맑은 고딕";
     const el = e => {
-      const box = `left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};${e.fill ? `background:#${e.fill};` : ""}${e.line ? `border:1px solid #${e.line};` : ""}`;
-      if (e.t === "poly") return `<svg class="r" style="left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};overflow:visible" viewBox="0 0 1000 1000" preserveAspectRatio="none"><polyline points="${e.pts.map(([a, b]) => `${(a * 1000).toFixed(1)},${(b * 1000).toFixed(1)}`).join(" ")}" fill="none" stroke="#${e.color}" stroke-width="${(e.width || 2) * 1.33}" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
-      if (e.t === "rect") return `<div class="r" style="${box}${e.shape === "ellipse" ? "border-radius:50%;" : e.shape === "round" ? "border-radius:10pt;" : ""}"></div>`;
+      const box = `left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};${e.fill ? `background:#${e.fill};` : ""}${e.line ? `border:${Math.max(1, Math.round((e.lw || 0.75) * 1.33))}px solid #${e.line};` : ""}`;
+      const svg = (vb, inner) => `<svg class="r" style="left:${px(e.x)};top:${px(e.y)};width:${px(e.w)};height:${px(e.h)};overflow:visible" viewBox="${vb}" preserveAspectRatio="none">${inner}</svg>`;
+      if (e.t === "poly") return svg("0 0 1000 1000", `<polyline points="${e.pts.map(([a, b]) => `${(a * 1000).toFixed(1)},${(b * 1000).toFixed(1)}`).join(" ")}" fill="none" stroke="#${e.color}" stroke-width="${(e.width || 2) * 1.33}" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>`);
+      if (e.t === "bracket") {
+        const r = Math.min(e.r || 0.2, e.w / 2, e.h), W = e.w, H = e.h, f = v => (v * 96).toFixed(1);
+        const d = e.dir === "down" ? `M0 0 V${f(H - r)} A${f(r)} ${f(r)} 0 0 0 ${f(r)} ${f(H)} H${f(W - r)} A${f(r)} ${f(r)} 0 0 0 ${f(W)} ${f(H - r)} V0`
+          : `M0 ${f(H)} V${f(r)} A${f(r)} ${f(r)} 0 0 1 ${f(r)} 0 H${f(W - r)} A${f(r)} ${f(r)} 0 0 1 ${f(W)} ${f(r)} V${f(H)}`;
+        return svg(`0 0 ${f(W)} ${f(H)}`, `<path d="${d}" fill="${e.fill ? "#" + e.fill : "none"}" stroke="#${e.color}" stroke-width="${(e.width || 2) * 1.33}" vector-effect="non-scaling-stroke"/>`);
+      }
+      if (e.t === "rect") return `<div class="r" style="${box}${e.r ? `border-radius:${px(e.r)};` : e.shape === "ellipse" ? "border-radius:50%;" : e.shape === "diamond" ? "clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);" : e.shape === "round" ? "border-radius:10pt;" : ""}"></div>`;
       const ps = e.paras.map(q => `<p style="font-size:${q.size}pt;${q.bold ? "font-weight:700;" : ""}color:#${q.color};text-align:${q.align === "ctr" ? "center" : q.align === "r" ? "right" : "left"};${q.bullet ? "padding-left:12pt;text-indent:-9pt;" : ""}">${q.bullet ? "• " : ""}${esc(q.text)}</p>`).join("");
       return `<div class="t" style="${box}justify-content:${e.anchor === "ctr" ? "center" : "flex-start"};">${ps}</div>`;
     };
