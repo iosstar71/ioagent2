@@ -59,7 +59,7 @@ var RoadmapChart = {
     months.forEach(m => { const d = new Date(m), k = `${d.getFullYear()} Q${Math.floor(d.getMonth() / 3) + 1}`; qs[k] = qs[k] || [Math.max(m, s), 0]; qs[k][1] = Math.min(next(m), e); });
     if (!cp) Object.keys(qs).forEach(k => {
       const x0 = X(qs[k][0]) + 0.02, x1 = X(qs[k][1]) - 0.02;
-      els.push({ t: "rect", x: x0, y, w: x1 - x0, h: 0.26, fill: this.BAND, r: 0.13 });
+      els.push({ t: "rect", x: x0, y, w: x1 - x0, h: 0.26, fill: this.BAND });
       if (x1 - x0 > 0.55) els.push(T(x0, y, x1 - x0, 0.26, [p(k, 8.5, { bold: true, color: "475569", align: "ctr" })], { anchor: "ctr" }));
     });
     els.push({ t: "poly", x, y: LY, w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.GRID, width: 0.75 });
@@ -77,7 +77,7 @@ var RoadmapChart = {
     els.push({ t: "poly", x: xr, y, w: 0.001, h: bottom - y, pts: [[0, 0], [0, 1]], color: this.NOW, width: 1 });
     els.push({ t: "rect", shape: "ellipse", x: xr - 0.04, y: y - 0.04, w: 0.08, h: 0.08, fill: this.NOW });
     const bw = cp ? 0.8 : 1.04, bh = cp ? 0.18 : 0.24;
-    els.push({ t: "rect", x: xr - bw / 2, y: bottom + 0.02, w: bw, h: bh, fill: this.NOW, r: bh / 2 });
+    els.push({ t: "rect", x: xr - bw / 2, y: bottom + 0.02, w: bw, h: bh, fill: this.NOW });
     els.push(T(xr - bw / 2, bottom + 0.02, bw, bh, [p(`기준일 ${this._md(ref)}`, cp ? 6.5 : 8, { bold: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
   },
 
@@ -154,8 +154,8 @@ var RoadmapChart = {
     const cut = (v, n) => { v = String(v || ""); return v.length > n ? v.slice(0, n - 1) + "…" : v; };
     const cur = now.length ? cut(now[0].t.name, 9) + (now.length > 1 ? ` 외 ${now.length - 1}` : "") : next ? "착수 전" : "완료";
     const st = this.status(b.root.pProg, b.root.aProg), col = (now[0] || next || ph[ph.length - 1]).color;
-    els.push({ t: "rect", x, y: y + 0.03, w, h: h - 0.06, fill: "FFFFFF", line: this.LINE, r: 0.08 });
-    els.push({ t: "rect", x: x + 0.08, y: y + h / 2 - 0.11, w: 0.5, h: 0.22, fill: this.tint(st.color, 0.86), r: 0.11 });
+    els.push({ t: "rect", x, y: y + 0.03, w, h: h - 0.06, fill: "FFFFFF", line: this.LINE });
+    els.push({ t: "rect", x: x + 0.08, y: y + h / 2 - 0.11, w: 0.5, h: 0.22, fill: this.tint(st.color, 0.86) });
     els.push(T(x + 0.08, y + h / 2 - 0.11, 0.5, 0.22, [p(st.label, 8, { bold: true, color: st.color, align: "ctr" })], { anchor: "ctr" }));
     els.push(T(x + 0.62, y + 0.03, w - 0.66, h - 0.06, [p(cur, 8.5, { bold: true, color: this.shade(col) }),
       p(next ? `→ ${this._md(next.t.pStart)} ${cut(next.t.name, 8)}` : "→ -", 7.5, { color: this.SUB })], { anchor: "ctr" }));
@@ -168,56 +168,91 @@ var RoadmapChart = {
     return { label: s[1], color: s[2] };
   },
 
-  // 간트형 통합 진척 (주간보고용): 줄 = 서브시스템 × 단계(2레벨), 계획 기간 옅은 막대 + 실적 진척만큼 진하게,
-  //  계획 대비 달성률이 낮으면 막대 테두리 주황(70~90%) · 빨강(<70%) — 종합보고서의 다른 장표와 같은 기준
-  //  줄이 많으면(MAX_ROWS 넘게) 서브시스템마다 한 줄에 단계를 이어 그림
-  MAX_ROWS: 22,
+  // 간트형 통합 진척 (주간보고용) — 앱의 Gantt 화면을 장표로: 진한 머리 칸(분기 · 월), 마일스톤 줄,
+  //  왼쪽 표 칸(WBS 목록 · 실적 · 계획) + L1(서브시스템) · L2(단계) 줄, 막대 = 실적만큼 남색 · 남은 기간 빗금 · 완료 초록, 기준일 빨간 점선
+  //  달성률이 낮으면 실적 부분을 주황(70~90%) · 빨강(<70%)으로 — 종합보고서의 다른 장표와 같은 기준. 줄이 많으면 L1 만
+  MAX_ROWS: 26, HDR: "1E3A5F", DONE: "15803D", BAR: "1E3A5F", MSC: "7C3AED",
   ganttEls(o) {
     const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;
-    const els = [], s = this._d(start), e = this._d(end);
-    const LW = 2.0, KW = 0.75, x = box.x + LW, w = box.w - LW - KW, bottom = box.y + box.h;
-    const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p });
-    els.push(T(box.x, box.y + 0.3, LW - 0.1, 0.24, [p("서브시스템 · 단계", 8, { bold: true, keep: true, color: this.SUB })], { anchor: "ctr" }));
-    els.push(T(x + w + 0.05, box.y + 0.3, KW - 0.05, 0.24, [p("실적/계획", 8, { bold: true, keep: true, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
-    let y = box.y + 0.62;
-    const ms = (milestones || []).filter(m => this._d(m.date) >= s && this._d(m.date) <= e);
-    if (ms.length) {
-      const at = els.length, msH = 0.22, rows = this._milestones(els, X, ms, { y: y + 0.03, rowH: msH, right: x + w, T, p });
-      els.splice(at, 0, { t: "rect", x: box.x, y, w: box.w, h: msH * rows + 0.06, fill: "FFFBEB", r: 0.08 },
-        T(box.x + 0.1, y, LW - 0.2, msH * rows + 0.06, [p("주요 마일스톤", 9, { bold: true, keep: true, color: this.MS })], { anchor: "ctr" }));
-      y += msH * rows + 0.12;
-    }
-    const groups = systems.map(sys => ({ sys, phases: this._items(tasksOf(sys), 2) })).filter(g => g.phases.length);
-    const total = groups.reduce((a, g) => a + g.phases.length, 0), perPhase = total <= this.MAX_ROWS;
-    const nRows = perPhase ? total : groups.length, rh = Math.min(0.42, (bottom - y) / Math.max(1, nRows));
-    const rateCol = t => { const pl = Number(t.pProg) || 0, ac = Number(t.aProg) || 0; if (pl <= 0) return null; const r = Metrics.achv(pl, ac, 0); return r >= 90 ? null : r >= 70 ? "D97706" : "DC2626"; };
-    const bar = (it, yy, h) => {
-      const x0 = X(it.s), x1 = X(it.e), bw = Math.max(0.04, x1 - x0), ac = Math.max(0, Math.min(100, Number(it.t.aProg) || 0)), warn = rateCol(it.t);
-      els.push({ t: "rect", x: x0, y: yy, w: bw, h, fill: this.tint(it.color, 0.82), line: warn || null, lw: 1, r: 0.03 });
-      if (ac > 0) els.push({ t: "rect", x: x0, y: yy, w: Math.max(0.03, bw * ac / 100), h, fill: it.color, r: 0.03 });
-    };
-    groups.forEach((g, gi) => {
-      const gh = (perPhase ? g.phases.length : 1) * rh;
-      if (gi % 2 === 0) els.push({ t: "rect", x: box.x, y, w: box.w, h: gh, fill: "F8FAFC" });
-      els.push({ t: "poly", x: box.x, y: y + gh, w: box.w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.LINE, width: 0.5 });
-      els.push(T(box.x + 0.05, y, 0.8, gh, [p(g.sys, 9, { bold: true, keep: true, color: this.INK })], { anchor: "ctr" }));
-      if (perPhase) {
-        g.phases.forEach((it, i) => {
-          const yy = y + i * rh, bh = Math.min(0.2, rh * 0.62);
-          const nm = String(it.t.name), short = nm.length > 12 ? nm.slice(0, 11) + "…" : nm;   // 한 줄에 (줄이 겹치지 않게)
-          els.push(T(box.x + 0.85, yy, LW - 0.9, rh, [p(short, 8, { color: this.INK })], { anchor: "ctr" }));
-          bar(it, yy + (rh - bh) / 2, bh);
-          const warn = rateCol(it.t);
-          els.push(T(x + w + 0.05, yy, KW - 0.05, rh, [p(`${Math.round(Number(it.t.aProg) || 0)}/${Math.round(Number(it.t.pProg) || 0)}%`, 8, { color: warn || this.SUB, align: "ctr" })], { anchor: "ctr" }));
-        });
-      } else {
-        const bh = Math.min(0.2, rh * 0.6), root = tasksOf(g.sys).find(t => +t.level === 1) || {};
-        g.phases.forEach(it => { bar(it, y + (rh - bh) / 2, bh); els.push(T(X(it.s), y + (rh - bh) / 2, X(it.e) - X(it.s), bh, [p(it.t.name, 7, { color: this.INK, align: "ctr" })], { anchor: "ctr" })); });
-        els.push(T(x + w + 0.05, y, KW - 0.05, rh, [p(`${Math.round(Number(root.aProg) || 0)}/${Math.round(Number(root.pProg) || 0)}%`, 8, { color: rateCol(root) || this.SUB, align: "ctr" })], { anchor: "ctr" }));
-      }
-      y += gh;
+    const els = [], s = this._d(start), e = this._d(end), bottom = box.y + box.h;
+    const NW = 2.0, CW = 0.48, LW = NW + CW * 2, x = box.x + LW, w = box.w - LW, X = t => x + Math.max(0, Math.min(1, (t - s) / (e - s))) * w;
+    // 머리 칸 (두 줄: 분기 · 월)
+    const H1 = 0.24, H2 = 0.24, hy = box.y, line = "3E5A7E";
+    [["WBS 목록 (서브시스템 · 단계)", box.x, NW, "l"], ["실적", box.x + NW, CW, "ctr"], ["계획", box.x + NW + CW, CW, "ctr"]].forEach(([h, cx, cw, al]) => {
+      els.push({ t: "rect", x: cx, y: hy, w: cw, h: H1 + H2, fill: this.HDR, line });
+      els.push(T(cx + (al === "l" ? 0.06 : 0), hy, cw - (al === "l" ? 0.08 : 0), H1 + H2, [p(h, 8, { bold: true, keep: true, color: "FFFFFF", align: al })], { anchor: "ctr" }));
     });
-    this._now(els, X, { y: box.y + 0.56, bottom, s, e, ref, T, p });
+    const months = [];
+    for (const d = new Date(s); d.getTime() <= e; d.setMonth(d.getMonth() + 1, 1)) months.push(new Date(d.getFullYear(), d.getMonth(), 1).getTime());
+    const next = m => { const d = new Date(m); return new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(); };
+    const qs = {};
+    months.forEach(m => { const d = new Date(m), k = `${d.getFullYear()} Q${Math.floor(d.getMonth() / 3) + 1}`; qs[k] = qs[k] || [Math.max(m, s), 0]; qs[k][1] = Math.min(next(m), e); });
+    Object.keys(qs).forEach(k => {
+      const x0 = X(qs[k][0]), x1 = X(qs[k][1]);
+      els.push({ t: "rect", x: x0, y: hy, w: x1 - x0, h: H1, fill: this.HDR, line }, T(x0, hy, x1 - x0, H1, [p(k, 8, { bold: true, keep: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
+    });
+    months.forEach(m => {
+      const d = new Date(m), x0 = X(Math.max(m, s)), x1 = X(Math.min(next(m), e));
+      els.push({ t: "rect", x: x0, y: hy + H1, w: x1 - x0, h: H2, fill: this.HDR, line });
+      if (x1 - x0 > 0.3) els.push(T(x0, hy + H1, x1 - x0, H2, [p(`${d.getMonth() + 1}월`, 8, { color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
+    });
+    let y = hy + H1 + H2;
+    // 마일스톤 줄
+    const ms = (milestones || []).filter(m => this._d(m.date) >= s && this._d(m.date) <= e).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    if (ms.length) {
+      const used = [], rowH = 0.2;
+      const pos = ms.map(m => {
+        const xm = X(this._d(m.date)), label = `${m.scope && m.scope !== "ALL" ? `[${m.scope}] ` : ""}${m.name}`, lw = Math.min(2.4, 0.25 + label.length * 0.1);
+        const left = xm + 0.1 + lw > x + w, l = left ? xm - 0.1 - lw : xm - 0.08, r = left ? xm + 0.08 : xm + 0.1 + lw;
+        let k = 0;
+        while ((used[k] || []).some(([a, b]) => l < b && r > a)) k++;
+        (used[k] = used[k] || []).push([l, r]);
+        return { xm, label, lw, left, k };
+      });
+      const mh = rowH * used.length + 0.06;
+      els.push({ t: "rect", x: box.x, y, w: box.w, h: mh, fill: "F5F3FF", line: this.LINE });
+      els.push(T(box.x + 0.08, y, LW - 0.1, mh, [p(`프로젝트 마일스톤 (${ms.length})`, 8, { bold: true, keep: true, color: this.MSC })], { anchor: "ctr" }));
+      pos.forEach(q => {
+        const yy = y + 0.03 + q.k * rowH + rowH / 2;
+        els.push({ t: "rect", shape: "diamond", x: q.xm - 0.065, y: yy - 0.065, w: 0.13, h: 0.13, fill: "A78BFA" });
+        els.push(T(q.left ? q.xm - 0.1 - q.lw : q.xm + 0.08, yy - 0.1, q.lw, 0.2, [p(q.label, 7, { color: this.INK, align: q.left ? "r" : "l" })], { anchor: "ctr" }));
+      });
+      y += mh;
+    }
+    // 줄: L1 + L2 (많으면 L1 만)
+    const rows = [];
+    systems.forEach(sys => {
+      const ts = tasksOf(sys), root = ts.find(t => +t.level === 1), ph = this._items(ts, 2);
+      if (root && this._d(root.pStart) && this._d(root.pEnd)) rows.push({ t: root, l1: true });
+      ph.forEach(it => rows.push({ t: it.t }));
+    });
+    const list = rows.length > this.MAX_ROWS ? rows.filter(r => r.l1) : rows;
+    const rh = Math.min(0.3, (bottom - 0.26 - y) / Math.max(1, list.length));
+    const top = y;
+    months.forEach(m => { if (m > s) els.push({ t: "poly", x: X(m), y: top, w: 0.001, h: rh * list.length, pts: [[0, 0], [0, 1]], color: this.LINE, width: 0.5 }); });
+    list.forEach(r => {
+      const t = r.t, x0 = X(this._d(t.pStart)), x1 = X(this._d(t.pEnd)), bw = Math.max(0.04, x1 - x0), bh = rh * (r.l1 ? 0.42 : 0.38), by = y + (rh - bh) / 2;
+      const ac = Math.max(0, Math.min(100, Math.round(Number(t.aProg) || 0))), pl = Math.round(Number(t.pProg) || 0);
+      const rr = pl > 0 ? Metrics.achv(pl, ac, 0) : 100, col = ac >= 100 ? this.DONE : rr < 70 ? "B91C1C" : rr < 90 ? "D97706" : this.BAR;
+      if (r.l1) els.push({ t: "rect", x: box.x, y, w: box.w, h: rh, fill: "F8FAFC" });
+      els.push({ t: "poly", x: box.x, y: y + rh, w: box.w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.LINE, width: 0.5 });
+      const nm = String(t.name), cut = r.l1 ? 22 : 18, name = nm.length > cut ? nm.slice(0, cut - 1) + "…" : nm;
+      els.push(T(box.x + (r.l1 ? 0.06 : 0.26), y, NW - (r.l1 ? 0.08 : 0.28), rh, [p(name, 8, { bold: r.l1, keep: r.l1, color: this.INK })], { anchor: "ctr" }));
+      els.push(T(box.x + NW, y, CW, rh, [p(`${ac}%`, 8, { bold: r.l1, keep: r.l1, color: col === this.BAR || col === this.DONE ? this.INK : col, align: "ctr" })], { anchor: "ctr" }));
+      els.push(T(box.x + NW + CW, y, CW, rh, [p(`${pl}%`, 8, { color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
+      els.push({ t: "rect", x: x0, y: by, w: bw, h: bh, fill: "FFFFFF", patt: "B6C2D2", line: this.BAR, lw: 0.5 });
+      if (ac > 0) els.push({ t: "rect", x: x0, y: by, w: Math.max(0.02, bw * ac / 100), h: bh, fill: col, line: col, lw: 0.5 });
+      y += rh;
+    });
+    [NW, NW + CW, LW].forEach(cx => els.push({ t: "poly", x: box.x + cx, y: top, w: 0.001, h: rh * list.length, pts: [[0, 0], [0, 1]], color: this.GRID, width: 0.75 }));
+    // 기준일: 머리 칸의 빨간 꼬리표 + 점선
+    const rr = this._d(ref);
+    if (rr >= s && rr <= e) {
+      const xr = X(rr);
+      els.push({ t: "poly", x: xr, y: hy + H1 + H2, w: 0.001, h: y - hy - H1 - H2, pts: [[0, 0], [0, 1]], color: "DC2626", width: 1, dash: true });
+      els.push({ t: "rect", x: xr - 0.42, y: y + 0.03, w: 0.84, h: 0.2, fill: "DC2626" });
+      els.push(T(xr - 0.42, y + 0.03, 0.84, 0.2, [p(`기준일 ${this._md(ref).replace(".", "/")}`, 7, { bold: true, keep: true, color: "FFFFFF", align: "ctr" })], { anchor: "ctr" }));
+    }
     return els;
   },
 
@@ -234,7 +269,7 @@ var RoadmapChart = {
     let y = box.y + (o.compact ? 0.26 : 0.62);
     if (all.length) {   // 줄 수는 그려 본 뒤에 정하고 바탕을 맨 뒤에 깔아 넣음
       const at = els.length, msH = 0.22, rows = this._milestones(els, X, all, { y: y + 0.03, rowH: msH, right: x + w, T, p });
-      els.splice(at, 0, { t: "rect", x: box.x, y, w: box.w, h: msH * rows + 0.06, fill: "FFFBEB", r: 0.08 },
+      els.splice(at, 0, { t: "rect", x: box.x, y, w: box.w, h: msH * rows + 0.06, fill: "FFFBEB" },
         T(box.x + 0.1, y, LW - 0.2, msH * rows + 0.06, [p("주요 마일스톤", 10, { bold: true, color: this.MS })], { anchor: "ctr" }));
       y += msH * rows + 0.14;
     }
@@ -253,7 +288,7 @@ var RoadmapChart = {
       const bh = b.units * unit;
       if (!o.compact) {   // compact(서브시스템 장표 위의 작은 로드맵)는 이름 칸 · 줄무늬 없이
         if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
-        els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
+        els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color });
         els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 9, { bold: true, keep: true, color: this.INK }), p(b.root.name || "", 9, { color: this.SUB })], { anchor: "ctr" }));
       }
       if (KW) this._side(els, b, { x: x + w + 0.12, y, w: KW - 0.12, h: bh, ref, T, p });
