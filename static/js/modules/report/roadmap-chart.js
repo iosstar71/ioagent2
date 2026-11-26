@@ -168,6 +168,59 @@ var RoadmapChart = {
     return { label: s[1], color: s[2] };
   },
 
+  // 간트형 통합 진척 (주간보고용): 줄 = 서브시스템 × 단계(2레벨), 계획 기간 옅은 막대 + 실적 진척만큼 진하게,
+  //  계획 대비 달성률이 낮으면 막대 테두리 주황(70~90%) · 빨강(<70%) — 종합보고서의 다른 장표와 같은 기준
+  //  줄이 많으면(MAX_ROWS 넘게) 서브시스템마다 한 줄에 단계를 이어 그림
+  MAX_ROWS: 22,
+  ganttEls(o) {
+    const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;
+    const els = [], s = this._d(start), e = this._d(end);
+    const LW = 2.0, KW = 0.75, x = box.x + LW, w = box.w - LW - KW, bottom = box.y + box.h;
+    const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p });
+    els.push(T(box.x, box.y + 0.3, LW - 0.1, 0.24, [p("서브시스템 · 단계", 8, { bold: true, keep: true, color: this.SUB })], { anchor: "ctr" }));
+    els.push(T(x + w + 0.05, box.y + 0.3, KW - 0.05, 0.24, [p("실적/계획", 8, { bold: true, keep: true, color: this.SUB, align: "ctr" })], { anchor: "ctr" }));
+    let y = box.y + 0.62;
+    const ms = (milestones || []).filter(m => this._d(m.date) >= s && this._d(m.date) <= e);
+    if (ms.length) {
+      const at = els.length, msH = 0.22, rows = this._milestones(els, X, ms, { y: y + 0.03, rowH: msH, right: x + w, T, p });
+      els.splice(at, 0, { t: "rect", x: box.x, y, w: box.w, h: msH * rows + 0.06, fill: "FFFBEB", r: 0.08 },
+        T(box.x + 0.1, y, LW - 0.2, msH * rows + 0.06, [p("주요 마일스톤", 9, { bold: true, keep: true, color: this.MS })], { anchor: "ctr" }));
+      y += msH * rows + 0.12;
+    }
+    const groups = systems.map(sys => ({ sys, phases: this._items(tasksOf(sys), 2) })).filter(g => g.phases.length);
+    const total = groups.reduce((a, g) => a + g.phases.length, 0), perPhase = total <= this.MAX_ROWS;
+    const nRows = perPhase ? total : groups.length, rh = Math.min(0.42, (bottom - y) / Math.max(1, nRows));
+    const rateCol = t => { const pl = Number(t.pProg) || 0, ac = Number(t.aProg) || 0; if (pl <= 0) return null; const r = Metrics.achv(pl, ac, 0); return r >= 90 ? null : r >= 70 ? "D97706" : "DC2626"; };
+    const bar = (it, yy, h) => {
+      const x0 = X(it.s), x1 = X(it.e), bw = Math.max(0.04, x1 - x0), ac = Math.max(0, Math.min(100, Number(it.t.aProg) || 0)), warn = rateCol(it.t);
+      els.push({ t: "rect", x: x0, y: yy, w: bw, h, fill: this.tint(it.color, 0.82), line: warn || null, lw: 1, r: 0.03 });
+      if (ac > 0) els.push({ t: "rect", x: x0, y: yy, w: Math.max(0.03, bw * ac / 100), h, fill: it.color, r: 0.03 });
+    };
+    groups.forEach((g, gi) => {
+      const gh = (perPhase ? g.phases.length : 1) * rh;
+      if (gi % 2 === 0) els.push({ t: "rect", x: box.x, y, w: box.w, h: gh, fill: "F8FAFC" });
+      els.push({ t: "poly", x: box.x, y: y + gh, w: box.w, h: 0.001, pts: [[0, 0], [1, 0]], color: this.LINE, width: 0.5 });
+      els.push(T(box.x + 0.05, y, 0.8, gh, [p(g.sys, 9, { bold: true, keep: true, color: this.INK })], { anchor: "ctr" }));
+      if (perPhase) {
+        g.phases.forEach((it, i) => {
+          const yy = y + i * rh, bh = Math.min(0.2, rh * 0.62);
+          const nm = String(it.t.name), short = nm.length > 12 ? nm.slice(0, 11) + "…" : nm;   // 한 줄에 (줄이 겹치지 않게)
+          els.push(T(box.x + 0.85, yy, LW - 0.9, rh, [p(short, 8, { color: this.INK })], { anchor: "ctr" }));
+          bar(it, yy + (rh - bh) / 2, bh);
+          const warn = rateCol(it.t);
+          els.push(T(x + w + 0.05, yy, KW - 0.05, rh, [p(`${Math.round(Number(it.t.aProg) || 0)}/${Math.round(Number(it.t.pProg) || 0)}%`, 8, { color: warn || this.SUB, align: "ctr" })], { anchor: "ctr" }));
+        });
+      } else {
+        const bh = Math.min(0.2, rh * 0.6), root = tasksOf(g.sys).find(t => +t.level === 1) || {};
+        g.phases.forEach(it => { bar(it, y + (rh - bh) / 2, bh); els.push(T(X(it.s), y + (rh - bh) / 2, X(it.e) - X(it.s), bh, [p(it.t.name, 7, { color: this.INK, align: "ctr" })], { anchor: "ctr" })); });
+        els.push(T(x + w + 0.05, y, KW - 0.05, rh, [p(`${Math.round(Number(root.aProg) || 0)}/${Math.round(Number(root.pProg) || 0)}%`, 8, { color: rateCol(root) || this.SUB, align: "ctr" })], { anchor: "ctr" }));
+      }
+      y += gh;
+    });
+    this._now(els, X, { y: box.y + 0.56, bottom, s, e, ref, T, p });
+    return els;
+  },
+
   // 로드맵 한 장: systems = 서브시스템 순서, tasksOf(이름) = 그 서브시스템 WBS (레벨 1 · 2 · 3), milestones = [{scope,name,date}]
   slideEls(o) {
     const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;

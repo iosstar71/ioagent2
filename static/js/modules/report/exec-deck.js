@@ -21,14 +21,14 @@ var ExecDeck = {
   //  · 디자인을 늘리려면 DESIGNS 에 한 줄 추가 + _head() / _cover() 에 모양 추가
   // ---------------------------------------------------------------------------
   SECTIONS: [
-    { k: "toc", l: "목차" }, { k: "scurve", l: "공정 S-커브 (종합 + 서브시스템별, 한 장)" }, { k: "roadmap", l: "추진 로드맵 (통합 + 서브시스템, 한 장)" },
+    { k: "toc", l: "목차" }, { k: "scurve", l: "공정 S-커브 (종합 + 서브시스템별, 한 장)" }, { k: "roadmap", l: "추진 로드맵 (통합 + 서브시스템, 한 장)" }, { k: "gantt", l: "통합 진척 (간트, 한 장)" },
     { k: "phase", l: "단계별 진척 현황 (WBS · 요구사항 · VOC · SDLC 단계, 한 장)" }, { k: "defect", l: "테스트 결함 현황 (결함이 있을 때)" }, { k: "delay", l: "지연 Task · 현안 · 주요 마일스톤" },
     { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
   ],
   PRESETS: [
     { id: "brief", name: "요약형", note: "표지 · S-커브 · 지연/현안/마일스톤", sections: ["scurve", "delay"] },
-    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "scurve", "roadmap", "phase", "defect", "delay"] },
-    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "scurve", "roadmap", "phase", "defect", "delay", "sys"] }
+    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "scurve", "roadmap", "gantt", "phase", "defect", "delay"] },
+    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "scurve", "roadmap", "gantt", "phase", "defect", "delay", "sys"] }
   ],
   DESIGNS: [
     { id: "classic", name: "Classic Band", note: "색 띠 제목 · 보고서 표준 (엑셀 · 워드 색상을 따름)" },
@@ -189,6 +189,20 @@ var ExecDeck = {
         els2.push(...rmEls.map(e => Object.assign(e, { native: true })));
         slides.push({ name: "로드맵", els: els2 });
       }
+    }
+
+    // 4-2. 통합 진척 (간트) — 서브시스템 × 단계 막대, 실적만큼 칠함, 달성률 낮으면 테두리 색 (RoadmapChart.ganttEls)
+    if (on("gantt")) {
+      mark("통합 진척 (간트)");
+      const rm = this.roadmapRange(), els = head("통합 진척 현황 (단계별 일정 대비 실적)"), Wd = this.W;
+      const late = c.order.flatMap(sy => rm.tasks.filter(t => t.system === sy && +t.level === 2 && num(t.pProg) > 0 && Metrics.achv(num(t.pProg), num(t.aProg)) < 90).map(t => `${sy} ${t.name}`));
+      const msg = `전체 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} — ${late.length ? `계획보다 늦은 단계 ${late.length}개: ${late.slice(0, 4).join(", ")}${late.length > 4 ? " 외" : ""}` : "계획보다 늦은 단계 없음"}`;
+      const g = [R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08 }), R(0.35, 0.9, 0.07, 0.4, C),
+        T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, keep: true, color: "1E293B" })], { anchor: "ctr" })];
+      g.push(...RoadmapChart.ganttEls({ systems: c.order, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: projectConfig.milestones || [], T, p, box: { x: 0.35, y: 1.38, w: Wd - 0.7, h: 5.27 } }));
+      g.push(T(0.35, 6.9, Wd - 0.7, 0.2, [p("옅은 막대: 계획 기간   진한 부분: 실적 진척률만큼   테두리 주황: 달성률 70~90%   빨강: 70% 미만   빨간 선: 기준일   오른쪽: 실적/계획 %", 7, { color: "94A3B8" })], { anchor: "ctr" }));
+      els.push(...g.map(e => Object.assign(e, { native: true })));
+      slides.push({ name: "간트", els });
     }
 
     // 5. 단계별 진척 현황 — Phase 진척 화면의 내용을 한 장에: ① 서브시스템별 진척율(WBS · 요구사항 · VOC) ② 단계별 공정 매트릭스(SDLC 유형마다)
