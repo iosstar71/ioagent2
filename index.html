@@ -2680,8 +2680,15 @@
               <div>
                 <label class="u-block u-bold u-fs-sm u-mb-4">🔐 1. 멤버 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
                 <select class="u-w100 u-bold" id="cfgAuthPolicySelect" data-change="AuthManager.setAuthPolicy" data-change-args='["$value"]'>
+<!--#sa-->
                   <option value="ID_ONLY">👤 아이디만 확인 — 멤버는 ID 로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 (기본)</option>
+<!--#/sa-->
+<!--#sa-->
                   <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증</option>
+<!--#/sa-->
+<template data-edition="workgroup">
+                  <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+</template>
                   <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(프로젝트 설정·시스템설정) 진입 시 재인증 (고보안)</option>
                   <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
                   <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>

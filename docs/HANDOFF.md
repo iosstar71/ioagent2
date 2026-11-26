@@ -6,7 +6,7 @@
 ## 지금 상태
 - 버전 **1.7.0** (두 판 같은 번호) — 브랜치 `iostar-pm-standalone`
 - 두 판: Standalone(정적 · IndexedDB) / Workgroup(Python 서버 + SQLite). 한 코드, 판 차이는 `tools/edition.py` 표시와 `workgroup/`
-- 시험 기준: 단위 84 · Standalone E2E 80 · Workgroup E2E 116 (조립 폴더에서) · 서버 API 37 (모두 통과)
+- 시험 기준: 단위 84 · Standalone E2E 80 · Workgroup E2E 117 (조립 폴더에서) · 서버 API 37 (모두 통과)
 - 설계 문서: `docs/design/DESIGN_v1.4.md`(적용), `docs/design/PLAN_v1.5.md`(적용)
 
 ## 사용자가 정한 것 (다시 묻지 않기)
@@ -38,7 +38,7 @@
 - **1.7 (2026-11 사용자 결정)**: 공유 드라이브 · 서버를 쓸 수 없어 Standalone 은 파일로 주고받음 (모으기는 사람이 따로 — 자동화하지 않음)
   - 멤버 담당 서브시스템은 여러 개 가능 — 값은 한 칸 `"W1,W2"`, 내 작업 파일도 한 개
   - 다운로드 파일 이름 앞 `<멤버 ID>_<기준주차>_`
-  - 로그인 기본 = **아이디만 확인**(`ID_ONLY`), 프로젝트 설정 · Admin 은 암호 (세션에 한 번). 예전 정책은 그대로 고를 수 있음
+  - 로그인 기본 = **Standalone 만 아이디만 확인**(`ID_ONLY`), 프로젝트 설정 · Admin 은 암호 (세션에 한 번). **Workgroup 은 예전 그대로 암호**(`STARTUP_ONLY`, ID_ONLY 선택지 없음)
   - [저장] 때 JSON 파일도 (폴더 — 없으면 내려받기)
   - 멤버가 PC 에서 바꾼 암호는 내 작업 파일로 PM 쪽에 반영 (더 새 것만, 관리자 · PM 계정 제외). 마스터 파일 · latest.json 에는 암호를 넣지 않음
 

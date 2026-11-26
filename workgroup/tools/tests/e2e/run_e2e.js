@@ -151,6 +151,8 @@ async function localMain() {
   check("Login box is a compact two-column layout (login button visible without scrolling)", loginBox.h <= 500 && loginBox.w > loginBox.h && loginBox.btnBottom < loginBox.vh && loginBox.lang && loginBox.proj, JSON.stringify(loginBox));
   check("Login screen starts in Korean with the default theme (app.ini default_lang=ko, default_theme=urban-slate)", await page.evaluate(() => I18N.lang === "ko" && APP_CONFIG.defaultLang === "ko" && document.body.dataset.theme === APP_CONFIG.defaultTheme && document.getElementById("headerVersionBadge").textContent === (APP_CONFIG.editionName ? APP_CONFIG.editionName + " " : "") + "v" + APP_CONFIG.version));
   check("Login screen displayed", await page.$eval("#securityLockOverlay", e => e.style.display) === "flex");
+  { const pol = await page.evaluate(() => ({ p: AuthManager.getAuthPolicy(), idOpt: !!document.querySelector('#cfgAuthPolicySelect option[value="ID_ONLY"]'), pwd: getComputedStyle(document.getElementById("inputSecurityPassword")).display }));
+    check("Workgroup keeps password login by default (ID-only login is Standalone only)", pol.p === "STARTUP_ONLY" && !pol.idOpt && pol.pwd !== "none", JSON.stringify(pol)); }
   const forcedAdmin = await login(page, "admin");
   check("Initial password 1234 -> forced password change", forcedAdmin);
   check("Admin login", await page.evaluate(() => AuthManager.getCurrentRole()) === "SYS_ADMIN");

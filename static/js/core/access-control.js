@@ -142,9 +142,13 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // 보안 정책
   // ---------------------------------------------------------------------------
-  // 기본 = ID_ONLY (Standalone): 멤버는 ID 만으로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 (세션에 한 번)
+  // 기본: Standalone = ID_ONLY (멤버는 ID 만으로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 — 세션에 한 번)
+  //       Workgroup = STARTUP_ONLY (서버 로그인 — 예전과 같음, ID_ONLY 는 쓰지 않음)
   getAuthPolicy() {
-    try { return AppStore.getItem(this.STORAGE_POLICY_KEY) || "ID_ONLY"; } catch (e) { return "ID_ONLY"; }
+    const local = SyncManager.isLocal(), def = local ? "ID_ONLY" : "STARTUP_ONLY";
+    let v;
+    try { v = AppStore.getItem(this.STORAGE_POLICY_KEY) || def; } catch (e) { v = def; }
+    return v === "ID_ONLY" && !local ? "STARTUP_ONLY" : v;
   },
   idOnlyLogin() { return SyncManager.isLocal() && this.getAuthPolicy() === "ID_ONLY"; },
   // 이번 세션에서 암호로 확인한 멤버인지 (ID_ONLY 에서 권한 메뉴에 들어갈 때)
