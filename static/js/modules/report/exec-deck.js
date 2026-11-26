@@ -175,8 +175,9 @@ var ExecDeck = {
       // 종합 (가로로 넓게)
       nat.push(T(0.35, 1.38, 5, 0.26, [p("■ 프로젝트 종합", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
       nat.push(R(Wd - 4.9, 1.49, 0.3, 0.03, "94A3B8"), T(Wd - 4.55, 1.38, 2.0, 0.26, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
-        R(Wd - 2.5, 1.49, 0.3, 0.04, C), T(Wd - 2.15, 1.38, 1.8, 0.26, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }));
-      this.curveEls(nat, { x: 0.85, y: 1.85, w: Wd - 1.3, h: 1.7, sc, color: C, T, R, p, axis: true, size: 7.5 });
+        R(Wd - 2.5, 1.49, 0.3, 0.04, C), T(Wd - 2.15, 1.38, 1.8, 0.26, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
+        R(Wd - 7.0, 1.43, 0.12, 0.16, "FBD9A3", { line: "F59E0B", lw: 0.5 }), T(Wd - 6.83, 1.38, 1.9, 0.26, [p("주별 달성률 (오른쪽 축)", 8, { color: "475569" })], { anchor: "ctr" }));
+      this.curveEls(nat, { x: 0.85, y: 1.85, w: Wd - 1.65, h: 1.7, sc, color: C, T, R, p, axis: true, size: 7.5 });
       // 서브시스템별 (가로로 긴 작은 그림)
       const n = Math.max(1, c.order.length), cols = n <= 4 ? 2 : 3, rws = Math.ceil(n / cols);
       const gx = 0.35, gy = 4.2, gw = Wd - 0.7, gh = 6.95 - gy, cw = gw / cols, ch = gh / rws;
@@ -496,7 +497,9 @@ var ExecDeck = {
       if (next === undefined) return pv;
       return Math.round(pv + (known[next] - pv) * (i - pi) / (next - pi));
     });
-    return { labels, plan: plan.map(x => x.p), actual, known: idx.filter(i => i <= last), repIndex, planNow: plan[last] ? plan[last].p : 0, actNow: Math.round(known[last]) };
+    // 주별 계획 대비 달성률 (대시보드 S-커브의 막대와 같은 셈: 실적 ÷ 계획, 150% 까지)
+    const rate = actual.map((a, i) => a === null ? null : plan[i].p > 0 ? Math.min(150, Math.round(a / plan[i].p * 100)) : 100);
+    return { labels, plan: plan.map(x => x.p), actual, rate, known: idx.filter(i => i <= last), repIndex, planNow: plan[last] ? plan[last].p : 0, actNow: Math.round(known[last]) };
   },
 
   // S-커브 그림 (계획 회색 · 실적 색 · 기준일 빨간 선). axis = 눈금 글자
@@ -510,6 +513,16 @@ var ExecDeck = {
       const step = Math.max(1, Math.ceil(sc.labels.length / 14));
       sc.labels.forEach((l, i) => { if (i % step === 0) els.push(T(x + w * i / n - 0.3, y + h + 0.04, 0.6, 0.22, [p(l, size || 8, { color: "64748B", align: "ctr" })])); });
     }
+    // 주별 달성률 막대 (오른쪽 축 0~150%)
+    const bw = Math.max(0.025, Math.min(0.14, w / n * 0.55));
+    (sc.rate || []).forEach((r, i) => {
+      if (r === null) return;
+      const bh = h * r / 150, bx = x + w * i / n - bw / 2;
+      els.push(R(bx, y + h - bh, bw, bh, axis ? "FBD9A3" : "FDEBCB", axis ? { line: "F59E0B", lw: 0.5 } : {}));
+      if (axis && (w / n >= 0.2 || i % 2 === 0 || i === sc.repIndex)) els.push(T(bx - 0.15, y + h - bh - 0.17, bw + 0.3, 0.16, [p(`${r}`, 5.5, { bold: true, color: "B45309", align: "ctr" })], { anchor: "b" }));
+    });
+    if (axis) els.push({ t: "poly", x, y: y + h / 3, w, h: 0.001, pts: [[0, 0], [1, 0]], color: "F5C77E", width: 0.75 });   // 달성률 100% 선
+    if (axis) [[150, 0], [100, 1 / 3], [0, 1]].forEach(([v, f]) => els.push(T(x + w + 0.04, y + h * f - 0.1, 0.42, 0.2, [p(`${v}%`, size || 8, { color: "B45309" })], { anchor: "ctr" })));
     if (sc.repIndex >= 0) {
       els.push(R(x + w * sc.repIndex / n - 0.006, y, 0.012, h, "DC2626"));
       if (axis) els.push(T(x + w * sc.repIndex / n - 0.5, y - 0.26, 1.0, 0.24, [p("기준일", 8, { bold: true, color: "DC2626", align: "ctr" })]));
