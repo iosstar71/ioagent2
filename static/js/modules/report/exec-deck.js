@@ -21,14 +21,14 @@ var ExecDeck = {
   //  · 디자인을 늘리려면 DESIGNS 에 한 줄 추가 + _head() / _cover() 에 모양 추가
   // ---------------------------------------------------------------------------
   SECTIONS: [
-    { k: "toc", l: "목차" }, { k: "summary", l: "종합 진척 현황" }, { k: "scurve", l: "공정 S-커브 (종합 + 서브시스템별, 한 장)" }, { k: "roadmap", l: "추진 로드맵 (통합 + 서브시스템, 한 장)" },
-    { k: "phase", l: "단계별 진척 현황 (WBS · 요구사항 · VOC · SDLC 단계, 한 장)" }, { k: "defect", l: "테스트 결함 현황 (결함이 있을 때)" }, { k: "delay", l: "지연 Task · 주요 마일스톤" },
+    { k: "toc", l: "목차" }, { k: "scurve", l: "공정 S-커브 (종합 + 서브시스템별, 한 장)" }, { k: "roadmap", l: "추진 로드맵 (통합 + 서브시스템, 한 장)" },
+    { k: "phase", l: "단계별 진척 현황 (WBS · 요구사항 · VOC · SDLC 단계, 한 장)" }, { k: "defect", l: "테스트 결함 현황 (결함이 있을 때)" }, { k: "delay", l: "지연 Task · 현안 · 주요 마일스톤" },
     { k: "sys", l: "서브시스템별 주간보고 (작성 완료분)" }
   ],
   PRESETS: [
-    { id: "brief", name: "요약형", note: "표지 · 종합 진척 · 지연/마일스톤", sections: ["summary", "delay"] },
-    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "summary", "scurve", "roadmap", "phase", "defect", "delay"] },
-    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "summary", "scurve", "roadmap", "phase", "defect", "delay", "sys"] }
+    { id: "brief", name: "요약형", note: "표지 · S-커브 · 지연/현안/마일스톤", sections: ["scurve", "delay"] },
+    { id: "standard", name: "종합형", note: "전체 현황 장표 (서브시스템별 장표 제외)", sections: ["toc", "scurve", "roadmap", "phase", "defect", "delay"] },
+    { id: "detail", name: "상세형", note: "종합형 + 서브시스템별 주간보고", sections: ["toc", "scurve", "roadmap", "phase", "defect", "delay", "sys"] }
   ],
   DESIGNS: [
     { id: "classic", name: "Classic Band", note: "색 띠 제목 · 보고서 표준 (엑셀 · 워드 색상을 따름)" },
@@ -131,56 +131,30 @@ var ExecDeck = {
     const toc = [];
     const mark = title => toc.push([title, slides.length + 1]);
 
-    // 3. 종합 진척 현황 — 핵심 지표 + 과업 상태 분포
-    if (on("summary")) {
-      mark("종합 진척 현황");
-      const els = head("종합 진척 현황");
-      const kpi = [["전체 계획", pct(c.m.totalPlan)], ["전체 실적", pct(c.m.totalActual)], ["계획 대비 달성률", `${c.m.achieveRate || 0}%`], ["지연 Task", `${c.m.cntDel || 0}건`], ["주간보고 작성", `${c.done.length} / ${c.order.length}`]];
-      kpi.forEach(([k, v], i) => {
-        const x = 0.45 + i * 2.52;
-        els.push(R(x, 1.2, 2.35, 1.45, SUB, { line: B }));
-        els.push(T(x, 1.28, 2.35, 0.4, [p(k, 12, { color: "475569", align: "ctr" })]));
-        els.push(T(x, 1.65, 2.35, 0.9, [p(v, 30, { bold: true, color: k === "지연 Task" && (c.m.cntDel || 0) > 0 ? "B91C1C" : C, align: "ctr" })], { anchor: "ctr" }));
-      });
-      // 과업 상태 분포 막대
-      const parts = [["완료", c.m.cntComp || 0, "15803D"], ["진행", c.m.cntProg || 0, C], ["지연", c.m.cntDel || 0, "DC2626"], ["착수 전", c.m.cntReady || 0, "CBD5E1"]];
-      const tot = parts.reduce((a, x) => a + x[1], 0) || 1;
-      els.push(T(0.45, 3.0, 12.4, 0.4, [p(`Task 상태 분포 (전체 ${tot}건)`, 14, { bold: true, color: C })]));
-      let x = 0.45;
-      parts.forEach(([n, v, col]) => {
-        const w = 12.4 * v / tot;
-        if (w > 0) { els.push(R(x, 3.5, w, 0.6, col)); if (w > 0.9) els.push(T(x, 3.5, w, 0.6, [p(`${n} ${v}`, 12, { bold: true, color: col === "CBD5E1" ? "1F2937" : "FFFFFF", align: "ctr" })], { anchor: "ctr" })); }
-        x += w;
-      });
-      parts.forEach(([n, v, col], i) => {
-        els.push(R(0.45 + i * 3.1, 4.35, 0.25, 0.25, col));
-        els.push(T(0.78 + i * 3.1, 4.28, 2.7, 0.4, [p(`${n} ${v}건 (${Math.round(v / tot * 100)}%)`, 12)], { anchor: "ctr" }));
-      });
-      els.push(T(0.45, 5.0, 12.4, 1.8, [
-        p(`· 기준일 ${c.data.reportDate || "-"} 현재 전체 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} (달성률 ${c.m.achieveRate || 0}%)`, 13),
-        ...(c.data.baseline && c.data.baseline.has ? [p(`· ${BaselineUI.sumText(c.data.baseline)}`, 13, { color: c.data.baseline.endVar > 0 ? "B91C1C" : "1F2937" })] : []),
-        p(`· 지연 Task ${c.m.cntDel || 0}건, 주간보고 작성 완료 ${c.done.length}개 서브시스템${c.missing.length ? ` (미작성: ${c.missing.join(", ")})` : ""}`, 13)
-      ]));
-      slides.push({ name: "종합 진척 현황", els });
-    }
-
     // 4. 공정 S-커브 — 왼쪽 종합(크게) + 오른쪽 서브시스템별(작게) 한 장 (장표 폭 W 로 직접 그림)
     if (on("scurve")) {
       mark("공정 S-커브");
       const els = head("공정 S-커브 (종합 · 서브시스템별)"), Wd = this.W, nat = [];
       const sc = this.scurve(c);
-      const msg = `기준일 계획 ${sc.planNow}% 대비 실적 ${sc.actNow}% — ${sc.actNow >= sc.planNow ? `계획보다 ${sc.actNow - sc.planNow}%p 앞섬` : `계획보다 ${sc.planNow - sc.actNow}%p 뒤처짐`}`;
+      const gap = Math.round((num(c.m.totalActual) - num(c.m.totalPlan)) * 10) / 10;
+      const msg = `기준일 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} (달성률 ${c.m.achieveRate || 0}%, ${gap >= 0 ? `${gap}%p 앞섬` : `${-gap}%p 뒤처짐`}) · 지연 Task ${(c.data.delayed || []).length}건 · 주간보고 작성 ${c.done.length}/${c.order.length}`;
       nat.push(R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08 }), R(0.35, 0.9, 0.07, 0.4, C),
-        T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, keep: true, color: sc.actNow >= sc.planNow ? "15803D" : "B91C1C" })], { anchor: "ctr" }));
+        T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, keep: true, color: "1E293B" })], { anchor: "ctr" }));
       // 종합 (가로로 넓게)
-      nat.push(T(0.35, 1.38, 5, 0.26, [p("■ 프로젝트 종합", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
-      nat.push(R(Wd - 4.9, 1.49, 0.3, 0.03, "94A3B8"), T(Wd - 4.55, 1.38, 2.0, 0.26, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
-        R(Wd - 2.5, 1.49, 0.3, 0.04, C), T(Wd - 2.15, 1.38, 1.8, 0.26, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
-        R(Wd - 7.0, 1.43, 0.12, 0.16, "FBD9A3", { line: "F59E0B", lw: 0.5 }), T(Wd - 6.83, 1.38, 1.9, 0.26, [p("주별 달성률 (오른쪽 축)", 8, { color: "475569" })], { anchor: "ctr" }));
-      this.curveEls(nat, { x: 0.85, y: 1.85, w: Wd - 1.65, h: 1.7, sc, color: C, T, R, p, axis: true, size: 7.5 });
+      // 종합 진척 (표 한 줄): 계획 · 실적 · 달성률 · 전주 실적과 증감 · 지연 · 주간보고 작성
+      const prev = sc.repIndex > 0 ? sc.actual[sc.repIndex - 1] : null, d = prev === null ? null : Math.round((num(c.m.totalActual) - prev) * 10) / 10;
+      const kcols = [["구분", 1.6, "l"], ["계획", 1.1], ["실적", 1.1], ["달성률", 1.1], ["전주 실적", 1.1], ["금주 증감", 1.1], ["지연 Task", 1.1], ["주간보고 작성", 1.3]];
+      const ksum = kcols.reduce((a, q) => a + q[1], 0), KW = Wd - 0.7;
+      table(nat, 0.35, 1.4, kcols.map(q => [q[0], q[1] * KW / ksum, q[2]]), [["프로젝트 전체", pct(c.m.totalPlan), pct(c.m.totalActual), { text: `${c.m.achieveRate || 0}%`, color: rateColor(num(c.m.achieveRate)) },
+        prev === null ? "-" : `${prev}%`, d === null ? "-" : `${d >= 0 ? "+" : ""}${d}%p`, { text: `${(c.data.delayed || []).length}건`, color: (c.data.delayed || []).length ? "B91C1C" : "1F2937" }, `${c.done.length} / ${c.order.length}`]], 0.26, { headSize: 9, size: 9, boldCol: -1 });
+      nat.push(T(0.35, 2.0, 5, 0.26, [p("■ 공정 S-커브", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
+      nat.push(R(Wd - 4.9, 2.11, 0.3, 0.03, "94A3B8"), T(Wd - 4.55, 2.0, 2.0, 0.26, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
+        R(Wd - 2.5, 2.11, 0.3, 0.04, C), T(Wd - 2.15, 2.0, 1.8, 0.26, [p(`누적 실적 (기준일 ${sc.actNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
+        R(Wd - 7.0, 2.05, 0.12, 0.16, "FBD9A3", { line: "F59E0B", lw: 0.5 }), T(Wd - 6.83, 2.0, 1.9, 0.26, [p("주별 달성률 (오른쪽 축)", 8, { color: "475569" })], { anchor: "ctr" }));
+      this.curveEls(nat, { x: 0.85, y: 2.45, w: Wd - 1.65, h: 1.45, sc, color: C, T, R, p, axis: true, size: 7.5 });
       // 서브시스템별 (가로로 긴 작은 그림)
       const n = Math.max(1, c.order.length), cols = n <= 4 ? 2 : 3, rws = Math.ceil(n / cols);
-      const gx = 0.35, gy = 4.2, gw = Wd - 0.7, gh = 6.95 - gy, cw = gw / cols, ch = gh / rws;
+      const gx = 0.35, gy = 4.48, gw = Wd - 0.7, gh = 6.95 - gy, cw = gw / cols, ch = gh / rws;
       nat.push(T(0.35, gy - 0.3, 5, 0.26, [p("■ 서브시스템별 (실적 / 계획)", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
       c.order.forEach((sy, i) => {
         const x = gx + (i % cols) * cw, y = gy + Math.floor(i / cols) * ch, s2 = this.scurve(c, sy), rr = Metrics.achv(s2.planNow, s2.actNow);
@@ -231,7 +205,7 @@ var ExecDeck = {
         const vs = Metrics.vocStats(vc), vo = Metrics.vocOpen(vc).length, radd = rq.filter(r => r.origin === "추가").length;
         const rr = Metrics.pct(rd, rq.length), vr = vs.rate;
         return [domainOf(sys), sys, `${WBSEngine.sysWeight(sys)}%`, wNA ? na : `${wp}%`, wNA ? na : { text: `${wa}%`, bold: true }, wNA ? na : { text: `${wr}%`, bold: true, color: rateColor(wr) },
-          "", radd ? `${rq.length} (+${radd})` : `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) },
+          radd ? `${rq.length} (+${radd})` : `${rq.length}`, `${rp}`, `${rd}`, { text: `${rr}%`, bold: true, color: rateColor(rr) },
           `${vs.total}`, vs.undecided ? { text: `${vs.undecided}`, bold: true, color: "B45309" } : "0", `${vo}`, `${vs.done}`, { text: `${vr}%`, bold: true, color: rateColor(vr) }];
       });
       const X0 = 0.35, TW = Wd - 0.7;
@@ -240,23 +214,15 @@ var ExecDeck = {
       // ①
       let y = 0.95;
       cap(y, "① 서브시스템별 진척율 (WBS · 요구사항 · VOC)"); y += 0.3;
-      const c1 = fitCols([["도메인", 0.85, "l"], ["서브시스템", 0.85, "l"], ["가중치", 0.55], ["계획", 0.55], ["실적", 0.55], ["달성률", 0.62], ["계획 대비 실적", 1.7], ["전체(추가)", 0.8], ["진행", 0.55], ["완료", 0.55], ["완료율", 0.66], ["접수", 0.55], ["판정 대기", 0.66], ["미결", 0.55], ["처리", 0.55], ["처리율", 0.66]]);
+      const c1 = fitCols([["도메인", 0.85, "l"], ["서브시스템", 0.85, "l"], ["가중치", 0.55], ["계획", 0.55], ["실적", 0.55], ["달성률", 0.62], ["전체(추가)", 0.8], ["진행", 0.55], ["완료", 0.55], ["완료율", 0.66], ["접수", 0.55], ["판정 대기", 0.66], ["미결", 0.55], ["처리", 0.55], ["처리율", 0.66]]);
       const gw = k => c1.slice(0, k).reduce((a, q) => a + q[1], 0);
       const grp = (a, b, text, fill, fg) => { nat.push(R(X0 + gw(a), y, gw(b) - gw(a), 0.25, fill)); nat.push(T(X0 + gw(a), y, gw(b) - gw(a), 0.25, [p(text, 9, { bold: true, color: fg, align: "ctr" })], { anchor: "ctr" })); };
-      grp(0, 3, "구분", H, P.headerTextColor); grp(3, 7, "WBS 공정 진척", "475569", "FFFFFF"); grp(7, 11, "요구사항 (REQ) 진척", C, "FFFFFF"); grp(11, 16, "VOC · 결함 처리", "B45309", "FFFFFF");
+      grp(0, 3, "구분", H, P.headerTextColor); grp(3, 6, "WBS 공정 진척", "475569", "FFFFFF"); grp(6, 10, "요구사항 (REQ) 진척", C, "FFFFFF"); grp(10, 15, "VOC · 결함 처리", "B45309", "FFFFFF");
       y += 0.25;
       const groups = c.data.sdlc && c.data.sdlc.length ? c.data.sdlc : WeeklyExport._sdlc();
       const lines2 = groups.reduce((a, g) => a + g.rows.length + 2.2, 0);
       const rh = Math.max(0.2, Math.min(0.36, (6.85 - y - 0.75) / (tr.length + 1 + lines2)));
       table(nat, X0, y, c1, tr, rh, { headSize: 8.5, size: 8.5 });
-      // 달성률 막대 (계획 = 검은 눈금, 실적 = 막대)
-      const bx = X0 + gw(6) + 0.08, bw = c1[6][1] - 0.16;
-      c.order.forEach((sys, i) => {
-        const row = rows.find(r => r[1] === sys) || [], pl = num(row[6]), ac = num(row[7]), rr = Metrics.achv(pl, ac), yy = y + rh * (i + 1);
-        nat.push(R(bx, yy + rh * 0.3, bw, rh * 0.4, "EEF2F6"));
-        if (ac > 0) nat.push(R(bx, yy + rh * 0.3, bw * Math.min(100, ac) / 100, rh * 0.4, rateColor(rr) === "15803D" ? C : rateColor(rr)));
-        nat.push(R(bx + bw * Math.min(100, pl) / 100 - 0.01, yy + rh * 0.15, 0.02, rh * 0.7, "111827"));
-      });
       y += rh * (tr.length + 1) + 0.15;
       // ②
       cap(y, "② 단계별 공정 매트릭스 (계획 / 실적 (달성률))"); y += 0.3;
@@ -315,24 +281,48 @@ var ExecDeck = {
       slides.push({ name: "테스트 결함 현황", els });
     }
 
+    // 지연 Task (표, 차이 큰 순) · 현안 · 지원 요청 (서브시스템 주간보고) · 주요 마일스톤 (표, 남은 기간)
     if (on("delay")) {
-      mark("지연 Task · 주요 마일스톤");
-      const els = head("지연 Task · 주요 마일스톤");
-      const del = (c.data.delayed || []).slice(0, 12);
-      els.push(T(0.45, 1.15, 7.3, 0.35, [p(`지연 Task ${c.m.cntDel || 0}건${del.length < (c.m.cntDel || 0) ? ` (상위 ${del.length}건)` : ""}`, 13, { bold: true, color: "B91C1C" })]));
-      const dl = del.length ? del.map(t => p(`[${t.system}] ${t.id} ${t.name} — 계획 ${t.pProg}% / 실적 ${t.aProg}%${t.bVar ? ` · 기준선 ${t.bVar > 0 ? "+" : ""}${t.bVar}일` : ""}${t.owner ? ` · ${t.owner}` : ""}`, 11, { bullet: true })) : [p("지연 Task 없음", 12, { color: "15803D" })];
-      // 선행 지연 영향 Task (예전 작성 완료본에는 없음)
-      const ph = (c.data.predHit || []).slice(0, 8);
-      if (ph.length) {
-        dl.push(p(`⛓ 선행 지연 영향 Task ${(c.data.predHit || []).length}건`, 12, { bold: true, color: "B45309" }));
-        ph.forEach(t => dl.push(p(`[${t.system}] ${t.id} ${t.name} — ${t.why}`, 10, { bullet: true })));
-      }
-      els.push(T(0.45, 1.55, 7.3, 5.4, this.fit(dl, 7.3, 5.4)));
-      const ms = (c.data.milestones || []).slice(0, 10);
-      els.push(T(8.1, 1.15, 4.8, 0.35, [p("주요 마일스톤", 13, { bold: true, color: C })]));
-      const ml = ms.length ? ms.map(x => p(`${x.date}  ${x.name}${x.scope && x.scope !== "ALL" ? ` (${x.scope})` : ""}`, 11, { bullet: true })) : [p("등록된 마일스톤 없음", 11, { color: "64748B" })];
-      els.push(R(8.0, 1.5, 4.9, 5.45, SUB, { line: B }));
-      els.push(T(8.1, 1.6, 4.7, 5.25, this.fit(ml, 4.7, 5.25)));
+      mark("지연 Task · 현안 · 주요 마일스톤");
+      const els = head("지연 Task · 현안 · 주요 마일스톤"), Wd = this.W, nat = [], X0 = 0.35, TW = Wd - 0.7;
+      const live = id => (wbsData || []).find(x => x.id === id) || {};   // 작성 완료본에 없는 계획 종료일은 지금 WBS 에서
+      const all = (c.data.delayed || []).map(t => Object.assign({ pEnd: live(t.id).pEnd }, t)).slice().sort((a, b) => (num(b.pProg) - num(b.aProg)) - (num(a.pProg) - num(a.aProg)));
+      const bySys = c.order.map(sy => [sy, all.filter(t => t.system === sy).length]).filter(x => x[1]);
+      const note = m => ((projectConfig.milestones || []).find(x => x.name === m.name && x.date === m.date) || {}).note || m.note || m.desc || "";
+      const ms = (c.data.milestones || []).slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const ref = String(c.data.reportDate || "");
+      const dday = d => { const n = Math.round((new Date(d + "T00:00:00") - new Date(ref + "T00:00:00")) / 86400000); return n < 0 ? "지남" : n === 0 ? "D-day" : `D-${n}`; };
+      const nextMs = ms.find(m => String(m.date) >= ref);
+      const ph = c.data.predHit || [];
+      const msg = `지연 Task ${all.length}건${bySys.length ? ` (${bySys.map(([sy, n]) => `${sy} ${n}`).join(" · ")})` : ""}${ph.length ? ` · 선행 지연 영향 ${ph.length}건` : ""}${nextMs ? ` — 다음 마일스톤 ${String(nextMs.date).slice(5).replace("-", ".")} ${nextMs.name} (${dday(nextMs.date)})` : ""}`;
+      nat.push(R(X0, 0.9, TW, 0.4, "F1F5F9", { r: 0.08 }), R(X0, 0.9, 0.07, 0.4, C),
+        T(0.55, 0.9, TW - 0.3, 0.4, [p(msg, 11, { bold: true, keep: true, color: "1E293B" })], { anchor: "ctr" }));
+      const fitCols = cols => { const sum = cols.reduce((a, q) => a + q[1], 0); return cols.map(q => [q[0], q[1] * TW / sum, q[2]]); };
+      // 현안 · 지원 요청: 서브시스템 주간보고(작성 완료분)에 적은 것
+      const iss = c.sysReps.map(r => [r.scopeValue, String(r.issuesNotes || "").trim()]).filter(([, t]) => t && t !== "특이사항 없음");
+      const msRows = Math.max(1, ms.length), isRows = Math.max(1, iss.length), rh = 0.27;
+      const room = Math.floor((6.95 - 1.45 - 0.3 * 3 - 0.36 - rh * (msRows + 1) - rh * (isRows + 1)) / rh);   // 지연 표에 넣을 수 있는 줄 수
+      const shown = all.slice(0, Math.max(3, room));
+      let y = 1.42;
+      nat.push(T(X0, y, TW, 0.28, [p(`■ 지연 Task (계획 대비 차이 큰 순${shown.length < all.length ? `, 상위 ${shown.length}건 / 전체 ${all.length}건` : ""})`, 11, { bold: true, color: C })], { anchor: "ctr" }));
+      y += 0.3;
+      const dcols = fitCols([["No", 0.35], ["서브시스템", 0.75], ["WBS ID", 0.8], ["Task", 3.6, "l"], ["담당", 1.0], ["계획 종료", 0.8], ["계획", 0.55], ["실적", 0.55], ["차이", 0.55]]);
+      const drows = shown.length ? shown.map((t, i) => [`${i + 1}`, t.system, t.id, t.name, t.owner || "-", String(t.pEnd || "-").slice(2).replace(/-/g, "."), `${num(t.pProg)}%`, `${num(t.aProg)}%`,
+        { text: `-${num(t.pProg) - num(t.aProg)}%p`, color: "B91C1C" }]) : [["", "", "", "지연 Task 없음", "", "", "", "", ""]];
+      table(nat, X0, y, dcols, drows, rh, { headSize: 9, size: 9, boldCol: -1 });
+      y += rh * (drows.length + 1) + 0.18;
+      nat.push(T(X0, y, TW, 0.28, [p("■ 현안 · 지원 요청 (서브시스템 주간보고)", 11, { bold: true, color: C })], { anchor: "ctr" }));
+      y += 0.3;
+      const icols = fitCols([["서브시스템", 0.9], ["현안 · 지원 요청", 8.0, "l"]]);
+      table(nat, X0, y, icols, iss.length ? iss : [["", "적은 현안 없음"]], rh, { headSize: 9, size: 9, boldCol: -1 });
+      y += rh * (isRows + 1) + 0.18;
+      nat.push(T(X0, y, TW, 0.28, [p("■ 주요 마일스톤", 11, { bold: true, color: C })], { anchor: "ctr" }));
+      y += 0.3;
+      const mcols = fitCols([["일자", 0.9], ["마일스톤", 2.6, "l"], ["대상", 0.9], ["남은 기간", 0.8], ["내용", 3.6, "l"]]);
+      const mrows = ms.length ? ms.map(m => [String(m.date).slice(2).replace(/-/g, "."), m.name, !m.scope || m.scope === "ALL" ? "전체" : m.scope,
+        String(m.date) < ref ? { text: "지남", color: "64748B" } : { text: dday(m.date), color: m === nextMs ? "B45309" : "1F2937" }, note(m)]) : [["", "등록된 마일스톤 없음", "", "", ""]];
+      table(nat, X0, y, mcols, mrows, rh, { headSize: 9, size: 9, boldCol: -1 });
+      els.push(...nat.map(e => Object.assign(e, { native: true })));
       slides.push({ name: "지연·마일스톤", els });
     }
 
@@ -586,23 +576,20 @@ var ExecDeck = {
     nat.push(...RoadmapChart.slideEls({ systems: [sys], tasksOf: () => tasks, start: rm.start, end: rm.end, ref: c.data.reportDate, depth: 3, compact: true, style: "bracket",
       milestones: [], T, p, box: { x: LX + 0.1, y: TY + 0.05, w: LWd - 0.2, h: TH - 0.3 } }));
     const root = tasks.find(t => +t.level === 1) || {};
-    const prow = tasks.filter(t => +t.level === 2).map(t => [t.name, t.pProg, t.aProg, false]).concat([["합계", root.pProg, root.aProg, true]]);
-    const tx = RXp + 0.06, tw = RWd - 0.12, cols = [["단계", 1.05, "l"], ["계획", 0.42], ["실적", 0.42], ["달성률", 0.5], ["계획 대비 실적", tw - 2.39]];
+    const md = v => String(v || "").slice(5).replace("-", ".");
+    const prow = tasks.filter(t => +t.level === 2).map(t => [t.name, t.pProg, t.aProg, false, `${md(t.pStart)}~${md(t.pEnd)}`]).concat([["합계", root.pProg, root.aProg, true, `${md(root.pStart)}~${md(root.pEnd)}`]]);
+    const tx = RXp + 0.06, tw = RWd - 0.12, cols = [["단계", tw - 2.62, "l"], ["기간", 0.98], ["계획", 0.52], ["실적", 0.52], ["달성률", 0.6]];
     const hy = TY + 0.06, rh = Math.min(0.2, (TH - 0.32) / (prow.length + 1));
     let x = tx;
-    cols.forEach(([h, w]) => { nat.push(R(x, hy, w, rh, P.headerBg), T(x, hy, w, rh, [p(h, 7, { bold: true, keep: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
+    cols.forEach(([h, w]) => { nat.push(R(x, hy, w, rh, P.headerBg), T(x, hy, w, rh, [p(h, 8, { bold: true, keep: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
     prow.forEach((r, i) => {
       const y = hy + rh * (i + 1), pl = Math.round(+r[1] || 0), ac = Math.round(+r[2] || 0), rr = pl <= 0 && ac <= 0 ? null : Metrics.achv(pl, ac), fill = r[3] ? "E2E8F0" : "FFFFFF";
       let xx = tx;
-      [r[0], `${pl}%`, `${ac}%`, rr === null ? "-" : `${rr}%`, ""].forEach((v, j) => {
+      [r[0], r[4], `${pl}%`, `${ac}%`, rr === null ? "-" : `${rr}%`].forEach((v, j) => {
         const w = cols[j][1];
-        nat.push(R(xx, y, w, rh, fill, { line: B }), T(xx, y, w, rh, [p(v, 7, { bold: r[3] || j === 3, color: j === 3 && rr !== null ? rateColor(rr) : "1F2937", align: cols[j][2] || "ctr" })], { anchor: "ctr" }));
+        nat.push(R(xx, y, w, rh, fill, { line: B }), T(xx, y, w, rh, [p(v, 8, { bold: r[3], keep: r[3], color: j === 4 && rr !== null ? rateColor(rr) : "1F2937", align: cols[j][2] || "ctr" })], { anchor: "ctr" }));
         xx += w;
       });
-      const bx = xx - cols[4][1] + 0.05, bw = cols[4][1] - 0.1;
-      nat.push(R(bx, y + rh * 0.3, bw, rh * 0.4, "EEF2F6"));
-      if (ac > 0) nat.push(R(bx, y + rh * 0.3, bw * Math.min(100, ac) / 100, rh * 0.4, rr === null || rateColor(rr) === "15803D" ? C : rateColor(rr)));
-      nat.push(R(bx + bw * Math.min(100, pl) / 100 - 0.008, y + rh * 0.12, 0.016, rh * 0.76, "111827"));
     });
     nat.push(T(RXp + 0.06, TY + TH - 0.24, RWd - 0.12, 0.22, [p(`가중치 ${WBSEngine.sysWeight(sys)}% · 담당 PM ${row[3] || "-"} · 지연 ${row[9] || 0}건`, 7.5, { color: "475569", align: "r" })], { anchor: "ctr" }));
     // 아래: 금주 실적 | 차주 계획
