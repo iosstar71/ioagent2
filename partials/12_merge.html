@@ -52,7 +52,7 @@
               <span class="mt-step">2 체크한 자료</span>
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
-              <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
+              <input type="file" id="mtUpInput" style="display:none;" multiple accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
               <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick" title="엑셀 · JSON 파일을 올리면 미리 보기에서 확인한 뒤 반영합니다">📤 파일 업로드</button>
             </div>
           </div>

@@ -39,7 +39,16 @@ var MergeTable = {
   _lockOn() { return false; },  // Local 판: 체크아웃 잠금 없음 (담당 서브시스템 배정으로 대신)
   scope() { const el = document.getElementById("workDataSubsysSelect"); return el && el.value ? el.value : "ALL"; },
   _sysOf(r) { return String((r && r.system) || "").trim(); },
-  _inSys(r, scope) { const s = this._sysOf(r); return s === scope || (typeof WBSEngine !== "undefined" && WBSEngine.getSubsystemCode(s) === scope); },
+  // scope: "A" 또는 "A,B" (여러 서브시스템 — 멤버 한 명이 여러 개 담당)
+  _inSys(r, scope) { const s = this._sysOf(r), code = WBSEngine.getSubsystemCode(s); return SubsysList.parse(scope).some(x => s === x || code === x); },
+  _scopeLabel(scope) { return !scope || scope === "ALL" ? "ALL" : SubsysList.label(scope); },
+  // 다운로드 파일 이름 앞머리: 멤버ID_기준주차_ (PM 이 여러 파일을 모을 때 누구 · 어느 주 것인지 보이게)
+  filePrefix() {
+    const u = AuthManager.getCurrentUser() || {};
+    const safe = v => String(v || "").replace(/[\\/:*?"<>|\s]+/g, "_");
+    const wk = projectConfig.reportDate ? WeekFmt.label(projectConfig.reportDate) : "";
+    return [safe(u.empNo), safe(wk)].filter(Boolean).map(x => x + "_").join("");
+  },
 
   // 올리기 권한: { ok, why }
   canUpload(k, scope) {
@@ -47,9 +56,12 @@ var MergeTable = {
     if (!it) return { ok: false, why: "알 수 없는 자료" };
     if (it.unit === "prj") return SmartMergeCenter.isAdminOrPm() ? { ok: true } : { ok: false, why: "관리자 · PM 만" };
     if (!scope || scope === "ALL") return SmartMergeCenter.canBulkWork() ? { ok: true } : { ok: false, why: "전체 범위는 관리자 · PM · 총괄리더만 — 담당 서브시스템을 고르세요" };
-    if (!Permission.canWriteSubsystem(scope)) return { ok: false, why: `${scope} 는 담당 서브시스템이 아님` };
+    const list = SubsysList.parse(scope);
+    const notMine = list.filter(x => !Permission.canWriteSubsystem(x));
+    if (notMine.length) return { ok: false, why: `${notMine.join(", ")} 는 담당 서브시스템이 아님` };
     // [Workgroup] 다른 사람이 체크아웃한 서브시스템은 올릴 수 없음
-    if (this.WORK.includes(k) && this._lockOn() && LockManager.byOther(scope)) return { ok: false, why: `${LockManager.who(LockManager.holder(scope))} 님이 체크아웃(편집 중)` };
+    const held = this.WORK.includes(k) && this._lockOn() ? list.find(x => LockManager.byOther(x)) : null;
+    if (held) return { ok: false, why: `${LockManager.who(LockManager.holder(held))} 님이 체크아웃(편집 중)` };
     return { ok: true };
   },
 
@@ -73,7 +85,7 @@ var MergeTable = {
     const keep = {};
     body.querySelectorAll(".mt-chk").forEach(c => { keep[c.value] = c.checked; });
     const first = !Object.keys(keep).length;
-    const scopeLbl = scope === "ALL" ? "전체 서브시스템" : scope;
+    const scopeLbl = scope === "ALL" ? "전체 서브시스템" : this._scopeLabel(scope);
     const row = it => {
       const p = this.canUpload(it.k, scope);
       const checked = first ? it.unit === "sys" : keep[it.k];
@@ -126,15 +138,18 @@ var MergeTable = {
     if (format === "JSON") {
       const payload = { schemaVersion: `AX_PMYS_${APP_VERSION.version}_MERGE`, exportCategory: "MERGE_TABLE", projectId: ProjectContext.current,
         projectName: ProjectData.currentName(), targetScope: scope, selectedItems: keys, exportedAt: new Date().toISOString(),
-        basedOn: projectConfig.packageStamp || "", exportedBy: (AuthManager.getCurrentUser() || {}).name || "" };
+        basedOn: projectConfig.packageStamp || "", exportedBy: (AuthManager.getCurrentUser() || {}).name || "", exportedByEmpNo: (AuthManager.getCurrentUser() || {}).empNo || "",
+        weekLabel: projectConfig.reportDate ? WeekFmt.label(projectConfig.reportDate) : "" };
+      const cred = typeof MemberCred !== "undefined" ? MemberCred.mine() : null;   // [Local] 내 PC 에서 바꾼 암호 → PM 쪽에 반영
+      if (cred) payload.memberCredential = cred;
       keys.forEach(k => {
         if (k === "config") { payload.projectConfig = projectConfig; payload.standardDeliverablesMeta = standardDeliverablesMeta; }
         else if (k === "users") payload.projectUsers = SmartMergeCenter._projectUserRows(false);
         else payload[this.DATA_KEY[k]] = this.records(k, scope);
       });
-      const name = ExcelSync.stdName("자료", [scope, tag], "json");
+      const name = this.filePrefix() + ExcelSync.stdName("자료", [SubsysList.parse(scope).join("+"), tag], "json");
       ExcelSync._triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }), name);
-      return showToast(`📥 [자료 ${keys.length}종 · ${scope}] JSON 다운로드: ${name}`);
+      return showToast(`📥 [자료 ${keys.length}종 · ${this._scopeLabel(scope)}] JSON 다운로드: ${name}`);
     }
     const sheets = keys.map(k => this.sheetFor(k, scope)).filter(Boolean);
     // 파일 정보 시트: 어느 종합본을 받아 작업했는지 · 보낸 사람 (PM 이 올릴 때 이전 종합본이면 경고)
@@ -143,20 +158,23 @@ var MergeTable = {
       { cells: ["기준 마스터 파일", projectConfig.packageStamp || ""], styleId: 2, height: 20 },
       { cells: ["보낸 사람", (AuthManager.getCurrentUser() || {}).name || ""], styleId: 2, height: 20 },
       { cells: ["범위", scope === "ALL" ? "전체" : scope], styleId: 2, height: 20 },
+      { cells: ["보낸 멤버 ID", (AuthManager.getCurrentUser() || {}).empNo || ""], styleId: 2, height: 20 },
       { cells: ["프로젝트", ProjectData.currentName()], styleId: 2, height: 20 },
       { cells: ["다운로드한 시각", new Date().toLocaleString()], styleId: 2, height: 20 }] });
-    const name = ExcelSync.stdName("자료", [scope, tag], "xlsx");
+    const name = this.filePrefix() + ExcelSync.stdName("자료", [SubsysList.parse(scope).join("+"), tag], "xlsx");
     ExcelSync._triggerDownload(ExcelSync._buildXlsxBlob(sheets), name);
-    showToast(`📥 [자료 ${keys.length}종 · ${scope}] 엑셀 다운로드: ${name}`);
+    showToast(`📥 [자료 ${keys.length}종 · ${this._scopeLabel(scope)}] 엑셀 다운로드: ${name}`);
   },
 
   // ---- 올리기 ----
   pick() { UiH.clickEl("mtUpInput"); },
+  // 파일 하나 = 미리 보기, 여러 개 = 멤버 자료 한꺼번에 합치기 (MergeBatch — 파일마다 그 파일의 범위로)
   async upload(e) {
-    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+    const files = e && e.target && e.target.files ? [...e.target.files] : [];
     if (e && e.target) e.target.value = "";
-    if (!file) return;
-    await this.previewFile(file, { scope: this.scope(), checked: this.selected(), title: "📋 자료 업로드" });
+    if (!files.length) return;
+    if (files.length > 1) return MergeBatch.open(files);
+    await this.previewFile(files[0], { scope: this.scope(), checked: this.selected(), title: "📋 자료 업로드" });
   },
 
   // 파일 읽기 → { json } 또는 { sheets }
@@ -176,6 +194,7 @@ var MergeTable = {
       if (k === "기준 종합본" || k === "기준 마스터 파일") meta.basedOn = v;
       else if (k === "보낸 사람") meta.exportedBy = v;
       else if (k === "범위") meta.targetScope = v === "전체" ? "ALL" : v;
+      else if (k === "보낸 멤버 ID") meta.exportedByEmpNo = v;
     });
     return { sheets: all.filter(sh => sh !== info), meta };
   },
@@ -220,7 +239,7 @@ var MergeTable = {
     if (it.unit === "sys" && sc !== "ALL") {
       if (this.WORK.includes(k)) apply = rows.filter(r => this._inSys(r, sc));
       else apply = rows.filter(r => SmartMergeCenter.COLLAB_DEFS[k].inScope(r, sc));
-      if (apply.length < fileRows) why = `${sc} 범위 밖 ${fileRows - apply.length}행`;
+      if (apply.length < fileRows) why = `${this._scopeLabel(sc)} 범위 밖 ${fileRows - apply.length}행`;
     }
     // [Workgroup] 전체 범위: 다른 사람이 체크아웃한 서브시스템 행은 빼고, 나머지는 서브시스템별로 바꿈
     let lockedOut = [];
@@ -233,7 +252,7 @@ var MergeTable = {
       }
     }
     const cur = this.count(k, sc);
-    if (this.WORK.includes(k)) how = sc === "ALL" ? (lockedOut.length ? `서브시스템별 바꾸기 (${lockedOut.join(", ")} 제외)` : `전체 바꾸기 (지금 ${cur}건 → ${apply.length}건)`) : `${sc} 자료 바꾸기 (지금 ${cur}건 → ${apply.length}건, 다른 서브시스템은 그대로)`;
+    if (this.WORK.includes(k)) how = sc === "ALL" ? (lockedOut.length ? `서브시스템별 바꾸기 (${lockedOut.join(", ")} 제외)` : `전체 바꾸기 (지금 ${cur}건 → ${apply.length}건)`) : `${this._scopeLabel(sc)} 자료 바꾸기 (지금 ${cur}건 → ${apply.length}건, 다른 서브시스템은 그대로)`;
     else if (this.COLLAB.includes(k)) how = "같은 ID 는 고치고 새 ID 는 추가";
     else if (k === "config") how = "프로젝트 설정을 파일 내용으로 바꾸기";
     else if (k === "subsystems") how = `서브시스템 목록 바꾸기 (지금 ${cur}개 → ${apply.length}개)`;
@@ -251,7 +270,7 @@ var MergeTable = {
     const keys = opts.keys || this.ITEMS.map(i => i.k);
     const src = parsed.json || parsed.meta || {};
     const subs = getAllSubsystemNames();
-    const fileScope = src.targetScope && src.targetScope !== "ALL" && subs.includes(src.targetScope) ? src.targetScope : "";
+    const fileScope = src.targetScope && !SubsysList.isAll(src.targetScope) && SubsysList.parse(src.targetScope).every(x => subs.includes(x)) ? SubsysList.join(SubsysList.parse(src.targetScope)) : "";
     let scope = opts.scope || "ALL";
     if (scope === "ALL" && fileScope) scope = fileScope;
     this._src = { file, parsed, keys, opts, src, fileScope };
@@ -271,7 +290,7 @@ var MergeTable = {
       if (rows && rows.length) plan.push(this._planOne(k, rows, scope));
     });
     if (!plan.length) { showToast(`⚠️ [${file.name}] 에서 올릴 자료를 찾지 못했습니다. 이 화면에서 다운로드한 양식(엑셀 / JSON)을 쓰세요.`); return false; }
-    this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone };
+    this._plan = { file: file.name, scope, items: plan, json: !!parsed.json, onDone: opts.onDone, cred: src.memberCredential || null, src };
     // [Local] 오래된 마스터 파일을 받아 작업한 파일이면 알림 (그 사이 다른 사람 자료가 바뀌었을 수 있음)
     const based = src.basedOn, cur = projectConfig.packageStamp;
     const stale = based && cur && based < cur ? `⚠️ 이 파일은 이전 마스터 파일(${based})을 받아 작업한 것입니다. 지금 마스터 파일은 ${cur} 입니다 — 반영할 행을 꼭 확인하세요. ` : "";
@@ -279,9 +298,10 @@ var MergeTable = {
     const checked = opts.checked && opts.checked.length ? opts.checked : keys;
     const hasSys = plan.some(p => this.item(p.k).unit === "sys");
     document.getElementById("mpTitle").textContent = `${opts.title || "📤 업로드"} — 미리 보기`;
-    document.getElementById("mpFile").innerHTML = `<span>${escapeHtml(file.name)}</span>${fileScope ? ` · <span>${escapeHtml(I18N.tf("파일 범위: {s}", { s: fileScope }))}</span>` : ""}`;
+    document.getElementById("mpFile").innerHTML = `<span>${escapeHtml(file.name)}</span>${fileScope ? ` · <span>${escapeHtml(I18N.tf("파일 범위: {s}", { s: this._scopeLabel(fileScope) }))}</span>` : ""}`;
     const sel = /** @type {HTMLSelectElement} */ (document.getElementById("mpScope"));
-    sel.innerHTML = [`<option value="ALL">${escapeHtml(I18N.t("전체 서브시스템"))}</option>`].concat(getAllSubsystemNames().map(x => `<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`)).join("");
+    const multi = [fileScope, scope].filter(x => x && x.includes(","));
+    sel.innerHTML = [`<option value="ALL">${escapeHtml(I18N.t("전체 서브시스템"))}</option>`].concat([...new Set(multi)].map(x => `<option value="${escapeAttr(x)}">${escapeHtml(this._scopeLabel(x))}</option>`), getAllSubsystemNames().map(x => `<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`)).join("");
     sel.value = scope;
     sel.disabled = !hasSys;
     document.getElementById("mpBody").innerHTML = plan.map((p, i) => `<tr class="${p.ok ? "" : "mp-off"}">
@@ -315,7 +335,7 @@ var MergeTable = {
       ? I18N.t("⚠️ 파일에 있는 서브시스템의 자료가 파일 내용으로 바뀝니다 (체크아웃 중인 서브시스템은 그대로)")
       : all
       ? I18N.t("⚠️ 전체 서브시스템의 자료가 파일 내용으로 바뀝니다 — 파일에 없는 서브시스템 자료는 지워집니다")
-      : I18N.tf("⚠️ [{s}] 서브시스템 자료가 파일 내용으로 바뀝니다 (다른 서브시스템은 그대로)", { s: plan.scope });
+      : I18N.tf("⚠️ [{s}] 서브시스템 자료가 파일 내용으로 바뀝니다 (다른 서브시스템은 그대로)", { s: this._scopeLabel(plan.scope) });
     const line = p => `<li><span>${escapeHtml(p.label)}</span> <b>${escapeHtml(I18N.tf("{a}건 → {b}건", { a: this.count(p.k, p.scope), b: p.rows.length }))}</b></li>`;
     box.innerHTML = `<div class="mp-impact-head">${escapeHtml(head)}</div>`
       + (work.length ? `<ul>${work.map(line).join("")}</ul>` : "")
@@ -341,7 +361,7 @@ var MergeTable = {
     if (this._lockOn()) {
       const touched = new Set();
       picks.filter(p => this.WORK.includes(p.k)).forEach(p => {
-        if (p.scope !== "ALL") touched.add(p.scope); else p.rows.forEach(r => touched.add(this._sysOf(r)));
+        if (p.scope !== "ALL") SubsysList.parse(p.scope).forEach(x => touched.add(x)); else p.rows.forEach(r => touched.add(this._sysOf(r)));
       });
       const need = [...touched].filter(x => x && !LockManager.mine(x) && !LockManager.byOther(x));
       if (need.length && !(await LockManager.checkout(need, { reload: false, quiet: true, snapshot: false }))) {
@@ -352,6 +372,8 @@ var MergeTable = {
     try {
       const backup = BackupHistoryManager.createBackupSnapshot(`자료업로드(${picks.map(p => p.k).join("+")}:${plan.scope})`, plan.scope, true);
       const done = this.apply(picks, plan.json);
+      const pw = plan.cred && typeof MemberCred !== "undefined" ? MemberCred.apply(plan.cred, plan.src) : "";
+      if (pw) done.push(pw);
       if (typeof plan.onDone === "function") plan.onDone(done);
       showToast(`✅ [업로드 반영 완료] ${done.join(", ")} · 스냅샷: ${backup}`);
       if (typeof AuditLogPane !== "undefined") AuditLogPane.event("MERGE", `${plan.scope} · ${done.join(", ")}`, `스냅샷 ${backup}`);
@@ -391,6 +413,9 @@ var MergeTable = {
       if (p.scope === "ALL" && p.lockedOut && p.lockedOut.length) {
         // 잠긴 서브시스템은 그대로 두고, 파일에 있는 서브시스템만 바꿈
         [...new Set(p.rows.map(r => this._sysOf(r)))].forEach(x => SmartMergeCenter._mergeWorkArrayData(k, p.rows.filter(r => this._sysOf(r) === x), x));
+      } else if (p.scope !== "ALL" && p.scope.includes(",")) {
+        // 여러 서브시스템 담당 멤버의 파일: 서브시스템마다 바꿈 (파일에 행이 없는 서브시스템은 그대로 둠 — 지우지 않음)
+        SubsysList.parse(p.scope).forEach(x => { const rows = p.rows.filter(r => this._inSys(r, x)); if (rows.length) SmartMergeCenter._mergeWorkArrayData(k, rows, x); });
       } else SmartMergeCenter._mergeWorkArrayData(k, p.rows, p.scope);
       if (keys) AttachManager.reapplyKeys(keys);  // 첨부파일 연결 유지
       done.push(`${this.item(k).label} ${p.rows.length}건`);

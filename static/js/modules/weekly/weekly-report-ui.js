@@ -52,7 +52,7 @@ Object.assign(WeeklyReportManager, {
       const list = (weeklyReportsData || []).filter(r => r.scope !== "DOMAIN").sort((a, b) => (b.weekNo - a.weekNo) || String(a.id).localeCompare(String(b.id)));
       if (summary) summary.textContent = `저장된 보고서 ${list.length}건`;
       body.innerHTML = list.length
-        ? list.map(r => { const sc = this.reportScope(r); return this._listRow(r.weekLabel || ("W" + r.weekNo), r.weekNo, sc, r, isCurRow(r.weekNo, sc), sc.scope === "SYS" && sc.value === own); }).join("")
+        ? list.map(r => { const sc = this.reportScope(r); return this._listRow(r.weekLabel || ("W" + r.weekNo), r.weekNo, sc, r, isCurRow(r.weekNo, sc), sc.scope === "SYS" && SubsysList.has(own, sc.value) && !SubsysList.isAll(own)); }).join("")
         : `<tr><td class="u-tc u-p-14 u-c-muted" colspan="7">저장된 주간보고가 없습니다.</td></tr>`;
       return;
     }
@@ -62,11 +62,11 @@ Object.assign(WeeklyReportManager, {
     if (!wObj) { body.innerHTML = ""; return; }
     let units = this._unitsOfWeek();
     // 일반 작업자: 담당 서브시스템을 맨 위에 표시
-    if (!Permission.canEditAllSubsystems()) units = units.sort((a, b) => (b.scope === "SYS" && b.value === own) - (a.scope === "SYS" && a.value === own));
+    if (!Permission.canEditAllSubsystems()) units = units.sort((a, b) => (b.scope === "SYS" && SubsysList.has(own, b.value)) - (a.scope === "SYS" && SubsysList.has(own, a.value)));
     const rows = units.map(sc => ({ sc, r: this._findSaved(wObj, sc.scope, sc.value) }));
     const done = rows.filter(x => x.r).length;
     if (summary) summary.textContent = `작성 ${done} / ${rows.length} 단위`;
-    body.innerHTML = rows.map(({ sc, r }) => this._listRow(wObj.fullLabel, wObj.weekNum, sc, r, isCurRow(wObj.weekNum, sc), sc.scope === "SYS" && sc.value === own)).join("");
+    body.innerHTML = rows.map(({ sc, r }) => this._listRow(wObj.fullLabel, wObj.weekNum, sc, r, isCurRow(wObj.weekNum, sc), sc.scope === "SYS" && SubsysList.has(own, sc.value) && !SubsysList.isAll(own))).join("");
   },
 
   renderSizeMeter() {

@@ -16,14 +16,14 @@ Object.assign(MergeTable, {
         else if (k === "users") payload.projectUsers = SmartMergeCenter._projectUserRows(false);
         else payload[this.DATA_KEY[k]] = this.records(k, scope);
       });
-      const name = ExcelSync.stdName("자료", [scope, tag], "json");
+      const name = this.filePrefix() + ExcelSync.stdName("자료", [SubsysList.parse(scope).join("+"), tag], "json");
       ExcelSync._triggerDownload(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }), name);
-      return showToast(`📥 [자료 ${keys.length}종 · ${scope}] JSON 다운로드: ${name}`);
+      return showToast(`📥 [자료 ${keys.length}종 · ${this._scopeLabel(scope)}] JSON 다운로드: ${name}`);
     }
     const sheets = keys.map(k => this.sheetFor(k, scope)).filter(Boolean);
-    const name = ExcelSync.stdName("자료", [scope, tag], "xlsx");
+    const name = this.filePrefix() + ExcelSync.stdName("자료", [SubsysList.parse(scope).join("+"), tag], "xlsx");
     ExcelSync._triggerDownload(ExcelSync._buildXlsxBlob(sheets), name);
-    showToast(`📥 [자료 ${keys.length}종 · ${scope}] 엑셀 다운로드: ${name}`);
+    showToast(`📥 [자료 ${keys.length}종 · ${this._scopeLabel(scope)}] 엑셀 다운로드: ${name}`);
   },
 
   // ---- 올리기 ----

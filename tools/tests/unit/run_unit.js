@@ -20,6 +20,17 @@ function eq(name, got, want) {
   if (ok) pass++; else { fail++; console.log(`  [FAIL] ${name}\n         got  ${JSON.stringify(got)}\n         want ${JSON.stringify(want)}`); }
 }
 
+// ---- 담당 서브시스템 목록 (SubsysList — 화면 · 서버 permission.py 와 같은 규칙) ----
+{
+  const src = fs.readFileSync(path.join(ROOT, "static/js/core/data-registry.js"), "utf8");
+  const m = /var SubsysList = \{[\s\S]*?\n\};/.exec(src);
+  const ctx = { window: {} }; vm.createContext(ctx); vm.runInContext(m[0], ctx);
+  const L = ctx.SubsysList;
+  eq("subsys: parse list / ALL / empty", [L.parse("A, B,A").join(), L.parse("ALL").join(), L.parse("").join(), L.parse("A,ALL").join()], ["A,B", "ALL", "ALL", "ALL"]);
+  eq("subsys: has", [L.has("A,B", "B"), L.has("A,B", "C"), L.has("ALL", "C"), L.has("A", "A")], [true, false, true, true]);
+  eq("subsys: join / label / isAll", [L.join(["B", "A", "B"]), L.label("A,B"), L.isAll("A"), L.isAll(" ")], ["B,A", "A, B", false, true]);
+}
+
 // ---- Metrics ----
 {
   const { Metrics: M } = load();

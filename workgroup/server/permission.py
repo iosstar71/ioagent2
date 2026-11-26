@@ -152,6 +152,17 @@ def merge_parts(key, base, changed):
     return out
 
 
+def owns(own, sys):
+    """담당 서브시스템 값: "ALL" 또는 "A" · "A,B" (쉼표로 여러 개) — 화면 SubsysList 와 같은 규칙"""
+    items = [x.strip() for x in str(own or "ALL").split(",") if x.strip()]
+    return not items or "ALL" in items or str(sys or "").strip() in items
+
+
+def owns_all(own):
+    items = [x.strip() for x in str(own or "ALL").split(",") if x.strip()]
+    return not items or "ALL" in items
+
+
 def can_write(user, key, part, row):
     role = user["role"]
     scope = DATASETS[key]["scope"]
@@ -163,12 +174,12 @@ def can_write(user, key, part, row):
     if scope == "users":
         return role in MANAGER_ROLES or str(part).lower() == str(user["empNo"]).lower()
     if scope == "subsystem":
-        return role in ALL_SUBSYSTEM_ROLES or own == "ALL" or own == str(part)
+        return role in ALL_SUBSYSTEM_ROLES or owns(own, part)
     if scope == "weekly":
-        if role in ALL_SUBSYSTEM_ROLES or (role == "LEAD" and own == "ALL"):
+        if role in ALL_SUBSYSTEM_ROLES or (role == "LEAD" and owns_all(own)):
             return True
         r = row or {}
-        return r.get("scope") == "SYS" and (own == "ALL" or own == str(r.get("scopeValue", "")))
+        return r.get("scope") == "SYS" and owns(own, r.get("scopeValue", ""))
     if scope == "shared":
         return True
     if scope == "personal":

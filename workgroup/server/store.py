@@ -134,7 +134,7 @@ class Store:
                 old_access = not p["restricted"] or emp in {str(m).lower() for m in p["members"]}
                 if old_access and p["id"] not in pr:
                     role = normalize_role(u.get("role"))
-                    pr[p["id"]] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(u.get("subsystem") or "ALL")[:50],
+                    pr[p["id"]] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(u.get("subsystem") or "ALL")[:200],
                                    "dept": str(u.get("dept") or "")[:100]}
             if pr != u.get("projectRoles"):
                 u["projectRoles"] = pr
@@ -454,7 +454,7 @@ class Store:
             for k, v in value.items():
                 if isinstance(v, dict) and str(k) and set(str(k)) <= PROJECT_ID_CHARS:
                     role = normalize_role(v.get("role"))
-                    out[str(k)] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(v.get("subsystem") or "ALL")[:50],
+                    out[str(k)] = {"role": "PM" if role == "SYS_ADMIN" else role, "subsystem": str(v.get("subsystem") or "ALL")[:200],
                                    "dept": str(v.get("dept") or "")[:100]}
                     if v.get("noDownload") and out[str(k)]["role"] != "PM":
                         out[str(k)]["noDownload"] = True   # 다운로드 제한 (프로젝트별)
@@ -497,7 +497,7 @@ class Store:
                 pr.pop(pid)  # 이 프로젝트에서 빼기 (참여 정보를 지운 채 저장)
             elif not stored or pid not in pr:
                 pr[pid] = {"role": normalize_role(row.get("role")) if normalize_role(row.get("role")) != "SYS_ADMIN" else "MEMBER",
-                           "subsystem": str(row.get("subsystem") or "ALL")[:50], "dept": str(row.get("dept") or "")[:100]}
+                           "subsystem": str(row.get("subsystem") or "ALL")[:200], "dept": str(row.get("dept") or "")[:100]}
         row["projectRoles"] = pr
         row["role"] = "SYS_ADMIN" if want_admin else (normalize_role(row.get("role")) if is_admin and stored is None else normalize_role((stored or row).get("role")))
         if row["role"] == "SYS_ADMIN" and not want_admin:
@@ -780,7 +780,7 @@ class Store:
             "empNo": emp,
             "name": str(new_user.get("name", "")).strip()[:50] or emp,
             "role": "MEMBER",  # 자가 등록은 항상 일반 사용자
-            "subsystem": str(new_user.get("subsystem", "")).strip()[:50] or "ALL",
+            "subsystem": str(new_user.get("subsystem", "")).strip()[:200] or "ALL",
             "dept": str(new_user.get("dept", "")).strip()[:100],
             "pwdHash": make_pwd_record(pwd),
             "lang": "en" if new_user.get("lang") == "en" else "ko",

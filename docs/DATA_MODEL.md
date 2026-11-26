@@ -64,7 +64,7 @@
 |---|---|
 | `subsystemsMeta` | `domain` `code`(ID 접두) `name` `type`(SDLC·REQ) `sdlcCode` `weight`(서브시스템 가중치) `pm` `desc` |
 | `standardDeliverablesMeta` | `phase` `name` `round1~4`(차수별 필수) `defaultDate` `remarks` |
-| `projectUsers` | `empNo` `name` `role`(SYS_ADMIN·PM·LEAD·MEMBER) `subsystem` `dept` `pwdHash` `pwdTemp`(처음 암호 — 바꿔야 함) `lang` `projectRoles`(`{ 프로젝트ID: { role, subsystem, dept, noDownload } }` — `noDownload` = 다운로드 제한, Workgroup 만) |
+| `projectUsers` | `empNo` `name` `role`(SYS_ADMIN·PM·LEAD·MEMBER) `subsystem` `dept` `pwdHash` `pwdTemp`(처음 암호 — 바꿔야 함) `pwdAt`(암호를 바꾸거나 초기화한 시각 ISO — 멤버 파일의 암호 정보와 비교, Standalone) `lang` `projectRoles`(`{ 프로젝트ID: { role, subsystem, dept, noDownload } }` — `noDownload` = 다운로드 제한, Workgroup 만). **`subsystem` = `"ALL"` · `"W1"` · `"W1,W2"`(여러 개, 쉼표)** — 읽기는 `SubsysList` (서버 `permission.owns`) |
 | `wbsData` | `id` `level`(1~5) `system` `name` `weight` `reqId` `pStart` `pEnd` `aStart` `aEnd` `pProg` `aProg` `owner` `output` `isLeaf` `status` `pred`(선행 Task WBS ID, 쉼표로 최대 3개 — 경고만, `WBSEngine.predCheck`) `bHist`(Leaf 만, `{ 기준선 번호: [계획 시작, 계획 종료] }`) — `pProg` · `status` · `bStart` · `bEnd`(비교 기준선) 는 계산값 |
 | `deliverablesData` | `id` `round`(N차) `system` `phase` `name` `pDate` `aDate` `status`(작성전·작성중·검토요청·보완완료) `manager` `remarks` |
 | `reqMasterData` | `id` `system` `name` `type` `priority` `accept` `status`(대기·진행·완료·보류·삭제) `origin`("추가" = VOC 에서 등록, 없으면 초기) `srcVoc` `addedDate` |
@@ -95,3 +95,15 @@
 | 파일 · 표 | 내용 |
 |---|---|
 | `data/audit_log.db` · `TB_AUDIT_LOG` | 감사 로그 `LOGGED_AT` `EMP_NO` `IP` `PROJECT_ID` `KIND`(DELETE · RESET · RESTORE · MERGE · LOCK · DOWNLOAD · DOWNLOAD_BLOCKED · LOGIN_FAIL · PASSWORD · PERMISSION · MEMBER · BASELINE) `TARGET` `DETAIL` — 자료 DB 와 따로 둠, 보관 `app.ini [audit] keep_days` (`server/audit.py`) |
+
+## 내 작업 파일 (자료 다운로드 JSON — `MergeTable.download`)
+| 필드 | 뜻 |
+|---|---|
+| `targetScope` | 범위: `"ALL"` · `"W1"` · `"W1,W2"` — PM 이 올릴 때 이 값으로 반영할 서브시스템을 정함 |
+| `basedOn` | 받아서 작업한 마스터 파일 판(`packageStamp`) — 지금보다 오래되면 "이전 기준" |
+| `exportedBy` · `exportedByEmpNo` · `exportedAt` · `weekLabel` | 보낸 멤버 이름 · ID · 시각 · 기준주차 |
+| `memberCredential` | (Standalone) `{ empNo, pwdHash, pwdAt }` — 멤버 PC 에서 바꾼 암호. 마스터 파일 · latest.json 에는 없음 |
+| `wbsData` … | 자료 묶음 (범위 안의 행) |
+
+## 저장할 때 JSON (Standalone `SaveFolder`)
+`<폴더>/<프로젝트ID>_<프로젝트명>.json` = 프로젝트 백업 형식(`IOSTAR_PROJECT_BACKUP_v1`: `data` · `users` — 암호 해시 없음), 이전 파일은 `<폴더>/backups/` (최근 10개). 폴더 핸들은 IndexedDB `pprjmgmt-files`.

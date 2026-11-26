@@ -19,10 +19,10 @@ var CheckList = {
     DayUtil.store(this.KEY_MINE, this.mine() ? "0" : "1");
     this.render(this._systems);
   },
-  // 현재 작업자 담당 서브시스템 (ALL 이면 "내 담당만" 을 표시하지 않음)
+  // 현재 작업자 담당 서브시스템 표시 ("A, B" — 전체 담당이면 "" → "내 담당만" 을 표시하지 않음)
   ownSystem() {
     const own = Permission.ownSubsystem();
-    return own && own !== "ALL" ? own : "";
+    return SubsysList.isAll(own) ? "" : SubsysList.label(own);
   },
   userName() {
     const u = AuthManager.getCurrentUser();
@@ -33,8 +33,8 @@ var CheckList = {
   _inScope(systems, sys, person) {
     if (systems && systems.indexOf(sys) === -1) return false;
     if (this._mineNow !== undefined ? this._mineNow : this.mine()) {
-      const own = this.ownSystem(), name = this.userName();
-      return (own && sys === own) || (!!name && !!person && String(person).indexOf(name) !== -1);
+      const own = Permission.ownSubsystem(), name = this.userName();
+      return (!SubsysList.isAll(own) && SubsysList.has(own, sys)) || (!!name && !!person && String(person).indexOf(name) !== -1);
     }
     return true;
   },

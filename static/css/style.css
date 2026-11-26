@@ -2586,6 +2586,12 @@ header.g-header .g-notice { color: var(--danger); border: 1px solid var(--border
 .prompt-modal { width: 440px; max-width: calc(100vw - 32px); }
 .prompt-field { width: 100%; box-sizing: border-box; margin: 10px 0 4px; padding: 8px 10px; font: inherit; }
 textarea.prompt-field { resize: vertical; min-height: 110px; }
+.prompt-checks { display: grid; gap: 6px; max-height: 300px; overflow-y: auto; margin: 10px 0 4px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 6px; }
+.prompt-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.mb-modal { width: 1100px; max-width: 96vw; max-height: 90vh; overflow-y: auto; }
+.mb-table { max-height: none; margin-top: 8px; }
+.mb-stale { color: var(--warning); font-weight: 700; }
+.subsys-pick { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; justify-content: flex-start; }
 .prompt-hint { font-size: var(--fs-xs, 11px); color: var(--text-muted); margin-bottom: 12px; }
 .prompt-actions { display: flex; justify-content: flex-end; gap: 8px; }
 

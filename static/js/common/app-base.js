@@ -67,26 +67,31 @@ function openPromptDialog(title, value, onOk, opts = {}) {
     m.addEventListener("keydown", e => {
       const f = document.getElementById("promptDialogField");
       if (e.key === "Escape") closePromptDialog(false);
-      else if (e.key === "Enter" && f && (f.tagName !== "TEXTAREA" || e.ctrlKey || e.metaKey)) { e.preventDefault(); closePromptDialog(true); }
+      else if (e.key === "Enter" && (!f || f.tagName !== "TEXTAREA" || e.ctrlKey || e.metaKey)) { e.preventDefault(); closePromptDialog(true); }
     });
   }
   document.getElementById("promptDialogTitle").textContent = title;
   document.getElementById("promptDialogHint").textContent = opts.multiline ? "Ctrl+Enter 확인 · Esc 취소" : "Enter 확인 · Esc 취소";
   const body = document.getElementById("promptDialogBody");
-  body.innerHTML = opts.multiline ? `<textarea id="promptDialogField" class="prompt-field" rows="5"></textarea>` : `<input id="promptDialogField" class="prompt-field" type="text">`;
-  const f = document.getElementById("promptDialogField");
-  f.value = value == null ? "" : String(value);
+  m._checks = !!opts.checks;
+  // opts.checks: [{ v, t, checked }] — 여러 개 고르기 (확인하면 고른 값 배열, 하나 이상)
+  if (opts.checks) {
+    body.innerHTML = `<div class="prompt-checks" id="promptDialogChecks">${opts.checks.map(c => `<label class="prompt-check"><input type="checkbox" value="${escapeAttr(c.v)}" ${c.checked ? "checked" : ""}> <span>${escapeHtml(c.t)}</span></label>`).join("")}</div>`;
+    if (opts.hint) document.getElementById("promptDialogHint").textContent = opts.hint;
+  } else body.innerHTML = opts.multiline ? `<textarea id="promptDialogField" class="prompt-field" rows="5"></textarea>` : `<input id="promptDialogField" class="prompt-field" type="text">`;
+  const f = document.getElementById("promptDialogField") || body.querySelector("input");
+  if (!opts.checks) f.value = value == null ? "" : String(value);
   m._onOk = onOk;
   m.style.display = "flex";
   if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(m);
-  setTimeout(() => { f.focus(); if (f.select) f.select(); }, 30);
+  setTimeout(() => { if (!f) return; f.focus(); if (f.select && !opts.checks) f.select(); }, 30);
 }
 function closePromptDialog(ok) {
   const m = document.getElementById("promptDialogModal");
   if (!m) return;
   const f = document.getElementById("promptDialogField");
-  const v = f ? f.value.trim() : "";
-  if (ok && !v) { if (typeof UiForm !== "undefined") UiForm.invalid(f, "값을 입력하세요"); return; }
+  const v = m._checks ? [...document.querySelectorAll("#promptDialogChecks input:checked")].map(x => x.value) : (f ? f.value.trim() : "");
+  if (ok && !v.length) { if (m._checks) return showToast("⚠️ 하나 이상 고르세요."); if (typeof UiForm !== "undefined") UiForm.invalid(f, "값을 입력하세요"); return; }
   m.style.display = "none";
   const cb = m._onOk; m._onOk = null;
   if (ok && typeof cb === "function") cb(v);

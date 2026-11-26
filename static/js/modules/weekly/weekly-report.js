@@ -18,7 +18,7 @@ var WeeklyReportManager = {
   defaultScope() {
     const u = AuthManager.getCurrentUser();
     const role = AuthManager.normalizeRole(u.role);
-    if (role === "MEMBER" && u.subsystem && u.subsystem !== "ALL") return { scope: "SYS", value: u.subsystem };
+    if (role === "MEMBER" && !SubsysList.isAll(u.subsystem)) return { scope: "SYS", value: SubsysList.parse(u.subsystem)[0] };   // 여러 개 담당이면 첫 서브시스템부터
     return { scope: "ALL", value: "" };
   },
   scopeKey(scope, value) {
@@ -482,7 +482,7 @@ var WeeklyReportManager = {
     this.readInputsIntoCurrentReport();
     if (!this._checkSize(300)) return;
     const systems = this.scopeSystems(this.scope, this.scopeValue);
-    const sys = this.scope === "SYS" ? this.scopeValue : (systems.includes(Permission.ownSubsystem()) ? Permission.ownSubsystem() : (systems[0] || ""));
+    const sys = this.scope === "SYS" ? this.scopeValue : (systems.find(s => Permission.canWriteSubsystem(s) && !Permission.canEditAllSubsystems()) || systems[0] || "");
     this._listOf(kind).push({
       id: `MT-${kind}-${Date.now().toString(36)}`, manual: true, system: sys, wbsId: "", level: "",
       name: "", pStart: "", pEnd: "", status: kind === "cur" ? "진행중" : "계획", detail: ""
@@ -513,7 +513,7 @@ var WeeklyReportManager = {
     this.readInputsIntoCurrentReport();
     const rep = this.currentWeekReport;
     if (!this.canWrite(rep)) {
-      showToast(`⛔ 저장 권한 없음: 멤버는 담당 서브시스템(${Permission.ownSubsystem()}) 주간보고만 저장할 수 있습니다.`);
+      showToast(`⛔ 저장 권한 없음: 멤버는 담당 서브시스템(${SubsysList.label(Permission.ownSubsystem())}) 주간보고만 저장할 수 있습니다.`);
       return false;
     }
     if (!this._checkSize()) return false;

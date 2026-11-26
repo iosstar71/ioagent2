@@ -209,6 +209,12 @@ var UiH = {
 
   clickEl(id) { const el = document.getElementById(id); if (el) el.click(); },
   focusEl(id) { const el = document.getElementById(id); if (el) el.focus(); },
+  // 멤버 ID 칸에서 Enter: 암호를 묻지 않는 방식이면 바로 시작, 아니면 암호 칸으로
+  loginEmpKeys(e) {
+    if (e.key !== "Enter") return;
+    if (AuthManager.lockMode === "LOGIN" && AuthManager.idOnlyLogin && AuthManager.idOnlyLogin()) AuthManager.unlock();
+    else this.focusEl("inputSecurityPassword");
+  },
   loginKeys(e) {
     if (e.key === "Enter") AuthManager.unlock();
     else if (e.key === "Escape") AuthManager.cancelUnlock();

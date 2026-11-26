@@ -661,7 +661,7 @@ async function localMain() {
       chip: (document.querySelector("#uaBody .ua-chip:not(.ua-admin)") || {}).textContent || "", sum: document.getElementById("uaSummary").textContent }));
     await page.evaluate(() => UserAdmin.openNew()); await page.waitForTimeout(300);
     await page.fill("#uaEmpNo", "ua_e2e"); await page.fill("#uaName", "통합 사용자"); await page.fill("#uaDept", "시험팀");
-    await page.evaluate(() => { const tr = document.querySelector("#uaProjectRows tr"); tr.querySelector(".ua-join").checked = true; UserAdmin.syncEditRows(); tr.querySelector(".ua-role").value = "LEAD"; tr.querySelector(".ua-sub").value = "W1"; });
+    await page.evaluate(() => { const tr = document.querySelector("#uaProjectRows tr"); tr.querySelector(".ua-join").checked = true; UserAdmin.syncEditRows(); tr.querySelector(".ua-role").value = "LEAD"; tr.querySelector(".ua-sub").dataset.value = "W1"; });
     await page.click('#userAdminModal [data-click="UserAdmin.saveEdit"]'); await page.waitForTimeout(900);
     const ua2 = await page.evaluate(() => { const u = UserAdmin.users.find(x => x.empNo === "ua_e2e"); const v = projectUsers.find(x => x.empNo === "ua_e2e");
       return { saved: !!u && u.projectRoles[ProjectContext.current].role === "LEAD" && u.projectRoles[ProjectContext.current].subsystem === "W1", inProject: !!v, lead: WbsTemplate.leadOf("W1") }; });

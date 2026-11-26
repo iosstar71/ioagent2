@@ -195,17 +195,24 @@ var SyncManager = {
     if (blockedList.length) {
       const reverted = this.revertBlocked(d);
       if (reverted > 0 || blockedList.length) {
-        const own = Permission.ownSubsystem();
+        const own = SubsysList.label(Permission.ownSubsystem());
         showToast(`⛔ 저장 권한 없음: ${blockedList.join(" / ")} 변경은 저장되지 않고 원래 값으로 복원되었습니다. (담당: ${own})`);
       }
     }
     if (!Object.keys(changes).length) {
       if (blockedList.length) this.afterDataApplied(Object.keys(d), true);
       if (opts.notify) showToast("💾 저장할 변경 내용이 없습니다. (최신 상태)");
+      this._afterSaveFile(opts);
       this.updateIndicators();
       return { ok: true, nothing: true };
     }
     return this._commit(changes, !!opts.force, opts);
+  },
+
+  // [Standalone] 사람이 누른 저장이면 JSON 파일도 남김 (SaveFolder — Standalone 에만 있음)
+  _afterSaveFile(opts) {
+    if (!this.isLocal() || !(opts.forceFile || opts.notify) || typeof SaveFolder === "undefined") return;
+    SaveFolder.afterSave().catch(e => console.error("[SaveFolder]", e));
   },
 
   async _commit(changes, force, opts) {
@@ -240,6 +247,7 @@ var SyncManager = {
     const cnt = Object.keys(changes).reduce((a, k) => a + Object.keys(changes[k].parts).length, 0);
     this.setStatus(`저장됨 (${new Date().toLocaleTimeString()})`, "ok");
     if (typeof FileAutoSyncManager !== "undefined") FileAutoSyncManager.syncNow(false);
+    this._afterSaveFile(opts);
     if (opts.notify) {
       const labels = Object.keys(changes).map(k => DataRegistry.DEFS[k].label).join(", ");
       showToast(`💾 저장 완료: ${labels} (${cnt}개 단위 변경 · ${this.isLocal() ? "로컬 저장소" : "DB 서버"})`);

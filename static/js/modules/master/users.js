@@ -34,10 +34,7 @@ function renderProjectUsersTable() {
           ${asg.admin ? `<div class="pm-role-tag own">모든 프로젝트 공통</div>` : ""}
         </td>
         <td>
-          <select style="width:125px;" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "subsystem", "$value")}" ${asg.admin ? "disabled" : ""}>
-            <option value="ALL" ${asg.subsystem === "ALL" ? "selected" : ""}>전체 서브시스템</option>
-            ${getSubsystemOptionsHtml(asg.subsystem)}
-          </select>
+          ${SubsysPicker.buttonHtml(asg.subsystem, `data-click="pickProjectUserSubsystems" data-click-args="${UiEvents.args(idx)}" ${asg.admin ? "disabled" : ""}`)}
         </td>
         <td><input class="u-w100" type="text" value="${escapeHtml(asg.dept || "")}" data-change="ProjectManager.setUserAssignment" data-change-args="${UiEvents.args(idx, "dept", "$value")}"></td>
         <td>
@@ -68,6 +65,13 @@ function renderProjectUsersTable() {
   setText("userStatPm", count("PM"));
   setText("userStatLead", count("LEAD"));
   setText("userStatMember", count("MEMBER"));
+}
+
+// 담당 서브시스템 고르기 (여러 개 — "A,B")
+function pickProjectUserSubsystems(idx) {
+  const u = projectUsers[idx];
+  if (!u) return;
+  SubsysPicker.open(ProjectManager.userAssignment(u).subsystem, v => ProjectManager.setUserAssignment(idx, "subsystem", v));
 }
 
 // 새로 추가한 행의 멤버 ID 변경 (다른 프로젝트·이 프로젝트에 이미 있는 멤버 ID은 불가)
@@ -185,7 +189,7 @@ var MilestoneManager = {
   },
   add(kind) {
     const subs = getAllSubsystemNames();
-    const own = Permission.ownSubsystem();
+    const own = Permission.firstOwnSubsystem();
     const scope = kind === "ALL" ? "ALL" : (subs.includes(own) ? own : (subs[0] || "ALL"));
     this.list().push({ id: `MS-${Date.now().toString(36)}`, scope, name: kind === "ALL" ? "신규 종합 마일스톤" : "신규 서브시스템 마일스톤", date: projectConfig.reportDate || projectConfig.projectStartDate, desc: "" });
     this.changed();
@@ -296,6 +300,7 @@ async function updateProjectUserPassword(idx) {
   const hash = await AuthManager.hashPassword(input.value);
   u.pwdHash = hash;
   u.pwdTemp = true; // 관리자가 지정한 임시 암호 → 멤버가 첫 멤버 선택 때 변경
+  u.pwdAt = AuthManager.pwdStamp();
   input.value = "";
   persistChanges();
   showToast(`[${u.name}(${u.empNo})] 인력의 암호가 변경되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);
@@ -309,6 +314,7 @@ function resetProjectUserPassword(idx) {
     u.pwdHash = "";
     u.pwdTemp = false;
     u.pwdReset = true;
+    u.pwdAt = AuthManager.pwdStamp();
     if (String(u.empNo).toLowerCase() === "admin") { try { AppStore.removeItem(AuthManager.LEGACY_ADMIN_HASH_KEY); } catch (e) {} }
     persistChanges();
     showToast(`🔄 [${u.name}(${u.empNo})] 암호가 1234 로 초기화되었습니다.${SyncManager.isLocal() ? "" : " (저장 버튼을 눌러 서버에 반영하세요)"}`);

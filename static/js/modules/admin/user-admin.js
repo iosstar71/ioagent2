@@ -74,7 +74,7 @@ var UserAdmin = {
       const first = Object.values(req.projectRoles)[0];
       Object.assign(row, { name: req.name, dept: req.dept, projectRoles: req.projectRoles,
         role: admin ? "SYS_ADMIN" : (first ? first.role : "MEMBER"), subsystem: admin ? "ALL" : (first ? first.subsystem : "ALL") });
-      if (req.pwdReset) { row.pwdHash = ""; row.pwdTemp = false; }
+      if (req.pwdReset) { row.pwdHash = ""; row.pwdTemp = false; row.pwdAt = AuthManager.pwdStamp(); }
       st.projectUsers = list;
       this._localWrite(st, row.empNo);
     }
@@ -162,13 +162,11 @@ var UserAdmin = {
     document.getElementById("uaEditTitle").textContent = isNew ? "👤 멤버 추가" : `👤 멤버 편집 — ${u.name || ""} (${u.empNo})`;
     document.getElementById("uaProjectRows").innerHTML = this.projects.map(p => {
       const a = (u.projectRoles || {})[p.id];
-      const subs = ["ALL"].concat(p.subsystems || []);
-      if (a && a.subsystem && !subs.includes(a.subsystem)) subs.push(a.subsystem);
       return `<tr data-pid="${escapeAttr(p.id)}">
         <td class="u-tc"><input type="checkbox" class="ua-join" ${a ? "checked" : ""} data-change="UserAdmin.syncEditRows"></td>
         <td>${escapeHtml(p.name)}${p.status === "ARCHIVED" ? ' <span class="status-tag tag-ready">사용 중지</span>' : ""}</td>
         <td><select class="ua-role">${this.ROLES.map(r => `<option value="${r}" ${(a ? a.role : "MEMBER") === r ? "selected" : ""}>${escapeHtml(this.roleLabel(r))}</option>`).join("")}</select></td>
-        <td><select class="ua-sub">${subs.map(s => `<option value="${escapeAttr(s)}" ${(a ? a.subsystem || "ALL" : "ALL") === s ? "selected" : ""}>${s === "ALL" ? "전체 (ALL)" : escapeHtml(s)}</option>`).join("")}</select></td>
+        <td>${SubsysPicker.buttonHtml(a ? a.subsystem || "ALL" : "ALL", `data-click="UserAdmin.pickSub" data-click-args="${UiEvents.args(p.id)}"`).replace("subsys-pick", "subsys-pick ua-sub")}</td>
       </tr>`;
     }).join("");
     this.syncEditRows();
@@ -189,6 +187,13 @@ var UserAdmin = {
       tr.classList.toggle("ua-off", off);
     });
   },
+  // 프로젝트 줄의 담당 서브시스템 고르기 (여러 개)
+  pickSub(pid) {
+    const btn = document.querySelector(`#uaProjectRows tr[data-pid="${CSS.escape(pid)}"] .ua-sub`);
+    const p = this.projects.find(x => x.id === pid);
+    if (!btn) return;
+    SubsysPicker.open(btn.dataset.value, v => { btn.dataset.value = v; btn.textContent = SubsysList.isAll(v) ? "전체 서브시스템" : SubsysList.label(v); }, (p && p.subsystems) || []);
+  },
   closeEdit() { document.getElementById("userAdminModal").style.display = "none"; this.editing = null; },
 
   async saveEdit() {
@@ -203,7 +208,7 @@ var UserAdmin = {
       if (!tr.querySelector(".ua-join").checked) return;
       const pid = tr.dataset.pid;
       const old = prev && prev.projectRoles && prev.projectRoles[pid];
-      req.projectRoles[pid] = { role: tr.querySelector(".ua-role").value, subsystem: tr.querySelector(".ua-sub").value, dept: old && old.dept !== undefined ? old.dept : req.dept };
+      req.projectRoles[pid] = { role: tr.querySelector(".ua-role").value, subsystem: tr.querySelector(".ua-sub").dataset.value || "ALL", dept: old && old.dept !== undefined ? old.dept : req.dept };
     });
     const err = await this._save(req);
     if (err) return showToast("⚠️ " + err);

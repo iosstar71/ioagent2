@@ -44,7 +44,12 @@ async function waitApp(page) {
   }, null, { timeout: 20000 }).catch(() => {});
   await page.waitForTimeout(300);
 }
+// 기존 시험은 암호로 멤버를 고르는 방식(STARTUP_ONLY)으로 — 기본값(ID_ONLY)은 [Login levels] 시험에서 따로
+async function usePasswordLogin(page) {
+  await page.evaluate(() => { if (AuthManager.getAuthPolicy() === "ID_ONLY") { AppStore.setItem(AuthManager.STORAGE_POLICY_KEY, "STARTUP_ONLY"); AuthManager.openLogin(); } });
+}
 async function pickWorker(page, emp, store, project) {
+  await usePasswordLogin(page);
   if (project) await page.selectOption("#inputLoginProject", project).catch(() => {});
   await page.fill("#inputSecurityEmpNo", emp);
   await page.fill("#inputSecurityPassword", store[emp] || "1234");
@@ -104,6 +109,10 @@ async function main() {
     const login = await pm.evaluate(() => ({ workers: [...document.querySelectorAll("#workerPickList option")].map(o => o.value).join(), start: !!document.getElementById("localStartInput"),
       brand: document.querySelector(".login-brand-name").textContent }));
     check("Worker selection: admin · admin2 only, [start from 종합본] button, Local shown", login.workers === "admin,admin2" && login.start && login.brand.includes("Standalone"), JSON.stringify(login));
+    const idOnly = await pm.evaluate(() => ({ policy: AuthManager.getAuthPolicy(), pwdShown: getComputedStyle(document.getElementById("inputSecurityPassword")).display !== "none",
+      desc: document.getElementById("lockModalDesc").textContent, opt: !!document.querySelector('#cfgAuthPolicySelect option[value="ID_ONLY"]') }));
+    check("Login level 'ID only' is the default: no password field when picking a member (Project Settings · Admin still ask)", idOnly.policy === "ID_ONLY" && !idOnly.pwdShown && idOnly.desc.includes("Admin") && idOnly.opt, JSON.stringify(idOnly));
+    await usePasswordLogin(pm);
     await pm.fill("#inputSecurityEmpNo", "admin"); await pm.fill("#inputSecurityPassword", "admin123!");
     await pm.click("#btnLockSubmit"); await pm.waitForTimeout(900);
     const pw = await pm.evaluate(() => ({ err: (document.getElementById("lockErrorMessage") || {}).textContent || "", hint: document.getElementById("lockModalDesc").textContent,
@@ -153,8 +162,8 @@ async function main() {
     const waMenu = await wa.evaluate(() => [...document.querySelectorAll("#gPkgMenu .g-menu-item")].map(b => b.getAttribute("data-click") + (b.getAttribute("data-click-args") || "")).join());
     await wa.click("#gPkgBtn");
     const viaMenu = await grab(wa, 'LocalPkg.sendMine("JSON")');
-    check("Top [📦 종합본] menu: PM gets package / latest.json / merge; a worker gets import + send-my-data, and it downloads only the own subsystem",
-      pmMenu.open && pmMenu.items.length === 5 && /latest\.json/.test(pmMenu.items.join()) && /consolidateInput/.test(waMenu) && /sendMine\["EXCEL"\]/.test(waMenu) && !/SERVER/.test(waMenu)
+    check("Top [📦 종합본] menu: PM gets package / latest.json / merge / save folder; a worker gets import + send-my-data, and it downloads only the own subsystem",
+      pmMenu.open && pmMenu.items.length === 6 && /latest\.json/.test(pmMenu.items.join()) && /consolidateInput/.test(waMenu) && /sendMine\["EXCEL"\]/.test(waMenu) && !/SERVER/.test(waMenu)
       && !!viaMenu && JSON.parse(viaMenu.text).targetScope === "W1", JSON.stringify({ pmMenu, waMenu, n: viaMenu && viaMenu.name }));
     check("Worker sees the same project data (own subsystem W1) and the package version", wst.subs === 2 && wst.wbs === 4 && wst.own === "W1" && wst.stamp === j1.packageStamp, JSON.stringify(wst));
     // 작업자: 담당 자료 고치고 파일로 내려받기
@@ -280,6 +289,71 @@ async function main() {
     await pm.reload(); await pm.waitForTimeout(1800); await waitApp(pm);
     const pmSame = await pm.evaluate(() => ({ w2: wbsData.find(t => t.id === "2.1").name, pending: !!AppStore.getItem("PPRJMGMT_PENDING_PKG"), dlg: getComputedStyle(document.getElementById("confirmDialogModal")).display }));
     check("Same version is not applied again (worker PC and the PM's own PC are left alone)", !again.shown && pmSame.w2 === "W2 설계 (PM 4차)" && !pmSame.pending && pmSame.dlg === "none", JSON.stringify({ again, pmSame }));
+    // ---- 1.7: 여러 서브시스템 담당 · 내 작업 파일 이름 · 여러 파일 한꺼번에 합치기 · 멤버 암호 반영 · 저장 JSON · 아이디만 로그인 ----
+    console.log("\n[Multi-subsystem members, batch merge, password sync, save JSON, ID-only login (v1.7)]");
+    await pickWorker(wa, "wg_a", PWD);
+    // PM: wg_a 에게 W1 · W2 둘 다 맡김 (멤버 정보는 한 칸 "W1,W2")
+    await pm.evaluate(async () => { const u = projectUsers.find(x => x.empNo === "wg_a"); ProjectManager.setUserAssignment(projectUsers.indexOf(u), "subsystem", "W1,W2"); await SyncManager.save(null, { notify: false }); });
+    const pmA = await pm.evaluate(() => ProjectContext.member(projectUsers.find(x => x.empNo === "wg_a"), ProjectContext.current).subsystem);
+    // 멤버 PC 에도 같은 배정 (보통은 PM 이 보낸 마스터 파일로 들어옴 — 여기서는 바로 맞춤)
+    await wa.evaluate(() => { const u = AuthManager.findUser("wg_a"); u.projectRoles[ProjectContext.current].subsystem = "W1,W2"; AuthManager.currentUser = AuthManager._buildSessionUser(u); });
+    const perm = await wa.evaluate(() => ({ own: Permission.ownSubsystems().join(), w1: Permission.canWriteSubsystem("W1"), w2: Permission.canWriteSubsystem("W2"), w3: Permission.canWriteSubsystem("W3") }));
+    check("A member can own several subsystems (W1,W2): both writable, others not", pmA === "W1,W2" && perm.own === "W1,W2" && perm.w1 && perm.w2 && !perm.w3, JSON.stringify({ pmA, perm }));
+    await wa.evaluate(async () => { wbsData.find(t => t.id === "1.1").name = "W1 설계 (가작업 5차)"; wbsData.find(t => t.id === "2.1").name = "W2 설계 (가작업 5차)"; rebuildAll(true); persistChanges(true); await SyncManager.save(null, { notify: false }); });
+    const multi = await grab(wa, '(async () => { GShell.go("tab-merge"); SubTabs.show("merge", "merge"); SmartMergeCenter.refreshMergeUiPermissions(); LocalPkg.sendMine("JSON"); })()');
+    const jmu = JSON.parse(multi.text);
+    const wk = await wa.evaluate(() => WeekFmt.label(projectConfig.reportDate));
+    check("Worker's file covers both own subsystems in one file; name starts with <member ID>_<base week>_; carries the member's password info",
+      jmu.targetScope === "W1,W2" && multi.name.startsWith(`wg_a_${wk}_`) && jmu.wbsData.length === 4 && jmu.exportedByEmpNo === "wg_a" && !!jmu.memberCredential && jmu.memberCredential.empNo === "wg_a",
+      JSON.stringify({ n: multi.name, sc: jmu.targetScope, cred: !!jmu.memberCredential }));
+    // PM: 파일 두 개를 한꺼번에 (같은 W1 범위의 예전 파일 + 새 파일) → 새 파일만 체크, 반영하면 W1 · W2 모두 바뀌고 wg_a 암호도 PM 쪽에 맞춰짐
+    // 앞의 한 파일 올리기(미리 보기)로 이미 wg_a 가 PC 에서 바꾼 암호가 PM 쪽에 들어와 있음
+    const pmHashBefore = await pm.evaluate(async p => ({ h: projectUsers.find(x => x.empNo === "wg_a").pwdHash || "", want: await AuthManager.hashPassword(p) }), PWD.wg_a);
+    await pm.evaluate(async ([a, b]) => { await MergeBatch.open([new File([a], "old_W1.json", { lastModified: 1 }), new File([b], "new_W1W2.json")]); }, [mine.text, multi.text]);
+    const bl = await pm.evaluate(() => ({ rows: [...document.querySelectorAll("#mbBody tr")].map(r => ({ on: r.querySelector(".mb-chk").checked, t: r.textContent.replace(/\s+/g, " ") })), shown: getComputedStyle(document.getElementById("mergeBatchModal")).display }));
+    await pm.evaluate(() => MergeBatch.confirm()); await pm.waitForTimeout(800);
+    const bm = await pm.evaluate(() => ({ w1: wbsData.find(t => t.id === "1.1").name, w2: wbsData.find(t => t.id === "2.1").name, hash: projectUsers.find(x => x.empNo === "wg_a").pwdHash, temp: !!projectUsers.find(x => x.empNo === "wg_a").pwdTemp }));
+    check("PM merges several member files at once: each file goes to its own scope, the newer file for an overlapping subsystem wins (older unchecked), the member's PC password is on the PM side (single-file and batch merge)",
+      bl.shown === "flex" && bl.rows.length === 2 && !bl.rows[0].on && bl.rows[1].on && /더 새 파일/.test(bl.rows[0].t) && /W1, W2/.test(bl.rows[1].t) && /이전 기준/.test(bl.rows[0].t)
+      && bm.w1 === "W1 설계 (가작업 5차)" && bm.w2 === "W2 설계 (가작업 5차)" && bm.hash === jmu.memberCredential.pwdHash && bm.hash === pmHashBefore.want && pmHashBefore.h === pmHashBefore.want && !bm.temp, JSON.stringify({ bl, bm, pmHashBefore }));
+    // 같은 암호 정보를 다시 올려도 바뀌지 않음 · PM 이 나중에 초기화하면 예전 파일의 암호는 들어오지 않음
+    const credRule = await pm.evaluate(c => { const a = MemberCred.check(c, { exportedByEmpNo: "wg_a", targetScope: "W1,W2" }); const u = projectUsers.find(x => x.empNo === "wg_a");
+      const keep = { h: u.pwdHash, t: u.pwdAt }; u.pwdHash = ""; u.pwdAt = AuthManager.pwdStamp(); const b = MemberCred.check(c, { exportedByEmpNo: "wg_a", targetScope: "W1,W2" }); u.pwdHash = keep.h; u.pwdAt = keep.t;
+      const forged = MemberCred.check(Object.assign({}, c, { empNo: "admin" }), { exportedByEmpNo: "admin" }); const other = MemberCred.check(c, { exportedByEmpNo: "wg_b" });
+      return { again: a.ok, afterReset: b.ok, forged: forged.ok, other: other.ok }; }, jmu.memberCredential);
+    check("Password info is taken only when newer, only for the sending member, never for admin / PM accounts", !credRule.again && !credRule.afterReset && !credRule.forged && !credRule.other, JSON.stringify(credRule));
+    // [저장] 때 JSON 파일: 폴더(여기서는 브라우저 안 폴더 OPFS)에 프로젝트 백업 JSON, 두 번째부터 이전 파일은 backups/
+    const sf = await pm.evaluate(async () => {
+      const root = await navigator.storage.getDirectory();
+      for await (const [n] of root.entries()) await root.removeEntry(n, { recursive: true });
+      SaveFolder._loaded = true; SaveFolder.handle = root; SaveFolder._mode = "folder";
+      wbsData.find(t => t.id === "2.1").name = "W2 저장 1"; rebuildAll(true); persistChanges(true);
+      await SyncManager.save(null, { notify: true, forceFile: true }); await new Promise(r => setTimeout(r, 600));
+      wbsData.find(t => t.id === "2.1").name = "W2 저장 2"; rebuildAll(true); persistChanges(true);
+      await SyncManager.save(null, { notify: true, forceFile: true }); await new Promise(r => setTimeout(r, 600));
+      const name = SaveFolder.fileName();
+      const j = JSON.parse(await (await (await root.getFileHandle(name)).getFile()).text());
+      const bk = []; for await (const [n] of (await root.getDirectoryHandle("backups")).entries()) bk.push(n);
+      return { name, schema: j.schemaVersion, pid: j.projectId, wbs: j.data.wbsData.length, p: j.data.wbsData.find(t => t.id === "2.1").name, hashes: JSON.stringify(j).includes("pwdHash"), backups: bk.length };
+    });
+    check("[💾 Save] also writes the project JSON into the chosen folder (backup format, no password hashes); the previous file goes to backups/",
+      /\.json$/.test(sf.name) && sf.schema === "IOSTAR_PROJECT_BACKUP_v1" && sf.wbs === 4 && sf.p === "W2 저장 2" && !sf.hashes && sf.backups === 1, JSON.stringify(sf));
+    // 아이디만 로그인: 멤버는 ID 로 바로 시작, 프로젝트 설정 메뉴는 암호를 물음
+    await wa.evaluate(() => { AppStore.setItem(AuthManager.STORAGE_POLICY_KEY, "ID_ONLY"); AuthManager.manualLock(); });
+    await wa.waitForTimeout(400);
+    const lp = await wa.evaluate(() => getComputedStyle(document.getElementById("inputSecurityPassword")).display);
+    await wa.fill("#inputSecurityEmpNo", "wg_a"); await wa.press("#inputSecurityEmpNo", "Enter"); await waitApp(wa);
+    const li = await wa.evaluate(() => ({ who: (AuthManager.currentUser || {}).empNo, verified: AuthManager.pwdVerified }));
+    await pm.evaluate(() => { AppStore.setItem(AuthManager.STORAGE_POLICY_KEY, "ID_ONLY"); AuthManager.pwdVerified = false; AuthManager.requestTabAccess("tab-master"); });
+    const cf = await pm.evaluate(() => ({ mode: AuthManager.lockMode, pwd: getComputedStyle(document.getElementById("inputSecurityPassword")).display, shown: document.getElementById("securityLockOverlay").style.display !== "none" }));
+    await pm.fill("#inputSecurityPassword", PWD.admin); await pm.click("#btnLockSubmit"); await pm.waitForTimeout(1200); await waitApp(pm);
+    const cf2 = await pm.evaluate(() => ({ active: (document.querySelector(".tab-pane.active") || {}).id, verified: AuthManager.pwdVerified }));
+    await pm.evaluate(() => GShell.go("tab-home")); await pm.evaluate(() => AuthManager.requestTabAccess("tab-master"));
+    const cf3 = await pm.evaluate(() => ({ active: (document.querySelector(".tab-pane.active") || {}).id, overlay: document.getElementById("securityLockOverlay").style.display }));
+    check("ID-only login: a member starts with the ID alone (Enter); Project Settings asks the password once per session, then opens directly",
+      lp === "none" && li.who === "wg_a" && !li.verified && cf.mode === "CONFIG" && cf.pwd !== "none" && cf.shown && cf2.active === "tab-master" && cf2.verified && cf3.active === "tab-master" && cf3.overlay === "none", JSON.stringify({ lp, li, cf, cf2, cf3 }));
+    await pm.evaluate(() => AppStore.setItem(AuthManager.STORAGE_POLICY_KEY, "STARTUP_ONLY"));
+    await wa.evaluate(() => AppStore.setItem(AuthManager.STORAGE_POLICY_KEY, "STARTUP_ONLY"));
     // 다음 시험이 빈 PC 로 화면을 열 때 질문 창이 뜨지 않도록 배포 폴더의 마스터 파일을 치움
     fs.rmSync(path.join(web.tmp, "pprjmgmt", "shared", "latest.json"), { force: true });
     // WBS 가중치: 서브시스템 100 기준 · 상위 변경 시 하위 자동 조정 · 경고색 유지 · 오류 보정 · 서브시스템 가중치로 종합

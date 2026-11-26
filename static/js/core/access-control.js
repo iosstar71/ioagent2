@@ -119,6 +119,8 @@ var AuthManager = {
   INITIAL_PWD: "1234",
   INITIAL_PWD_HINT: "1234",
   initialPassword(empNo) { void empNo; return this.INITIAL_PWD; },
+  // 암호를 바꾼 시각 (pwdAt) — 멤버 PC 에서 바꾼 암호를 PM 이 합칠 때 더 새 것만 반영 (MemberCred)
+  pwdStamp() { return new Date().toISOString(); },
   // 새 암호 규칙: 8자 이상, 영문과 숫자를 모두 포함, 초기 암호 사용 불가
   PWD_MIN_LENGTH: 8,
   validateNewPassword(pwd, empNo) {
@@ -140,12 +142,17 @@ var AuthManager = {
   // ---------------------------------------------------------------------------
   // 보안 정책
   // ---------------------------------------------------------------------------
+  // 기본 = ID_ONLY (Standalone): 멤버는 ID 만으로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 (세션에 한 번)
   getAuthPolicy() {
-    try { return AppStore.getItem(this.STORAGE_POLICY_KEY) || "STARTUP_ONLY"; } catch (e) { return "STARTUP_ONLY"; }
+    try { return AppStore.getItem(this.STORAGE_POLICY_KEY) || "ID_ONLY"; } catch (e) { return "ID_ONLY"; }
   },
+  idOnlyLogin() { return SyncManager.isLocal() && this.getAuthPolicy() === "ID_ONLY"; },
+  // 이번 세션에서 암호로 확인한 멤버인지 (ID_ONLY 에서 권한 메뉴에 들어갈 때)
+  pwdVerified: false,
   setAuthPolicy(policy) {
     try { AppStore.setItem(this.STORAGE_POLICY_KEY, policy); } catch (e) {}
     const labels = {
+      ID_ONLY: "아이디만 확인 — 프로젝트 설정 · Admin 은 암호 (기본)",
       STARTUP_ONLY: "최초 접속(멤버 선택) 시 1회 인증 (권장)",
       STARTUP_AND_CONFIG: "최초 접속 시 + 권한 메뉴 진입 시 재인증",
       CONFIG_ONLY: "권한 메뉴 진입 시에만 인증 (로컬 모드 전용)",
@@ -230,7 +237,7 @@ var AuthManager = {
   _saveSession() {
     try {
       const u = this.getCurrentUser();
-      sessionStorage.setItem(this.SESSION_USER_KEY, JSON.stringify({ empNo: u.empNo, authenticated: this.sessionAuthenticated, user: u }));
+      sessionStorage.setItem(this.SESSION_USER_KEY, JSON.stringify({ empNo: u.empNo, authenticated: this.sessionAuthenticated, pwdVerified: !!this.pwdVerified, user: u }));
     } catch (e) {}
   },
   _readSession() {
@@ -273,8 +280,8 @@ var AuthManager = {
 
     // 로컬 저장소 모드
     const policy = this.getAuthPolicy();
-    if (sess && sess.authenticated && this.findUser(sess.empNo) && !(this.mustChangeLocal(this.findUser(sess.empNo)) && policy !== "OFF" && policy !== "CONFIG_ONLY")) {
-      await this._completeLogin(this.findUser(sess.empNo), { silent: true });
+    if (sess && sess.authenticated && this.findUser(sess.empNo) && !(this.mustChangeLocal(this.findUser(sess.empNo)) && !["OFF", "CONFIG_ONLY", "ID_ONLY"].includes(policy) && !sess.pwdVerified)) {
+      await this._completeLogin(this.findUser(sess.empNo), { silent: true, pwdVerified: !!sess.pwdVerified });
       return;
     }
     if (policy === "OFF" || policy === "CONFIG_ONLY") {
@@ -288,7 +295,10 @@ var AuthManager = {
   requestTabAccess(tabId) {
     const hasPerm = this.canAccessTab(this.getCurrentRole(), tabId);
     const policy = this.getAuthPolicy();
-    if (hasPerm && policy !== "STARTUP_AND_CONFIG" && policy !== "CONFIG_ONLY") {
+    // ID_ONLY: 권한 메뉴는 이번 세션에서 암호를 확인한 멤버만 (한 번 확인하면 다시 묻지 않음)
+    if (this.idOnlyLogin()) {
+      if (hasPerm && this.pwdVerified) return this._guardedActivate(tabId);
+    } else if (hasPerm && policy !== "STARTUP_AND_CONFIG" && policy !== "CONFIG_ONLY") {
       this._guardedActivate(tabId);
       return;
     }
@@ -310,6 +320,7 @@ var AuthManager = {
     const projRow = document.getElementById("loginProjectRow");
     if (projRow) projRow.style.display = "";
     this.fillLoginProjects(true);
+    this._showPwdField(true);
     const emp = document.getElementById("inputSecurityEmpNo");
     if (emp) emp.value = hasPerm ? this.getCurrentUser().empNo : meta.defaultEmpNo;
     const cancel = document.getElementById("btnLockCancel");
@@ -336,6 +347,7 @@ var AuthManager = {
     const active = document.querySelector(".tab-pane.active");
     if (active && this.TAB_POLICY[active.id]) this._innerActivate("tab-home");
     this.sessionAuthenticated = false;
+    this.pwdVerified = false;
     this._saveSession();
     this.openLogin(
       isIdle ? "⏱️ 자리 비움 자동 잠금" : "🔒 화면 잠금 / 계정 전환",
@@ -374,15 +386,24 @@ var AuthManager = {
     const pwd = pwdEl.value;
     const langSel = document.getElementById("inputLoginLang");
     const lang = langSel ? langSel.value : "ko";
-    if (!empNo || !pwd) {
-      this._err("lockErrorMessage", "멤버 ID과 암호를 입력하세요.");
+    // ID_ONLY: 멤버 선택은 ID 만 (권한 메뉴 인증 창에서는 암호)
+    const idOnly = this.lockMode === "LOGIN" && this.idOnlyLogin();
+    if (!empNo || (!pwd && !idOnly)) {
+      this._err("lockErrorMessage", idOnly ? "멤버 ID을 입력하세요." : "멤버 ID과 암호를 입력하세요.");
       return;
     }
 
     // 작업할 프로젝트: 관리자 외에는 필수 (권한 인증 창에서는 지금 프로젝트)
     const project = this.lockMode === "CONFIG" ? ProjectContext.current : this.loginProject();
     let result;
-    if (SyncManager.isLocal()) {
+    if (idOnly) {
+      const u = ProjectContext.findAny(empNo) || this.findUser(empNo);
+      result = u ? { ok: true, user: u } : { ok: false, message: `등록되지 않은 멤버 ID(${empNo})입니다. 관리자 · PM 에게 등록을 요청하세요.`, noCount: true };
+      if (result.ok && !ProjectContext.isAdminUser(result.user)) {
+        if (!project) result = { ok: false, message: "작업할 프로젝트를 선택하세요.", noCount: true };
+        else if (!ProjectContext.member(result.user, project)) result = { ok: false, message: "선택한 프로젝트의 멤버가 아닙니다. 프로젝트를 확인하세요.", noCount: true };
+      }
+    } else if (SyncManager.isLocal()) {
       result = await this._verifyLocal(empNo, pwd);
       if (result.ok && !ProjectContext.isAdminUser(result.user)) {
         if (!project) result = { ok: false, message: "작업할 프로젝트를 선택하세요.", noCount: true };
@@ -428,18 +449,20 @@ var AuthManager = {
     pwdEl.value = "";
     const landing = this.lockMode === "CONFIG" ? this.pendingTabId : null;
     if (project) { try { AppStore.setItem(this.LOGIN_PROJECT_KEY, project); } catch (e) {} }
+    const pwdVerified = !idOnly;
     if (result.mustChange) {
-      this._forced = { user: result.user, lang, landing, oldPwd: pwd, project };
+      this._forced = { user: result.user, lang, landing, oldPwd: pwd, project, pwdVerified };
       this.showPwdChange(true, true);
       return;
     }
-    await this._completeLogin(result.user, { lang, landing, project });
+    await this._completeLogin(result.user, { lang, landing, project, pwdVerified });
   },
 
   async _completeLogin(user, opts = {}) {
     const prev = this.currentUser ? this.currentUser.empNo : null;
     const next = this._buildSessionUser(user);
     if (opts.lang) next.lang = opts.lang;
+    this.pwdVerified = !!opts.pwdVerified;
 
     // 고른 프로젝트가 지금 화면의 프로젝트와 다르면: 그 프로젝트로 바꿔 다시 불러옴
     if (opts.project && opts.project !== ProjectContext.current) {
@@ -541,7 +564,7 @@ var AuthManager = {
     if (SyncManager.isLocal()) {
       const chk = await this._verifyLocal(empNo, oldPwd);
       if (!chk.ok) return this._err("pcErrorMessage", chk.message);
-      const row = Object.assign({}, chk.user, { pwdHash: newHash, pwdTemp: false });
+      const row = Object.assign({}, chk.user, { pwdHash: newHash, pwdTemp: false, pwdAt: this.pwdStamp() });
       delete row.pwdReset;
       const res = await LocalBackend.save({ projectUsers: { parts: { [row.empNo]: row }, base: {} } }, true, `password(${row.empNo})`);
       if (!res.ok) return this._err("pcErrorMessage", res.error || "변경 실패");
@@ -557,7 +580,7 @@ var AuthManager = {
     if (forced && String(forced.user.empNo).toLowerCase() === empNo.toLowerCase()) {
       showToast(`🔑 [${empNo}] 암호가 변경되었습니다.`);
       const user = SyncManager.isLocal() ? (this.findUser(empNo) || forced.user) : Object.assign({}, forced.user, { mustChangePassword: false });
-      await this._completeLogin(user, { lang: forced.lang, landing: forced.landing, project: forced.project });
+      await this._completeLogin(user, { lang: forced.lang, landing: forced.landing, project: forced.project, pwdVerified: true });
       return;
     }
     showToast(`🔑 [${empNo}] 암호가 변경되었습니다. 새 암호로 멤버를 선택하세요.`);
@@ -585,6 +608,7 @@ var AuthManager = {
       const u = this.findUser(me.empNo);
       u.pwdHash = newHash;
       u.pwdTemp = false;
+      u.pwdAt = this.pwdStamp();
       await SyncManager.save(["projectUsers"], { notify: false });
     } else {
       const res = await ServerBackend.request("/api/auth/password", { oldHash: await this.hashPassword(cur), newHash });

@@ -154,8 +154,9 @@ var WbsTemplate = {
     const eff = u => (typeof ProjectContext !== "undefined" && ProjectContext.effective ? ProjectContext.effective(u) : u);
     const role = u => (typeof AuthManager !== "undefined" ? AuthManager.normalizeRole(eff(u).role) : String(eff(u).role || ""));
     const of = u => String(eff(u).subsystem || "").trim();
-    const hit = users.find(u => role(u) === "LEAD" && of(u) === sys)
-      || users.find(u => of(u) === sys && role(u) !== "SYS_ADMIN")
+    const mine = u => of(u) && !SubsysList.isAll(of(u)) && SubsysList.has(of(u), sys);
+    const hit = users.find(u => role(u) === "LEAD" && mine(u))
+      || users.find(u => mine(u) && role(u) !== "SYS_ADMIN")
       || users.find(u => role(u) === "LEAD" && (of(u) === "ALL" || of(u) === ""));
     return hit ? String(hit.name).slice(0, 40) : "";
   },

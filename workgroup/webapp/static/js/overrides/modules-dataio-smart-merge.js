@@ -16,8 +16,8 @@ Object.assign(SmartMergeCenter, {
     if (!items.length) return showToast("⚠️ 마스터 파일(④ 전체 다운로드) 파일이 아닙니다.");
     const src = items[0].data;
     const all = Permission.canEditAllSubsystems();
-    const own = Permission.ownSubsystem();
-    const keep = all ? [] : [own];
+    const own = SubsysList.label(Permission.ownSubsystem());
+    const keep = all ? [] : Permission.ownSubsystems();
     const mine = sys => keep.includes(String(sys || ""));
     openConfirmDialog(`📥 [마스터 파일 적용] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 마스터 파일로 맞춥니다.\n` +
       (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 작업 파일을 그대로 둡니다.\n` : "· 모든 서브시스템을 마스터 파일 내용으로 바꿉니다.\n") +

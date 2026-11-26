@@ -152,6 +152,30 @@ class ServerApiTest(unittest.TestCase):
         self.assertTrue(any(x["name"].endswith("_T") and x["system"] == "W1" for x in saved))
         self.assertFalse(any(x["name"].endswith("_T") and x["system"] == "W2" for x in saved))
 
+    def test_13_member_with_two_subsystems(self):
+        """담당 서브시스템 여러 개("W1,W2"): 둘 다 저장, 다른 곳은 막힘 (화면 SubsysList 와 같은 규칙)"""
+        s, d = self.call("/api/admin/users/list", {}, self.admin)
+        self.assertEqual(s, 200)
+        u = next(x for x in d["users"] if x["empNo"] == "lead_lee")
+        roles = u.get("projectRoles") or {}
+        old = dict(roles.get("DEFAULT") or {"role": "MEMBER", "subsystem": "W1"})
+        req = {"isNew": False, "empNo": "lead_lee", "name": u["name"], "dept": u.get("dept", ""), "sysAdmin": False, "pwdReset": False,
+               "projectRoles": dict(roles, DEFAULT=dict(old, subsystem="W1,W2"))}
+        s, r = self.call("/api/admin/users/save", req, self.admin)
+        self.assertEqual(s, 200, r)
+        try:
+            token = self.ready("lead_lee")
+            data, revs = self.load(["wbsData"], token)
+            w2 = [x for x in data["wbsData"] if x["system"] == "W2"]
+            w2[0]["name"] += "_M"
+            s, r = self.call("/api/db/save", {"changes": {"wbsData": {"parts": {"W2": w2}, "base": {"W2": revs["wbsData"]["W2"]["rev"]}}}}, token)
+            self.assertEqual(s, 200, r)
+            self.assertNotIn("wbsData[W2]", r.get("blocked") or [])
+            self.assertTrue(any(x["name"].endswith("_M") and x["system"] == "W2" for x in r["data"]["wbsData"]))
+        finally:
+            req["projectRoles"] = dict(roles, DEFAULT=old)
+            self.call("/api/admin/users/save", req, self.admin)
+
     def test_11_member_cannot_write_master(self):
         token = self.ready("lead_park")
         s, r = self.call("/api/db/save", {"changes": {"projectConfig": {"parts": {"*": {"x": 1}}, "base": {"*": 1}}}}, token)

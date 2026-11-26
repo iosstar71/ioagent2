@@ -177,7 +177,7 @@ Object.assign(SyncManager, {
     if (blockedList.length) {
       const reverted = this.revertBlocked(d);
       if (reverted > 0 || blockedList.length) {
-        const own = Permission.ownSubsystem();
+        const own = SubsysList.label(Permission.ownSubsystem());
         showToast(`⛔ 저장 권한 없음: ${blockedList.join(" / ")} 변경은 저장되지 않고 원래 값으로 복원되었습니다. (담당: ${own})`);
       }
     }

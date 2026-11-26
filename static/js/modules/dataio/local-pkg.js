@@ -18,7 +18,7 @@ var LocalPkg = {
     if (!m) return;
     const cfg = typeof projectConfig !== "undefined" && projectConfig ? projectConfig : {};
     const stamp = cfg.packageStamp || "";
-    const own = typeof Permission !== "undefined" && Permission.ownSubsystem ? Permission.ownSubsystem() : "";
+    const own = SubsysList.isAll(Permission.ownSubsystem()) ? "" : SubsysList.label(Permission.ownSubsystem());
     const item = (fn, args, label, hint) => `<button type="button" class="g-menu-item" data-click="${fn}"${args ? ` data-click-args='${args}'` : ""}>${label}${hint ? `<span class="g-pkg-hint">${hint}</span>` : ""}</button>`;
     let html = `<div class="g-menu-title">📦 마스터 파일 — 프로젝트 최신 자료 파일</div>
       <div class="g-menu-row g-pkg-ver">이 PC 마스터 파일 버전: <b>${escapeHtml(stamp || "없음")}</b>${cfg.packageBy ? ` <span class="g-pkg-hint">(${escapeHtml(cfg.packageBy)})</span>` : ""}</div>`;
@@ -31,13 +31,19 @@ var LocalPkg = {
         + item("LocalPkg.mergeWorker", "", "📋 멤버 자료 받아 합치기", "");
     }
     html += `<div class="g-menu-sep"></div><div class="g-menu-title">${this._pm() ? "그 밖에" : "PM 이 보낸 마스터 파일 받기"}</div>`
-      + item("UiH.clickEl", '["consolidateInput"]', "📤 받은 마스터 파일 적용", this._pm() ? "PM · 관리자는 전부 종합본으로 바뀜" : `내 담당${own && own !== "ALL" ? `(${escapeHtml(own)})` : ""} 작업은 그대로, 나머지만 최신으로`);
+      + item("UiH.clickEl", '["consolidateInput"]', "📤 받은 마스터 파일 적용", this._pm() ? "PM · 관리자는 전부 종합본으로 바뀜" : `내 담당${own ? `(${escapeHtml(own)})` : ""} 작업은 그대로, 나머지만 최신으로`);
     if (!this._pm()) {
       html += `<div class="g-menu-sep"></div><div class="g-menu-title">내 작업 파일 PM 에게 보내기</div>`
         + item("LocalPkg.sendMine", '["EXCEL"]', "📤 내 작업 파일 다운로드 (엑셀)", "")
         + item("LocalPkg.sendMine", '["JSON"]', "📤 내 작업 파일 다운로드 (JSON)", "");
     }
+    html += `<div class="g-menu-sep"></div><div class="g-menu-title">저장할 때 JSON 파일</div>
+      <div class="g-menu-row g-pkg-ver" id="saveFolderInfo"></div>`
+      + item("SaveFolder.connect", "", "📁 저장 폴더 고르기 · 바꾸기", "[💾 저장]할 때 프로젝트 JSON 을 이 폴더에 남김")
+      + (SaveFolder.handle ? item("SaveFolder.disconnect", "", "연결 끊기", "") : "");
     m.innerHTML = html;
+    if (!SaveFolder._loaded) SaveFolder.load().then(() => { if (SaveFolder.handle) this.render(); });
+    else SaveFolder.renderInfo();
     if (typeof ButtonStandard !== "undefined") ButtonStandard.apply(m);
   },
 
@@ -50,9 +56,11 @@ var LocalPkg = {
   sendMine(fmt) {
     GShell.closeMenus();
     this._toMerge();
-    const own = Permission.ownSubsystem();
+    // 여러 서브시스템 담당이면 "내 담당 (A, B)" 줄 — 파일 하나에 함께 담음
+    const own = SubsysList.join(Permission.ownSubsystems());
     const sel = document.getElementById("workDataSubsysSelect");
-    if (sel && own && own !== "ALL" && [...sel.options].some(o => o.value === own)) sel.value = own;
+    const first = Permission.firstOwnSubsystem();
+    if (sel && !SubsysList.isAll(own)) sel.value = [...sel.options].some(o => o.value === own) ? own : first;
     MergeTable.selectUnit("sys");
     MergeTable.download(fmt === "JSON" ? "JSON" : "EXCEL");
   },

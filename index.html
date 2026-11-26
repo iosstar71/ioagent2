@@ -85,11 +85,11 @@
         <label class="login-label">멤버 ID (멤버 ID):</label>
         <input type="text" id="inputSecurityEmpNo" value="" placeholder="멤버 ID 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
 </template>
-               data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
+               data-keydown="UiH.loginEmpKeys" data-keydown-args='["$event"]'>
 <!--#sa-->
         <datalist id="workerPickList"></datalist>
         <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
-        <label class="login-label">③ 멤버 암호:</label>
+        <label class="login-label" id="loginPwdLabel">③ 멤버 암호:</label>
         <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 1234)" autocomplete="off" class="login-input"
 <!--#/sa-->
 <template data-edition="workgroup">
@@ -1578,7 +1578,7 @@
               <span class="mt-step">2 체크한 자료</span>
               <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
               <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
-              <input type="file" id="mtUpInput" style="display:none;" accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
+              <input type="file" id="mtUpInput" style="display:none;" multiple accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
               <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick" title="엑셀 · JSON 파일을 올리면 미리 보기에서 확인한 뒤 반영합니다">📤 파일 업로드</button>
             </div>
           </div>
@@ -2680,7 +2680,8 @@
               <div>
                 <label class="u-block u-bold u-fs-sm u-mb-4">🔐 1. 멤버 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
                 <select class="u-w100 u-bold" id="cfgAuthPolicySelect" data-change="AuthManager.setAuthPolicy" data-change-args='["$value"]'>
-                  <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증 (권장 기본)</option>
+                  <option value="ID_ONLY">👤 아이디만 확인 — 멤버는 ID 로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 (기본)</option>
+                  <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증</option>
                   <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(프로젝트 설정·시스템설정) 진입 시 재인증 (고보안)</option>
                   <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
                   <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>
@@ -3086,6 +3087,23 @@
   </div>
 </template>
   <!-- 올리기 미리 보기 (파일 Merge · 각 화면 📤 공통) -->
+  <div class="modal-overlay" id="mergeBatchModal">
+    <div class="modal mb-modal">
+      <div class="card-title"><span>📋 멤버 자료 여러 파일 합치기 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeBatch.close">닫기</button></div>
+      <div class="pm-hint">파일 안에 적힌 범위(담당 서브시스템)로 반영합니다. 같은 서브시스템 파일이 여럿이면 가장 새 파일만 체크됩니다. 반영 전에 지금 상태를 스냅샷으로 남깁니다.</div>
+      <div class="table-container mb-table">
+        <table class="m-table">
+          <thead><tr><th class="u-tc">반영</th><th>파일</th><th>보낸 사람</th><th>범위</th><th>기준 마스터 파일</th><th>보낸 시각</th><th>담긴 자료</th><th>확인</th></tr></thead>
+          <tbody id="mbBody"></tbody>
+        </table>
+      </div>
+      <div class="u-flex u-jc-end u-gap-6 u-mt-10">
+        <button class="btn btn-secondary btn-sm" data-click="MergeBatch.close">취소</button>
+        <button class="btn btn-primary btn-sm" data-click="MergeBatch.confirm">✅ 체크한 파일 반영</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="mergePreviewModal">
     <div class="modal" style="width:880px; max-width:96vw; max-height:90vh; overflow-y:auto;">
       <div class="card-title"><span id="mpTitle">📤 업로드 — 미리 보기</span><button class="btn btn-secondary btn-sm" data-click="MergeTable.close">닫기</button></div>
@@ -3364,6 +3382,8 @@
   <script src="static/js/modules/dataio/smart-merge.js"></script>
 <!--#sa-->
   <script src="static/js/modules/dataio/local-pkg.js"></script>
+  <script src="static/js/core/save-folder.js"></script>
+  <script src="static/js/modules/dataio/member-cred.js"></script>
 <!--#/sa-->
   <script src="static/js/core/storage.js"></script>
   <script src="static/js/modules/weekly/weekly-report.js"></script>
@@ -3374,6 +3394,7 @@
   <script src="static/js/core/data-store.js"></script>
   <script src="static/js/core/migrate.js"></script>
   <script src="static/js/modules/dataio/merge-table.js"></script>
+  <script src="static/js/modules/dataio/merge-batch.js"></script>
   <script src="static/js/modules/dataio/data-io.js"></script>
   <script src="static/js/core/project-manager.js"></script>
   <script src="static/js/core/project-data.js"></script>

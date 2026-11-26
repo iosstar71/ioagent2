@@ -214,6 +214,22 @@ var Partition = {
 };
 
 // -----------------------------------------------------------------------------
+// 담당 서브시스템 값: "ALL"(전체) 또는 "A" · "A,B"(여러 개, 쉼표) — 멤버 정보의 subsystem 한 칸에 저장 (서버 permission.py 와 같은 규칙)
+// -----------------------------------------------------------------------------
+var SubsysList = {
+  parse(v) {
+    const list = String(v == null ? "" : v).split(",").map(x => x.trim()).filter(Boolean);
+    return !list.length || list.includes("ALL") ? ["ALL"] : [...new Set(list)];
+  },
+  join(list) { const l = this.parse((list || []).join(",")); return l.join(","); },
+  isAll(v) { return this.parse(v)[0] === "ALL"; },
+  has(v, sys) { const l = this.parse(v); return l[0] === "ALL" || l.includes(String(sys == null ? "" : sys).trim()); },
+  // 화면 표시: "A, B" / 전체
+  label(v) { return this.isAll(v) ? "ALL" : this.parse(v).join(", "); }
+};
+window.SubsysList = SubsysList;
+
+// -----------------------------------------------------------------------------
 // 3. 저장 권한 (서버에서도 동일 규칙으로 재검증)
 // -----------------------------------------------------------------------------
 var Permission = {
@@ -226,13 +242,16 @@ var Permission = {
   },
   isManager() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM"; },
   // 전체 서브시스템 데이터 수정 가능 여부 — 관리자 · PM, 총괄리더는 담당이 ALL 일 때만 (리더 · 작업자는 담당 서브시스템)
-  canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || (r === "LEAD" && this.ownSubsystem() === "ALL"); },
+  canEditAllSubsystems() { const r = this.role(); return r === "SYS_ADMIN" || r === "PM" || (r === "LEAD" && SubsysList.isAll(this.ownSubsystem())); },
+  // 담당 서브시스템 원래 값 ("ALL" · "A" · "A,B") — 목록은 ownSubsystems(), 화면 표시는 SubsysList.label
   ownSubsystem() { return String(this.user().subsystem || "ALL"); },
+  ownSubsystems() { return SubsysList.parse(this.ownSubsystem()); },
+  // 담당 중 첫 서브시스템 (기본 선택값) — 전체 담당이면 "ALL"
+  firstOwnSubsystem() { return this.ownSubsystems()[0]; },
 
   canWriteSubsystem(sys) {
     if (this.canEditAllSubsystems()) return true;
-    const own = this.ownSubsystem();
-    return own === "ALL" || own === String(sys || "");
+    return SubsysList.has(this.ownSubsystem(), sys);
   },
 
   // row: 현재 행(또는 삭제 시 기준본 행)

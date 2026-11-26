@@ -85,11 +85,11 @@
         <label class="login-label">멤버 ID (멤버 ID):</label>
         <input type="text" id="inputSecurityEmpNo" value="" placeholder="멤버 ID 입력 (기본 관리자: admin)" autocomplete="off" class="login-input"
 </template>
-               data-keydown="UiH.focusEl" data-keydown-args='["inputSecurityPassword"]' data-keydown-key="Enter">
+               data-keydown="UiH.loginEmpKeys" data-keydown-args='["$event"]'>
 <!--#sa-->
         <datalist id="workerPickList"></datalist>
         <div class="login-hint">이 화면은 프로젝트 관리 안에서 쓰는 멤버를 고르는 곳입니다. 전사 시스템 로그인(SSO) 계정과는 별개입니다.</div>
-        <label class="login-label">③ 멤버 암호:</label>
+        <label class="login-label" id="loginPwdLabel">③ 멤버 암호:</label>
         <input type="password" id="inputSecurityPassword" placeholder="멤버 암호 (처음: 1234)" autocomplete="off" class="login-input"
 <!--#/sa-->
 <template data-edition="workgroup">

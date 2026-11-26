@@ -32,7 +32,7 @@ const SmartMergeCenter = {
         ? `👑 ${who} — 모든 자료 업로드 가능`
         : bulk
           ? `⭐ ${who} — 서브시스템 단위 자료 전체 업로드 (프로젝트 단위 자료는 다운로드만)`
-          : `👤 ${who} — 담당 서브시스템(${escapeHtml(Permission.ownSubsystem())}) 자료만 업로드`;
+          : `👤 ${who} — 담당 서브시스템(${escapeHtml(SubsysList.label(Permission.ownSubsystem()))}) 자료만 업로드`;
     }
 
     // 분야 드롭다운 갱신
@@ -68,10 +68,21 @@ const SmartMergeCenter = {
         sSel.appendChild(opt);
       });
 
-      if (prevVal && (prevVal === "ALL" || list.includes(prevVal))) {
+      // 여러 서브시스템 담당: "내 담당 (A, B)" 한 줄 — 내 작업 파일 하나에 함께 담음
+      const mo = SubsysPicker.mineOption(list);
+      const multi = mo ? mo.value : "";
+      if (mo) {
+        const opt = document.createElement("option");
+        opt.value = mo.value;
+        opt.textContent = mo.label;
+        sSel.insertBefore(opt, sSel.children[1] || null);
+      }
+      if (prevVal && (prevVal === "ALL" || list.includes(prevVal) || prevVal === multi)) {
         sSel.value = prevVal;
-      } else if (!bulk && curUser.subsystem && curUser.subsystem !== "ALL" && list.includes(curUser.subsystem)) {
-        sSel.value = curUser.subsystem;
+      } else if (multi) {
+        sSel.value = multi;
+      } else if (!bulk && !SubsysList.isAll(curUser.subsystem) && list.includes(SubsysList.parse(curUser.subsystem)[0])) {
+        sSel.value = SubsysList.parse(curUser.subsystem)[0];
       } else {
         sSel.value = bulk ? "ALL" : (list[0] || "ALL");
       }
@@ -602,12 +613,12 @@ const SmartMergeCenter = {
     weekly: {
       dataKey: "weeklyReportsData", sheet: "7_주간보고", label: "주간보고",
       cols: [["id", "보고서ID"], ["weekLabel", "보고주차"], ["scope", "작성단위"], ["scopeValue", "단위값"], ["status", "상태"], ["author", "작성자"], ["updatedAt", "저장일시"], ["currentWeekSummary", "금주요약"], ["nextWeekSummary", "차주요약"], ["issuesNotes", "현안"]],
-      inScope: (r, sc) => r.scope === "SYS" ? r.scopeValue === sc : false
+      inScope: (r, sc) => r.scope === "SYS" ? SubsysList.has(sc, r.scopeValue) : false
     },
     meetings: {
       dataKey: "meetingsData", sheet: "8_회의록", label: "회의록",
       cols: [["id", "회의ID"], ["system", "서브시스템"], ["title", "회의명"], ["date", "회의일자"], ["startTime", "시작"], ["endTime", "종료"], ["location", "장소"], ["host", "주관"], ["status", "상태"], ["summary", "요약"]],
-      inScope: (r, sc) => r.system === sc || r.system === "ALL"
+      inScope: (r, sc) => SubsysList.has(sc, r.system) || r.system === "ALL"
     },
     notices: {
       dataKey: "noticesData", sheet: "9_공지", label: "공지",
@@ -617,7 +628,7 @@ const SmartMergeCenter = {
     comms: {
       dataKey: "communicationsData", sheet: "10_소통피드", label: "소통피드",
       cols: [["id", "게시ID"], ["channel", "채널"], ["title", "제목"], ["taskId", "연계 Task"], ["author", "작성자"], ["date", "작성일"], ["content", "내용"]],
-      inScope: (r, sc) => r.channel === sc || r.channel === "전체"
+      inScope: (r, sc) => SubsysList.has(sc, r.channel) || r.channel === "전체"
     }
   },
   COLLAB_JSON_COL: "원본데이터(JSON)",
@@ -749,8 +760,8 @@ const SmartMergeCenter = {
     let items;
     try { items = await ProjectTransfer.parse(file); } catch (err) { return showToast("⚠️ 파일을 읽지 못했습니다: " + err.message); }
     if (!items.length) return showToast("⚠️ 마스터 파일(④ 전체 다운로드) 파일이 아닙니다.");
-    const own = Permission.ownSubsystem();
-    const keep = Permission.canEditAllSubsystems() ? [] : [own];
+    const own = SubsysList.label(Permission.ownSubsystem());
+    const keep = Permission.canEditAllSubsystems() ? [] : Permission.ownSubsystems();
     openConfirmDialog(`📥 [마스터 파일 적용] ${file.name}\n이 브라우저의 [${ProjectData.currentName()}] 자료를 마스터 파일로 맞춥니다.\n` +
       (keep.length ? `· 내 담당 서브시스템(${own}) 자료는 지금 내 작업 파일을 그대로 둡니다.\n` : "· 모든 서브시스템을 마스터 파일 내용으로 바꿉니다.\n") +
       `· 마스터 파일의 멤버 목록을 추가 · 갱신합니다 (내 암호는 그대로). 바꾸기 전에 스냅샷을 만듭니다. 계속할까요?`, () => this.applyConsolidated(items[0]));
@@ -760,8 +771,8 @@ const SmartMergeCenter = {
   //   일반 작업자: 내 담당 서브시스템 자료는 이 PC 것을 유지 / PM · 관리자: 전부 종합본으로
   applyConsolidated(item, label) {
     const src = item.data;
-    const own = Permission.ownSubsystem();
-    const keep = Permission.canEditAllSubsystems() ? [] : [own];
+    const own = SubsysList.label(Permission.ownSubsystem());
+    const keep = Permission.canEditAllSubsystems() ? [] : Permission.ownSubsystems();
     const mine = sys => keep.includes(String(sys || ""));
     {
       BackupHistoryManager.createBackupSnapshot("마스터 파일가져오기직전백업", "ALL", false);

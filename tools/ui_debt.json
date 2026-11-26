@@ -75,7 +75,7 @@
   "js/modules/dataio": 5,
   "js/modules/deliverable": 2,
   "js/modules/home": 19,
-  "js/modules/master": 34,
+  "js/modules/master": 33,
   "js/modules/meeting": 44,
   "js/modules/progress": 1,
   "js/modules/report": 5,
@@ -89,6 +89,6 @@
   "html_inline": 435,
   "html_inline_hex": 138,
   "js_hex": 100,
-  "js_inline": 196
+  "js_inline": 195
  }
 }

@@ -25,7 +25,7 @@ import time
 from .common import AuthError, now_str
 from .logger import write_server_log
 from . import audit
-from .permission import can_write
+from .permission import can_write, owns_all
 from .settings import APP_CONFIG, DB_LOCK, app_features, load_app_config, BASE_DIR
 
 LOCK_KEYS = ("wbsData", "reqMasterData", "deliverablesData", "vocData")
@@ -110,7 +110,7 @@ def listing(cur, pid, with_log=True):
 
 def can_take(user, scope):
     if scope == PROJECT:
-        return user["role"] in MANAGER or (user["role"] == "LEAD" and str(user.get("subsystem") or "ALL") == "ALL")
+        return user["role"] in MANAGER or (user["role"] == "LEAD" and owns_all(user.get("subsystem")))
     if scope.startswith("SUB:"):
         return can_write(user, "wbsData", scope[4:], None)
     return False

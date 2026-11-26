@@ -44,15 +44,21 @@ Object.assign(AuthManager, {
   },
 
 
+  // 암호 칸 보이기 · 숨기기 (ID_ONLY 의 멤버 선택에서는 숨김)
+  _showPwdField(show) {
+    ["loginPwdLabel", "inputSecurityPassword"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = show ? "" : "none"; });
+  },
   openLogin(title, desc) {
     this.lockMode = "LOGIN";
     this.pendingTabId = null;
     this._showPane("loginFormPane");
     const server = !SyncManager.isLocal();
+    const idOnly = this.idOnlyLogin();
+    this._showPwdField(!idOnly);
     this._setText("lockModalTitle", title || "🔐 멤버 선택");
-    this._setText("lockModalDesc",
-      (desc || "멤버 ID과 암호를 입력하여 멤버를 선택하세요.") +
-      `<br><span class="u-fs-xs u-c-muted">* 초기 암호: <b>1234</b></span>`, true);
+    this._setText("lockModalDesc", idOnly
+      ? (desc || "멤버 ID을 고르면 바로 시작합니다.") + `<br><span class="u-fs-xs u-c-muted">* 프로젝트 설정 · Admin 메뉴에 들어갈 때만 암호를 확인합니다 (초기 암호 1234).</span>`
+      : (desc || "멤버 ID과 암호를 입력하여 멤버를 선택하세요.") + `<br><span class="u-fs-xs u-c-muted">* 초기 암호: <b>1234</b></span>`, true);
     const info = document.getElementById("lockServerInfo");
     if (info) {
       info.style.display = "block";
@@ -81,7 +87,7 @@ Object.assign(AuthManager, {
     if (pwd) pwd.value = "";
     this._overlay(true);
     if (typeof I18N !== "undefined") I18N.translateTree(document.getElementById("securityLockOverlay"));
-    setTimeout(() => { const f = emp && !emp.value ? emp : pwd; if (f) f.focus(); }, 80);
+    setTimeout(() => { const f = emp && (!emp.value || idOnly) ? emp : pwd; if (f) f.focus(); }, 80);
   },
 
 

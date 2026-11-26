@@ -121,7 +121,15 @@ function onDomainFilterChanged(domainSelectId, subsysSelectId) {
     sSel.appendChild(opt);
   });
 
-  if (filteredSystems.includes(prevSubVal)) {
+  // 자료 내려받기 범위: 여러 서브시스템을 맡은 멤버는 "내 담당 (A, B)" 한 줄 (파일 하나에 함께)
+  const mine = sSel.id === "workDataSubsysSelect" ? SubsysPicker.mineOption(filteredSystems) : null;
+  if (mine) {
+    const opt = document.createElement("option");
+    opt.value = mine.value;
+    opt.textContent = mine.label;
+    sSel.insertBefore(opt, sSel.children[1] || null);
+  }
+  if (filteredSystems.includes(prevSubVal) || (mine && prevSubVal === mine.value)) {
     sSel.value = prevSubVal;
   } else if (!isAllOptNeeded && filteredSystems.length > 0) {
     sSel.value = filteredSystems[0];
@@ -148,6 +156,27 @@ function getSubsystemOptionsHtml(selectedVal) {
     .map(sys => `<option value="${escapeHtml(sys)}" ${sys === sel ? "selected" : ""}>${escapeHtml(sys)}</option>`)
     .join("");
 }
+
+// 담당 서브시스템 고르기 (여러 개) — 버튼에 지금 값을 보이고, 누르면 체크 창. onDone(새 값 "ALL" | "A,B")
+var SubsysPicker = {
+  buttonHtml(value, attrs) {
+    return `<button type="button" class="btn btn-sm subsys-pick" data-value="${escapeAttr(value || "ALL")}" ${attrs || ""} title="눌러서 담당 서브시스템 고르기 (여러 개 가능)">${escapeHtml(SubsysList.isAll(value) ? "전체 서브시스템" : SubsysList.label(value))}</button>`;
+  },
+  // 지금 멤버가 서브시스템을 2개 이상 맡았으면 { value: "A,B", label } (관리자 · PM · 전체 담당 리더는 없음)
+  mineOption(names) {
+    if (Permission.canEditAllSubsystems()) return null;
+    const mine = Permission.ownSubsystems().filter(x => x !== "ALL" && (!names || names.includes(x)));
+    return mine.length > 1 ? { value: mine.join(","), label: I18N.tf("👤 내 담당 ({s})", { s: mine.join(", ") }) } : null;
+  },
+  open(value, onDone, names) {
+    const list = (names || getAllSubsystemNames()).slice();
+    const cur = SubsysList.parse(value);
+    cur.filter(x => x !== "ALL" && !list.includes(x)).forEach(x => list.push(x));
+    const checks = [{ v: "ALL", t: "전체 서브시스템", checked: cur[0] === "ALL" }].concat(list.map(x => ({ v: x, t: x, checked: cur.includes(x) })));
+    openPromptDialog("담당 서브시스템 (여러 개 고를 수 있음)", "", picked => onDone(SubsysList.join(picked)), { checks, hint: "'전체'를 고르면 모든 서브시스템 · Enter 확인 · Esc 취소" });
+  }
+};
+window.SubsysPicker = SubsysPicker;
 
 function updateAllSubsystemFilterDropdowns() {
   const list = getAllSubsystemNames();
@@ -186,7 +215,7 @@ function updateAllSubsystemFilterDropdowns() {
     let curVal = sel.value || "ALL";
     if (!sel.dataset.init) {
       sel.dataset.init = "1";
-      const own = typeof Permission !== "undefined" ? Permission.ownSubsystem() : "ALL";
+      const own = Permission.firstOwnSubsystem();
       if (own && own !== "ALL") curVal = own;
     }
     sel.innerHTML = `<option value="ALL">${cfg.allLabel}</option>`;
