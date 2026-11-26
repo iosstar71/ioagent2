@@ -694,9 +694,9 @@ async function main() {
       await MeetingTemplate.upload({ target: { files: [file], value: "" } });
       const up = projectConfig.reportTemplates && projectConfig.reportTemplates.meeting, after = box.textContent;
       MeetingTemplate.reset(); document.getElementById("confirmDialogOkBtn").click();
-      return { name: got.n, title: sh.includes(m.title), agn, min: Math.max(5, (m.agendas || []).length), btns: !!box.querySelector('[data-click="UiH.clickEl"]'), before: /기본 양식/.test(before), up: !!(up && up.b64), after: /올린 양식: 우리회사_회의록/.test(after), reset: !(projectConfig.reportTemplates || {}).meeting };
+      return { name: got.n, title: sh.includes(m.title), agn, min: (m.agendas || []).length, btns: !!box.querySelector('[data-click="UiH.clickEl"]'), before: /기본 양식/.test(before), up: !!(up && up.b64), after: /올린 양식: 우리회사_회의록/.test(after), reset: !(projectConfig.reportTemplates || {}).meeting };
     });
-    check("Meeting minutes Excel fills the company minutes template (agendas at least 5 slots); report settings can upload a template and go back to the default",
+    check("Meeting minutes Excel fills the company minutes template (empty agenda slots have no number); report settings can upload a template and go back to the default",
       /회의록/.test(mx.name) && /\.xlsx$/.test(mx.name) && mx.title && mx.agn === mx.min && mx.btns && mx.before && mx.up && mx.after && mx.reset, JSON.stringify(mx));
 
     console.log("\n[Predecessor warnings (v1.5)]");

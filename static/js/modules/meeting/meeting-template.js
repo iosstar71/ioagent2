@@ -26,7 +26,7 @@ var MeetingTemplate = {
     const att = (m.attendees || []).map(a => [a.dept, a.name, a.role].filter(Boolean).join(" ") + (a.attendance && a.attendance !== "참석" ? ` (${a.attendance})` : ""));
     const agendas = (m.agendas || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
       .map((a, i) => ({ 번호: i + 1, 제목: a.title || "", 논의: a.discussion || "", 결정: a.decision || "" }));
-    for (let i = agendas.length; i < this.MIN_AGENDAS; i++) agendas.push({ 번호: i + 1, 제목: "", 논의: "", 결정: "" });
+    for (let i = agendas.length; i < this.MIN_AGENDAS; i++) agendas.push({ 번호: "", 제목: "", 논의: "", 결정: "" });   // 빈 자리는 번호도 비움 ("안건 N." 칸이 빈칸)
     const acts = (m.actionItems || []).filter(a => a.status !== "삭제")
       .map((a, i) => ({ 번호: i + 1, 내용: [a.title, a.content].filter(Boolean).join(" — "), 담당자: a.assignee || "", 완료예정일: this.excelDate(a.targetDate), 상태: a.status || "", 비고: a.status && a.status !== "대기" ? a.status : "" }));
     for (let i = acts.length; i < this.MIN_ACTIONS; i++) acts.push({ 번호: i + 1, 내용: "", 담당자: "", 완료예정일: "", 상태: "", 비고: "" });

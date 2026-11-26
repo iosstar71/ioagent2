@@ -233,14 +233,15 @@ async function meetingTemplateTests() {
   const v = MT.values(m);
   eq("meeting values: title with subsystem, schedule, attendees per line, agendas sorted and padded to 5, actions padded to 4 (deleted left out), date as Excel serial",
     [v.제목, v.일정, v.참석자목록, v.안건.map(a => a.번호 + a.제목).join(), v.액션.length, v.액션[0].내용, v.액션[0].완료예정일],
-    ["[MES] 연계 협의", "2027-05-28 10:00~11:30", "IT 김 수석\n이 (불참)", "1A,2B,3,4,5", 4, "할 일 — 상세", 46542]);
+    ["[MES] 연계 협의", "2027-05-28 10:00~11:30", "IT 김 수석\n이 (불참)", "1A,2B,,,", 4, "할 일 — 상세", 46542]);
   const r = await XT.fill(MT.current().bytes, v);
   const f = await XT.unzip(new Uint8Array(await r.blob.arrayBuffer())), sh = new TextDecoder().decode(f["xl/worksheets/sheet1.xml"]);
   const txt = ref => { const c = new RegExp(`<c r="${ref}"[^>]*?(?:/>|>([\\s\\S]*?)</c>)`).exec(sh); return c && c[1] ? (/<t[^>]*>([\s\S]*?)<\/t>/.exec(c[1]) || /<v>([\s\S]*?)<\/v>/.exec(c[1]) || [])[1] : ""; };
   // 안건 묶음 3줄 × 5 = 8 ~ 22, 상자 아래 23, 빈 줄 24, Action item 25 · 머리 26, Action 27 ~ 30
   eq("minutes file: 5 agenda blocks of 3 rows, empty decision cleared, merges copied per block, 4 action rows after",
     [txt("C8"), txt("C10"), txt("C11"), txt("C13"), txt("C14"), txt("C20"), sh.includes("<c r=\"B26\""), txt("C27"), txt("G27"), txt("B30"), /ref="C20:H20"/.test(sh), /ref="C27:E27"/.test(sh) && /ref="C30:E30"/.test(sh), r.unknown.length],
-    ["안건 1. A", "▶ 결정", "안건 2. B", "", "안건 3. ", "안건 5. ", true, "할 일 — 상세", "46542", "4", true, true, 0]);
+    ["안건 1. A", "▶ 결정", "안건 2. B", "", "", "", true, "할 일 — 상세", "46542", "4", true, true, 0]);
+  eq("minutes file: thick line under the action table (top border of the row after it)", /<row r="31"[^>]*>/.test(sh) && /<c r="H31" s="\d+"/.test(sh), true);
   eq("minutes file: long or multi-line text raises the row height", Number((/<row r="9"[^>]*\bht="([\d.]+)"/.exec(sh) || [])[1]) >= 30, true);
 }
 

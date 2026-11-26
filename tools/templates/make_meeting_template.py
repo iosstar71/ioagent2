@@ -44,11 +44,13 @@ new_rows = [row(1, 1), row(2, 2),
             row(10, 13, {"C": "▶ {{안건.결정}}"}),
             row(11, 26), row(12, 27), row(13, 28), row(14, 29),
             # Action Item 한 줄 — 건수만큼 반복 (최소 4줄)
-            row(15, 31, {"B": "{{액션.번호}}", "C": "{{액션.내용}}", "F": "{{액션.담당자}}", "G": "{{액션.완료예정일}}", "H": "{{액션.비고}}"})]
+            row(15, 31, {"B": "{{액션.번호}}", "C": "{{액션.내용}}", "F": "{{액션.담당자}}", "G": "{{액션.완료예정일}}", "H": "{{액션.비고}}"}),
+            # Action Item 표의 굵은 아래선: 표 다음 줄 칸의 굵은 윗선 (줄이 몇 개로 늘어도 마지막 줄 아래에 붙음)
+            '<row r="16" spans="2:8" ht="6" customHeight="1">%s</row>' % "".join('<c r="%s16" s="@TOPLINE@"/>' % c for c in "BCDEFGH")]
 s = re.sub(r"<sheetData>.*</sheetData>", "<sheetData>%s</sheetData>" % "".join(new_rows), s, flags=re.S)
 merges = ["B2:H2", "B3:C3", "E3:H3", "B4:C4", "E4:H4", "B5:C5", "E5:H5", "B6:C6", "E6:H6", "B7:H7", "C8:H8", "C9:H9", "C10:H10", "C11:H11", "C14:E14", "C15:E15"]
 s = re.sub(r"<mergeCells.*</mergeCells>", '<mergeCells count="%d">%s</mergeCells>' % (len(merges), "".join('<mergeCell ref="%s"/>' % m for m in merges)), s, flags=re.S)
-s = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="B1:H15"/>', s)
+s = re.sub(r'<dimension ref="[^"]*"/>', '<dimension ref="B1:H16"/>', s)
 # 칸 꾸밈: 안건 제목 · 논의 · 결정 · Action 내용은 줄바꿈(긴 글), 완료예정일은 날짜(yy-mm-dd) — 같은 꾸밈의 복사본을 더해 바꿈
 st = files["xl/styles.xml"].decode("utf-8")
 mx = re.search(r'(<cellXfs count=")(\d+)(">)(.*?)(</cellXfs>)', st, re.S)
@@ -61,6 +63,13 @@ def clone(ref, fn):
 wrap = lambda x: x.replace("<alignment ", '<alignment wrapText="1" ', 1) if "<alignment " in x else x.replace("/>", ' applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>', 1)
 for ref in ("C8", "C9", "C10", "C15"): clone(ref, wrap)
 clone("G15", lambda x: re.sub(r'numFmtId="\d+"', 'numFmtId="164" applyNumberFormat="1"', x, count=1))
+# 굵은 윗선 하나짜리 테두리 · 꾸밈 (Action Item 표 아래선)
+bm = re.search(r'(<borders count=")(\d+)(">)(.*?)(</borders>)', st, re.S)
+nb = int(bm.group(2))
+xfs.append('<xf numFmtId="0" fontId="0" fillId="0" borderId="%d" xfId="0" applyBorder="1"/>' % nb)
+s = s.replace("@TOPLINE@", str(len(xfs) - 1))
+st = st[:bm.start()] + bm.group(1) + str(nb + 1) + bm.group(3) + bm.group(4) + '<border><left/><right/><top style="medium"><color indexed="64"/></top><bottom/><diagonal/></border>' + bm.group(5) + st[bm.end():]
+mx = re.search(r'(<cellXfs count=")(\d+)(">)(.*?)(</cellXfs>)', st, re.S)
 st = st[:mx.start()] + mx.group(1) + str(len(xfs)) + mx.group(3) + "".join(xfs) + mx.group(5) + st[mx.end():]
 if "<numFmts" not in st:   # 날짜 서식은 cellXfs 를 바꾼 뒤에 넣음 (앞에서 넣으면 위치가 어긋남)
     st = st.replace("<fonts", '<numFmts count="1"><numFmt numFmtId="164" formatCode="yy\\-mm\\-dd"/></numFmts><fonts', 1)
