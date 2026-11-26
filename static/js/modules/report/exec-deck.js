@@ -707,6 +707,7 @@ var DeckSettings = {
     db.innerHTML = ExecDeck.DESIGNS.map(d => `<button type="button" class="deck-design${o.design === d.id ? " active" : ""}" data-design="${d.id}" data-click="DeckSettings.setDesign" data-click-args="${UiEvents.args(d.id)}">
       <span class="deck-thumb"><i class="dt-a"></i><i class="dt-b"></i><i class="dt-c"></i><i class="dt-d"></i></span><b>${escapeHtml(d.name)}</b><small>${escapeHtml(d.note)}</small></button>`).join("");
     if (typeof I18N !== "undefined" && I18N.translateTree) I18N.translateTree(document.getElementById("deckSetCard"));
+    MeetingTemplate.renderSettings();
   },
   _done(msg) { this.render(); if (typeof ReportTabs !== "undefined" && ReportTabs.cur === "deck") ReportTabs.renderDeck(); showToast(msg); },
   setPreset(id) {

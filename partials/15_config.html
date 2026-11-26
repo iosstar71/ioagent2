@@ -256,6 +256,12 @@
             <div id="deckDesignBox" class="deck-designs"></div>
           </div>
         </div>
+        <!-- 회의록 엑셀 양식: 회사 양식에 {{자리표시}} (MeetingTemplate) -->
+        <div class="card mtpl-card" id="mtplCard">
+          <div class="card-title"><span>📝 회의록 엑셀 양식</span></div>
+          <div id="mtplBox"></div>
+          <input type="file" id="mtplInput" hidden accept=".xlsx" data-change="MeetingTemplate.upload" data-change-args='["$event"]'>
+        </div>
         </div>
       </div>
 

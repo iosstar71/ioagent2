@@ -96,6 +96,11 @@
 |---|---|
 | `data/audit_log.db` · `TB_AUDIT_LOG` | 감사 로그 `LOGGED_AT` `EMP_NO` `IP` `PROJECT_ID` `KIND`(DELETE · RESET · RESTORE · MERGE · LOCK · DOWNLOAD · DOWNLOAD_BLOCKED · LOGIN_FAIL · PASSWORD · PERMISSION · MEMBER · BASELINE) `TARGET` `DETAIL` — 자료 DB 와 따로 둠, 보관 `app.ini [audit] keep_days` (`server/audit.py`) |
 
+## 보고서 양식 (`projectConfig.reportTemplates`)
+| 필드 | 뜻 |
+|---|---|
+| `meeting` | 회의록 엑셀 양식 `{ name, b64(xlsx), at, by }` — 없으면 기본 양식 (`BUILTIN_REPORT_TEMPLATES.meeting`, 원본 `static/templates/회의록_기본양식.xlsx`). 자리표시는 `MeetingTemplate.KEYS` |
+
 ## 내 작업 파일 (자료 다운로드 JSON — `MergeTable.download`)
 | 필드 | 뜻 |
 |---|---|

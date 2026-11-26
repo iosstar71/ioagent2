@@ -50,6 +50,7 @@
 | [Workgroup] 다운로드 제한 · 감사 로그 | 서버 `workgroup/server/audit.py`, 화면 `workgroup/webapp/static/js/core/download-guard.js` |
 | 담당 서브시스템 여러 개("W1,W2") · 고르기 창 | 규칙 `core/data-registry.js` (`SubsysList`, `Permission.ownSubsystems`) · 서버 `permission.py` (`owns`), 고르기 `master-subsystem.js` (`SubsysPicker`) |
 | [Standalone] 멤버 파일 여러 개 합치기 · 멤버 암호 반영 · 저장 때 JSON | `modules/dataio/merge-batch.js` (`MergeBatch`) · `member-cred.js` (`MemberCred`) · `core/save-folder.js` (`SaveFolder`) |
+| 회의록 엑셀 양식 · 양식 엔진 | `modules/meeting/meeting-template.js` (`MeetingTemplate` — 값 · 올리기, 기본 양식 `static/templates/` → `python tools/templates/embed_templates.py`), 엔진 `modules/dataio/xlsx-template.js` (`XlsxTemplate`, PM Hub Cost 와 같은 규칙) |
 | 로그인 방식(아이디만 · 암호) | `core/access-control.js` (`getAuthPolicy` — 기본 Standalone `ID_ONLY` · Workgroup `STARTUP_ONLY`, `idOnlyLogin`, `pwdVerified`) |
 - **여러 파일을 같은 식으로 고칠 때**는 파이썬 스크립트 한 번으로 고친다(파일마다 Edit 반복 금지). 고친 뒤 다시 읽어 확인하지 않는다.
 - **시험은 필요한 만큼만**: 작은 수정 → `node --check <파일>` + `python tools/check_ui_debt.py`; 계산 수정 → `node tools/tests/unit/run_unit.js`(1초); 화면 동작 변경 → E2E 1회.

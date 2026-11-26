@@ -1893,6 +1893,18 @@ var I18N_EN = (function () {
     "전체 사용자에 적용": "Apply to All",
     "전체 상태": "All Status",
     "전체 서브시스템": "All Subsystems",
+    "📝 회의록 엑셀 양식": "📝 Meeting minutes Excel template",
+    "올린 양식": "Uploaded template",
+    "기본 양식": "Default template",
+    "📤 양식 올리기": "📤 Upload template",
+    "📥 지금 양식 내려받기": "📥 Download current template",
+    "↩️ 기본 양식으로": "↩️ Back to default",
+    "회사 회의록 양식(xlsx)의 값이 들어갈 칸에 아래 이름을 {{이름}} 으로 적어 올립니다. 올린 양식은 [💾 저장]하면 기록되고 팀에 함께 전달됩니다 (Standalone: 마스터 파일 JSON · 배포용 latest.json, Workgroup: 서버). 올리기 · 되돌리기는 PM · 관리자만.": "Write the names below as {{name}} in the cells of your company minutes template (xlsx) and upload it. Press [💾 Save] to keep it; it goes to the team with the project (Standalone: master file JSON · latest.json, Workgroup: server). Only PM · admins can upload or reset.",
+    "올린 회의록 양식을 지우고 기본 양식으로 되돌릴까요? ([💾 저장]하면 기록됩니다)": "Remove the uploaded minutes template and go back to the default? (Press [💾 Save] to keep it)",
+    "⛔ 회의록 양식은 PM · 관리자만 바꿀 수 있습니다.": "⛔ Only PM · admins can change the minutes template.",
+    "⚠️ 엑셀(xlsx) 양식만 올릴 수 있습니다.": "⚠️ Only Excel (xlsx) templates can be uploaded.",
+    "⚠️ 양식 파일이 너무 큽니다 (1MB 까지).": "⚠️ The template file is too large (up to 1 MB).",
+    "↩️ 기본 회의록 양식으로 되돌렸습니다.": "↩️ Back to the default minutes template.",
     "담당 서브시스템 (여러 개 고를 수 있음)": "Assigned subsystems (multiple allowed)",
     "'전체'를 고르면 모든 서브시스템 · Enter 확인 · Esc 취소": "Pick 'All' for every subsystem · Enter OK · Esc cancel",
     "⚠️ 하나 이상 고르세요.": "⚠️ Pick at least one.",
@@ -3809,7 +3821,16 @@ var I18N_EN = (function () {
     "✅ [멤버 자료 {n}개 반영] 스냅샷: {b} — [💾 저장]을 눌러 기록하세요.": "✅ [{n} member files applied] Snapshot: {b} — press [💾 Save] to keep it.",
     "📁 저장 폴더: {n}": "📁 Save folder: {n}",
     "{id} 암호 갱신": "{id} password updated",
-    "👤 내 담당 ({s})": "👤 Mine ({s})"
+    "👤 내 담당 ({s})": "👤 Mine ({s})",
+    "⚠️ 회의록 양식을 채우지 못했습니다: {m}": "⚠️ Could not fill the minutes template: {m}",
+    " · 모르는 자리표시 {k} — 빈칸으로 둠": " · unknown placeholders {k} — left blank",
+    "📄 [회의록 엑셀] {f} ({t}){w}": "📄 [Minutes Excel] {f} ({t}){w}",
+    "올린 양식: {n} · {a}{b}": "Uploaded: {n} · {a}{b}",
+    "기본 양식: {n}": "Default: {n}",
+    "자리표시 목록 ({n}개)": "Placeholders ({n})",
+    "⚠️ 양식을 읽지 못했습니다: {m}": "⚠️ Could not read the template: {m}",
+    "📤 회의록 양식을 올렸습니다: {n}{w} — [💾 저장]하면 기록됩니다.": "📤 Minutes template uploaded: {n}{w} — press [💾 Save] to keep it.",
+    " · 모르는 자리표시 {k}": " · unknown placeholders {k}"
   };
   return { exact, patterns, phrases, templates };
 })();

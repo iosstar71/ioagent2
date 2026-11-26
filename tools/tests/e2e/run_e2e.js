@@ -681,6 +681,23 @@ async function main() {
       await sx.evaluate(t => { try { GShell.go(t); } catch (e) {} }, t); await sx.waitForTimeout(200);
     }
     check("Every screen opens on the sample project without page errors", sx.errors.length === 0, sx.errors.slice(0, 3).join(" | "));
+    // 회의록 엑셀: 회사 회의록 양식(기본 양식)에 채움 — 안건 최소 5개 자리 · Action Item 최소 4줄. 보고서 설정에서 양식 올리기 · 되돌리기
+    const mx = await sx.evaluate(async () => {
+      const m = meetingsData.find(x => (x.agendas || []).length && (x.actionItems || []).length) || meetingsData[0];
+      const o = ExcelSync._triggerDownload; let got = null; ExcelSync._triggerDownload = (b, n) => { got = { b, n }; };
+      try { await MeetingManager.exportMeetingExcel(m.id); } finally { ExcelSync._triggerDownload = o; }
+      const f = await XlsxTemplate.unzip(new Uint8Array(await got.b.arrayBuffer())), sh = new TextDecoder().decode(f["xl/worksheets/sheet1.xml"]);
+      const agn = (sh.match(/안건 \d+\./g) || []).length;
+      ReportTabs.open("settings"); await new Promise(r => setTimeout(r, 400));
+      const box = document.getElementById("mtplBox"), before = box.textContent;
+      const t = MeetingTemplate.current(), file = new File([t.bytes], "우리회사_회의록.xlsx");
+      await MeetingTemplate.upload({ target: { files: [file], value: "" } });
+      const up = projectConfig.reportTemplates && projectConfig.reportTemplates.meeting, after = box.textContent;
+      MeetingTemplate.reset(); document.getElementById("confirmDialogOkBtn").click();
+      return { name: got.n, title: sh.includes(m.title), agn, min: Math.max(5, (m.agendas || []).length), btns: !!box.querySelector('[data-click="UiH.clickEl"]'), before: /기본 양식/.test(before), up: !!(up && up.b64), after: /올린 양식: 우리회사_회의록/.test(after), reset: !(projectConfig.reportTemplates || {}).meeting };
+    });
+    check("Meeting minutes Excel fills the company minutes template (agendas at least 5 slots); report settings can upload a template and go back to the default",
+      /회의록/.test(mx.name) && /\.xlsx$/.test(mx.name) && mx.title && mx.agn === mx.min && mx.btns && mx.before && mx.up && mx.after && mx.reset, JSON.stringify(mx));
 
     console.log("\n[Predecessor warnings (v1.5)]");
     await sx.evaluate(() => { GShell.go("tab-wbs"); WbsStatusChips.set("ALL"); document.getElementById("wbsMaxLevelFilter").value = "5"; renderWbsTable(); }); await sx.waitForTimeout(300);

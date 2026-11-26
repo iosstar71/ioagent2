@@ -2665,6 +2665,12 @@
             <div id="deckDesignBox" class="deck-designs"></div>
           </div>
         </div>
+        <!-- 회의록 엑셀 양식: 회사 양식에 {{자리표시}} (MeetingTemplate) -->
+        <div class="card mtpl-card" id="mtplCard">
+          <div class="card-title"><span>📝 회의록 엑셀 양식</span></div>
+          <div id="mtplBox"></div>
+          <input type="file" id="mtplInput" hidden accept=".xlsx" data-change="MeetingTemplate.upload" data-change-args='["$event"]'>
+        </div>
         </div>
       </div>
 
@@ -3355,6 +3361,9 @@
   <script src="static/js/modules/meeting/meeting-schedule.js"></script>
   <script src="static/js/modules/meeting/meeting-minutes.js"></script>
   <script src="static/js/modules/meeting/meeting-actions.js"></script>
+  <script src="static/js/modules/dataio/xlsx-template.js"></script>
+  <script src="static/js/modules/meeting/report-templates-default.js"></script>
+  <script src="static/js/modules/meeting/meeting-template.js"></script>
   <script src="static/js/modules/meeting/meeting-export.js"></script>
   <script src="static/js/common/charts.js"></script>
   <script src="static/js/modules/weekly/weekly-export.js"></script>

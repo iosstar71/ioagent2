@@ -1,5 +1,5 @@
 // =============================================================================
-// 회의 다운로드 (MeetingManager 의 일부) — 회의록 워드 · 엑셀, Action Item · 일정 목록 엑셀
+// 회의 다운로드 (MeetingManager 의 일부) — 회의록 워드 · 엑셀(양식: meeting-template.js), Action Item · 일정 목록 엑셀
 // modules/meeting/meeting-manager.js 다음에 불러옴
 // =============================================================================
 Object.assign(MeetingManager, {
@@ -24,81 +24,9 @@ Object.assign(MeetingManager, {
   },
 
 
-  // 회의록 엑셀(XLSX) 다운로드
-  exportMeetingExcel(meetingId) {
-    const m = (meetingsData || []).find(x => x.id === meetingId) || meetingsData[0];
-    if (!m) return;
+  // 회의록 엑셀(XLSX) 다운로드 — 회의록 양식(올린 양식, 없으면 기본 양식)에 채움 (MeetingTemplate)
+  exportMeetingExcel(meetingId) { return MeetingTemplate.exportExcel(meetingId); },
 
-    const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "프로젝트";
-
-    const s1Rows = [
-      { cells: [`[회의록] ${m.title}`], styleId: 3, height: 28 },
-      { cells: ["프로젝트명", projName, "서브시스템", m.system, "회의일자", m.date, "회의시간", `${m.startTime}~${m.endTime}`], styleId: 2, height: 22 },
-      { cells: ["회의장소", m.location || "-", "주관/발표", m.host || "-", "회의상태", m.status, "작성일시", m.updatedAt || "-"], styleId: 2, height: 22 },
-      { cells: [], styleId: 0, height: 10 },
-      { cells: ["【회의 목적 및 총괄 요약】"], styleId: 3, height: 24 },
-      { cells: [m.summary || m.title], styleId: 2, height: 26 },
-      { cells: [], styleId: 0, height: 10 },
-      { cells: ["【참석자 명단】"], styleId: 3, height: 24 }
-    ];
-
-    (m.attendees || []).forEach(att => {
-      s1Rows.push({
-        cells: ["참석자", att.name, "소속부서", att.dept || "-", "역할", att.role || "-", "참석여부", att.attendance || "참석"],
-        styleId: 2,
-        height: 20
-      });
-    });
-
-    s1Rows.push({ cells: [], styleId: 0, height: 12 });
-    s1Rows.push({ cells: ["【회의 안건별 논의 및 결정사항】"], styleId: 3, height: 24 });
-    s1Rows.push({ cells: ["안건번호", "안건명칭", "논의 내용 및 주요 발언 요지", "결정 사항 및 실행 합의"], styleId: 1, height: 24 });
-
-    (m.agendas || []).forEach(a => {
-      s1Rows.push({
-        cells: [`안건 #${a.order}`, a.title, a.discussion || "-", a.decision || "-"],
-        styleId: 2,
-        height: 28
-      });
-    });
-
-    s1Rows.push({ cells: [], styleId: 0, height: 12 });
-    s1Rows.push({ cells: ["【도출 Action Item】"], styleId: 3, height: 24 });
-    s1Rows.push({ cells: ["ID", "Action Item 명칭", "세부 수행과업", "요청자", "담당자", "완료목표일", "상태"], styleId: 1, height: 24 });
-
-    (m.actionItems || []).forEach(act => {
-      s1Rows.push({
-        cells: [act.id, act.title, act.content || "-", act.requester || "-", act.assignee || "-", act.targetDate || "-", act.status || "진행중"],
-        styleId: 2,
-        height: 22
-      });
-    });
-
-    // 회의록 엑셀 제목 및 헤더 짤림 방지: A~H열 셀 병합 및 컬럼 너비 확대
-    const merges = ["A1:H1", "A5:H5", "A6:H6", "A8:H8"];
-    // Agenda and Action Items banners
-    let rIdx = 8 + (m.attendees || []).length + 1; // blank row
-    rIdx++; // blank
-    merges.push(`A${rIdx}:H${rIdx}`); // 안건 헤더
-    rIdx += 1 + 1 + (m.agendas || []).length; // 안건 테이블
-    rIdx++; // blank
-    merges.push(`A${rIdx}:H${rIdx}`); // Action Item 헤더
-
-    const blob = ExcelSync._buildXlsxBlob([
-      {
-        name: "회의록_상세",
-        colWidths: [16, 28, 45, 45, 16, 16, 16, 16],
-        rows: s1Rows,
-        merges: merges
-      }
-    ]);
-    const filename = ExcelSync.stdName("회의록", [m.system, m.title], "xlsx", String(m.date || "").replace(/-/g, ""));
-    ExcelSync._triggerDownload(blob, filename);
-    showToast(`📊 [회의록 엑셀 다운로드 완료] ${filename} 파일이 저장되었습니다.`);
-  },
-
-
-  // Action Item 통합 목록 엑셀 내려받기
   exportActionItemsExcel() {
     const allActions = this.getAllActionItems().filter(a => a.status !== "삭제");
     const projName = (typeof projectConfig !== "undefined" && projectConfig.projectName) || "프로젝트";
