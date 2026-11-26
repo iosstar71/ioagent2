@@ -11,7 +11,9 @@
 //  브라우저의 [PDF로 저장]을 씀 (폐쇄망에서 한글 글꼴을 PDF 에 넣을 수 없어서)
 // =============================================================================
 var ExecDeck = {
-  W: 13.333, H: 7.5, // 16:9 (inch)
+  W: 10.833, H: 7.5, // A4 (PowerPoint 「A4 용지」 27.51 × 19.05cm, inch)
+  CW: 13.333,      // 본문 장표를 그리는 바탕 폭 (16:9) — 다 그린 뒤 W 에 맞춰 가로로 줄임 (FS: 글자 크기 비율)
+  FS: 0.86,
 
   // ---------------------------------------------------------------------------
   // 내용(구성)과 디자인은 따로 고름 — 보고 > 보고서 설정 (projectConfig.exportSettings.deck 에 저장)
@@ -190,13 +192,20 @@ var ExecDeck = {
       slides.push({ name: "S-커브", els });
     }
 
-    // 4-1. 로드맵 — 통합 + 서브시스템을 한 장에 (RoadmapChart)
+    // 4-1. 로드맵 — 통합 + 서브시스템을 한 장에 (RoadmapChart, 장표 폭 W 로 직접 그림)
     if (on("roadmap")) {
       mark("로드맵");
-      const rm = this.roadmapRange(), els = head("추진 로드맵");
-      els.push(...RoadmapChart.slideEls({ systems: c.order, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: projectConfig.milestones || [], style: this.roadmapStyle, T, p, box: { x: 0.45, y: 1.0, w: 12.43, h: 5.62 } }));
-      els.push(T(0.45, 6.89, 9, 0.22, [p(this.roadmapStyle === "bracket" ? "진하게 칠함: 완료   옅게 칠함: 진행 중   선만: 예정 (계획 일정 기준)   축 아래: 같은 기간에 함께 가는 트랙   ◆ 마일스톤   빨간 선: 기준일" : "진한 색: 완료   테두리: 진행 중   옅은 색: 예정 (계획 일정 기준)   ◆ 마일스톤   빨간 선: 기준일", 8, { color: "94A3B8" })], { anchor: "ctr" }));
-      slides.push({ name: "로드맵", els });
+      const rm = this.roadmapRange(), els = head("추진 로드맵"), Wd = this.W;
+      const legend = this.roadmapStyle === "bracket" ? "진하게 칠함: 완료   옅게 칠함: 진행 중   선만: 예정 (계획 일정 기준)   축 아래: 같은 기간에 함께 가는 트랙   ◆ 마일스톤   빨간 선: 기준일" : "진한 색: 완료   테두리: 진행 중   옅은 색: 예정 (계획 일정 기준)   ◆ 마일스톤   빨간 선: 기준일";
+      // 한 장 = 단계(2레벨)만, 나눠 그리기 = 장마다 서브시스템 4개 이하 + 세부 작업(3레벨)
+      const per = this.roadmapSplit ? 4 : c.order.length, pages = Math.max(1, Math.ceil(c.order.length / per)), size = Math.ceil(c.order.length / pages);
+      for (let i = 0; i < pages; i++) {
+        const sys = c.order.slice(i * size, (i + 1) * size), els2 = i ? head(`추진 로드맵 (${i + 1}/${pages})`) : (pages > 1 ? head(`추진 로드맵 (1/${pages})`) : els);
+        const rmEls = RoadmapChart.slideEls({ systems: sys, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: (projectConfig.milestones || []).filter(m => !m.scope || m.scope === "ALL" || sys.indexOf(m.scope) !== -1), style: this.roadmapStyle, depth: this.roadmapSplit ? 3 : undefined, T, p, box: { x: 0.35, y: 0.9, w: Wd - 0.7, h: 5.75 } });
+        rmEls.push(T(0.35, 6.9, Wd - 0.7, 0.2, [p(legend, 7, { color: "94A3B8" })], { anchor: "ctr" }));
+        els2.push(...rmEls.map(e => Object.assign(e, { native: true })));
+        slides.push({ name: "로드맵", els: els2 });
+      }
     }
 
     // 5. 서브시스템별 계획 대비 실적 — 불릿 차트 (10개씩)
@@ -361,6 +370,13 @@ var ExecDeck = {
         ...(on("sys") && c.missing.length ? [p(`미작성 서브시스템 (장표 제외): ${c.missing.join(", ")}`, 11, { color: "B45309" })] : [])
       ], 11.3, 5.6))
     ]);
+    // 본문을 장표 폭에 맞춤 (머리 · 바닥 · 표지 · 로드맵처럼 W 로 직접 그린 것은 그대로)
+    const k = this.W / this.CW;
+    if (k !== 1) slides.slice(1).forEach(sl => sl.els.forEach(e => {
+      if (e.fixed || e.native) return;
+      e.x *= k; e.w *= k;
+      if (e.paras) e.paras.forEach(q => { q.size = Math.round(q.size * this.FS * 10) / 10; });
+    }));
     // 디자인에 따라 본문 자리 옮기기 (예: Side Bar — 왼쪽 띠만큼 오른쪽으로, 조금 작게)
     if (D.shift) {
       const sx = (this.W - D.shift.dx) / this.W, fs = D.shift.fs || 1;
@@ -377,11 +393,11 @@ var ExecDeck = {
   _head(id, c, title, sub, T, R, p) {
     const P = c.pal, W = this.W, Hh = this.H, subT = sub || c.wObj.fullLabel, foot = `${c.projName} · 종합보고서`;
     if (id === "minimal") return [
-      T(0.6, 0.14, 9.2, 0.66, [p(title, 24, { bold: true, color: "111827" })], { anchor: "ctr" }),
-      T(9.4, 0.3, 3.35, 0.5, [p(subT, 11, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
-      R(0.6, 0.86, W - 1.2, 0.025, "111827"),
+      T(0.6, 0.12, W - 4, 0.6, [p(title, 20, { bold: true, color: "111827" })], { anchor: "ctr" }),
+      T(W - 3.4, 0.24, 2.8, 0.44, [p(subT, 10, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
+      R(0.6, 0.76, W - 1.2, 0.025, "111827"),
       R(0.6, Hh - 0.36, W - 1.2, 0.01, "D1D5DB"),
-      T(0.6, Hh - 0.34, 8, 0.32, [p(foot, 9, { color: "9CA3AF" })], { anchor: "ctr" }),
+      T(0.6, Hh - 0.34, W - 4, 0.32, [p(foot, 9, { color: "9CA3AF" })], { anchor: "ctr" }),
       T(W - 3.35, Hh - 0.34, 2.75, 0.32, [p(c.docNo, 9, { color: "9CA3AF", align: "r" })], { anchor: "ctr" })];
     if (id === "sidebar") return [
       R(0, 0, 2.3, Hh, P.headerBg),
@@ -390,24 +406,24 @@ var ExecDeck = {
       T(0.22, Hh - 1.0, 1.9, 0.8, [p(c.projName, 9, { color: "CCFBF1" }), p(c.docNo, 7.5, { color: "99F6E4" })])];
     if (id === "dark") return [
       R(0.5, 0.34, 0.22, 0.22, P.accent, { shape: "ellipse" }),
-      T(0.85, 0.12, 8.9, 0.66, [p(title, 24, { bold: true, color: "111827" })], { anchor: "ctr" }),
-      T(9.4, 0.12, 3.5, 0.66, [p(subT, 11, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
+      T(0.85, 0.1, W - 4.2, 0.6, [p(title, 20, { bold: true, color: "111827" })], { anchor: "ctr" }),
+      T(W - 3.35, 0.1, 2.9, 0.6, [p(subT, 10, { color: "6B7280", align: "r" })], { anchor: "ctr" }),
       R(0, Hh - 0.32, W, 0.32, "111827"),
-      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "D1D5DB" })], { anchor: "ctr" }),
+      T(0.45, Hh - 0.32, W - 3.8, 0.32, [p(foot, 9, { color: "D1D5DB" })], { anchor: "ctr" }),
       T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "D1D5DB", align: "r" })], { anchor: "ctr" })];
     if (id === "soft") return [
       R(0, 0, W, Hh, "F1F7F5"),
-      T(0.45, 0.12, 9.0, 0.66, [p(title, 24, { bold: true, color: "1F4D43" })], { anchor: "ctr" }),
-      R(W - 3.75, 0.27, 3.3, 0.36, P.headerBg, { shape: "round" }),
-      T(W - 3.75, 0.27, 3.3, 0.36, [p(subT, 10, { bold: true, color: "1F4D43", align: "ctr" })], { anchor: "ctr" }),
-      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "7B8C87" })], { anchor: "ctr" }),
+      T(0.45, 0.1, W - 3.9, 0.6, [p(title, 20, { bold: true, color: "1F4D43" })], { anchor: "ctr" }),
+      R(W - 3.35, 0.22, 2.9, 0.34, P.headerBg, { shape: "round" }),
+      T(W - 3.35, 0.22, 2.9, 0.34, [p(subT, 9.5, { bold: true, color: "1F4D43", align: "ctr" })], { anchor: "ctr" }),
+      T(0.45, Hh - 0.32, W - 3.8, 0.32, [p(foot, 9, { color: "7B8C87" })], { anchor: "ctr" }),
       T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "7B8C87", align: "r" })], { anchor: "ctr" })];
     return [
-      R(0, 0, W, 0.9, P.headerBg),
-      T(0.45, 0.12, 9.5, 0.66, [p(title, 24, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
-      T(9.4, 0.12, 3.5, 0.66, [p(subT, 11, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
+      R(0, 0, W, 0.78, P.headerBg),
+      T(0.45, 0.09, W - 3.8, 0.6, [p(title, 20, { bold: true, color: P.headerTextColor })], { anchor: "ctr" }),
+      T(W - 3.35, 0.09, 2.9, 0.6, [p(subT, 10, { color: P.headerTextColor, align: "r" })], { anchor: "ctr" }),
       R(0, Hh - 0.32, W, 0.32, P.subHeaderBg),
-      T(0.45, Hh - 0.32, 8, 0.32, [p(foot, 9, { color: "475569" })], { anchor: "ctr" }),
+      T(0.45, Hh - 0.32, W - 3.8, 0.32, [p(foot, 9, { color: "475569" })], { anchor: "ctr" }),
       T(W - 3.2, Hh - 0.32, 2.75, 0.32, [p(c.docNo, 9, { color: "475569", align: "r" })], { anchor: "ctr" })];
   },
 
@@ -420,48 +436,48 @@ var ExecDeck = {
       p(`문서 번호 ${c.docNo}`, 11, { color: dark ? "9CA3AF" : "64748B" })];
     if (id === "minimal") return [
       R(0, 0, W, Hh, "FFFFFF"),
-      T(0.9, 0.9, 11.5, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { color: "6B7280" })]),
-      T(0.9, 1.4, 11.5, 0.6, [p(c.projName, 18, { bold: true, color: "374151" })]),
-      T(0.9, 3.4, 11.5, 1.1, [p("종합보고서", 44, { bold: true, color: "111827" })]),
-      T(0.9, 4.6, 11.5, 0.6, [p(`${c.wObj.fullLabel}   ·   ${next}`, 16, { color: "4B5563" })]),
+      T(0.9, 0.9, W - 1.8, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { color: "6B7280" })]),
+      T(0.9, 1.4, W - 1.8, 0.6, [p(c.projName, 18, { bold: true, color: "374151" })]),
+      T(0.9, 3.4, W - 1.8, 1.1, [p("종합보고서", 44, { bold: true, color: "111827" })]),
+      T(0.9, 4.6, W - 1.8, 0.6, [p(`${c.wObj.fullLabel}   ·   ${next}`, 16, { color: "4B5563" })]),
       R(0.9, 5.45, W - 1.8, 0.025, "111827"),
-      T(0.9, 5.7, 11.5, 0.9, meta(false))];
+      T(0.9, 5.7, W - 1.8, 0.9, meta(false))];
     if (id === "sidebar") return [
       R(0, 0, W, Hh, "FFFFFF"),
-      R(0, 0, 5.0, Hh, P.headerBg),
-      T(0.6, Hh - 1.9, 3.8, 1.3, [p("WEEKLY", 13, { color: "CCFBF1" }), p("SUMMARY", 13, { color: "CCFBF1" }), p("REPORT", 13, { color: "CCFBF1" })]),
-      T(5.7, 1.5, 7.0, 0.6, [p(c.projName, 18, { bold: true, color: "475569" })]),
-      T(5.7, 2.5, 7.0, 1.1, [p("종합보고서", 42, { bold: true, color: "134E4A" })]),
-      T(5.7, 3.7, 7.0, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
-      T(5.7, 4.4, 7.0, 0.5, [p(next, 14, { color: "475569" })]),
-      T(5.7, 6.0, 7.0, 0.9, meta(false))];
+      R(0, 0, 3.6, Hh, P.headerBg),
+      T(0.5, Hh - 1.9, 2.8, 1.3, [p("WEEKLY", 13, { color: "CCFBF1" }), p("SUMMARY", 13, { color: "CCFBF1" }), p("REPORT", 13, { color: "CCFBF1" })]),
+      T(4.2, 1.5, W - 4.7, 0.6, [p(c.projName, 18, { bold: true, color: "475569" })]),
+      T(4.2, 2.5, W - 4.7, 1.1, [p("종합보고서", 42, { bold: true, color: "134E4A" })]),
+      T(4.2, 3.7, W - 4.7, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
+      T(4.2, 4.4, W - 4.7, 0.5, [p(next, 14, { color: "475569" })]),
+      T(4.2, 6.0, W - 4.7, 0.9, meta(false))];
     if (id === "dark") return [
       R(0, 0, W, Hh, "111827"),
-      R(W - 4.3, Hh - 4.0, 3.7, 3.7, P.accent, { shape: "ellipse" }),
-      T(0.9, 1.0, 9.0, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { bold: true, color: P.accent })]),
-      T(0.9, 1.5, 9.0, 0.6, [p(c.projName, 18, { bold: true, color: "D1D5DB" })]),
-      T(0.9, 2.5, 9.0, 1.1, [p("종합보고서", 44, { bold: true, color: "FFFFFF" })]),
-      T(0.9, 3.7, 9.0, 0.7, [p(c.wObj.fullLabel, 22, { bold: true, color: "F3F4F6" })]),
-      T(0.9, 4.4, 9.0, 0.5, [p(next, 14, { color: "9CA3AF" })]),
-      T(0.9, 6.0, 8.0, 0.9, meta(true))];
+      R(W - 3.4, Hh - 3.2, 2.9, 2.9, P.accent, { shape: "ellipse" }),
+      T(0.9, 1.0, W - 2.2, 0.5, [p("WEEKLY SUMMARY REPORT", 12, { bold: true, color: P.accent })]),
+      T(0.9, 1.5, W - 2.2, 0.6, [p(c.projName, 18, { bold: true, color: "D1D5DB" })]),
+      T(0.9, 2.5, W - 2.2, 1.1, [p("종합보고서", 44, { bold: true, color: "FFFFFF" })]),
+      T(0.9, 3.7, W - 2.2, 0.7, [p(c.wObj.fullLabel, 22, { bold: true, color: "F3F4F6" })]),
+      T(0.9, 4.4, W - 2.2, 0.5, [p(next, 14, { color: "9CA3AF" })]),
+      T(0.9, 6.0, W - 2.2, 0.9, meta(true))];
     if (id === "soft") return [
       R(0, 0, W, Hh, "F1F7F5"),
       R(1.1, 1.0, W - 2.2, Hh - 2.0, "FFFFFF", { shape: "round", line: P.border }),
       R(1.8, 1.55, 3.4, 0.4, P.headerBg, { shape: "round" }),
       T(1.8, 1.55, 3.4, 0.4, [p(c.projName, 11, { bold: true, color: "1F4D43", align: "ctr" })], { anchor: "ctr" }),
-      T(1.8, 2.3, 9.8, 1.1, [p("종합보고서", 42, { bold: true, color: P.primary })]),
-      T(1.8, 3.5, 9.8, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
-      T(1.8, 4.2, 9.8, 0.5, [p(next, 14, { color: "5B6B66" })]),
-      T(1.8, 5.3, 9.8, 0.9, meta(false))];
+      T(1.8, 2.3, W - 3.6, 1.1, [p("종합보고서", 42, { bold: true, color: P.primary })]),
+      T(1.8, 3.5, W - 3.6, 0.7, [p(c.wObj.fullLabel, 20, { bold: true, color: "1F2937" })]),
+      T(1.8, 4.2, W - 3.6, 0.5, [p(next, 14, { color: "5B6B66" })]),
+      T(1.8, 5.3, W - 3.6, 0.9, meta(false))];
     return [
       R(0, 0, W, Hh, "FFFFFF"),
       R(0, 0, 0.35, Hh, P.headerBg),
       R(0.35, 2.15, W - 0.35, 0.06, P.primary),
-      T(1.0, 1.0, 11.3, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
-      T(1.0, 2.45, 11.3, 1.1, [p("종합보고서", 44, { bold: true, color: P.primary })]),
-      T(1.0, 3.65, 11.3, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
-      T(1.0, 4.4, 11.3, 0.5, [p(next, 14, { color: "475569" })]),
-      T(1.0, 6.0, 11.3, 0.9, meta(false))];
+      T(1.0, 1.0, W - 1.6, 0.6, [p(c.projName, 20, { bold: true, color: "475569" })]),
+      T(1.0, 2.45, W - 1.6, 1.1, [p("종합보고서", 44, { bold: true, color: P.primary })]),
+      T(1.0, 3.65, W - 1.6, 0.7, [p(c.wObj.fullLabel, 24, { bold: true, color: "1F2937" })]),
+      T(1.0, 4.4, W - 1.6, 0.5, [p(next, 14, { color: "475569" })]),
+      T(1.0, 6.0, W - 1.6, 0.9, meta(false))];
   },
 
   // S-커브 자료: 계획선은 작성 시점 계획(없으면 지금 계획), 실적은 주차별 주간보고 작성 시점 실적을 이어 그림
@@ -609,7 +625,7 @@ var ExecDeck = {
         return `<a:p>${bu}<a:r>${rpr}<a:t>${esc(q.text)}</a:t></a:r></a:p>`;
       }).join("");
       return `<p:sp><p:nvSpPr><p:cNvPr id="${nid}" name="Text ${nid}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr><p:spPr>${geo}${fill}${line}</p:spPr>` +
-        `<p:txBody><a:bodyPr wrap="square" lIns="45720" tIns="27432" rIns="45720" bIns="27432" anchor="${el.anchor === "ctr" ? "ctr" : "t"}"><a:noAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`;
+        `<p:txBody><a:bodyPr wrap="square" lIns="45720" tIns="27432" rIns="45720" bIns="27432" anchor="${el.anchor === "ctr" || el.anchor === "b" ? el.anchor : "t"}"><a:noAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`;
     };
     const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
     const tree = inner => `<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${inner}</p:spTree></p:cSld>`;
@@ -647,7 +663,7 @@ var ExecDeck = {
     files.push({ name: "ppt/viewProps.xml", content: X(`<p:viewPr ${NS}><p:normalViewPr><p:restoredLeft sz="15620"/><p:restoredTop sz="94660"/></p:normalViewPr><p:gridSpacing cx="76200" cy="76200"/></p:viewPr>`) });
     files.push({ name: "ppt/tableStyles.xml", content: X(`<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`) });
     const sldIds = deck.slides.map((s, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 2}"/>`).join("");
-    files.push({ name: "ppt/presentation.xml", content: X(`<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${sldIds}</p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle>${lvl}</p:defaultTextStyle></p:presentation>`) });
+    files.push({ name: "ppt/presentation.xml", content: X(`<p:presentation ${NS} saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${sldIds}</p:sldIdLst><p:sldSz cx="${E(this.W)}" cy="${E(this.H)}"/><p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle>${lvl}</p:defaultTextStyle></p:presentation>`) });
     const presRels = [`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>`]
       .concat(deck.slides.map((s, i) => `<Relationship Id="rId${i + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${i + 1}.xml"/>`))
       .concat([`<Relationship Id="rId${n + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>`,
@@ -687,13 +703,13 @@ var ExecDeck = {
       }
       if (e.t === "rect") return `<div class="r" style="${box}${e.r ? `border-radius:${px(e.r)};` : e.shape === "ellipse" ? "border-radius:50%;" : e.shape === "diamond" ? "clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);" : e.shape === "round" ? "border-radius:10pt;" : ""}"></div>`;
       const ps = e.paras.map(q => `<p style="font-size:${q.size}pt;${q.bold ? "font-weight:700;" : ""}color:#${q.color};text-align:${q.align === "ctr" ? "center" : q.align === "r" ? "right" : "left"};${q.bullet ? "padding-left:12pt;text-indent:-9pt;" : ""}">${q.bullet ? "• " : ""}${esc(q.text)}</p>`).join("");
-      return `<div class="t" style="${box}justify-content:${e.anchor === "ctr" ? "center" : "flex-start"};">${ps}</div>`;
+      return `<div class="t" style="${box}justify-content:${e.anchor === "ctr" ? "center" : e.anchor === "b" ? "flex-end" : "flex-start"};">${ps}</div>`;
     };
     const slides = deck.slides.map(s => `<section class="slide">${s.els.map(el).join("")}</section>`).join("");
     return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(deck.c.docNo)}</title><style>
-@page { size: 13.333in 7.5in; margin: 0; }
+@page { size: ${this.W}in ${this.H}in; margin: 0; }
 html, body { margin: 0; padding: 0; background: #e5e7eb; font-family: "${font}", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
-.slide { position: relative; width: 1280px; height: 720px; margin: 16px auto; background: #fff; overflow: hidden; page-break-after: always; break-after: page; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+.slide { position: relative; width: ${Math.round(this.W * 96)}px; height: ${Math.round(this.H * 96)}px; margin: 16px auto; background: #fff; overflow: hidden; page-break-after: always; break-after: page; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
 .r, .t { position: absolute; box-sizing: border-box; }
 .t { display: flex; flex-direction: column; padding: 2px 5px; overflow: hidden; }
 .t p { margin: 0 0 2pt; line-height: 1.25; word-break: keep-all; overflow-wrap: anywhere; }

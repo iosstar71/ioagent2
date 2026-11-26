@@ -6,6 +6,7 @@
 //  구간 = 둥근 알약 막대 (단계마다 색). 완료 · 진행 중 · 예정은 계획 날짜와 기준일로만 정함
 //    → 같은 계획이면 기준일 세로선만 옮겨 가며 그 시점을 보여 줌 (숫자는 쓰지 않음)
 //  겹치는 막대는 아랫줄로 (_lanes). 묶음 높이는 줄 수에 맞춰 장표를 채움
+//  서브시스템이 5개 이상이면 3레벨은 빼고 단계(2레벨)만 — 한 장에서 글자가 읽히지 않으므로 (o.depth 로 정할 수 있음)
 // =============================================================================
 var RoadmapChart = {
   // 단계 색 — 차가운 색 → 따뜻한 색 순서로 진행을 나타냄. 이름의 낱말로 같은 단계는 어느 서브시스템이든 같은 색
@@ -142,7 +143,7 @@ var RoadmapChart = {
   slideEls(o) {
     const { systems, tasksOf, start, end, ref, milestones, T, p, box } = o;
     const els = [], s = this._d(start), e = this._d(end);
-    const LW = 1.75, x = box.x + LW, w = box.w - LW, bottom = box.y + box.h;
+    const LW = Math.min(1.75, box.w * 0.14), x = box.x + LW, w = box.w - LW, bottom = box.y + box.h;
     const X = this._scale(els, { x, w, y: box.y, bottom, s, e, ref, T, p });
     const inRange = m => this._d(m.date) >= s && this._d(m.date) <= e;
     const all = (milestones || []).filter(inRange);   // 서브시스템 마일스톤은 [이름] 을 붙여 같은 줄에
@@ -158,7 +159,7 @@ var RoadmapChart = {
     const blocks = systems.map(sys => {
       const tasks = tasksOf(sys), phases = this._items(tasks, 2);
       const pl = phases.length ? this._lanes(phases) : 1;
-      const kids = this._items(tasks, 3).map(k => { const ph = phases.find(q => String(k.t.id).startsWith(q.t.id + ".")); return Object.assign(k, { color: ph ? ph.color : k.color }); });
+      const kids = (o.depth || (systems.length > 4 ? 2 : 3)) < 3 ? [] : this._items(tasks, 3).map(k => { const ph = phases.find(q => String(k.t.id).startsWith(q.t.id + ".")); return Object.assign(k, { color: ph ? ph.color : k.color }); });
       const kl = kids.length ? this._lanes(kids) : 0;
       const down = phases.some(q => q.lane > 0) || kids.some(k => k.lane > 0);
       return { sys, root: tasks.find(t => +t.level === 1) || {}, phases, pl, kids, kl, units: o.style === "bracket" ? (down ? 4.3 : 2.25) : pl * 1.2 + kl };
@@ -168,8 +169,8 @@ var RoadmapChart = {
       const bh = b.units * unit;
       if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
       els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
-      els.push(T(box.x + 0.14, y + bh / 2 - 0.34, LW - 0.2, 0.32, [p(b.sys, 13, { bold: true, color: this.INK })], { anchor: "b" }));
-      els.push(T(box.x + 0.14, y + bh / 2 - 0.01, LW - 0.2, 0.42, [p(b.root.name || "", 8, { color: this.SUB })]));
+      els.push(T(box.x + 0.14, bh > 0.6 ? y + bh / 2 - 0.34 : y, LW - 0.2, bh > 0.6 ? 0.32 : bh, [p(b.sys, 13, { bold: true, color: this.INK })], { anchor: bh > 0.6 ? "b" : "ctr" }));
+      if (bh > 0.6) els.push(T(box.x + 0.14, y + bh / 2 - 0.01, LW - 0.2, Math.min(0.42, bh / 2 - 0.04), [p(b.root.name || "", 8, { color: this.SUB })]));
       if (o.style === "bracket") { this._bracketBlock(els, b, { X, y, bh, ref, T, p, x, w }); y += bh + GAP; return; }
       const ph = unit * 1.2, kh = unit;
       b.phases.forEach(it => this._pill(els, { x: X(it.s) + 0.025, y: y + it.lane * ph + 0.04, w: X(it.e) - X(it.s) - 0.05, h: ph - 0.08, color: it.color, state: this._state(it, ref), name: it.t.name, size: 9.5, T, p }));
