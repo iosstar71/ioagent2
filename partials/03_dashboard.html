@@ -1,0 +1,91 @@
+
+    <div id="tab-dashboard" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10 u-wrap">
+          <span class="sub-title">📊 Dashboard</span><span class="neo-ph-desc">프로젝트가 계획대로 가고 있는지 숫자와 그래프로 확인합니다.</span>
+          <div class="current-date-badge">수행기간: <b id="dashProjPeriodText">-</b></div>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
+        </div>
+        <!-- [요건 8] 주간보고/월간보고 엑셀/PPT 생성 및 대시보드 리프레시 버튼 -->
+        <div class="u-flex u-ai-center u-gap-6 u-wrap">
+          <button class="btn btn-success btn-sm" data-click="ReportExporter.exportExcelReport" title="주간보고 탭의 [전체 통합 엑셀]과 동일한 주간보고 엑셀(.xlsx: 종합요약·금주실적·차주계획·VOC·회의일정)을 다운로드합니다.">
+            📥 엑셀 다운로드 (보고서)
+          </button>
+        </div>
+      </div>
+
+      <!-- 조회 범위 (아래 모든 숫자 · 차트에 함께 적용) -->
+      <div class="dash-filter">
+        <span class="dash-filter-title">🔍 조회 범위</span>
+        <div class="filter-item">
+          <label class="u-bold">🗂️ 도메인:</label>
+          <select class="u-bold" id="dashDomainFilter" data-change="UiH.domainFilter" data-change-args='["dashDomainFilter", "dashSubsystemFilter", "renderDashboard"]'></select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🏢 서브시스템:</label>
+          <select class="u-bold" id="dashSubsystemFilter" data-change="renderDashboard">
+            <option value="ALL">전체 서브시스템 (종합)</option>
+          </select>
+        </div>
+        <span class="dash-filter-note">핵심 숫자 · 체크할 일 · S-curve · 불릿 차트 · 요약 카드에 함께 적용</span>
+      </div>
+
+      <!-- 상단 4대 KPI 카드 -->
+      <div class="grid-4 u-mb-12">
+        <div class="kpi-card kpi-b-primary">
+          <div class="kpi-title">종합 계획 진척률 (기준일 연산)</div>
+          <div class="kpi-value" id="kpi-plan">0.0%</div>
+          <div class="kpi-sub">서브시스템 가중치 합산</div>
+        </div>
+        <div class="kpi-card kpi-b-success">
+          <div class="kpi-title">종합 실적 진척률 (가중치 롤업)</div>
+          <div class="kpi-value u-c-success" id="kpi-actual">0.0%</div>
+          <div class="kpi-sub">L5 ➔ L1 자동합산</div>
+        </div>
+        <div class="kpi-card kpi-b-accent">
+          <div class="kpi-title">종합 달성률 (실적 / 계획)</div>
+          <div class="kpi-value" id="kpi-rate">0.0%</div>
+          <div class="kpi-sub">목표 대비 이행 효율</div>
+        </div>
+        <div class="kpi-card kpi-b-danger">
+          <div class="kpi-title">지연 Task / 일정 오류 수</div>
+          <div class="kpi-value u-c-danger" id="kpi-delayed">0 건</div>
+          <div class="kpi-sub">기간 이탈 오류: <b class="u-c-danger" id="kpi-out-of-range-count">0</b>건 포함</div>
+        </div>
+      </div>
+
+      <!-- 체크할 일 -->
+      <div class="card neo-todo" id="neoTodoCard"></div>
+
+      <!-- S-curve | 불릿 차트 (나란히) -->
+      <div class="dash-charts">
+        <div class="card u-mb-0">
+          <div class="card-title">
+            <span>📈 S-Curve 주별 진척률 · 달성률</span>
+            <span class="sc-legend"><i class="sc-plan"></i>누적 계획 <i class="sc-actual"></i>누적 실적 <i class="sc-today"></i>기준일 <i class="sc-rate"></i>달성률</span>
+          </div>
+          <div class="scurve-box"><canvas class="u-w100" id="scurveCanvas"></canvas></div>
+        </div>
+        <div class="card bullet-card u-mb-0">
+          <div class="card-title">
+            <span class="u-bold">🎯 서브시스템별 계획 대비 실적</span>
+            <span class="bl-legend"><i class="lg-bar"></i>실적 <i class="lg-mark"></i>계획(기준일) <i class="lg-bad"></i>위험 <i class="lg-warn"></i>주의 <i class="lg-ok"></i>정상 · 줄을 누르면 WBS 로</span>
+          </div>
+          <div id="dashBulletChart" class="bullet-box"></div>
+        </div>
+      </div>
+
+      <!-- 요약 카드: 요구사항 · VOC · 테스트 결함 · 산출물 (자세한 표는 Phase 진척) -->
+      <div class="dash-sum-grid" id="dashSumGrid"></div>
+
+      <!-- 도메인별 진척 (도메인이 2개 이상일 때) -->
+      <div class="card" id="dashDomainCard" hidden>
+        <div class="card-title"><span>🏛️ 도메인별 진척</span></div>
+        <div class="table-container">
+          <table class="matrix-table" id="execDomainPortfolioTable">
+            <thead><tr><th>도메인</th><th>Task 수</th><th>가중치</th><th>계획</th><th>실적</th><th>달성률</th><th>상태</th></tr></thead>
+            <tbody id="execDomainPortfolioBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,583 @@
+
+    
+
+    <!-- =================================================================== -->
+    <!-- 11. 시스템 환경설정 (tab-config) - [권한: 관리자(SYS_ADMIN) 전용] -->
+    <!-- =================================================================== -->
+    <div id="tab-config" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10 u-wrap">
+          <span class="sub-title">⚙️ Admin</span><span class="neo-ph-desc">프로젝트 목록 · 전체 멤버 · SDLC 유형 · 보안 · 데이터 관리 등 프로그램 전체 설정입니다.</span>
+          <span class="status-badge-chip chip-delayed" style="background:#f3e8ff; color:#6b21a8; border-color:#d8b4fe;">👑 관리자(SYS_ADMIN) 전용 메뉴</span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+        </div>
+      </div>
+
+      <div class="master-subtab-bar" data-group="config">
+        <button class="master-subtab-btn active" data-subtab="project" data-click="SubTabs.show" data-click-args='["config", "project"]'>🗂️ 프로젝트</button>
+        <button class="master-subtab-btn" data-subtab="users" data-click="SubTabs.show" data-click-args='["config", "users"]'>👥 전체 멤버</button>
+        <button class="master-subtab-btn" data-subtab="process" data-click="SubTabs.show" data-click-args='["config", "process"]'>🔄 SDLC 유형</button>
+        <button class="master-subtab-btn" data-subtab="security" data-click="SubTabs.show" data-click-args='["config", "security"]'>🔐 보안·인증</button>
+        <button class="master-subtab-btn" data-subtab="data" data-click="SubTabs.show" data-click-args='["config", "data"]'>🗄️ 데이터 관리</button>
+        <button class="master-subtab-btn" data-subtab="db" data-click="SubTabs.show" data-click-args='["config", "db"]'>🔌 저장소·DB 연동</button>
+      </div>
+
+      <!-- SDLC 유형 라이브러리 (SDLC · 개선과제) — 모든 프로젝트 공통, 관리자 -->
+      <div class="master-subpane" data-group="config" data-subpane="process">
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div class="card-title">
+            <span>🔄 SDLC 유형 라이브러리 — SDLC 유형 · 개선과제(REQ) 유형</span>
+            <span class="u-flex u-gap-6 u-ai-center u-wrap">
+              <span class="u-fs-xs u-c-muted" id="plStatus"></span>
+              <button class="btn btn-secondary btn-sm" data-click="ProcessLib.resetDefaults">🔄 기본 유형으로</button>
+            </span>
+          </div>
+          <div class="pl-head"><b>SDLC 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["sdlc"]'>+ SDLC 유형</button></div>
+          <div id="plSdlcCards" class="grid-2 u-gap-10"></div>
+          <div class="pl-head u-mt-16"><b>개선과제(REQ) 유형</b><button class="btn btn-primary btn-sm" data-click="ProcessLib.openNew" data-click-args='["req"]'>+ 개선과제 유형</button></div>
+          <div id="plReqCards" class="grid-2 u-gap-10"></div>
+        </div>
+      </div>
+
+      <!-- 전체 멤버 통합 관리 (관리자) -->
+      <div class="master-subpane" data-group="config" data-subpane="users" id="uaPane">
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div class="card-title">
+            <span>👥 전체 멤버 · 프로젝트별 권한 통합 관리</span>
+            <span class="u-flex u-gap-6 u-ai-center u-wrap">
+              <input type="text" id="uaSearch" placeholder="멤버 ID · 이름 · 부서 검색" style="width:170px;" data-input="UserAdmin.render">
+              <select id="uaProjectFilter" data-change="UserAdmin.render"><option value="ALL">전체 프로젝트</option></select>
+              <button class="btn btn-secondary btn-sm" data-click="UserAdmin.load">🔄 새로고침</button>
+              <button class="btn btn-primary btn-sm" data-click="UserAdmin.openNew">+ 멤버 추가</button>
+            </span>
+          </div>
+          <div class="u-fs-sm u-bold" id="uaSummary" style="margin:6px 0;"></div>
+          <div class="table-container" style="max-height: 560px;">
+            <table class="m-table ua-table">
+              <thead><tr><th style="width:110px;">멤버 ID</th><th style="width:130px;">이름</th><th style="width:200px;">부서</th><th>참여 프로젝트 · 역할 · 담당 서브시스템</th><th style="width:96px;">암호</th><th style="width:120px;">관리</th></tr></thead>
+              <tbody id="uaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="master-subpane active" data-group="config" data-subpane="project">
+        <div class="card sys-title-card">
+          <div class="card-title"><span>🏷️ 시스템 타이틀</span></div>
+          <div class="sys-title-row">
+            <input type="text" id="cfgSystemTitle" maxlength="40" placeholder="PM Hub" data-change="SystemTitle.save">
+            <button class="btn btn-sm" data-btn="save" data-click="SystemTitle.save">💾 적용</button>
+            <button class="btn btn-sm" data-btn="neutral" data-click="SystemTitle.reset">기본값으로</button>
+            <span class="lk-hint">화면 왼쪽 위와 브라우저 탭에 나오는 이름입니다. 모든 프로젝트에 똑같이 적용됩니다.</span>
+          </div>
+        </div>
+        <div class="card pm-admin-card">
+          <div class="card-title"><span>🗂️ 프로젝트 등록 · 관리</span></div>
+          <div id="cfgProjectPanel" data-project-panel="full"></div>
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="config" data-subpane="screen">
+        <div class="u-flex u-col u-gap-16">
+        <div class="card" style="border-left:4px solid #475569;">
+          <div class="card-title"><span>🎛️ 버튼 · 바로가기 스타일 표준</span></div>
+          <div class="btn-legend">
+            <button class="btn btn-sm" data-btn="save" type="button">💾 저장 · 완료 · 적용</button>
+            <button class="btn btn-sm" data-btn="refresh" type="button">🔄 새로고침 · 동기화</button>
+            <button class="btn btn-sm" data-btn="add" type="button">➕ 추가 · 등록</button>
+            <button class="btn btn-sm" data-btn="danger" type="button">🗑️ 삭제 · 초기화</button>
+            <button class="btn btn-sm" data-btn="warn" type="button">🔒 주의 동작</button>
+            <button class="btn btn-sm" data-btn="cancel" type="button">↩️ 취소 · 닫기</button>
+            <button class="btn btn-sm" data-btn="nav" type="button">➡️ 이동 · 보기</button>
+            <button class="btn btn-sm" data-btn="excel-down" type="button">📥 엑셀 다운로드</button>
+            <button class="btn btn-sm" data-btn="excel-up" type="button">📤 엑셀 업로드</button>
+            <button class="btn btn-sm" data-btn="word-down" type="button">📥 워드 다운로드</button>
+            <button class="btn btn-sm" data-btn="json-down" type="button">📥 JSON 다운로드</button>
+            <button class="btn btn-sm" data-btn="json-up" type="button">📤 JSON 업로드</button>
+          </div>
+        </div>
+        <div class="card" style=" border-left: 4px solid var(--primary);">
+          <div class="card-title">
+            <div>
+              <span>🚪 역할별 첫 화면 (로그인 후 처음 여는 화면)</span>
+            </div>
+            
+          </div>
+          <div class="u-grid u-gap-14" style="grid-template-columns:repeat(3, 1fr); padding:4px 0;">
+            <div class="home-role-box">
+              <label>👑 관리자 (SYS_ADMIN)</label>
+              <select id="cfgRoleHomeSysAdmin" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["SYS_ADMIN", "$value"]' class="home-role-select"><option value="EXECUTIVE" selected>🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO">🙋 My Work</option></select>
+            </div>
+            <div class="home-role-box">
+              <label>👔 프로젝트 관리자 · PL (PM · LEAD)</label>
+              <select id="cfgRoleHomePM" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["PM", "$value"]' class="home-role-select"><option value="EXECUTIVE" selected>🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO">🙋 My Work</option></select>
+            </div>
+            <div class="home-role-box">
+              <label>👷 멤버 (MEMBER)</label>
+              <select id="cfgRoleHomeMember" data-change="HomeScreenManager.onRoleHomeSettingChange" data-change-args='["MEMBER", "$value"]' class="home-role-select"><option value="EXECUTIVE">🧭 Summary</option><option value="DASHBOARD">📊 Dashboard</option><option value="TODO" selected>🙋 My Work</option></select>
+            </div>
+          </div>
+        </div><div class="card" style=" border-left: 4px solid var(--primary);">
+          <div class="card-title">
+            <div>
+              <span>🎨 메뉴 위치 · 화면 밀도 · 테마</span>
+            </div>
+            <div class="u-flex u-ai-center u-gap-8">
+              <button class="btn btn-success btn-sm u-bold u-fs-115" style="padding:4px 12px;" data-click="MasterSyncEngine.syncAll" data-click-args='[true]'>⚡ 설정 동기화</button>
+              <span id="currentLayoutStatusBadge" class="status-badge-chip chip-progress">현재 메뉴 위치: ⬆️ 위쪽 메뉴 (기본)</span>
+            </div>
+          </div>
+
+          <div class="u-mb-12">
+            <label class="u-block u-bold u-fs-sm u-mb-8 u-c-main">
+              1. 메뉴 위치 (클릭 시 바로 적용 · 멤버 메뉴의 [메뉴 위치]와 같음):
+            </label>
+            <div class="g-layout-cards">
+              <div class="layout-option-card active" id="layoutCard_top-nav" data-click="LayoutManager.setLayout" data-click-args='["top-nav", true]'>
+                <div class="layout-preview-wireframe u-col">
+                  <div class="u-w100" style="height:10px; background:var(--header-bg);"></div>
+                  <div class="u-bg-card u-w100 u-flex u-gap-3 u-ai-center" style="height:10px; border-bottom:1px solid var(--border-color); padding:0 4px;">
+                    <span class="u-r-3" style="width:30px; height:6px; background:var(--primary);"></span>
+                    <span style="width:2px; height:6px; background:var(--border-color);"></span>
+                    <span class="u-r-1" style="width:12px; height:3px; background:var(--text-muted);"></span>
+                    <span class="u-r-1" style="width:12px; height:3px; background:var(--text-muted);"></span>
+                  </div>
+                  <div class="u-flex1 u-p-4 u-flex u-gap-4">
+                    <div class="u-flex1 u-r-2" style="background:var(--border-color); opacity:0.5;"></div>
+                    <div class="u-flex1 u-r-2" style="background:var(--border-color); opacity:0.5;"></div>
+                  </div>
+                </div>
+                <div class="u-bold u-fs-sm u-c-main">⬆️ 위쪽 메뉴 (기본)</div>
+                <div class="u-c-sub" style="font-size:calc(10.5px * var(--fs-scale, 1)); line-height:1.35;">업무 묶음 4개 + 선택한 묶음의 하위 메뉴를 한 줄로 표시 — 화면을 넓게 사용</div>
+              </div>
+              <div class="layout-option-card" id="layoutCard_sidebar-left" data-click="LayoutManager.setLayout" data-click-args='["sidebar-left", true]'>
+                <div class="layout-preview-wireframe u-col">
+                  <div class="u-w100" style="height:10px; background:var(--header-bg);"></div>
+                  <div class="u-flex1 u-flex">
+                    <div class="u-bg-card u-p-3 u-flex u-col u-gap-2" style="width:28%; border-right:1px solid var(--border-color);">
+                      <span class="u-r-1" style="height:3px; width:60%; background:var(--text-muted);"></span>
+                      <span class="u-r-1" style="height:4px; background:var(--primary);"></span>
+                      <span class="u-r-1" style="height:4px; background:var(--border-color);"></span>
+                      <span class="u-r-1 u-mt-2" style="height:3px; width:60%; background:var(--text-muted);"></span>
+                      <span class="u-r-1" style="height:4px; background:var(--border-color);"></span>
+                    </div>
+                    <div class="u-flex1 u-p-4 u-flex u-col u-gap-3">
+                      <div class="u-flex1 u-r-2" style="background:var(--border-color); opacity:0.5;"></div>
+                      <div class="u-flex1 u-r-2" style="background:var(--border-color); opacity:0.5;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="u-bold u-fs-sm u-c-main">⬅️ 왼쪽 메뉴</div>
+                <div class="u-c-sub" style="font-size:calc(10.5px * var(--fs-scale, 1)); line-height:1.35;">모든 메뉴를 왼쪽에 세로로 펼쳐 표시 — 와이드 모니터에 적합</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-3 u-gap-12" style="padding-top: 10px; border-top: 1px solid var(--border-color);">
+            <div>
+              <label class="u-block u-fs-115 u-bold u-mb-4">📐 메뉴 위치:</label>
+              <select class="u-w100 u-bold" id="cfgLayoutTypeSelect" data-change="LayoutManager.setLayout" data-change-args='["$value", true]'>
+                <option value="top-nav">⬆️ 위쪽 메뉴 (기본)</option>
+                <option value="sidebar-left">⬅️ 왼쪽 메뉴</option>
+              </select>
+            </div>
+            <div>
+              <label class="u-block u-fs-115 u-bold u-mb-4">📏 화면 밀도 (표·입력 칸 간격):</label>
+              <select class="u-w100 u-bold" id="cfgDensitySelect" data-change="LayoutManager.setDensity" data-change-args='["$value", true]'>
+                <option value="standard">기본</option>
+                <option value="compact">촘촘 (한 화면에 많은 행 표시)</option>
+              </select>
+            </div>
+            <div>
+              <label class="u-block u-fs-115 u-bold u-mb-4">🎨 테마:</label>
+              <select class="u-w100 u-bold" id="cfgThemeSelect" data-change="changeTheme" data-change-args='["$value"]' data-theme-select>
+              </select>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="config" data-subpane="report">
+        <div class="u-flex u-col u-gap-16">
+        <div class="card" style=" border-left: 4px solid #10b981;">
+          <div class="card-title u-flex u-jc-between u-ai-center">
+            <div>
+              <span>📊 엑셀(XLSX) · 워드 공통 보고서 스타일 및 폰트 설정</span>
+            </div>
+          </div>
+          <div class="u-r-6 u-p-14" style="background:#f8fafc; border:1px solid #e2e8f0;">
+            <div class="u-grid u-gap-14" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+              <div>
+                <label class="u-fs-115 u-bold u-c-info u-block u-mb-5">🎨 엑셀 · 워드 양식 색상:</label>
+                                <select class="u-fs-115 u-w100 u-r-4 u-semibold" id="cfgExportUnifiedTheme" data-change="HomeScreenManager.onExportSettingChange" data-change-args='["exportTheme", "$value"]' style="padding:6px 10px; border:1px solid #cbd5e1; background:#ffffff;">
+                </select>
+              </div>
+              <div>
+                <label class="u-fs-115 u-bold u-c-info u-block u-mb-5">🔤 공통 본문 서체(Font):</label>
+                <select class="u-fs-115 u-w100 u-r-4 u-semibold" id="cfgExportUnifiedFont" data-change="HomeScreenManager.onExportSettingChange" data-change-args='["exportFont", "$value"]' style="padding:6px 10px; border:1px solid #cbd5e1; background:#ffffff;">
+                  <option value="맑은 고딕">맑은 고딕 (Malgun Gothic) [표준 권장]</option>
+                  <option value="나눔고딕">나눔고딕 (NanumGothic)</option>
+                  <option value="본고딕">본고딕 (Noto Sans KR)</option>
+                  <option value="Arial">Arial / Segoe UI (영문 최적화)</option>
+                </select>
+              </div>
+              <div>
+                <label class="u-fs-115 u-bold u-c-info u-block u-mb-5">📏 기본 폰트 크기:</label>
+                <select class="u-fs-115 u-w100 u-r-4 u-semibold" id="cfgExportUnifiedFontSize" data-change="HomeScreenManager.onExportSettingChange" data-change-args='["exportFontSize", "$value"]' style="padding:6px 10px; border:1px solid #cbd5e1; background:#ffffff;">
+                  <option value="9">9pt (컴팩트 고밀도 보고서)</option>
+                  <option value="10" selected>10pt (표준 비즈니스 권장)</option>
+                  <option value="11">11pt (가독성 강화형)</option>
+                  <option value="12">12pt (대형 인쇄·발표용)</option>
+                </select>
+              </div>
+              <div>
+                <label class="u-fs-115 u-bold u-c-primary u-block u-mb-5">🏷️ 파일 이름 약칭 (프로젝트 코드):</label>
+                <input class="u-fs-115 u-w100" type="text" id="cfgFileCode" maxlength="20" placeholder="비우면 프로젝트 ID" style="padding:6px 10px;" data-change="HomeScreenManager.onFileCodeChange" data-change-args='["$value"]'>
+                <div class="u-c-muted u-mt-4" id="cfgFileNameSample" style="font-size:calc(10.5px * var(--fs-scale, 1));"></div>
+              </div>
+            </div>
+            <div class="u-mt-12 u-fs-115 u-r-4" style="color:#475569; background:#ffffff; padding:10px 14px; border:1px dashed #cbd5e1; line-height:1.6;">
+              💡 <b>스타일 통합 안내 (ver1.0.4):</b> 엑셀과 Word 문서의 스타일 선택이 완전히 하나로 일원화되었습니다. 선택하신 테마(배경·테두리·글자색) 및 폰트 크기·서체가 <b>주간보고서 워드, 회의록 워드, WBS 공정표 엑셀의 첫 번째 테이블부터 마지막 테이블까지 100% 완전하게 동일 적용</b>됩니다.
+            </div>
+          </div>
+        </div>
+        <!-- 종합보고서(PPT): 내용 구성과 디자인을 따로 고름 (ExecDeck.PRESETS · SECTIONS · DESIGNS 에서 그려짐) -->
+        <div class="card deck-set-card" id="deckSetCard">
+          <div class="card-title"><span>📽 종합보고서 (PPT) 구성 · 디자인</span>
+            <button class="btn btn-sm" data-btn="nav" data-click="DeckSettings.preview" title="기준일 주차의 종합보고서를 새 창에서 미리 봅니다">🔍 미리보기</button></div>
+          <div class="deck-set-sec">
+            <div class="deck-set-label">① 내용 구성 <span class="lk-hint">묶음을 고르거나, 아래에서 장표를 하나씩 켜고 끕니다 (표지는 항상 들어감)</span></div>
+            <div id="deckPresetBox" class="deck-presets"></div>
+            <div id="deckSectionBox" class="deck-sections"></div>
+          </div>
+          <div class="deck-set-sec">
+            <div class="deck-set-label">② 디자인 <span class="lk-hint">표지 · 제목 줄 · 여백 · 색을 한 세트로</span></div>
+            <div id="deckDesignBox" class="deck-designs"></div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="config" data-subpane="security">
+        <div class="u-flex u-col u-gap-16">
+        <div class="card" style=" border-left: 4px solid var(--primary);">
+          <div class="card-title">
+            <span>2. 사내망 보안 인증 정책 · 자동 세션 잠금 및 관리자 암호 변경</span>
+            <span class="u-fs-xs u-c-success u-bold">🛡️ 폐쇄망/사내망 HTTP 환경 SHA-256 암호화 인증 적용</span>
+          </div>
+          <div class="grid-2 u-gap-16">
+            <div class="u-flex u-col u-gap-10">
+              <div>
+                <label class="u-block u-bold u-fs-sm u-mb-4">🔐 1. 멤버 선택 및 관리 메뉴 접근 시 암호 인증 정책:</label>
+                <select class="u-w100 u-bold" id="cfgAuthPolicySelect" data-change="AuthManager.setAuthPolicy" data-change-args='["$value"]'>
+                  <option value="ID_ONLY">👤 아이디만 확인 — 멤버는 ID 로 시작, 프로젝트 설정 · Admin 메뉴는 암호 확인 (기본)</option>
+                  <option value="STARTUP_ONLY">🔑 최초 접속(멤버 선택) 시 1회 인증 — 이후 계정 권한으로 자동 검증</option>
+                  <option value="STARTUP_AND_CONFIG">🛡️ 최초 접속 시 + 권한 메뉴(프로젝트 설정·시스템설정) 진입 시 재인증 (고보안)</option>
+                  <option value="CONFIG_ONLY">⚙️ 권한 메뉴 진입 시에만 인증 (로컬 저장소 모드 전용)</option>
+                  <option value="OFF">🔓 인증 사용 안 함 — 관리자로 동작 (로컬 저장소 단독 PC 전용)</option>
+                </select>
+              </div>
+              <div>
+                <label class="u-block u-bold u-fs-sm u-mb-4">⏱️ 2. 자리 비움(유휴 세션) 화면 자동 잠금 시간:</label>
+                <select class="u-w100" id="cfgAutoLockMinutesSelect" data-change="AuthManager.setAutoLockMinutes" data-change-args='["$value"]'>
+                  <option value="15">15분간 미사용 시 화면 자동 잠금 (권장)</option>
+                  <option value="30">30분간 미사용 시 화면 자동 잠금</option>
+                  <option value="60">60분간 미사용 시 화면 자동 잠금</option>
+                  <option value="0">자동 잠금 사용 안 함</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="u-flex u-col u-gap-8" style="border-left:1px solid var(--border-color); padding-left:16px;">
+              <label class="u-bold u-fs-sm">🔑 3. 내 계정(멤버 선택 멤버) 암호 변경:</label>
+              <input class="u-w100" type="password" id="cfgCurrentPassword" placeholder="현재 암호 입력 (초기: 1234)" autocomplete="off">
+              <input class="u-w100" type="password" id="cfgNewPassword" placeholder="새 암호 입력 (8자 이상, 영문+숫자)" autocomplete="off">
+              <input class="u-w100" type="password" id="cfgConfirmPassword" placeholder="새 암호 확인 입력" autocomplete="off">
+              <button class="btn btn-primary btn-sm u-mt-4 u-p-8 u-jc-center" data-btn="save" data-click="AuthManager.changePassword">🔑 암호 변경</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- 저장소 · 서버 연결 (Project Mgmt: SQLite 서버 하나) -->
+      <div class="master-subpane" data-group="config" data-subpane="db">
+<!--#sa-->
+        <div class="card" style="border-left:4px solid var(--primary);">
+          <div class="card-title"><span>🔌 저장소 · 서버 연결</span>
+            <span class="u-flex u-gap-6">
+              <button type="button" class="btn btn-primary btn-sm" data-click="DbConnector.testConnection">🔌 연결 확인</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.loadFromDb">🔄 서버 자료 다시 받기</button>
+            </span>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="u-flex u-col u-gap-16">
+        <div class="card" style=" border-left: 4px solid var(--success);">
+          <div class="card-title">
+            <span>3. 데이터베이스(DB) 엔진 연결 및 데이터 저장 반영 방식(자동 / 수동) 설정</span>
+            <div class="u-flex u-gap-6 u-wrap">
+              <button type="button" class="btn btn-primary btn-sm" data-click="DbConnector.testConnection">🔌 연결 테스트</button>
+              <button type="button" class="btn btn-warning btn-sm" data-click="DbConnector.initSchema">🛠️ 테이블 생성</button>
+              <button type="button" class="btn btn-success btn-sm" data-click="DbConnector.saveToDb" data-click-args='[true]'>📤 DB 저장</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.loadFromDb">📥 DB 불러오기</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-click="DbConnector.downloadDdlScript">📜 DDL 다운로드</button>
+            </div>
+</template>
+          </div>
+<!--#sa-->
+          <div id="dbConnectionSummaryText" class="pm-hint u-m0"></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+
+          <div class="u-mb-10 u-bd u-r-6 u-fs-xs" id="dbConnectionSummaryText" style="padding: 7px 12px; background: rgba(59, 130, 246, 0.06);">
+            현재 DB 연결 상태를 불러오는 중...
+          </div>
+
+          <div class="grid-2 u-gap-12 u-mb-12">
+            <div>
+              <label class="u-block u-bold u-fs-xs u-mb-5">연동할 데이터베이스(DB) 엔진 선택:</label>
+              <div class="u-flex u-gap-6 u-wrap">
+                <button type="button" id="btnDbMode_SQLITE" class="btn btn-primary btn-sm" data-click="DbConnector.selectMode" data-click-args='["SQLITE"]'>🪶 SQLite 파일 DB</button>
+                <button type="button" id="btnDbMode_ORACLE" class="btn btn-secondary btn-sm db-mode-disabled" disabled title="Workgroup 판은 SQLite 만 사용 — Oracle 은 Enterprise 판 예정" data-click="DbConnector.selectMode" data-click-args='["ORACLE"]'>🏛️ Oracle DB <small>(Enterprise)</small></button>
+              </div>
+              <div class="u-fs-xs u-c-warning u-mt-4">※ Oracle 연동은 비활성화되었습니다 (Enterprise 판 예정). 다중 멤버 서버 DB 는 SQLite(run_server.bat) 를 사용하세요.</div>
+            </div>
+
+            <div class="u-flex u-gap-10">
+              <div class="u-flex1">
+                <label class="u-block u-fs-xs u-bold u-mb-4">💾 데이터 저장 방식 (저장소 모드에 따라 자동 결정):</label>
+                <select class="u-w100 u-bold" id="dbSaveModeSelect" disabled title="저장 방식은 저장소 모드에 따라 자동 결정됩니다.">
+                  <option value="AUTO">⚡ 실시간 자동저장 (로컬 저장소 모드 전용)</option>
+                  <option value="MANUAL">🖐️ 저장 버튼 저장 (DB 서버 모드 · 충돌 경고)</option>
+                </select>
+              </div>
+              <div class="u-flex1">
+                <label class="u-block u-fs-xs u-bold u-mb-4">중계 웹/API 서버 주소:</label>
+                <input class="u-w100" type="text" id="dbApiBaseUrl" value="http://127.0.0.1:8080" data-change="DbConnector.readFormValues">
+              </div>
+            </div>
+          </div>
+
+          <div class="u-p-10 u-r-6 u-mb-10" id="panelDbMode_SQLITE" style="background: rgba(0,0,0,0.02);">
+            <div class="grid-2 u-gap-10">
+              <div>
+                <label class="u-block u-fs-xs u-bold u-mb-3">SQLite DB 파일 경로 (서버 기준):</label>
+                <input class="u-w100" type="text" id="dbSqlitePath" value="./data/wbs_enterprise.db">
+              </div>
+              <div class="u-flex u-gap-8">
+                <div class="u-flex1">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">저널 동시성 모드:</label>
+                  <select class="u-w100" id="dbSqliteJournal">
+                    <option value="WAL">WAL (다중멤버 동시읽기/쓰기 권장)</option>
+                    <option value="DELETE">DELETE (기본 단일모드)</option>
+                    <option value="MEMORY">MEMORY (고속 인메모리)</option>
+                  </select>
+                </div>
+                <div style="width:110px;">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">Lock 대기(ms):</label>
+                  <input class="u-w100" type="number" id="dbSqliteTimeout" value="5000">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="u-p-10 u-r-6 u-mb-10" id="panelDbMode_ORACLE" style="background: rgba(0,0,0,0.02); display: none;">
+            <div class="grid-2 u-gap-10">
+              <div class="u-flex u-gap-8">
+                <div class="u-flex1">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">Oracle Host IP:</label>
+                  <input class="u-w100" type="text" id="dbOracleHost" value="10.10.20.15">
+                </div>
+                <div style="width:85px;">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">Port:</label>
+                  <input class="u-w100" type="number" id="dbOraclePort" value="1521">
+                </div>
+              </div>
+              <div class="u-flex u-gap-8">
+                <div style="width:120px;">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">접속 구분:</label>
+                  <select class="u-w100" id="dbOracleConnType">
+                    <option value="SERVICE_NAME">Service Name</option>
+                    <option value="SID">SID</option>
+                  </select>
+                </div>
+                <div class="u-flex1">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">Service Name / SID:</label>
+                  <input class="u-w100" type="text" id="dbOracleService" value="ORCL">
+                </div>
+              </div>
+              <div class="u-flex u-gap-8">
+                <div class="u-flex1">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">계정 (Username):</label>
+                  <input class="u-w100" type="text" id="dbOracleUser" value="WBS_ADMIN">
+                </div>
+                <div class="u-flex1">
+                  <label class="u-block u-fs-xs u-bold u-mb-3">암호 (Password):</label>
+                  <input class="u-w100" type="password" id="dbOraclePassword" placeholder="DB 암호 입력">
+                </div>
+              </div>
+              <div>
+                <label class="u-block u-fs-xs u-bold u-mb-3">테이블 접두사 (Prefix):</label>
+                <input class="u-w100" type="text" id="dbOraclePrefix" value="TB_WBS_">
+              </div>
+            </div>
+          </div>
+
+
+          <div class="u-p-10 u-r-6 u-mb-10" id="panelDbMode_LOCAL" style="background: rgba(0,0,0,0.02); display: none;">
+            <p class="u-fs-xs u-c-sub">
+              외부 DB 서버 없이 현재 PC 브라우저 내부 저장소에만 데이터를 보관합니다.
+            </p>
+          </div>
+
+          <div>
+            <label class="u-block u-fs-xs u-bold u-mb-4">선택된 DB 모드 전용 테이블 생성 DDL (SQL 스키마 미리보기):</label>
+            <textarea class="u-w100 u-fs-xs u-p-8 u-bd u-r-4 u-c-main" id="dbDdlPreviewBox" readonly style="height:85px; font-family:monospace; background:rgba(0,0,0,0.03);"></textarea>
+          </div>
+        </div>
+</template>
+        </div>
+      </div>
+
+      <!-- 🗄️ 데이터 관리 (관리자) — 사용 용량 · 프로젝트 초기화 -->
+      <div class="master-subpane" data-group="config" data-subpane="data" id="dataAdminPane">
+        <div class="cfg-scope-note">백업 · 복원은 한 곳에서 합니다 — <button type="button" class="btn btn-xs" data-btn="nav" data-click="ProjectData.goBackup">파일 Merge › 💾 백업 · 복원 →</button></div>
+        <div class="card" style="border-left:4px solid var(--primary);">
+<!--#sa-->
+          <div class="card-title"><span>💽 이 브라우저 저장 용량</span>
+            <button class="btn btn-sm" data-btn="neutral" data-click="DataAdmin.usage">🔄 다시 계산</button></div>
+          <div id="daUsage" class="pm-hint u-m0"></div>
+<!--#/sa-->
+<template data-edition="workgroup">
+          <div class="card-title"><span>⏱ 자동 백업 설정 (선택)</span><span class="bk-who">시스템 전체 백업(zip)을 정해진 간격으로 서버에 만듭니다 — 목록 · 복원은 파일 Merge &gt; 💾 백업 · 복원</span></div>
+          <div id="daAutoServer">
+            <div class="bk-auto">
+              <label class="bk-check"><input type="checkbox" id="bkAutoOn"> 사용</label>
+              <label>간격 <input type="number" id="bkAutoHours" min="1" max="720" value="24" style="width:64px;"> 시간</label>
+              <label>보관 <input type="number" id="bkAutoKeep" min="1" max="365" value="14" style="width:64px;"> 개</label>
+              <label class="bk-check"><input type="checkbox" id="bkAutoFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.saveAuto">저장</button>
+              <span class="bk-hint" id="bkAutoLast"></span>
+            </div>
+            <div class="bk-hint u-mt-6" id="bkFolder2"></div>
+          </div>
+          <div id="daAutoLocal" class="pm-hint u-m0" style="display:none;">로컬 저장소 방식에는 자동 백업이 없습니다. 올리기 · 초기화 전에 만들어지는 <b>스냅샷</b>과, 파일 Merge &gt; 💾 백업 · 복원의 <b>시스템 전체 백업 (JSON)</b>을 쓰세요.</div>
+</template>
+        </div>
+
+        <div class="card" style="border-left:4px solid #dc2626;">
+          <div class="card-title"><span>🧹 프로젝트 초기화</span><span class="bk-who">관리자 전용 · 대상 이름을 입력해 확인 · 바꾸기 전에 스냅샷을 남깁니다</span></div>
+          <div class="da-target">
+            <label class="u-bold u-fs-sm">대상 프로젝트:</label>
+            <select id="cfgClearTarget" style="min-width:260px;" data-change="DataAdmin.renderActions"></select>
+          </div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table">
+              <thead><tr><th style="width:210px;">기능</th><th>지우거나 바꾸는 것</th><th style="width:220px;">그대로 두는 것</th><th class="u-tc" style="width:200px;">실행</th></tr></thead>
+              <tbody id="daActions"></tbody>
+            </table>
+          </div>
+        </div>
+
+<!--#sa-->
+      </div>
+<!--#/sa-->
+<template data-edition="workgroup">
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🗑 첨부파일 휴지통</span></div>
+          <div id="daTrash" class="proj-box-btns"></div>
+        </div>
+</template>
+      </div>
+
+      <div class="master-subpane" data-group="config" data-subpane="backup">
+      </div>
+      <div class="master-subpane" data-group="config" data-subpane="channel">
+        <div class="u-flex u-col u-gap-16">
+        <div class="card" style="border: 1.5px solid var(--primary);">
+          <div class="card-title u-c-info" style="border-bottom: 2px solid #bae6fd;">
+            <div class="u-flex u-ai-center u-gap-8">
+              <span style="font-size: var(--fs-lg, 16px);">💬</span>
+              <strong style="font-size: var(--fs-md, 14px);">프로젝트 게시판 채널 관리 및 대화/피드 데이터 초기화</strong>
+            </div>
+            <span class="u-fs-115" style="color: #64748b;">공지 &amp; 소통 탭의 피드 채널을 등록·삭제하고 데이터를 초기화합니다.</span>
+          </div>
+          <div class="channel-scope-note">🗂️ <b>게시판 채널·공지·게시판는 프로젝트별로 관리됩니다.</b> <span>현재 프로젝트:</span> <b class="lbl-current-project-name">-</b></div>
+
+          <div class="grid-2 u-mt-10">
+            <!-- 좌측: 채널 등록 및 관리 -->
+            <div class="u-bd u-r-8 u-p-14" style="background: #f8fafc;">
+              <div class="u-flex u-jc-between u-ai-center u-mb-10">
+                <strong class="u-fs-base" style="color: #1e293b;">📋 등록된 게시판 채널 목록</strong>
+                <span class="u-fs-xs" style="color: #64748b;">(피드에 자동 반영)</span>
+              </div>
+              <div class="u-gap-8 u-mb-12" id="settingsChannelAddContainer" style="display: flex;">
+                <input class="u-flex1 u-fs-sm u-bd u-r-4" type="text" id="newChannelNameInput" placeholder="신규 채널명 입력 (예: 품질감리Q&A)" style="padding: 6px 10px;">
+                <button class="btn btn-primary btn-sm" data-click="NoticeCommManager.addChannel">
+                  ➕ 채널 추가
+                </button>
+              </div>
+              <table style="border-collapse: collapse;" class="m-table u-w100 u-fs-sm">
+                <thead>
+                  <tr style="background: #f1f5f9;">
+                    <th class="u-tc" style="width: 45px;">No</th>
+                    <th>채널명</th>
+                    <th>구분</th>
+                    <th class="u-tc" style="width: 65px;">관리</th>
+                  </tr>
+                </thead>
+                <tbody id="settingsChannelTableBody">
+                  <!-- JavaScript 렌더링 -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 우측: 대화내역 및 게시글 초기화 관리 -->
+            <div class="u-bd u-r-8 u-p-14 u-flex u-col u-jc-between" style="background: #f8fafc;">
+              <div>
+                <strong class="u-fs-base u-block u-mb-6" style="color: #1e293b;">🧹 소통 데이터 초기화 및 정리</strong>
+                <p class="u-fs-115 u-mb-14" style="color: #64748b; line-height: 1.6;">
+                  테스트 작성 데이터나 완료된 이전 프로젝트 대화내역을 초기화할 수 있습니다. 삭제된 데이터는 영구 삭제되므로 신중하게 실행하세요.
+                </p>
+                <div class="u-flex u-col u-gap-10">
+<template data-edition="workgroup">
+                  <div class="u-flex u-jc-between u-ai-center u-r-6 u-bd" style="background: #ffffff; padding: 10px 14px;">
+                    <div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #dc2626;">⚡ 채팅 대화내역 전체 삭제</strong>
+                      <div class="u-fs-xs" style="color: #64748b;">SQLite TB_WBS_CHAT 테이블 및 실시간 메시지 스트림 영구 삭제</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" data-click="RealtimeChatManager.clearAllChat">
+                      채팅 비우기
+                    </button>
+                  </div>
+</template>
+                  <div class="u-flex u-jc-between u-ai-center u-r-6 u-bd" style="background: #ffffff; padding: 10px 14px;">
+                    <div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #d97706;">💬 업무 게시판(게시글) 전체 초기화</strong>
+                      <div class="u-fs-xs" style="color: #64748b;">작성된 게시판 포스트, Task 매핑 이슈, 답글 스레드 전체 초기화</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" data-click="NoticeCommManager.clearAllCommunications">
+                      피드 초기화
+                    </button>
+                  </div>
+                  <div class="u-flex u-jc-between u-ai-center u-r-6 u-bd" style="background: #ffffff; padding: 10px 14px;">
+                    <div>
+                      <strong style="font-size: calc(12.5px * var(--fs-scale, 1)); color: #475569;">📢 프로젝트 공지 전체 초기화</strong>
+                      <div class="u-fs-xs" style="color: #64748b;">등록된 모든 공지 목록 및 상단 고정 핀 전체 초기화</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" data-click="NoticeCommManager.clearAllNotices">
+                      공지 초기화
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>

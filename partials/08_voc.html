@@ -1,0 +1,49 @@
+
+    <!-- =================================================================== -->
+    <!-- 6. 추가 VOC / 이슈관리 (tab-voc) - [요건 6] 서브시스템 필터 & 선택   -->
+    <!-- =================================================================== -->
+    <div id="tab-voc" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10">
+          <span class="sub-title">📣 VOC · 결함</span><span class="neo-ph-desc">진행 중에 들어온 요청 · 문제 · 테스트 결함을 접수하고, 판정해서 해결까지 챙깁니다.</span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
+        </div>
+        <div class="u-flex u-gap-8 u-ai-center">
+          
+          <button class="btn btn-sm" data-btn="excel-down" data-click="DataIO.download" data-click-args='["voc"]' title="이 화면의 서브시스템 조회 범위 그대로 엑셀로 다운로드합니다">📥 엑셀 다운로드 (VOC)</button>
+          <button class="btn btn-sm" data-btn="excel-up" data-click="DataIO.pick" data-click-args='["voc"]' title="같은 양식의 엑셀을 이 화면의 서브시스템 조회 범위에 반영합니다 (반영 전 확인 · 자동 백업)">📤 엑셀 업로드 (VOC)</button>
+          <button class="btn btn-primary btn-sm" data-click="addNewVoc">+ VOC 등록</button>
+        </div>
+      </div>
+
+      <!-- VOC 서브시스템 필터 및 상태 통계 바 -->
+      <div class="filter-toolbar">
+        <div class="filter-item">
+          <label class="u-bold">🗂️ 도메인별 조회:</label>
+          <select class="u-bold" id="vocDomainFilter" data-change="UiH.domainFilter" data-change-args='["vocDomainFilter", "vocSubsystemFilter", "renderVocTable"]'></select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🏢 서브시스템별 조회:</label>
+          <select id="vocSubsystemFilter" data-change="renderVocTable">
+            <option value="ALL">전체 서브시스템 보기</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">📶 단계:</label>
+          <select id="vocStageFilter" data-change="renderVocTable" title="접수일이 들어가는 Phase 로 자동 지정된 단계"><option value="ALL">전체 단계</option></select>
+        </div>
+        <div class="filter-item">
+          <label class="u-bold">🏷️ 판정:</label>
+          <select id="vocJudgeFilter" data-change="renderVocTable" title="미판정 · 결함 · 개선 요청 · 설명 종결 · 이슈"><option value="ALL">전체 판정</option></select>
+        </div>
+        <div class="filter-item"><span class="neo-chips" id="vocStatusChips" role="group" aria-label="상태 필터"></span></div>
+        <div class="filter-item u-ml-auto"><span class="list-summary" id="vocListSummary"></span></div>
+      </div>
+
+      <div class="table-container grid-scroll">
+        <table id="vocTable" class="list-table">
+          <thead></thead>
+          <tbody id="vocTableBody"></tbody>
+        </table>
+      </div>
+    </div>

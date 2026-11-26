@@ -1,0 +1,190 @@
+
+    <!-- =================================================================== -->
+    <!-- 8. 파일 Merge (tab-merge)                                   -->
+    <!-- =================================================================== -->
+    <div id="tab-merge" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10 u-wrap">
+          <span class="sub-title">🔀 파일 Merge</span><span class="neo-ph-desc">여러 사람이 각자 PC에서 고친 자료를 하나로 모으는 곳입니다. 멤버는 내 작업 파일을 파일로 받아 PM에게 보내고, PM은 받은 파일을 업로드해 미리 보기로 확인한 뒤 합칩니다.</span>
+          <span id="mergeRoleNoticeBadge" class="status-badge-chip chip-progress"></span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+        </div>
+      </div>
+
+      <!-- 서브 탭: 파일 Merge(일괄 작업 · 통합) / 백업 · 복원(비상 대응 — 관리자 · PM) -->
+      <div class="master-subtab-bar" data-group="merge">
+        <button class="master-subtab-btn active" data-subtab="merge" data-click="SubTabs.show" data-click-args='["merge", "merge"]'>📋 자료 다운로드·업로드</button>
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="locks" data-click="SubTabs.show" data-click-args='["merge", "locks"]'>🔐 체크아웃 현황</button>
+</template>
+        <button class="master-subtab-btn" data-subtab="backup" id="mergeBackupTabBtn" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원</button>
+      </div>
+      <div class="master-subpane active" data-group="merge" data-subpane="merge">
+        <!-- 📋 자료 다운로드·업로드 — 목록표 (자료마다 한 줄: 범위 · 건수 · 올리기 권한) -->
+        <ol class="mt-guide" aria-label="순서">
+          <li><b>1</b> 범위 고르기</li><li><b>2</b> 자료 체크</li><li><b>3</b> 다운로드 · 업로드</li><li><b>4</b> 미리 보기 확인 후 반영</li>
+          <li class="mt-guide-side">백업 · 복원은 <button type="button" class="btn btn-xs" data-btn="nav" data-click="SubTabs.show" data-click-args='["merge", "backup"]'>💾 백업 · 복원 →</button></li>
+        </ol>
+        <div class="card mt-card">
+          <div class="mt-scope">
+            <span class="mt-step">1 범위</span>
+            <select id="workDataDomainSelect" data-change="onDomainFilterChanged" data-change-args='["workDataDomainSelect", "workDataSubsysSelect"]'></select>
+            <select id="workDataSubsysSelect" class="merge-scope-select mt-scope-sys"></select>
+            <span class="mt-presets" role="group" aria-label="자료 묶음 고르기">
+              <span class="mt-presets-label">자료 묶음</span>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["work"]' title="WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록">작업데이터</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["base"]' title="프로젝트 설정 · 서브시스템 · 멤버 · 공지 · 게시판">기준정보 / 공지</button>
+              <button type="button" class="btn btn-sm" data-btn="neutral" data-click="MergeTable.selectGroup" data-click-args='["all"]' title="모든 자료 = 마스터 파일">마스터 파일 (전체)</button>
+            </span>
+            <label class="mt-auto"><input type="checkbox" id="chkAutoDownloadBackupJson" data-change="BackupHistoryManager.setAutoDownload" data-change-args='["$checked"]'> 💾 올리기 전 백업 파일도 받기</label>
+          </div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table mt-table">
+              <thead><tr>
+                <th class="u-tc" style="width:44px;"><input type="checkbox" id="mtAll" title="전체 선택 / 해제" data-change="MergeTable.toggleAll" data-change-args='["$checked"]'></th>
+                <th>자료</th><th style="width:150px;">범위</th><th class="u-tr" style="width:80px;">건수</th><th style="width:300px;">올리기 권한</th>
+              </tr></thead>
+              <tbody id="mtBody"></tbody>
+            </table>
+          </div>
+          <div class="mt-actions">
+            <div class="mt-btns">
+              <span class="mt-step">2 체크한 자료</span>
+              <button type="button" class="btn btn-sm" data-btn="excel-down" data-click="MergeTable.download" data-click-args='["EXCEL"]'>📥 엑셀 다운로드</button>
+              <button type="button" class="btn btn-sm" data-btn="json-down" data-click="MergeTable.download" data-click-args='["JSON"]'>📥 JSON 다운로드</button>
+              <input type="file" id="mtUpInput" style="display:none;" multiple accept=".xlsx,.xls,.csv,.json" data-change="MergeTable.upload" data-change-args='["$event"]'>
+              <button type="button" class="btn btn-sm" data-btn="excel-up" data-click="MergeTable.pick" title="엑셀 · JSON 파일을 올리면 미리 보기에서 확인한 뒤 반영합니다">📤 파일 업로드</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 레거시 호환용 히든 요소 -->
+        <div style="display:none;">
+          <!-- 머리글 [📦 마스터 파일 ▾ > 가져오기] 가 쓰는 파일 입력 -->
+          <span id="consolidateBox"><input type="file" id="consolidateInput" accept=".xlsx,.xls,.json" data-change="SmartMergeCenter.importConsolidated" data-change-args='["$event"]'></span>
+          <input type="file" id="masterPkgJsonInput" accept=".json" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "JSON"]'>
+          <input type="file" id="masterPkgExcelInput" accept=".xlsx,.xls,.csv" data-change="SmartMergeCenter.uploadMasterPackage" data-change-args='["$event", "EXCEL"]'>
+          <select id="masterPkgDomainSelect"></select>
+          <select id="masterPkgSubsysSelect"><option value="ALL" selected>ALL</option></select>
+          <select id="excelSubsysExportSelect"></select>
+          <select id="excelSubsysImportSelect"></select>
+<template data-edition="workgroup">
+          <span id="fileSyncDetailStatus"></span>
+          <button id="btnFileHandleSync"></button>
+</template>
+        </div>
+      </div>
+
+<template data-edition="workgroup">
+      <!-- [Workgroup 0.1] 🔐 체크아웃 현황 — 서브시스템별 편집 잠금 (DB 서버 방식, 자동 새로고침 없음) -->
+      <div class="master-subpane" data-group="merge" data-subpane="locks" id="mergeLocksPane">
+        <div class="card" style="border-left:4px solid #7c3aed;">
+          <div class="card-title"><span>🔐 서브시스템 체크아웃 현황</span>
+            <span class="u-flex u-gap-6 u-ai-center"><span class="bk-who" id="lkBoardNote"></span>
+            <button class="btn btn-sm" data-btn="neutral" data-click="LockManager.refresh">🔄 상태 확인</button></span></div>
+          <div class="pm-hint" style="margin:0 0 8px;">서브시스템의 WBS · 요구사항 · 산출물 · VOC 를 고치려면 먼저 <b>📝 체크아웃</b>(편집 잠금)합니다. 다른 사람은 그동안 읽기만 하고 저장할 수 없습니다. 끝나면 <b>✅ 체크인</b>(저장 · 잠금 해제)합니다. 주간보고 · 회의록 · 공지 · 소통은 잠금 없이 지금처럼 씁니다.</div>
+          <div class="table-container" style="max-height:none;">
+            <table class="m-table">
+              <thead><tr><th style="width:140px;">서브시스템</th><th style="width:120px;">상태</th><th style="width:200px;">편집하는 사람 · 메모</th><th style="width:200px;">체크아웃 · 마지막 활동</th><th style="width:120px;">만료</th><th>관리</th></tr></thead>
+              <tbody id="lkBoardBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="border-left:4px solid #64748b;">
+          <div class="card-title"><span>🧾 최근 기록 (40건)</span></div>
+          <div class="table-container" style="max-height:320px;">
+            <table class="m-table">
+              <thead><tr><th style="width:110px;">때</th><th style="width:110px;">서브시스템</th><th style="width:120px;">구분</th><th style="width:130px;">사람</th><th style="width:110px;">처리자</th><th>메모 · 사유</th></tr></thead>
+              <tbody id="lkLogBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</template>
+      <!-- 💾 백업 · 복원 (비상 대응) — 관리자 · PM 만, 권한 없는 기능은 비활성 / 3영역 (프로젝트 · 시스템 · 스냅샷), 초기화 · 자동 백업 설정은 시스템 설정 > 데이터 관리 -->
+      <div class="master-subpane" data-group="merge" data-subpane="backup" id="mergeBackupPane">
+        <div class="bk-role" id="bkRoleNote"></div>
+
+        <div class="card bk-sec" data-need="manager" style="border-left:4px solid var(--primary);">
+          <div class="card-title"><span>🗂️ ① 프로젝트 백업 · 복원 (엑셀 / JSON)</span><span class="bk-who">관리자: 모든 프로젝트 · PM: 지금 프로젝트</span></div>
+          <div class="grid-2 u-gap-14">
+            <div class="proj-box proj-box-blue">
+              <div class="proj-box-title">📥 백업 다운로드</div>
+              <p>프로젝트의 기본정보 · 프로젝트 설정 · 멤버(참여자)와 Task 정보(WBS · 요구사항 · 산출물 · VOC · 주간보고 · 회의록 · 공지 · 소통)를 파일로 보관합니다. 엑셀은 프로젝트마다 파일 1개, JSON 은 모든 프로젝트를 묶음 파일 1개로 받습니다.</p>
+              <div class="proj-box-btns">
+                <select id="ptDownTarget" style="min-width:230px;"></select>
+                <button class="btn btn-sm" data-btn="excel-down" data-click="ProjectTransfer.download" data-click-args='["EXCEL"]'>📥 엑셀</button>
+                <button class="btn btn-sm" data-btn="json-down" data-click="ProjectTransfer.download" data-click-args='["JSON"]'>📥 JSON</button>
+              </div>
+            </div>
+            <div class="proj-box proj-box-amber">
+              <div class="proj-box-title">📤 복원 · 새 프로젝트 추가</div>
+              <p>백업 파일로 프로젝트를 되돌리거나(파일 내용으로 바꾸기), 새 프로젝트로 추가합니다. 일부 자료만 합칠 때는 [📋 자료 다운로드·업로드]를 씁니다. 같은 이름의 프로젝트가 있으면 <b>새 이름으로 추가</b> 또는 <b>그 프로젝트에 덮어쓰기</b>를 고릅니다. 바꾸기 전에 스냅샷을 자동으로 만듭니다.</p>
+              <div class="proj-box-btns">
+                <select id="ptUpTarget" style="min-width:250px;"></select>
+                <input type="file" id="ptUpInput" style="display:none;" accept=".xlsx,.xls,.json" data-change="ProjectTransfer.upload" data-change-args='["$event"]'>
+                <button class="btn btn-sm" data-btn="excel-up" data-click="ProjectTransfer.pick">📤 파일 업로드 (엑셀 / JSON)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bk-sec" data-need="admin" style="border-left:4px solid #dc2626;">
+          <div class="card-title"><span>🖥️ ② 시스템 전체 백업 · 복원</span><span class="bk-who">관리자 전용 — 모든 프로젝트 · 멤버 · SDLC 유형 · 설정</span></div>
+          <div id="bkServerBox">
+<!--#sa-->
+            <div class="proj-box-btns">
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.download">📥 시스템 백업 다운로드 (.db)</button>
+              <input type="file" id="bkUploadInput" style="display:none;" accept=".db" data-change="SystemBackup.upload" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 백업 파일로 복원</button>
+<!--#/sa-->
+<template data-edition="workgroup">
+            <div class="proj-box-btns u-mb-10">
+              <label class="bk-check"><input type="checkbox" id="bkWithFiles"> 첨부파일 포함</label>
+              <button class="btn btn-sm" data-btn="save" data-click="SystemBackup.create">💾 지금 시스템 백업 만들기</button>
+              <input type="file" id="bkUploadInput" style="display:none;" accept=".zip" data-change="SystemBackup.upload" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="excel-up" data-click="UiH.clickEl" data-click-args='["bkUploadInput"]'>📤 PC 의 백업 파일(zip) 올리기</button>
+              <span class="bk-hint" id="bkFolder"></span>
+            </div>
+            <div class="bk-auto" id="bkAutoStatus"></div>
+            <div class="table-container u-mt-10" style="max-height:260px;">
+              <table class="m-table">
+                <thead><tr><th style="width:150px;">만든 때</th><th style="width:110px;">구분</th><th style="width:80px;">첨부</th><th style="width:90px;">크기</th><th>파일 이름</th><th class="u-tc" style="width:220px;">관리</th></tr></thead>
+                <tbody id="bkServerList"></tbody>
+              </table>
+</template>
+            </div>
+          </div>
+          <div id="bkLocalBox" style="display:none;">
+            <div class="proj-box-btns">
+              <button class="btn btn-sm" data-btn="json-down" data-click="SystemBackup.exportLocal">📥 시스템 전체 백업 (JSON)</button>
+              <input type="file" id="bkLocalInput" style="display:none;" accept=".json" data-change="SystemBackup.importLocal" data-change-args='["$event"]'>
+              <button class="btn btn-sm" data-btn="json-up" data-click="UiH.clickEl" data-click-args='["bkLocalInput"]'>📤 시스템 전체 복원 (JSON)</button>
+              <span id="storageUsageText" class="bk-hint"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bk-sec" data-need="manager" style="border-left:4px solid #7c3aed;">
+          <div class="card-title"><span>🕒 ③ 스냅샷 (자동 · 수동 스냅샷)</span>
+            <span class="u-flex u-gap-6 u-ai-center"><span class="bk-who" id="bkSnapWhere"></span>
+            <button class="btn btn-secondary btn-sm" data-click="BackupHistoryManager.createBackupSnapshot" data-click-args='["수동백업", "ALL", false]'>+ 지금 복원 지점 만들기</button></span></div>
+          <div class="table-container" style="max-height: 280px;">
+            <table id="backupHistoryTable">
+              <thead><tr><th style="width:155px;">만든 때</th><th style="width:150px;">구분</th><th style="width:160px;">프로젝트</th><th style="width:250px;">파일 이름</th><th>건수</th><th class="u-tc" style="width:240px;">다운로드 / 복원</th></tr></thead>
+              <tbody id="backupHistoryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+</div>
+
+    <!-- =================================================================== -->
+    <!-- 9. 프로젝트 설정 관리 (tab-master) - [권한: 프로젝트 관리자(PM) / 관리자] -->
+    <!-- =================================================================== -->
+        <!-- ============================================================
+         공지 등록 및 팀원 간 소통 센터 탭
+         ============================================================ -->
+        <!-- ============================================================
+         공지, 업무게시판 통합 센터
+         ============================================================ -->

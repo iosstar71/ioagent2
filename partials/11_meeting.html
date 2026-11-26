@@ -1,0 +1,230 @@
+
+<!-- =================================================================== -->
+    <!-- 회의관리 센터 (tab-meeting)                      -->
+    <!-- =================================================================== -->
+    <div id="tab-meeting" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10 u-wrap">
+          <span class="sub-title">📅 회의</span><span class="neo-ph-desc">회의 일정을 잡고 회의록과 후속 조치(Action Item)를 기록합니다.</span>
+          <div class="current-date-badge">공정 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+        </div>
+        <div class="u-flex u-ai-center u-gap-8 u-wrap">
+          <button class="btn btn-sm" data-btn="add" data-click="MeetingManager.openNewMeetingModal" title="새 회의 일정 등록">➕ 신규 회의 일정 등록</button>
+        </div>
+      </div>
+      <div class="master-subtab-bar sub-tabs" id="meetingSubTabs">
+        <button class="master-subtab-btn active" data-subtab="schedule" data-click="MeetingManager.switchSubTab" data-click-args='["schedule"]'>🗓️ 회의일정</button>
+        <button class="master-subtab-btn" data-subtab="minutes" data-click="MeetingManager.switchSubTab" data-click-args='["minutes"]'>📝 회의록 작성 · 상세</button>
+        <button class="master-subtab-btn" data-subtab="actionitems" data-click="MeetingManager.switchSubTab" data-click-args='["actionitems"]'>⚡ Action Item 현황</button>
+      </div>
+
+      <!-- 서브탭 1: 회의일정 (캘린더 & 일정 목록) -->
+      <div id="meeting-panel-schedule" class="meeting-sub-panel" style="display:block;">
+        <!-- 상단 필터 바 -->
+        <div class="card u-mb-12" style="padding:10px 14px;">
+          <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-10">
+            <div class="u-flex u-ai-center u-gap-12 u-wrap">
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">🏢 서브시스템:</label>
+                <select class="u-bold" id="meetingFilterSubsystem" data-change="MeetingManager.onFilterChanged" style="min-width:130px;">
+                  <option value="ALL">전체 서브시스템</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">📅 회의 월:</label>
+                <select class="u-fs-xs" id="meetingFilterMonth" data-change="MeetingManager.onFilterChanged" style="min-width:110px;">
+                  <option value="ALL">전체 월</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">📌 회의 상태:</label>
+                <span class="neo-chips" id="meetingStatusChips" role="group" aria-label="회의 상태 필터"></span>
+                <select id="meetingFilterStatus" data-change="MeetingManager.onFilterChanged" hidden>
+                  <option value="ALL">전체 상태</option>
+                  <option value="예정">예정</option>
+                  <option value="진행중">진행중</option>
+                  <option value="완료">완료</option>
+                  <option value="취소">취소</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">🔍 검색:</label>
+                <input class="u-fs-xs" type="text" id="meetingSearchInput" data-keyup="MeetingManager.renderScheduleList" placeholder="회의제목, 장소, 주관자 검색" style="padding:3px 8px; width:180px;">
+              </div>
+            </div>
+            <div class="u-flex u-ai-center u-gap-8">
+              <button class="btn btn-xs" data-btn="excel-down" data-click="MeetingManager.exportScheduleListExcel" title="조회된 회의 일정 목록 엑셀(XLSX) 다운로드">📥 엑셀 다운로드 (회의일정)</button>
+              <span class="u-fs-xs u-c-muted">총 등록 회의:</span>
+              <span id="meetingTotalCountBadge" class="brand-badge" style="background:var(--tint-info-text); color:white;">0건</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 월별 프로젝트 인터랙티브 캘린더 카드 -->
+        <div class="cal-container" id="meetingCalendarCard">
+          <div class="cal-nav-bar">
+            <div class="u-flex u-ai-center u-gap-10">
+              <button class="btn btn-outline btn-xs" data-click="MeetingManager.changeMonth" data-click-args='[-1]' title="이전달">◀ 이전달</button>
+              <span class="u-bold u-c-primary" id="meetingCalTitle" style="font-size:var(--fs-lg, 16px); letter-spacing:-0.3px;">회의 캘린더</span>
+              <button class="btn btn-outline btn-xs" data-click="MeetingManager.changeMonth" data-click-args='[1]' title="다음달">다음달 ▶</button>
+              <select class="u-fs-xs u-bold" id="meetingCalMonthSelect" data-change="MeetingManager.setMonth" data-change-args='["$value"]' style="padding:2px 6px;">
+                <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option>
+                <option value="5" selected>5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option>
+                <option value="9">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+              </select>
+            </div>
+            <div class="u-flex u-ai-center u-gap-8 u-fs-xs" style="color:#64748b;">
+              <span class="u-iflex u-ai-center u-gap-4"><span class="u-r-2 u-iblock" style="width:10px; height:10px; background:var(--primary);"></span> 예정</span>
+              <span class="u-iflex u-ai-center u-gap-4"><span class="u-r-2 u-iblock" style="width:10px; height:10px; background:#15803d;"></span> 완료</span>
+              <span class="u-iflex u-ai-center u-gap-4"><span class="u-r-2 u-iblock" style="width:10px; height:10px; background:#dc2626;"></span> 휴일</span>
+            </div>
+          </div>
+          <div id="meetingCalendarGrid"></div>
+        </div>
+
+        <!-- 회의 일정 전체 테이블 카드 -->
+        <div class="card" id="meetingScheduleListCard">
+          <div class="card-title">
+            <span>📋 회의 목록</span>
+          </div>
+          <div class="table-container" style="max-height:380px;">
+            <table class="matrix-table" id="meetingScheduleTable">
+              <thead>
+                <tr>
+                  <th style="width:45px;">No</th>
+                  <th style="width:100px;">서브시스템</th>
+                  <th>회의 제목</th>
+                  <th style="width:105px;">회의 일자</th>
+                  <th style="width:110px;">회의 시간</th>
+                  <th style="width:180px;">회의 장소</th>
+                  <th style="width:100px;">주관/발표</th>
+                  <th style="width:85px;">상태</th>
+                  <th style="width:150px;">관리</th>
+                </tr>
+              </thead>
+              <tbody id="meetingScheduleTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 서브탭 2: 회의록 작성 및 상세 (Minutes Editor) -->
+      <div id="meeting-panel-minutes" class="meeting-sub-panel" style="display:none;">
+        <div class="card u-mb-12" style="padding:10px 14px; background:#f8fafc;">
+          <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-10">
+            <div class="u-flex u-ai-center u-gap-12 u-flex1 u-wrap">
+              <div class="filter-item u-flex u-ai-center u-gap-6">
+                <label class="u-bold u-fs-sm u-c-primary u-nowrap">🏢 서브시스템:</label>
+                <select class="u-bold u-fs-xs" id="minutesFilterSubsystem" data-change="MeetingManager.onMinutesSubsystemFilterChanged" style="min-width:130px; padding:4px 6px;">
+                  <option value="ALL">전체 서브시스템</option>
+                </select>
+              </div>
+              <div class="filter-item u-flex u-ai-center u-gap-6">
+                <label class="u-bold u-fs-sm u-c-primary u-nowrap">📅 회의 월:</label>
+                <select class="u-bold u-fs-xs" id="minutesFilterMonth" data-change="MeetingManager.onMinutesMonthFilterChanged" style="min-width:110px; padding:4px 6px;">
+                  <option value="ALL">전체 월</option>
+                </select>
+              </div>
+              <div class="u-flex u-ai-center u-gap-8 u-flex1">
+                <label class="u-bold u-fs-sm u-c-primary u-nowrap">📋 회의 선택:</label>
+                <select class="u-bold u-fs-sm u-flex1 u-r-4" id="minutesMeetingSelector" data-change="MeetingManager.openMinutesForMeeting" data-change-args='["$value"]' style="min-width:280px; padding:4px 8px; border:1px solid #93c5fd;"></select>
+              </div>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-xs" data-btn="add" data-click="MeetingManager.openNewMeetingModal">➕ 새 회의 일정 등록</button>
+            </div>
+          </div>
+        </div>
+        <div id="minutesEditorContainer"></div>
+      </div>
+
+      <!-- 서브탭 3: Action Item 현황 (통합 트래커) -->
+      <div id="meeting-panel-actionitems" class="meeting-sub-panel" style="display:none;">
+        <!-- KPI 통계 카드 -->
+        <div class="grid-4 ai-kpis">
+          <div class="kpi-card kpi-tone-info">
+            <div class="kpi-title">총 Action Item</div>
+            <div class="kpi-value" id="aiKpiTotal">0건</div>
+          </div>
+          <div class="kpi-card kpi-tone-info">
+            <div class="kpi-title">진행중 Task</div>
+            <div class="kpi-value" id="aiKpiProg">0건</div>
+          </div>
+          <div class="kpi-card kpi-tone-ok">
+            <div class="kpi-title">완료 Task</div>
+            <div class="kpi-value" id="aiKpiDone">0건</div>
+          </div>
+          <div class="kpi-card kpi-tone-ok">
+            <div class="kpi-title">조치 완료율</div>
+            <div class="kpi-value" id="aiKpiRate">0%</div>
+          </div>
+          <div class="kpi-card kpi-tone-bad">
+            <div class="kpi-title">지연 주의 Task</div>
+            <div class="kpi-value" id="aiKpiDelay">0건</div>
+          </div>
+        </div>
+
+        <!-- Action Item 통합 관리 테이블 카드 -->
+        <div class="card">
+          <div class="card-title u-flex u-jc-between u-ai-center u-wrap u-gap-10">
+            <div class="u-flex u-ai-center u-gap-8">
+              <span>⚡ 회의 도출 Action Item 전사 통합 관리 대장</span>
+              <span class="lk-hint">추가는 회의록 작성에서 · 행을 누르면 오른쪽에서 수정</span>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-xs" data-btn="excel-down" data-click="MeetingManager.exportActionItemsExcel">📥 엑셀 다운로드 (Action Item)</button>
+            </div>
+          </div>
+          <div class="u-flex u-jc-between u-ai-center u-wrap u-gap-10 u-mb-10 u-r-6" style="background:#f8fafc; padding:8px 12px; border:1px solid #e2e8f0;">
+            <div class="u-flex u-ai-center u-gap-10 u-wrap">
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">서브시스템:</label>
+                <select class="u-fs-xs" id="aiFilterSubsystem" data-change="MeetingManager.renderActionItemsTracker" style="min-width:110px;">
+                  <option value="ALL">전체 서브시스템</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">상태:</label>
+                <span class="neo-chips" id="aiStatusChips" role="group" aria-label="상태 필터"></span>
+                <select class="u-fs-xs" id="aiFilterStatus" data-change="MeetingManager.renderActionItemsTracker" style="display:none;">
+                  <option value="ALL">전체 상태</option>
+                  <option value="진행중">진행중</option>
+                  <option value="완료">완료</option>
+                  <option value="지연">지연 Task만</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">담당자:</label>
+                <select class="u-fs-xs" id="aiFilterAssignee" data-change="MeetingManager.renderActionItemsTracker" style="min-width:110px;">
+                  <option value="ALL">전체 담당자</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label class="u-bold u-fs-xs">검색:</label>
+                <input class="u-fs-xs" type="text" id="aiSearchInput" data-keyup="MeetingManager.renderActionItemsTracker" placeholder="Action Item명, 내용, 회의명" style="padding:2px 6px; width:160px;">
+              </div>
+            </div>
+          </div>
+          <div class="table-container" style="max-height:420px;">
+            <table class="matrix-table" id="aiTrackerTable">
+              <thead>
+                <tr>
+                  <th style="width:40px;">No</th>
+                  <th style="width:85px;">ID</th>
+                  <th style="width:95px;">서브시스템</th>
+                  <th style="width:180px;">연계 회의명</th>
+                  <th style="width:95px;">회의일자</th>
+                  <th>Action Item 명칭</th>
+                  <th>세부 Task 내용</th>
+                  <th style="width:90px;">요청자</th>
+                  <th style="width:95px;">담당자</th>
+                  <th style="width:105px;">완료목표일</th>
+                  <th style="width:120px;">상태</th>
+                </tr>
+              </thead>
+              <tbody id="aiTrackerTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>

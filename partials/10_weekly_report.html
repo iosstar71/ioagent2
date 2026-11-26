@@ -1,0 +1,223 @@
+
+<!-- =================================================================== -->
+    <!-- 주간보고 작성 메뉴 (tab-weekly-report)           -->
+    <!-- =================================================================== -->
+    <div id="tab-weekly-report" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="rp-head">
+          <span class="sub-title">📝 보고</span><span class="neo-ph-desc">주간보고를 작성 · 출력하고, 종합보고서를 내려받습니다.</span>
+          <div class="current-date-badge">보고 기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+        </div>
+      </div>
+      <div class="master-subtab-bar sub-tabs" id="rpTabs">
+        <button class="master-subtab-btn active" data-rp-tab="weekly" data-click="ReportTabs.show" data-click-args='["weekly"]'>📝 주간보고 작성 · 출력</button>
+        <button class="master-subtab-btn" data-rp-tab="deck" data-click="ReportTabs.show" data-click-args='["deck"]'>📽 종합보고서 출력</button>
+        <button class="master-subtab-btn" data-rp-tab="settings" data-click="ReportTabs.show" data-click-args='["settings"]' title="PM 이상만 바꿀 수 있습니다">⚙️ 보고서 설정</button>
+      </div>
+
+      <!-- ① 주간보고 작성 · 출력 -->
+      <div class="rp-pane active" data-rp-pane="weekly">
+      <!-- 선택 주차 종합 주간보고: 작성 완료된 종합·서브시스템 보고서를 모두 취합하여 생성 -->
+      <div class="wr-export-bar rp-export-bar">
+        <span class="neo-dd-label rp-export-label">선택 주차 종합 주간보고</span>
+          <button class="btn btn-sm" data-btn="excel-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["EXCEL"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 1개 엑셀 보고서로 다운로드합니다.">📥 엑셀 주간보고</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 표가 포함된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 포함)</button>
+          <button class="btn btn-sm" data-btn="word-down" data-click="WeeklyReportManager.exportWeek" data-click-args='["WORD_TEXT"]' title="선택 주차에 작성 완료된 종합·서브시스템 주간보고를 모두 취합하여 표 없이 문장으로 구성된 워드 보고서로 다운로드합니다.">📥 워드 주간보고 (표 제외)</button>
+      </div>
+
+      <!-- [Neo 2.2] 주간보고 2단 화면: 왼쪽 보고 단위 목록 / 오른쪽 보고서 -->
+      <div class="neo-wr-split">
+      <!-- ① 보고 주차별 보고서 작성 현황 목록 -->
+      <div class="card" id="wrListCard">
+        <div class="card-title">
+          <div class="u-flex u-ai-center u-gap-8 u-wrap">
+            <span>📅 보고 주차별 보고서 목록</span>
+            <button class="btn btn-xs" data-btn="neutral" data-click="WeeklyReportManager.shiftWeek" data-click-args='[-1]' title="이전 주차">◀</button>
+            <select class="u-bold" id="wrWeekSelect" data-change="WeeklyReportManager.onListWeekChanged" style="min-width:230px;"></select>
+            <button class="btn btn-xs" data-btn="neutral" data-click="WeeklyReportManager.shiftWeek" data-click-args='[1]' title="다음 주차">▶</button>
+            <button class="btn btn-xs" data-btn="nav" data-click="WeeklyReportManager.goToReportWeek" title="보고 기준일이 속한 주차로 이동">📍 기준일 주차</button>
+            <span class="u-fs-xs u-c-muted" id="wrListSummary"></span>
+          </div>
+          <div class="u-flex u-ai-center u-gap-6 u-wrap">
+            <label class="u-fs-xs u-iflex u-ai-center u-gap-4 u-pointer">
+              <input type="checkbox" id="wrListShowAll" data-change="WeeklyReportManager.renderSavedList"> 저장된 전체 주차 보기
+            </label>
+          </div>
+        </div>
+        <div style="max-height:260px; overflow:auto;">
+          <table class="matrix-table u-w100">
+            <thead><tr><th style="width:190px;">보고 주차</th><th>작성 단위</th><th style="width:120px;">작성자</th><th style="width:90px;">상태</th><th style="width:100px;">금주 / 차주 항목</th><th style="width:150px;">저장 일시</th><th style="width:90px;">보기</th></tr></thead>
+            <tbody id="wrSavedListBody"></tbody>
+          </table>
+        </div>
+        <select id="wrSubsystemSelect" style="display:none;"></select>
+      </div>
+
+      <!-- ② 보고서 상세 -->
+      <div id="wrDetailPanel">
+        <div class="wr-detail-head">
+          <div class="u-flex u-gap-8 u-wrap" style="align-items:stretch;">
+            <div id="wrScopeBanner" class="wr-detail-title u-flex1"></div>
+            <div id="wrSizeMeter" class="wr-size-meter"></div>
+          </div>
+          <div class="wr-toolbar">
+            <div class="wr-toolbar-group">
+              <button id="btnWrComplete" class="btn btn-sm" data-btn="save" data-click="WeeklyReportManager.completeReport" data-click-args='[true]' title="작성한 주간보고서를 확정하여 저장합니다.">✅ 작성 완료 (저장)</button>
+              <button class="btn btn-sm" data-btn="cancel" data-click="WeeklyReportManager.discardChanges" title="저장하지 않은 변경 내용을 취소합니다.">↩️ 변경 취소</button>
+            </div>
+            <div class="wr-toolbar-group">
+              <button class="btn btn-sm" data-btn="refresh" data-click="WeeklyReportManager.syncWbsTasks" title="WBS · 회의 · Action Item · 지표를 지금 자료로 다시 가져옵니다. 작성 완료된 보고서는 작성 완료가 취소됩니다 (직접 쓴 내용은 유지)">🔄 최신 데이터 가져오기</button>
+              <button class="btn btn-sm" data-btn="neutral" data-click="WeeklyReportManager.openHistoryModal" title="이전 주차 보고서의 요약·현안 내용을 복사합니다.">📋 이전 보고서 내용 복사</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>📋 총괄 요약</span>
+            <div class="u-flex u-gap-8 u-ai-center">
+              <span class="u-fs-xs u-c-muted">작성자:</span>
+              <input class="u-fs-xs u-bold" type="text" id="wrAuthorInput" value="" style="padding:3px 8px; width:130px;">
+            </div>
+          </div>
+          <div class="u-grid u-gap-12 u-mb-12" style="grid-template-columns: 1fr 1fr;">
+            <div class="u-r-6 u-p-10" style="background:#f8fafc; border:1px solid #e2e8f0;">
+              <label class="u-bold u-fs-sm u-c-info u-block u-mb-6">🔹 금주 중점 추진 실적 총괄 요약</label>
+              <textarea class="u-w100 u-fs-xs u-p-6 u-r-4" id="wrCurrentSummary" maxlength="3000" data-input="WeeklyReportManager.onSizeInput" rows="3" style="border:1px solid #cbd5e1; resize:vertical;" placeholder="금주에 달성한 주요 성과, 공정률 달성 내역, 주요 마일스톤 완료 사항을 서술하세요."></textarea>
+            </div>
+            <div class="u-r-6 u-p-10" style="background:#f8fafc; border:1px solid #e2e8f0;">
+              <label class="u-bold u-fs-sm u-c-info u-block u-mb-6">🔹 차주 중점 추진 목표 및 계획 요약</label>
+              <textarea class="u-w100 u-fs-xs u-p-6 u-r-4" id="wrNextSummary" maxlength="3000" data-input="WeeklyReportManager.onSizeInput" rows="3" style="border:1px solid #cbd5e1; resize:vertical;" placeholder="차주에 착수 또는 완료 예정인 중점 Task, 연계 산출물 검수 목표를 서술하세요."></textarea>
+            </div>
+          </div>
+          <div class="u-r-6 u-p-10" style="background:#fffbeb; border:1px solid #fef3c7;">
+            <label class="u-bold u-fs-sm u-block u-mb-6" style="color:#92400e;">⚠️ 주요 현안 · 리스크 및 PMO / 유관부서 지원 요청사항 <span class="week-chip lbl-wr-week"></span></label>
+            <textarea class="u-w100 u-fs-xs u-p-6 u-r-4" id="wrIssuesNotes" maxlength="2000" data-input="WeeklyReportManager.onSizeInput" rows="2" style="border:1px solid #fde68a; resize:vertical;" placeholder="공정 지연 리스크, 기술적 병목, 대외 협의 지연 등 즉각적인 조치가 필요한 사항을 기록하세요."></textarea>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>✅ 금주 실적 <span id="wrCurCount" class="badge" style="background:#dcfce7; color:#166534;">0</span></span>
+            <div class="u-flex u-gap-6 u-ai-center u-wrap">
+              <select class="u-fs-xs" id="wrAddCurWbsSelect" style="max-width:320px;"></select>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["cur"]'>➕ WBS Task 추가</button>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addManualItem" data-click-args='["cur"]'>➕ 직접 입력 항목 추가</button>
+            </div>
+          </div>
+          <div class="table-container" style="max-height:420px;">
+            <table class="matrix-table" id="wrCurrentTasksTable">
+              <thead>
+                <tr>
+                  <th style="width:84px;">서브시스템</th>
+                  <th style="width:76px;">WBS ID</th>
+                  <th style="min-width:200px;">항목명</th>
+                  <th style="width:84px;">담당자</th>
+                  <th style="width:150px;">계획 일정 / 완료일</th>
+                  <th style="width:54px;">계획</th>
+                  <th style="width:54px;">실적</th>
+                  <th style="width:80px;">추진상태</th>
+                  <th style="min-width:280px;">상세 추진실적 및 조치내역</th>
+                  <th style="width:40px;">제외</th>
+                </tr>
+              </thead>
+              <tbody id="wrCurrentTasksBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>🎯 차주 계획 <span id="wrNxtCount" class="badge" style="background:#e0f2fe; color:#075985;">0</span></span>
+            <div class="u-flex u-gap-6 u-ai-center u-wrap">
+              <select class="u-fs-xs" id="wrAddNxtWbsSelect" style="max-width:320px;"></select>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addWbsItem" data-click-args='["nxt"]'>➕ WBS Task 추가</button>
+              <button class="btn btn-xs" data-btn="add" data-click="WeeklyReportManager.addManualItem" data-click-args='["nxt"]'>➕ 직접 입력 항목 추가</button>
+            </div>
+          </div>
+          <div class="table-container" style="max-height:420px;">
+            <table class="matrix-table" id="wrNextTasksTable">
+              <thead>
+                <tr>
+                  <th style="width:84px;">서브시스템</th>
+                  <th style="width:76px;">WBS ID</th>
+                  <th style="min-width:200px;">항목명</th>
+                  <th style="width:84px;">담당자</th>
+                  <th style="width:150px;">계획 일정</th>
+                  <th style="width:60px;">목표</th>
+                  <th style="width:80px;">추진상태</th>
+                  <th style="min-width:280px;">차주 중점 추진계획 및 준비사항</th>
+                  <th style="width:40px;">제외</th>
+                </tr>
+              </thead>
+              <tbody id="wrNextTasksBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="u-flex u-col u-gap-14 u-mt-14">
+        <div class="card u-mb-0">
+          <div class="card-title">
+            <span>🤝 [금주 회의 실적] WBS 연계 주간 회의 진행 현황</span>
+          </div>
+          <div class="table-container" style="max-height:220px;">
+            <table class="matrix-table" id="wrCurrentMeetingsTable">
+              <thead>
+                <tr>
+                  <th style="width:35px;">No</th>
+                  <th style="width:75px;">서브시스템</th>
+                  <th>회의 명칭</th>
+                  <th style="width:100px;">일시</th>
+                  <th style="width:100px;">주관/장소</th>
+                  <th>주요 결정사항</th>
+                </tr>
+              </thead>
+              <tbody id="wrCurrentMeetingsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card u-mb-0">
+          <div class="card-title">
+            <span>📅 [차주 회의 계획] WBS 연계 차주 예정 회의 계획</span>
+          </div>
+          <div class="table-container" style="max-height:220px;">
+            <table class="matrix-table" id="wrNextMeetingsTable">
+              <thead>
+                <tr>
+                  <th style="width:35px;">No</th>
+                  <th style="width:75px;">서브시스템</th>
+                  <th>회의 명칭</th>
+                  <th style="width:100px;">일시</th>
+                  <th style="width:100px;">주관/장소</th>
+                  <th>중점 상정 안건</th>
+                </tr>
+              </thead>
+              <tbody id="wrNextMeetingsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div>
+      </div><!-- /neo-wr-split -->
+      </div><!-- /rp-pane weekly -->
+
+      <!-- ② 종합보고서 출력 (PPT) -->
+      <div class="rp-pane" data-rp-pane="deck">
+        <div class="card rp-deck-card">
+          <div class="card-title"><span>📽 종합보고서 (PowerPoint)</span></div>
+          <div class="rp-deck-row">
+            <label class="rp-deck-label" for="rpDeckWeek">보고 주차</label>
+            <select id="rpDeckWeek" data-change="ReportTabs.renderDeck"></select>
+            <button class="btn" data-btn="nav" data-click="ReportTabs.downloadDeck">📥 종합보고서 PPT 다운로드</button>
+          </div>
+          <div id="rpDeckInfo" class="exec-report-info"></div>
+          <div class="rp-deck-sub">들어가는 장표</div>
+          <ol id="rpDeckSlides" class="rp-deck-slides"></ol>
+          <div class="exec-report-note">💡 고른 주차에 작성 완료된 종합 · 서브시스템 주간보고와 그 시점의 진척 자료로 만듭니다. 색상 · 글꼴은 [보고서 설정]을 따릅니다.</div>
+        </div>
+      </div>
+
+      <!-- ③ 보고서 설정 (PM 이상) — 설정 화면 한 벌을 SharedPanes 가 여기로 옮겨 옴 -->
+      <div class="rp-pane" data-rp-pane="settings" id="reportSub-settings"></div>
+    </div>

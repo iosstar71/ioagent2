@@ -1,0 +1,53 @@
+
+    <div id="tab-gantt" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10">
+          <span class="sub-title">🗓️ Gantt</span><span class="neo-ph-desc">모든 일정을 막대로 펼쳐 겹치거나 늦어진 일을 찾습니다.</span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2026-11-04 (수)</b></div>
+        </div>
+        <div class="u-flex u-ai-center u-gap-8 u-wrap">
+          <div class="filter-item">
+            <label class="u-bold u-fs-xs">📏 열 표시 단위:</label>
+            <select class="u-bold" id="ganttScaleFilter" data-change="renderGantt">
+              <option value="MONTH">🗓️ 월별 표시 (월단위 타임라인)</option>
+              <option value="WEEK" selected>📅 주차별 표시 (주차 + 주시작일)</option>
+              <option value="DAY">📆 일자별 표시 (1일 단위)</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="u-bold u-fs-xs">🗂️ 도메인별:</label>
+            <select class="u-bold" id="ganttDomainFilter" data-change="UiH.domainFilter" data-change-args='["ganttDomainFilter", "ganttSubsystemFilter", "renderGantt"]'></select>
+          </div>
+          <div class="filter-item">
+            <label class="u-bold u-fs-xs">서브시스템:</label>
+            <select id="ganttSubsystemFilter" data-change="renderGantt">
+              <option value="ALL">전체 서브시스템</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="u-bold u-fs-xs">표시 레벨(접기):</label>
+            <select id="ganttMaxLevelFilter" data-change="renderGantt">
+              <option value="5">전체 펼치기 (L1~L5)</option>
+              <option value="4">L4까지만 표시 (L5 접기)</option>
+              <option value="3">L3까지만 표시 (L4 이하 접기)</option>
+              <option value="2">L2까지만 표시 (L3 이하 접기)</option>
+              <option value="1">L1만 표시 (L2 이하 접기)</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label class="u-fs-xs" title="계획 막대 아래에 기준선 일정을 연한 막대로, 기준선보다 밀린 기간을 빨간색으로 표시"><input type="checkbox" id="ganttBlShow" checked data-change="renderGantt"> 📐 기준선 보기</label>
+            <label class="u-fs-xs" title="기준선보다 계획 종료가 늦어진 Task 와 그 상위 Task 만"><input type="checkbox" id="ganttBlSlip" data-change="renderGantt"> 밀린 Task만</label>
+          </div>
+        </div>
+      </div>
+      <div class="gantt-legend" id="ganttBaselineBar"></div>
+      <div class="card">
+        <div class="gantt-wrapper">
+          <div class="gantt-tree" id="ganttTreeList"></div>
+          <div class="gantt-chart-pane" id="ganttPane">
+            <div class="gantt-header" id="ganttHeaderDays"></div>
+            <div id="ganttRowsContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>

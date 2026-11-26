@@ -1,0 +1,423 @@
+
+
+
+                <div id="tab-master" class="tab-pane">
+      <div class="sub-header-bar">
+        <div class="u-flex u-ai-center u-gap-10 u-wrap">
+          <span class="sub-title">🗂️ 프로젝트 설정</span><span class="neo-ph-desc">기간 · 서브시스템 · 단계 · 휴일 · 멤버처럼 모든 화면의 기준이 되는 값을 정합니다.</span>
+          <span class="status-badge-chip chip-completed">🔑 접근 권한: 프로젝트 관리자(PM) / 관리자(SYS_ADMIN)</span>
+          <div class="current-date-badge">기준일: <b class="lbl-current-date">2027-06-01 (화)</b></div>
+        </div>
+      </div>
+
+      
+      <!-- 프로젝트 설정 기능별 서브탭 -->
+      <div class="master-subtab-bar" data-group="master">
+        <button class="master-subtab-btn active" data-subtab="basic" data-click="MasterSubTabs.show" data-click-args='["basic"]'>📋 프로젝트 기본정보</button>
+        <button class="master-subtab-btn" data-subtab="holiday" data-click="MasterSubTabs.show" data-click-args='["holiday"]'>⚙️ 프로젝트 부가정보</button>
+        <button class="master-subtab-btn" data-subtab="phase" data-click="MasterSubTabs.show" data-click-args='["phase"]'>🧩 서브시스템</button>
+        <button class="master-subtab-btn" data-subtab="deliv" data-click="MasterSubTabs.show" data-click-args='["deliv"]'>📑 산출물</button>
+        <button class="master-subtab-btn" data-subtab="users" data-click="MasterSubTabs.show" data-click-args='["users"]'>👥 멤버 정보</button>
+        <button class="master-subtab-btn" data-subtab="ui-screen" data-click="MasterSubTabs.show" data-click-args='["ui-screen"]'>🖥️ 화면·테마</button>
+        <button class="master-subtab-btn" data-subtab="ui-channel" data-click="MasterSubTabs.show" data-click-args='["ui-channel"]'>💬 게시판 채널</button>
+<template data-edition="workgroup">
+        <button class="master-subtab-btn" data-subtab="audit" data-click="MasterSubTabs.show" data-click-args='["audit"]'>🧾 감사 로그</button>
+</template>
+        <button class="master-subtab-btn master-subtab-link" data-click="ReportTabs.open" data-click-args='["settings"]' title="보고서 설정은 [보고] 메뉴로 옮겼습니다">📊 보고서 설정 →</button>
+      </div>
+
+      <div class="master-subpane" data-group="master" id="masterSub-basic" data-subpane="basic">
+        <div class="u-flex u-col u-gap-16">
+        <!-- 프로젝트 바로가기 (PM 도 사용) -->
+        <div class="card pm-shortcut-card">
+          <div class="card-title"><span>🗂️ 프로젝트</span></div>
+          <div id="masterProjectPanel" data-project-panel="compact"></div>
+        </div>
+        <!-- [1-1] 프로젝트 기본정보 -->
+        <div class="card" style="border-left: 4px solid var(--primary);">
+          <div class="card-title">
+            <div class="u-flex u-jc-between u-ai-center u-w100">
+              <div>
+                <strong>프로젝트 기본정보</strong>
+              </div>
+              <button class="btn btn-success btn-sm u-bold u-fs-115" style="padding:4px 12px;" data-click="MasterSyncEngine.syncAll" data-click-args='[true]' title="변경된 프로젝트 설정을 모든 탭에 즉시 실시간 동기화">⚡ 프로젝트 설정 적용</button>
+            </div>
+          </div>
+          <div class="u-flex u-col u-gap-10">
+            <div class="grid-2 u-gap-8">
+              <div>
+                <label class="u-block u-bold u-fs-xs u-mb-3">프로젝트명 정의 (배지 및 보고서 표기):</label>
+                <input class="u-w100 u-bold" type="text" id="cfgProjectName" value="프로젝트" data-change="updateProjectTitles">
+              </div>
+            </div>
+
+            <div class="grid-2 u-gap-8">
+              <div>
+                <label class="u-block u-bold u-mb-4 u-fs-xs">프로젝트 전체 수행 기간:</label>
+                <div class="u-flex u-ai-center u-gap-8">
+                  <input class="u-flex1" type="date" id="cfgProjectStartDate" data-change="updateProjectPeriod">
+                  <span id="cfgProjStartDayTag" class="day-of-week-tag">-</span>
+                  <span>~</span>
+                  <input class="u-flex1" type="date" id="cfgProjectEndDate" data-change="updateProjectPeriod">
+                  <span id="cfgProjEndDayTag" class="day-of-week-tag">-</span>
+                </div>
+              </div>
+              <div>
+                <label class="u-block u-bold u-mb-4 u-fs-xs">매주 시작 요일 선택 (간트 주차 및 공정률 산출 기준):</label>
+                <select class="u-w100" id="cfgWeekStartDay" data-change="saveConfig">
+                  <option value="1">월요일 시작 (월 ~ 일)</option>
+                  <option value="2">화요일 시작 (화 ~ 월)</option>
+                  <option value="3">수요일 시작 (수 ~ 화)</option>
+                  <option value="4">목요일 시작 (목 ~ 수)</option>
+                  <option value="5" selected>금요일 시작 (금 ~ 목)</option>
+                  <option value="6">토요일 시작 (토 ~ 금)</option>
+                  <option value="0">일요일 시작 (일 ~ 토)</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 주요 마일스톤 (종합 / 서브시스템별) — Gantt에 ◆ 로 표시 -->
+        <div class="card" style="border-left: 4px solid #7c3aed;">
+          <div class="card-title">
+            <div>
+              <strong>주요 마일스톤</strong>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["ALL"]'>➕ 종합 마일스톤 추가</button>
+              <button class="btn btn-sm" data-btn="add" data-click="MilestoneManager.add" data-click-args='["SYS"]'>➕ 서브시스템 마일스톤 추가</button>
+              <button class="btn btn-sm" data-btn="nav" data-click="switchTab" data-click-args='["tab-gantt"]'>🗓️ Gantt에서 보기</button>
+            </div>
+          </div>
+          <div class="table-container" style="max-height:300px;">
+            <table class="matrix-table u-w100">
+              <thead><tr><th style="width:160px;">구분</th><th>마일스톤명</th><th style="width:150px;">일자</th><th>설명</th><th style="width:90px;">상태</th><th style="width:60px;">삭제</th></tr></thead>
+              <tbody id="milestoneTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="master" id="masterSub-phase" data-subpane="phase">
+        <div class="ss-pane">
+        <!-- 도메인 (서브시스템의 상위 묶음, 최대 5개) -->
+        <div class="card" id="ssDomainCard">
+          <div class="card-title"><div><strong>도메인</strong> <span class="lk-hint">서브시스템을 묶는 상위 그룹 (최대 5개)</span></div></div>
+              <div>
+                <div class="ss-domain-add">
+                  <input type="text" id="newDomainInput" placeholder="추가할 도메인명 (최대 5개)">
+                  <button class="btn btn-primary btn-sm" data-click="addNewDomain">+ 도메인 추가</button>
+                </div>
+                <div id="domainChipsContainer" class="ss-domain-chips"></div>
+              </div>
+        </div>
+
+        <!-- [1-2] 도메인 및 서브시스템 프로젝트 설정 등록 -->
+        <div class="card" id="ssListCard">
+          <div class="card-title">
+            <div>
+              <strong>서브시스템</strong> <span class="lk-hint">관리 유형 · SDLC 유형 · 가중치(합계 100) · 담당 PM — ⚠ 일정 미지정을 누르면 아래 [공정 유형]에서 채웁니다</span>
+            </div>
+            <div class="u-flex u-gap-6 u-ai-center">
+              <button class="btn btn-primary btn-sm" data-click="addNewSubsystemMeta">+ 서브시스템 추가</button>
+            </div>
+          </div>
+          <div class="table-container ss-table-wrap">
+            <table id="subsystemsMetaTable">
+              <thead>
+                <tr>
+                  <th style="width: 135px;">소속 도메인 (상위그룹)</th>
+                  <th style="width: 100px;">코드(Prefix)</th>
+                  <th style="width: 135px;">서브시스템명</th>
+                  <th style="width: 130px;">관리 유형</th>
+                  <th style="width: 170px;">적용 SDLC 타입</th>
+                  <th style="width: 80px;">가중치(%)</th>
+                  <th style="width: 95px;">담당자(PM)</th>
+                  <th>서브시스템 상세 Task 및 개발 개요</th>
+                  <th class="u-tc" style="width: 75px;">Task수</th>
+                  <th class="u-tr" style="width: 80px;">실적공정</th>
+                  <th class="u-tc" style="width: 45px;">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="subsystemsMetaBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- [1-3] SDLC 생명주기 공정 프로젝트 설정 -->
+        <div class="card" id="ssProcCard">
+          <div class="card-title">
+            <div>
+              <strong>공정 유형</strong> <span class="lk-hint">유형별 단계 가중치 · 계획 일정 (시스템 설정의 모든 유형)</span>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-sm" data-btn="nav" data-admin-only="1" data-click="ProcessLib.goAdmin" title="유형 추가 · 단계 수정은 관리자가 [시스템 설정 > SDLC 유형]에서 합니다">⚙ SDLC 유형 관리 (시스템 설정)</button>
+            </div>
+          </div>
+          <div id="customSdlcCardsContainer" class="ss-proc"></div>
+        </div>
+
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="master" id="masterSub-deliv" data-subpane="deliv">
+        <div class="ss-pane">
+        <div class="card" id="delivRoundCard">
+          <div class="card-title"><div><strong>산출물 제출 차수</strong> <span class="lk-hint">산출물을 몇 차까지 나눠 제출하는지</span></div></div>
+              <div>
+                <label class="ss-label">제출 운영 차수 (최대 4차)</label>
+                <select id="cfgMaxDeliverableRounds" data-change="updateMaxDeliverableRounds" data-change-args='["$value"]'>
+                  <option value="1">1차만 운영 (단일 제출)</option>
+                  <option value="2">1차 ~ 2차 운영 (2회 제출)</option>
+                  <option value="3">1차 ~ 3차 운영 (3회 제출)</option>
+                  <option value="4" selected>1차 ~ 4차 전체 운영 (최대 4회 제출)</option>
+                </select>
+              </div>
+        </div>
+
+        <!-- [1-5] 단계별 표준산출물 관리 -->
+        <div class="card" style="border-left: 4px solid #10b981;">
+          <div class="card-title">
+            <div>
+              <strong>단계별 표준 산출물</strong>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-secondary btn-sm" data-click="resetStandardDeliverablesMeta">🔄 기본 복원</button>
+              <button class="btn btn-primary btn-sm" data-click="addNewStandardDeliverableMeta">+ 산출물 추가</button>
+            </div>
+          </div>
+          <div class="table-container" style="max-height: 220px;">
+            <table id="standardDeliverablesTable">
+              <thead>
+                <tr>
+                  <th style="width:85px;">공정 구분</th>
+                  <th style="width:130px;">표준 단계명</th>
+                  <th>표준 산출물 명칭</th>
+                  <th style="width:140px;">필수 제출 차수 (복수선택)</th>
+                  <th style="width:110px;">작성 주체</th>
+                  <th style="width:110px;">검토/승인 주체</th>
+                  <th class="u-tc" style="width:50px;">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="standardDeliverablesBody"></tbody>
+            </table>
+          </div>
+          <!-- 차수별 제출 계획일 일괄 변경 (PM · 관리자) -->
+          <div class="deliv-bulk" id="delivBulkBox">
+            <b class="deliv-bulk-title">📅 차수별 제출일 일괄 변경</b>
+            <label>차수 <select id="delivBulkRound"></select></label>
+            <label>서브시스템 <select id="delivBulkSys"></select></label>
+            <label>새 제출 계획일 <input type="date" id="delivBulkDate"></label>
+            <label class="deliv-bulk-chk"><input type="checkbox" id="delivBulkSkipDone" checked> 이미 제출한 산출물은 그대로</label>
+            <button class="btn btn-sm" data-btn="warn" data-click="DelivBulkDate.apply">일괄 변경</button>
+            <span class="lk-hint" id="delivBulkInfo"></span>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <div class="master-subpane" data-group="master" id="masterSub-holiday" data-subpane="holiday">
+        <!-- 2열 배치: 진척률 | 판정 기준 → 기준선(전체 폭) → ID 규칙 | 주차 표시 → 공휴일(전체 폭). 한 줄의 카드는 같은 높이 -->
+        <div class="pane-grid-2 pg-even">
+        <!-- 계획 진척률 산정 기준 (달력일수 / 영업일) -->
+        <div class="card">
+          <div class="card-title">
+            <div>
+              <strong>계획 진척률 산정 기준 (달력 일수 / 영업일)</strong>
+              <div class="u-fs-xs u-c-muted u-mt-3">* 계획 진척률(기준일 대비 계획 공정률)을 주말·공휴일 포함 <b>달력 일수</b> 또는 주말·공휴일을 제외한 <b>영업일</b> 기준으로 계산합니다. 변경 후 [적용]을 누르면 전체 진척률을 다시 계산합니다.</div>
+            </div>
+          </div>
+          <div class="u-flex u-gap-10 u-ai-center u-wrap">
+            <label class="u-bold u-fs-sm">산정 기준:</label>
+            <select class="u-bold" id="cfgProgressBasisSelect" style="min-width:300px;" data-change="ProgressBasisManager.onSelectChanged">
+              <option value="CALENDAR">📅 달력 일수 기준 (주말·공휴일 포함)</option>
+              <option value="BUSINESS">🏢 영업일 기준 (주말·공휴일 제외)</option>
+            </select>
+            <button class="btn btn-primary btn-sm" data-click="ProgressBasisManager.apply">✅ 적용 (진척률 재계산)</button>
+            <span class="u-fs-xs u-c-muted" id="progressBasisStatus"></span>
+          </div>
+        </div>
+
+
+        <!-- 판정 기준: 지연 · 마감 임박 -->
+        <div class="card">
+          <div class="card-title">
+            <div>
+              <strong>🚦 판정 기준 (지연 · 마감 임박 · 범위 협의)</strong>
+              <div class="u-fs-xs u-c-muted u-mt-3">* <b>지연</b> = 계획 진척률보다 실적이 아래 값 이상 적거나, 계획종료일이 기준일보다 앞인데 미완료인 Task. <b>체크할 일</b>(홈 · 대시보드)은 아래 일수 안에 마감되는 Task · 산출물을 보여 줍니다. <b>범위 협의</b> = 한 서브시스템에서 VOC 안에서 처리한 개선 요청이 이 건수 이상이면 Summary 에 알림 (0 = 끔).</div>
+            </div>
+          </div>
+          <div class="u-flex u-gap-10 u-ai-center u-wrap">
+            <label class="u-bold u-fs-sm">지연 판정 차이:</label>
+            <input type="number" class="num-in" id="cfgDelayGap" min="0" max="100" step="0.5"> <span>%p 이상</span>
+            <label class="u-bold u-fs-sm u-ml-12">마감 임박:</label>
+            <input type="number" class="num-in" id="cfgDueDays" min="1" max="90" step="1"> <span>일 안</span>
+            <label class="u-bold u-fs-sm u-ml-12">범위 협의 알림:</label>
+            <input type="number" class="num-in" id="cfgScopeAlert" min="0" max="999" step="1"> <span>건 이상</span>
+            <button class="btn btn-primary btn-sm" data-click="JudgeRules.apply">✅ 적용 (다시 계산)</button>
+          </div>
+        </div>
+
+        <!-- 기준선: 확정 순간의 계획 일정을 복사해 두고 지금 계획과 비교 (modules/wbs/baseline-ui.js) -->
+        <div class="card pg-wide" id="baselineCard">
+          <div class="card-title">
+            <div><strong>📐 기준선</strong> <span class="lk-hint">확정한 순간의 Task 계획 일정을 남겨 두고 Gantt · Summary · 보고서에서 "기준선 대비 +N일" 로 비교 (다시 확정할 때는 사유 필수)</span></div>
+          </div>
+          <div id="baselineBox"></div>
+        </div>
+
+        <!-- [1-7] 표기 규칙: ID 접두사 + 주차 표시 (번호 · 날짜를 적는 방식을 한 곳에) -->
+        <div class="card" id="ruleCard">
+          <div class="card-title">
+            <div><strong>🏷️ ID 규칙</strong> <span class="lk-hint">WBS · REQ · 추가 요구사항 · VOC · Action Item 의 ID 접두사 (새로 만드는 것부터 적용)</span></div>
+            <button class="btn btn-warning btn-sm" data-click="applyIdPrefixSettings" data-click-args='[true]'>🔄 ID 다시 매기기</button>
+          </div>
+          <div class="rule-id-grid" id="idRuleGrid"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <div><strong>📅 주차 표시 방식</strong> <span class="lk-hint">머리글 기준일 옆 · 주간보고 · 현안/리스크에 표시 (한 주의 시작 요일은 기본정보에서 설정)</span></div>
+          </div>
+          <div id="weekFmtBox" class="wk-box wk-plain">
+            <div class="wk-grid">
+              <div>
+                <div class="wk-label">① 주차 기준</div>
+                <label class="bk-check"><input type="radio" name="wkBasis" value="ANNUAL" data-change="WeekFmt.preview"> 연간 주차 — 1월 1일이 들어 있는 주 = W1 (엑셀 WEEKNUM)</label>
+                <label class="bk-check"><input type="radio" name="wkBasis" value="PROJECT" data-change="WeekFmt.preview"> 프로젝트 주차 — 프로젝트 시작일이 들어 있는 주 = W1</label>
+                <div class="wk-label wk-gap">② 2개 연도 이상일 때</div>
+                <label class="bk-check"><input type="radio" name="wkMulti" value="PREFIX" data-change="WeekFmt.preview"> 해마다 W1 부터, 앞에 연도 — 27W52, 28W1</label>
+                <label class="bk-check"><input type="radio" name="wkMulti" value="CONTINUE" data-change="WeekFmt.preview"> 이어서 — W52, W53, W54</label>
+                <div class="lk-hint" id="wkSpanNote"></div>
+              </div>
+              <div>
+                <div class="wk-label">③ 표시 형식 (엑셀 사용자 지정 형식처럼)</div>
+                <select id="wkFormatPreset" data-change="WeekFmt.preview" class="wk-wide"></select>
+                <input type="text" id="wkFormatCustom" maxlength="40" placeholder='예: yy"W"ww' data-input="WeekFmt.preview" class="wk-wide wk-gap6" hidden>
+                <div class="lk-hint wk-gap4">yyyy · yy = 연도, ww = 두 자리 주차, w = 주차, "…" 안의 글자는 그대로</div>
+                <table class="m-table wk-gap6"><thead><tr><th>날짜</th><th></th><th class="wk-col-out">표시</th></tr></thead><tbody id="wkPreviewBody"></tbody></table>
+                <div class="wk-save"><button class="btn btn-sm" data-btn="save" data-click="WeekFmt.save">💾 주차 표시 저장</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- [1-6] 휴일 및 비작업일 캘린더 관리 -->
+        <div class="card pg-wide">
+          <div class="card-title">
+            <div>
+              <strong>공휴일 · 비작업일</strong>
+            </div>
+            <div class="u-flex u-gap-6">
+              <button class="btn btn-primary btn-sm" data-click="updateKoreanHolidays" data-click-args='[true]'>🔄 공휴일 업데이트</button>
+              <button class="btn btn-secondary btn-sm" data-click="addCustomHolidayRow">+ 휴일 추가</button>
+            </div>
+          </div>
+          <div class="u-flex u-gap-10 u-mb-8 u-ai-center u-fs-xs">
+            <label class="u-bold">휴일 필터링:</label>
+            <select id="holidayTypeFilter" data-change="renderHolidays" style="padding:3px 8px;">
+              <option value="ALL">전체 휴일 목록 보기</option>
+              <option value="CUSTOM">사용자 지정 휴일만 보기</option>
+              <option value="NATIONAL">대한민국 법정공휴일만 보기</option>
+            </select>
+          </div>
+          <div class="table-container pg-scroll">
+            <table id="holidayTable">
+              <thead><tr><th style="width:90px;">구분</th><th>휴일명</th><th style="width:160px;">일자 (요일)</th><th style="width:50px;">삭제</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- 프로젝트별 설정: 화면·테마 / 게시판 채널 (보고서 설정은 [보고] 메뉴) (SharedPanes 가 화면을 옮겨 옴) -->
+      <div class="master-subpane" data-group="master" id="masterSub-ui-screen" data-subpane="ui-screen"></div>
+      <div class="master-subpane" data-group="master" id="masterSub-ui-channel" data-subpane="ui-channel"></div>
+<template data-edition="workgroup">
+      <div class="master-subpane" data-group="master" id="masterSub-audit" data-subpane="audit"></div>
+</template>
+      <div class="master-subpane" data-group="master" id="masterSub-users" data-subpane="users">
+      
+
+      <div class="config-group-banner" style="background: linear-gradient(90deg, #b45309, #d97706);">
+        <span>👥 멤버 정보</span>
+      </div>
+
+      <!-- 권한 등급별 요약 카드 -->
+      <div class="u-grid u-gap-12 u-mb-14" style="grid-template-columns:repeat(5, 1fr);">
+        <div class="kpi-card" style="border-left-color: #1e293b;">
+          <div class="kpi-title">전체 등록 멤버</div>
+          <div class="kpi-value" id="userStatTotal">9 명</div>
+          <div class="kpi-sub">프로젝트 등록 멤버 ID 총계</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #7c3aed;">
+          <div class="kpi-title">👑 관리자 (SYS_ADMIN)</div>
+          <div class="kpi-value" id="userStatAdmin">1 명</div>
+          <div class="kpi-sub">시스템 환경설정 및 전 메뉴 총괄</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: var(--primary);">
+          <div class="kpi-title">🛡️ 프로젝트 관리자 (PM / PMO)</div>
+          <div class="kpi-value" id="userStatPm">2 명</div>
+          <div class="kpi-sub">프로젝트 설정 · 멤버관리 · 전체 데이터 병합</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #f59e0b;">
+          <div class="kpi-title">⭐ PL (LEAD)</div>
+          <div class="kpi-value" id="userStatLead">0 명</div>
+          <div class="kpi-sub">전체 서브시스템 업무 데이터 수정</div>
+        </div>
+        <div class="kpi-card" style="border-left-color: #10b981;">
+          <div class="kpi-title">👤 멤버 (MEMBER)</div>
+          <div class="kpi-value" id="userStatMember">6 명</div>
+          <div class="kpi-sub">담당 서브시스템 데이터만 저장</div>
+        </div>
+      </div>
+
+      <div class="card" style="border-left: 4px solid #d97706;">
+        <div class="card-title">
+          <div>
+            <span>📋 프로젝트 멤버 계정 및 권한 일람표</span>
+            <span class="u-fs-xs u-c-muted u-normal u-ml-8">
+              * <b>관리자</b>: 전 메뉴 | <b>PM</b>: 프로젝트 설정·멤버·전체 데이터 | <b>PL(LEAD)</b>: 담당 서브시스템 데이터 수정 (담당 ALL 이면 전체) | <b>멤버(MEMBER)</b>: 담당 서브시스템만 저장 | 실무 메뉴 및 담당 서브시스템 개별 업로드 가능
+            </span>
+          </div>
+          <div class="u-flex u-gap-6 u-ai-center u-wrap">
+            <label class="u-fs-xs u-bold">🌐 언어 일괄 설정:</label>
+            <select class="u-fs-xs" id="bulkUserLangSelect">
+              <option value="ko">한국어</option>
+              <option value="en">English</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" data-click="applyBulkUserLanguage">전체 멤버에 적용</button>
+            <button class="btn btn-sm" data-btn="nav" id="btnCopyUsers" data-click="UserCopy.open" title="다른 프로젝트의 멤버(역할·담당·부서)를 이 프로젝트로 복사 (관리자)">📥 다른 프로젝트에서 복사</button>
+            <button class="btn btn-primary btn-sm" data-click="addNewProjectUser">+ 신규 멤버 추가</button>
+          </div>
+        </div>
+        <div id="projectUsersScopeInfo" class="pm-scope-info" style="display:none;"></div>
+        <div class="table-container" style="max-height: 460px;">
+          <table id="projectUsersTable">
+            <thead>
+              <tr>
+                <th style="width: 130px;">멤버 ID (멤버 선택 ID)</th>
+                <th style="width: 120px;">성명</th>
+                <th style="width: 260px;">시스템 권한 등급 (4단계 RBAC)</th>
+                <th style="width: 150px;">담당 서브시스템</th>
+                <th>소속 부서 / 담당 역할</th>
+                <th style="width: 100px;">언어</th>
+                <th style="width: 260px;">암호 변경 / 초기화</th>
+<template data-edition="workgroup">
+                <th style="width: 80px;" title="엑셀 · 워드 · PPT · 백업 · 첨부 내려받기 (PM 이상이 정함)">다운로드</th>
+</template>
+                <th style="width: 55px;">삭제</th>
+              </tr>
+            </thead>
+            <tbody id="projectUsersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    
+      </div>
+
+    </div>

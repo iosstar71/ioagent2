@@ -13,8 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [
-    ("license", "사용권 계약", "LICENSE_ko.txt"),
-    ("privacy", "개인정보 처리 안내", "PRIVACY_ko.txt"),
     ("notices", "오픈소스 고지", "THIRD_PARTY_NOTICES.txt"),
 ]
 
@@ -24,7 +22,7 @@ def build():
     for key, title, name in DOCS:
         path = ROOT / "legal" / name
         items.append({"key": key, "title": title, "file": "legal/" + name, "text": path.read_text(encoding="utf-8") if path.exists() else ""})
-    out = ROOT / "js" / "legal-text.js"
+    out = ROOT / "static" / "js" / "common" / "legal-text.js"
     out.write_text(
         "// [IOSTAR-PM] 법적 고지 문서 (자동 생성 파일 - 직접 수정 금지)\n"
         "// 원본: legal/*.txt  /  생성: python tools/build_legal.py\n"
