@@ -201,7 +201,7 @@ var RoadmapChart = {
       if (!o.compact) {   // compact(서브시스템 장표 위의 작은 로드맵)는 이름 칸 · 줄무늬 없이
         if (i % 2 === 0) els.push({ t: "rect", x: box.x, y: y - GAP / 2, w: box.w, h: bh + GAP, fill: "F8FAFC" });
         els.push({ t: "rect", x: box.x, y: y + 0.04, w: 0.06, h: bh - 0.08, fill: b.phases[0].color, r: 0.03 });
-        els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 12, { bold: true, color: this.INK }), p(b.root.name || "", 7.5, { color: this.SUB })], { anchor: "ctr" }));
+        els.push(T(box.x + 0.12, y, LW - 0.15, bh, [p(b.sys, 9, { bold: true, keep: true, color: this.INK }), p(b.root.name || "", 9, { color: this.SUB })], { anchor: "ctr" }));
       }
       if (KW) this._side(els, b, { x: x + w + 0.12, y, w: KW - 0.12, h: bh, ref, T, p });
       if (o.style === "bracket") { this._bracketBlock(els, b, { X, y, bh, ref, T, p, x, w, compact: o.compact }); y += bh + GAP; return; }

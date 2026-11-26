@@ -103,14 +103,14 @@ var ExecDeck = {
     const slides = [];
     const T = (x, y, w, h, paras, o = {}) => Object.assign({ t: "text", x, y, w, h, paras }, o);
     const R = (x, y, w, h, fill, o = {}) => Object.assign({ t: "rect", x, y, w, h, fill }, o);
-    const p = (text, size, o = {}) => ({ text: String(text === undefined || text === null ? "" : text), size, bold: !!o.bold, color: o.color || "1F2937", align: o.align || "l", bullet: !!o.bullet });
+    const p = (text, size, o = {}) => ({ text: String(text === undefined || text === null ? "" : text), size, bold: !!o.bold, keep: !!o.keep, color: o.color || "1F2937", align: o.align || "l", bullet: !!o.bullet });
     const num = v => parseFloat(String(v === undefined || v === null ? 0 : v).replace(/%/g, "")) || 0;
     const pct = v => `${num(v)}%`;
     const head = (title, sub) => this._head(D.id, c, title, sub, T, R, p).map(e => Object.assign(e, { fixed: true }));
     // 표 그리기 (머리줄 + 줄무늬 행)
     const table = (els, x, y, cols, rows, rh, o = {}) => {
       let xx = x;
-      cols.forEach(([h, w]) => { els.push(R(xx, y, w, rh, H)); els.push(T(xx, y, w, rh, [p(h, o.headSize || 10.5, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); xx += w; });
+      cols.forEach(([h, w]) => { els.push(R(xx, y, w, rh, H)); els.push(T(xx, y, w, rh, [p(h, o.headSize || 10.5, { bold: true, keep: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); xx += w; });
       rows.forEach((r, i) => {
         let cx = x;
         const yy = y + rh * (i + 1);
@@ -171,7 +171,7 @@ var ExecDeck = {
       const sc = this.scurve(c);
       const msg = `기준일 계획 ${sc.planNow}% 대비 실적 ${sc.actNow}% — ${sc.actNow >= sc.planNow ? `계획보다 ${sc.actNow - sc.planNow}%p 앞섬` : `계획보다 ${sc.planNow - sc.actNow}%p 뒤처짐`}`;
       nat.push(R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08 }), R(0.35, 0.9, 0.07, 0.4, C),
-        T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, color: sc.actNow >= sc.planNow ? "15803D" : "B91C1C" })], { anchor: "ctr" }));
+        T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, keep: true, color: sc.actNow >= sc.planNow ? "15803D" : "B91C1C" })], { anchor: "ctr" }));
       // 종합 (가로로 넓게)
       nat.push(T(0.35, 1.38, 5, 0.26, [p("■ 프로젝트 종합", 10.5, { bold: true, color: C })], { anchor: "ctr" }));
       nat.push(R(Wd - 4.9, 1.49, 0.3, 0.03, "94A3B8"), T(Wd - 4.55, 1.38, 2.0, 0.26, [p(`누적 계획 (기준일 ${sc.planNow}%)`, 8, { color: "475569" })], { anchor: "ctr" }),
@@ -185,7 +185,7 @@ var ExecDeck = {
       c.order.forEach((sy, i) => {
         const x = gx + (i % cols) * cw, y = gy + Math.floor(i / cols) * ch, s2 = this.scurve(c, sy), rr = Metrics.achv(s2.planNow, s2.actNow);
         nat.push(R(x + 0.03, y + 0.03, cw - 0.06, ch - 0.06, "FFFFFF", { line: B, r: 0.06 }));
-        nat.push(T(x + 0.1, y + 0.05, cw * 0.45, 0.22, [p(sy, 9, { bold: true, color: "1E293B" })], { anchor: "ctr" }));
+        nat.push(T(x + 0.1, y + 0.05, cw * 0.45, 0.22, [p(sy, 9, { bold: true, keep: true, color: "1E293B" })], { anchor: "ctr" }));
         nat.push(T(x + cw * 0.45, y + 0.05, cw * 0.55 - 0.12, 0.22, [p(`${s2.actNow}% / ${s2.planNow}% (${rr}%)`, 8, { bold: true, color: rateColor(rr), align: "r" })], { anchor: "ctr" }));
         this.curveEls(nat, { x: x + 0.12, y: y + 0.3, w: cw - 0.24, h: ch - 0.4, sc: s2, color: rateColor(rr) === "15803D" ? C : rateColor(rr), T, R, p });
       });
@@ -209,7 +209,7 @@ var ExecDeck = {
         const nextMs = (projectConfig.milestones || []).filter(m => String(m.date) >= String(c.data.reportDate)).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
         const msg = `전체 계획 ${pct(c.m.totalPlan)} 대비 실적 ${pct(c.m.totalActual)} — ${roots.length}개 서브시스템 중 정상 ${cnt.정상} · 주의 ${cnt.주의} · 지연 ${cnt.지연}${nextMs ? `   |   다음 마일스톤 ${String(nextMs.date).slice(5).replace("-", ".")} ${nextMs.name}` : ""}`;
         els2.push(R(0.35, 0.9, Wd - 0.7, 0.4, "F1F5F9", { r: 0.08, native: true }), R(0.35, 0.9, 0.07, 0.4, C, { native: true }),
-          T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, color: "1E293B" })], { anchor: "ctr", native: true }));
+          T(0.55, 0.9, Wd - 1.0, 0.4, [p(msg, 11, { bold: true, keep: true, color: "1E293B" })], { anchor: "ctr", native: true }));
         const rmEls = RoadmapChart.slideEls({ systems: sys, side: true, tasksOf: sy => rm.tasks.filter(t => t.system === sy), start: rm.start, end: rm.end, ref: c.data.reportDate, milestones: (projectConfig.milestones || []).filter(m => !m.scope || m.scope === "ALL" || sys.indexOf(m.scope) !== -1), style: this.roadmapStyle, depth: this.roadmapSplit ? 3 : undefined, T, p, box: { x: 0.35, y: 1.38, w: Wd - 0.7, h: 5.27 } });
         rmEls.push(T(0.35, 6.9, Wd - 0.7, 0.2, [p(legend, 7, { color: "94A3B8" })], { anchor: "ctr" }));
         els2.push(...rmEls.map(e => Object.assign(e, { native: true })));
@@ -371,7 +371,27 @@ var ExecDeck = {
         if (e.paras) e.paras.forEach(q => { q.size = Math.round(q.size * fs * 10) / 10; });
       }));
     }
+    this._typeset(slides);
     return { c, slides, opt };
+  },
+
+  // 글자 크기 · 굵기 정리 (사람이 만든 보고서처럼): 크기는 TYPE 단계로만, 한 글상자 안은 한 크기,
+  //  굵게는 장 제목 · 소제목(■ ① ⚠ …) · 표 머리 · 핵심 메시지(keep) · 14pt 이상 숫자에만
+  TYPE: [20, 14, 11, 10, 9, 8, 7],   // 제목 · 큰 숫자 / 핵심 메시지 / 소제목 / 본문 / 표 / 주석 / 그림 글자
+  _typeset(slides) {
+    const snap = v => this.TYPE.reduce((a, t) => Math.abs(t - v) < Math.abs(a - v) || (Math.abs(t - v) === Math.abs(a - v) && t < a) ? t : a, this.TYPE[0]);
+    const strong = q => q.keep || q.size >= 14 || /^[■□①②③④⑤⚠]/.test(q.text);
+    slides.slice(1).forEach(sl => sl.els.forEach(e => {
+      if (e.fixed || !e.paras || !e.paras.length) return;
+      e.paras.forEach(q => { q.size = snap(q.size); });
+      if (e.paras.length > 1) {   // 가장 많이 쓴 크기 하나로 (같으면 작은 쪽)
+        const cnt = {};
+        e.paras.forEach(q => { cnt[q.size] = (cnt[q.size] || 0) + 1; });
+        const one = Object.keys(cnt).map(Number).sort((a, b) => cnt[b] - cnt[a] || a - b)[0];
+        e.paras.forEach(q => { q.size = one; });
+      }
+      e.paras.forEach(q => { q.bold = q.bold && strong(q); });
+    }));
   },
 
   // 장표 머리 · 바닥 (디자인별)
@@ -570,7 +590,7 @@ var ExecDeck = {
     const tx = RXp + 0.06, tw = RWd - 0.12, cols = [["단계", 1.05, "l"], ["계획", 0.42], ["실적", 0.42], ["달성률", 0.5], ["계획 대비 실적", tw - 2.39]];
     const hy = TY + 0.06, rh = Math.min(0.2, (TH - 0.32) / (prow.length + 1));
     let x = tx;
-    cols.forEach(([h, w]) => { nat.push(R(x, hy, w, rh, P.headerBg), T(x, hy, w, rh, [p(h, 7, { bold: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
+    cols.forEach(([h, w]) => { nat.push(R(x, hy, w, rh, P.headerBg), T(x, hy, w, rh, [p(h, 7, { bold: true, keep: true, color: P.headerTextColor, align: "ctr" })], { anchor: "ctr" })); x += w; });
     prow.forEach((r, i) => {
       const y = hy + rh * (i + 1), pl = Math.round(+r[1] || 0), ac = Math.round(+r[2] || 0), rr = pl <= 0 && ac <= 0 ? null : Metrics.achv(pl, ac), fill = r[3] ? "E2E8F0" : "FFFFFF";
       let xx = tx;
@@ -588,7 +608,7 @@ var ExecDeck = {
     // 아래: 금주 실적 | 차주 계획
     const box = (x, y, w, h, title, lines) => {
       nat.push(R(x, y, w, h, "FFFFFF", { line: B }), R(x, y, w, 0.26, SUB));
-      nat.push(T(x + 0.06, y, w - 0.12, 0.26, [p(title, 9.5, { bold: true, color: C })], { anchor: "ctr" }));
+      nat.push(T(x + 0.06, y, w - 0.12, 0.26, [p(title, 9.5, { bold: true, keep: true, color: C })], { anchor: "ctr" }));
       nat.push(T(x + 0.06, y + 0.28, w - 0.12, h - 0.3, this.fit(lines.map(q => Object.assign({}, q, { size: q.size * 0.82 })), w - 0.12, h - 0.3)));
     };
     const issue = rep.issuesNotes && rep.issuesNotes.trim() && rep.issuesNotes.trim() !== "특이사항 없음";
